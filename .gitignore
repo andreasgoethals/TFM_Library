@@ -1,0 +1,9 @@
+# >100MB — exceeds the GitHub file limit; regenerate locally via
+# scripts/refresh_repositories.py (see README).
+repositories/TabPFN Wide.txt
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
+__pycache__/
+*.pyc
