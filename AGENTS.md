@@ -12,9 +12,8 @@ The single canonical collection of tabular-foundation-model (TFM) knowledge
 shared across the owner's projects: paper PDFs + text extractions
 (`papers/`), per-paper summaries (`SUMMARIES.md`), the cross-paper field
 synthesis (`SYNTHESIS.md`), flat-text dumps of upstream reference
-implementations (`repositories/`, guide in `REPOSITORIES.md`), a to-acquire
-list (`WATCHLIST.md`), and a `CHANGELOG.md` for consumers deciding when to
-update their pin.
+implementations (`repositories/`, guide in `REPOSITORIES.md`), and a
+`CHANGELOG.md` for consumers deciding when to update their pin.
 
 ## Rules
 
@@ -31,7 +30,9 @@ update their pin.
    periodically refreshed (`scripts/refresh_repositories.py`) and line
    numbers drift by thousands. `` `TabPFN .txt`, `save_tabpfn_model` `` —
    yes. `` `TabPFN .txt:12211` `` — never.
-4. **Adding a paper** (the full procedure — do all five steps):
+4. **Papers are added ONLY when the owner explicitly says so** (or adds
+   one themselves). Never collect papers proactively. When the owner does
+   ask, follow the full procedure — all five steps:
    1. PDF into `papers/` as `YYYY_Author_et_al._Title.pdf` (underscores, no
       spaces or commas).
    2. Extract text: `python scripts/extract_paper_text.py papers/<file>.pdf`.
@@ -39,7 +40,7 @@ update their pin.
       what it contains → limitations → per-project relevance).
    4. Integrate into `SYNTHESIS.md`: timeline row, the fitting thematic
       section, and an appendix card.
-   5. Log it in `CHANGELOG.md`; remove it from `WATCHLIST.md` if it was there.
+   5. Log it in `CHANGELOG.md`.
 5. **Refreshing a dump**: run the refresh script, then spot-check that
    symbol names cited in `SUMMARIES.md`/`REPOSITORIES.md`/consumer code
    still exist; note the refresh in `CHANGELOG.md`.

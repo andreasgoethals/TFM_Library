@@ -26,7 +26,6 @@ read [`AGENTS.md`](AGENTS.md) before touching anything here.
 | [`papers/`](papers/) | The PDFs, named `YYYY_Author_et_al._Title.pdf`, with full text extractions under [`papers/text/`](papers/text/) (same basename, `.txt`). |
 | [`REPOSITORIES.md`](REPOSITORIES.md) | What each code dump is, why it's kept, and what to grep for when building on it. |
 | [`repositories/`](repositories/) | The flat-text code snapshots themselves (made with `gitingest`). |
-| [`WATCHLIST.md`](WATCHLIST.md) | Papers and repositories that should be added next. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Human-readable log of library updates — check it before bumping a project's submodule pin. |
 | [`scripts/`](scripts/) | Maintenance tools: `refresh_repositories.py` (re-snapshot all dumps), `extract_paper_text.py` (PDF → `papers/text/`). |
 
