@@ -2,7 +2,7 @@
 
 This folder is a **read-only** reference corpus. Every `.txt` file
 here is a flat dump of an upstream repository or webpage, kept
-locally so the pipeline code can be grepped against canonical
+locally so downstream code can be grepped against canonical
 implementations without round-tripping to the internet. **Never edit
 these files.** If a snapshot is stale, replace the whole file with a
 fresh dump using the same filename, so existing greps in the
@@ -19,22 +19,22 @@ refresh, so treat them as rough sizes only.
 
 | File | Lines | GitHub | Paper | What it gives us |
 |------|-------|--------|-------|------------------|
-| `Huggingface TabPFN.txt` | 551 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
-| `NanoTabPFN.txt` | 1,103 | [automl/nanoTabPFN](https://github.com/automl/nanoTabPFN) | [Pfefferle 2025](papers/2025_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) | Cleanest end-to-end reference of a PFN training loop. Structural template for `src/train/`. |
-| `On Finetuning Tabular Foundation Models.txt` | 77,581 | [yandex-research/tabpfn-finetuning](https://github.com/yandex-research/tabpfn-finetuning) | [Rubachev 2025](papers/2025_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | Yandex research repo for TabPFNv2 full/PEFT finetuning: experiment configs, reports, LoRA utilities, vendored TabPFN changes, and practical LR/early-stopping recipes. |
-| `PFNS.txt` | 29,093 | [SamuelGabriel/PFNs](https://github.com/SamuelGabriel/PFNs) | [Müller 2021](papers/2021_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | Implementations of every encoder step that runs *inside* every TabPFN forward pass (NaN handling, normalisation, …). Tells us what `sanitize.py` should *not* duplicate. |
-| `PFNs4BO.txt` | 7,455 | [automl/PFNs4BO](https://github.com/automl/PFNs4BO) | [Müller 2023](papers/2023_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf) | PFN-as-Bayesian-optimisation surrogate. Tangential to credit-risk; useful only if we wrap a PFN around our own HP search. |
-| `TabDPT.txt` | 3,168 | [layer6ai-labs/TabDPT-inference](https://github.com/layer6ai-labs/TabDPT-inference) | [Ma 2026](papers/2026_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) | Inference code for the real-data-only competitor to TabPFN. Comparison baseline. |
-| `TabPFN .txt` | 77,938 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for `src/train/`. |
-| `TabPFN Client.txt` | 12,672 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Not used in our self-hosted pretraining; only for benchmarking against the API. |
+| `Huggingface TabPFN.txt` | 551 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
+| `NanoTabPFN.txt` | 1,103 | [automl/nanoTabPFN](https://github.com/automl/nanoTabPFN) | [Pfefferle 2025](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) | Cleanest end-to-end reference of a PFN training loop. Cleanest structural template for a PFN training loop. |
+| `On Finetuning Tabular Foundation Models.txt` | 77,581 | [yandex-research/tabpfn-finetuning](https://github.com/yandex-research/tabpfn-finetuning) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | Yandex research repo for TabPFNv2 full/PEFT finetuning: experiment configs, reports, LoRA utilities, vendored TabPFN changes, and practical LR/early-stopping recipes. |
+| `PFNS.txt` | 29,093 | [SamuelGabriel/PFNs](https://github.com/SamuelGabriel/PFNs) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | Implementations of every encoder step that runs *inside* every TabPFN forward pass (NaN handling, normalisation, …). Delimits what an upstream preprocessing step should *not* duplicate. |
+| `PFNs4BO.txt` | 7,455 | [automl/PFNs4BO](https://github.com/automl/PFNs4BO) | [Müller 2023](papers/2023/05_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf) | PFN-as-Bayesian-optimisation surrogate. Tangential to tabular prediction; relevant only for PFN-as-BO-surrogate work. |
+| `TabDPT.txt` | 3,168 | [layer6ai-labs/TabDPT-inference](https://github.com/layer6ai-labs/TabDPT-inference) | [Ma 2026](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) | Inference code for the real-data-only competitor to TabPFN. Comparison baseline. |
+| `TabPFN .txt` | 77,938 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for training/finetuning work. |
+| `TabPFN Client.txt` | 12,672 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Irrelevant to self-hosted training; only for benchmarking the hosted API. |
 | `TabPFN Docs.txt` | 7,797 | _GitHub source removed_ — refresh manually from [docs.priorlabs.ai/overview](https://docs.priorlabs.ai/overview) | — | The docs.priorlabs.ai source. Documents *intent* of every config knob; faster to grep than the implementation in `TabPFN .txt`. |
-| `TabPFN Drift-Resilient.txt` | 138,551 | [automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN) | [Helli 2024](papers/2024_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) | Drift-aware training augmentation. Highly relevant for credit-risk's macro-cycle drift; consider folding into `src/train/`. |
+| `TabPFN Drift-Resilient.txt` | 138,551 | [automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN) | [Helli 2024](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) | Drift-aware training augmentation. The reference for drift-aware training-time augmentation. |
 | `TabPFN Extensions.txt` | 21,784 | [PriorLabs/tabpfn-extensions](https://github.com/PriorLabs/tabpfn-extensions) | — | `AutoTabPFN` post-hoc ensembling, RF-PFN, embeddings, HPO. Source of evaluation baselines. |
-| `TabPFN V2 Finetuning.txt` | 4,331 | [PriorLabs/TabPFN/examples](https://github.com/PriorLabs/TabPFN/tree/main/examples) | [Rubachev 2025](papers/2025_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | The `finetune_classifier.py` and `finetune_regressor.py` reference scripts built on the official `FinetunedTabPFN*` wrappers. |
-| `TabPFN Wide.txt` | 2,279,103 | [not-a-feature/TabPFN-Wide](https://github.com/not-a-feature/TabPFN-Wide) | [Kolberg 2026](papers/2026_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) | Continued-pretraining for extreme-feature-count regimes via a feature-widening prior (it argues *against* feature reduction; not the source of our agglomeration). Gitignored (~366 MB); regenerate locally. |
-| `TabTune.txt` | 162,653 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. Useful as a *future* source of additional eval baselines beyond what `src/model/` currently wraps; **not adopted now** because it doesn't natively support Real-TabPFN-style multi-dataset continued pretraining (which is the core training stage of this project). See "Should we use TabTune?" below for the full call. |
-| `TransformersCanDoBayesianInference.txt` | 12,325 | [automl/TransformersCanDoBayesianInference](https://github.com/automl/TransformersCanDoBayesianInference) | [Müller 2021](papers/2021_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | The original (unmaintained) code release of the 2021 PFN paper. Historical; useful for explaining what a PFN is. |
-| `VSC Documentation.txt` | 38,120 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | Full Sphinx source of the VSC supercomputer documentation. SLURM job scripting, **Mindwell B200 / wICE H100+A100** partitions, Lustre/GPFS + project-staging storage tiers, account / credit management. The reference when writing the SLURM scripts of consuming projects. |
+| `TabPFN V2 Finetuning.txt` | 4,331 | [PriorLabs/TabPFN/examples](https://github.com/PriorLabs/TabPFN/tree/main/examples) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | The `finetune_classifier.py` and `finetune_regressor.py` reference scripts built on the official `FinetunedTabPFN*` wrappers. |
+| `TabPFN Wide.txt` | 2,279,103 | [not-a-feature/TabPFN-Wide](https://github.com/not-a-feature/TabPFN-Wide) | [Kolberg 2026](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) | Continued-pretraining for extreme-feature-count regimes via a feature-widening prior (it argues *against* feature reduction; not the source of our agglomeration). Gitignored (~366 MB); regenerate locally. |
+| `TabTune.txt` | 162,653 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. A convenient source of non-TabPFN eval baselines; it does **not** natively support Real-TabPFN-style multi-dataset continued pretraining. |
+| `TransformersCanDoBayesianInference.txt` | 12,325 | [automl/TransformersCanDoBayesianInference](https://github.com/automl/TransformersCanDoBayesianInference) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | The original (unmaintained) code release of the 2021 PFN paper. Historical; useful for explaining what a PFN is. |
+| `VSC Documentation.txt` | 38,120 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | Full Sphinx source of the VSC supercomputer documentation. SLURM job scripting, **Mindwell B200 / wICE H100+A100** partitions, Lustre/GPFS + project-staging storage tiers, account / credit management. The reference when writing SLURM scripts. |
 
 ## Layout
 
@@ -55,8 +55,8 @@ and
 [`Prior-Labs/tabpfn_2_6`](https://huggingface.co/Prior-Labs/tabpfn_2_6).
 
 **Related papers:**
-[2025 — Hollmann et al. — Accurate predictions on small data with a tabular foundation model](papers/2025_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf),
-[2026 — Grinsztajn et al. — TabPFN-2.5](papers/2026_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf).
+[2025 — Hollmann et al. — Accurate predictions on small data with a tabular foundation model](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf),
+[2026 — Grinsztajn et al. — TabPFN-2.5](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf).
 
 **What it is.** Concatenation of the public HuggingFace model-card
 READMEs for `Prior-Labs/tabpfn_2_5` and `Prior-Labs/tabpfn_2_6` (the
@@ -69,8 +69,7 @@ hit.
 source* for which checkpoint is real-finetuned vs. synthetic-only,
 the layer counts (v2.5 = 18–24, v2.6 = 24), the licence terms, and
 the citation. Consuming projects that maintain a checkpoint
-inventory (e.g. CreditPFN's `docs/CHECKPOINTS.md`) cross-check
-every fact against this file.
+inventory should cross-check every fact against this file.
 
 **Contents in detail.**
 
@@ -112,7 +111,7 @@ prose).
 **Upstream:** [github.com/automl/nanoTabPFN](https://github.com/automl/nanoTabPFN).
 
 **Related paper:**
-[2025 — Pfefferle et al. — nanoTabPFN: A Lightweight and Educational Reimplementation of TabPFN](papers/2025_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf).
+[2025 — Pfefferle et al. — nanoTabPFN: A Lightweight and Educational Reimplementation of TabPFN](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf).
 
 **What it is.** A minimal reference implementation of TabPFN — the
 "how-it-works-in-under-1000-lines" educational version, trimmed of
@@ -120,10 +119,10 @@ the production package's ergonomics (sklearn API surface, ensembles,
 distributed training, autocast handling, multiple checkpoints) so
 that the *core training and inference loop* is visible at a glance.
 
-**Why it's the highest-signal file in this folder for our work:**
-Real-TabPFN's source is not public, so the closest thing we have to
-"a continued-pretraining loop in a few hundred lines that we can
-read end-to-end" lives here.
+**Why it is the highest-signal file in this folder:** Real-TabPFN's
+source is not public, so the closest available thing to a
+continued-pretraining loop readable end-to-end in a few hundred lines
+lives here.
 
 **Contents in detail:**
 
@@ -135,8 +134,8 @@ read end-to-end" lives here.
   arrays; categoricals get an `OrdinalEncoder(handle_unknown=
   'use_encoded_value', unknown_value=np.nan)`. Constant columns (≤ 1
   unique non-NaN value) are dropped. This is the *minimum* feature
-  preprocessing TabPFN inputs need, and it matches the rules we are
-  putting into `src/data/sanitize.py`.
+  preprocessing TabPFN inputs need, and it defines the
+  minimum any downstream preprocessing step must match.
 - **`get_openml_datasets(...)`** — illustrates the OpenML download
   path for evaluation (TabArena task IDs hardcoded), with stratified
   subsampling via `train_test_split(stratify=y)`.
@@ -153,18 +152,16 @@ read end-to-end" lives here.
   in 70 lines: `schedulefree.AdamWScheduleFree`, learning rate `4e-3`,
   cross-entropy loss reshaped to `(B*N_query, n_classes)`,
   gradient-norm clip at `1.0`, periodic eval. This is the structural
-  reference for `src/train/train.py` once we get there.
+  reference for a from-scratch PFN training loop.
 - **`PriorDumpDataLoader`.** Loads pre-baked
   synthetic prior datasets from an HDF5 file. Fields:
   `X (B, N_max, F_max)`, `y (B, N_max)`, `num_features`,
   `num_datapoints`, `single_eval_pos` (= train/test split index),
   `max_num_classes`. Padding-aware: each batch slices to the
   per-batch max feature count and max sequence length. **Reference
-  format only** — since the 2026-05-20 refactor our training pipeline
-  reads sanitized CSVs from `data/processed/` directly and assembles
-  the same `(X_context, y_context, X_query, y_query)` quadruple on
-  the fly inside `src/train/dataloader.py::_build_step_batch` (with
-  a fresh random subsample every epoch). No `.npz` cache step.
+  format only** — a pipeline that reads real tables directly can
+  assemble the same `(X_context, y_context, X_query, y_query)` quadruple
+  on the fly instead of pre-baking a prior dump.
 
 **When to grep this file:** any time you need the "what does the
 training loop actually look like" answer — model `forward`
@@ -178,7 +175,7 @@ layout.
 **Upstream:** [github.com/yandex-research/tabpfn-finetuning](https://github.com/yandex-research/tabpfn-finetuning).
 
 **Related paper:**
-[2025 - Rubachev et al. - On Finetuning Tabular Foundation Models](papers/2025_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf).
+[2025 - Rubachev et al. - On Finetuning Tabular Foundation Models](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf).
 
 **What it is.** A Yandex Research code dump for the Rubachev et al.
 TabPFNv2 finetuning study. It is much larger than the Prior Labs
@@ -190,11 +187,9 @@ a vendored/modified TabPFN implementation.
 that full finetuning is the strongest and simplest TabPFNv2
 adaptation baseline: it converges quickly, tends to beat PEFT
 variants, and can be run on datasets up to roughly 50K rows on an
-80GB GPU. The mechanism result is also directly relevant to
-CreditPFN: finetuning improves the alignment between test-row query
+80GB GPU. The mechanism result: finetuning improves the alignment between test-row query
 representations and in-context training-row key representations, so
-attention weights better track target similarity. For our project,
-this repo is the best public source for the LR grid, patience,
+attention weights better track target similarity. This repo is the best public source for the LR grid, patience,
 prediction length, and A100 memory assumptions behind single-dataset
 gradient adaptation.
 
@@ -203,8 +198,8 @@ gradient adaptation.
 **paper also reports LoRA and other partial/PEFT ablations**. Do not turn
 the contents of that one result directory into a claim that the paper did
 not evaluate LoRA. (2) each run adapts to one target table. Multi-dataset
-corpus continued pretraining is Garg et al.'s Real-TabPFN setting and
-CreditPFN's setting, not Rubachev's experimental design.
+corpus continued pretraining is Garg et al.'s Real-TabPFN setting, not
+Rubachev's experimental design.
 
 **Contents in detail:**
 
@@ -228,36 +223,34 @@ CreditPFN's setting, not Rubachev's experimental design.
 - **`lib/data.py`** - expects arrays such as `X_num.npy`,
   `X_bin.npy`, `X_cat.npy`, `Y.npy`, and
   `split-default/{train,val,test}_idx.npy`. Useful when designing
-  future adapters between our `.npz` cache and RTDL-style tabular
-  loaders.
+  adapters between a custom cache format and RTDL-style loaders.
 - **`lib/deep.py`** - RTDL numerical embedding utilities such as
   piecewise-linear embeddings, one-hot helpers, optimization helpers,
   and parameter-count utilities.
 - **`FILE: lib/tabpfn/lora_utils.py`** - LoRA injection
   helpers for TabPFN internals, including replacements for MHA,
-  linear layers, and embeddings. This is the local reference if we
-  later benchmark LoRA against full continued pretraining.
+  linear layers, and embeddings. The local reference for benchmarking LoRA against full continued
+  pretraining.
 - **`FILE: lib/tabpfn/preprocessing.py`** - vendored
   TabPFN preprocessing configs (`none`, `numeric`, `onehot`,
   `ordinal`, `ordinal_shuffled`, etc.) and the package-level feature
   preprocessing choices.
 
-**Verified config facts (aggregated across all 342 `report.json`
-runs, 2026-06-23) — and how CreditPFN deliberately differs.** These
-are the *reference* values; our deviations are intentional and noted:
+**Verified config facts (aggregated across all 342 `report.json` runs,
+2026-06-23).** These are the *reference* values a downstream project
+should calibrate against, not adopt blindly:
 
-| Knob | Reference (all 342 runs) | CreditPFN | Why we differ |
-|------|--------------------------|-----------|---------------|
-| optimizer | AdamW | AdamW | match |
-| **weight_decay** | **0.0** | **0.0** (was 0.01; fixed 2026-06-23) | match — decay-to-origin fights the prior |
-| LR | tuned 5e-6…5e-4, median ~3.9e-5 | grid {3e-7, 1e-6, 1e-5, 3e-5} | low rung matches Garg; high rung approaches Rubachev's median |
-| LR schedule | **none (constant)** | warmup→cosine | deliberate; consider a constant rung |
-| **L2-SP / anchor** | **not used** | λ=0.003 (full-FT only) | follows Garg's Real-TabPFN corpus-CPT recipe, not Rubachev |
-| batch_size | 1 | 1 | match |
-| epoch policy | `n_epochs=-1` + early stop (patience 16) | fixed 50 epochs + divergence-abort | deliberate (val-noise with ~10 datasets) |
-| ensemble/step | clf 2 / **reg 8** (official wrappers) | PD 2 / LGD 8 | match |
-| loss | CE (clf) / bar-dist NLL (reg) | same | match |
-
+| Knob | Reference value (all 342 runs) |
+|------|--------------------------------|
+| optimizer | AdamW |
+| **weight_decay** | **0.0** |
+| LR | tuned 5e-6…5e-4, median ~3.9e-5 |
+| LR schedule | **none (constant)** |
+| **L2-SP / anchor** | **not used** |
+| batch_size | 1 |
+| epoch policy | `n_epochs=-1` + early stop (patience 16) |
+| ensemble/step | clf 2 / **reg 8** (official wrappers) |
+| loss | CE (clf) / bar-dist NLL (reg) |
 The main optimization lesson from this repository is that Rubachev uses
 `weight_decay=0.0`; stacking decay-to-origin on an L2-SP anchor would be a
 separate, untested regularization choice. **This says nothing about Garg's
@@ -287,7 +280,7 @@ reports, and TabPFNv2 internals.
 (formerly `automl/PFNs`; the old slug no longer resolves directly).
 
 **Related papers:**
-[2021 — Müller et al. — Transformers Can Do Bayesian Inference](papers/2021_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf)
+[2021 — Müller et al. — Transformers Can Do Bayesian Inference](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf)
 (the foundational PFN framework that this code implements).
 
 **What it is.** The full Prior-Labs `PFNs` repo — the underlying
@@ -295,10 +288,10 @@ reports, and TabPFNv2 internals.
 Contains the canonical implementations of the *internal* encoder
 steps that run inside every TabPFN forward pass.
 
-**Why it matters here:** It tells us what `sanitize.py` should *not*
-duplicate. The model already handles a lot of preprocessing
-internally; if our pipeline does it a second time we either waste
-work or (worse) double-transform features in ways that drift the
+**Why it matters here:** it delimits what an upstream preprocessing step
+should *not* duplicate. The model already handles a lot of preprocessing
+internally; a pipeline that does it a second time either wastes work
+or (worse) double-transforms features in ways that drift the
 distribution off the model's training prior.
 
 **Contents in detail:**
@@ -323,8 +316,8 @@ distribution off the model's training prior.
   - `NanHandlingEncoderStep`: replaces `NaN` with
     `nan_indicator`, `+inf` with `inf_indicator`, `-inf` with
     `neg_inf_indicator`, then concatenates a binary "was-this-NaN"
-    flag along the feature dimension. Confirms that our sanitize
-    step (h) — replace ±inf with NaN — is correct.
+    flag along the feature dimension. Confirms that replacing ±inf with NaN
+    upstream is consistent with the model's own handling.
   - `VariableNumFeaturesEncoderStep`.
   - `InputNormalizationEncoderStep` — per-column mean/std
     computed on the context split only.
@@ -337,7 +330,7 @@ distribution off the model's training prior.
   ensemble preprocessing, not training-time preprocessing.**
 
 **When to grep this file:** to confirm whether something is the
-model's internal job or our pipeline's job; to look up what the
+model's internal job or the pipeline's job; to look up what the
 encoder steps actually do to NaNs / infs / constants; to see the
 canonical ensemble of preprocessing options at inference.
 
@@ -349,7 +342,7 @@ canonical ensemble of preprocessing options at inference.
 [github.com/automl/PFNs4BO](https://github.com/automl/PFNs4BO)).
 
 **Related paper:**
-[2023 — Müller et al. — PFNs4BO: In-Context Learning for Bayesian Optimization](papers/2023_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf).
+[2023 — Müller et al. — PFNs4BO: In-Context Learning for Bayesian Optimization](papers/2023/05_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf).
 
 **What it is.** PFNs adapted to Bayesian optimisation. Implements an
 acquisition function on top of a PFN posterior — useful for
@@ -369,7 +362,7 @@ machinery beyond what's already in `PFNS.txt`.
 [`layer6ai-labs/TabDPT-training`](https://github.com/layer6ai-labs/TabDPT-training)).
 
 **Related paper:**
-[2026 — Ma et al. — TabDPT: Scaling Tabular Foundation Models on Real Data](papers/2026_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf).
+[2026 — Ma et al. — TabDPT: Scaling Tabular Foundation Models on Real Data](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf).
 
 **What it is.** TabDPT is the *real-data-only* counterpart to
 TabPFN: a transformer trained on real tables sampled from OpenML
@@ -380,10 +373,9 @@ sklearn-style API.
 
 **Why it matters.** TabDPT and TabPFN bracket the
 synthetic-vs-real spectrum from opposite ends. Real-TabPFN (and
-hence CreditPFN) sits in the middle. Having TabDPT locally lets
-us include it as an *inference baseline* in the eval harness:
-compare CreditPFN's scores against TabPFN-2.6, TabDPT, TabICL,
-and the published Real-TabPFN-2.5 weights, all in one place.
+and any domain specialisation after it) sits in the middle. Having
+TabDPT locally makes it usable as an *inference baseline* alongside
+TabPFN-2.6, TabICL and the published Real-TabPFN-2.5 weights.
 
 **Contents in detail.**
 
@@ -394,14 +386,14 @@ and the published Real-TabPFN-2.5 weights, all in one place.
 * `tabdpt_datasets/data_splits/{cls,reg}_datasets.csv` — the
   exact CSV manifest of which OpenML datasets they trained on.
   Useful for *contamination checking* — any dataset on this list
-  must NOT appear in our held-out evaluation set if we want a
-  fair comparison.
+  must NOT appear in a held-out evaluation set, or the comparison is
+  unfair to TabDPT's competitors.
 * `tests/cls_example.py`, `reg_example.py` — minimum working
   example.
 
 **When to grep this file:** when implementing the TabDPT
-baseline in `src/eval/`, or when checking that our credit-risk
-held-out splits don't overlap with TabDPT's training corpus.
+TabDPT baseline, or when checking that your held-out
+splits don't overlap with TabDPT's training corpus.
 
 ---
 
@@ -411,9 +403,9 @@ held-out splits don't overlap with TabDPT's training corpus.
 (the main `tabpfn` Python package).
 
 **Related papers:**
-[2023 — Hollmann et al. — TabPFN](papers/2023_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf),
-[2025 — Hollmann et al. — Accurate predictions on small data](papers/2025_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf),
-[2026 — Grinsztajn et al. — TabPFN-2.5](papers/2026_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf).
+[2023 — Hollmann et al. — TabPFN](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf),
+[2025 — Hollmann et al. — Accurate predictions on small data](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf),
+[2026 — Grinsztajn et al. — TabPFN-2.5](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf).
 
 **What it is.** The user-facing sklearn-style API
 (`TabPFNClassifier`, `TabPFNRegressor`), the checkpoint-loading
@@ -422,8 +414,8 @@ list of every released `.ckpt` and what it's good for. Plus the
 finetuning wrappers (`FinetunedTabPFNClassifier` /
 `FinetunedTabPFNRegressor`) and the multi-table machinery
 (`get_preprocessed_dataset_chunks`,
-`DatasetCollectionWithPreprocessing`, `fit_from_preprocessed`) that
-our `src/train/` will compose on.
+`DatasetCollectionWithPreprocessing`, `fit_from_preprocessed`) that a
+multi-dataset training loop composes on.
 
 **Why it matters:** this is the single source of truth for
 checkpoint provenance (which files are synthetic-only, which are
@@ -442,7 +434,7 @@ input shapes / dtypes / NaN handling at the API boundary.
   (`large-features-L` up to 500 features, `large-features-XL` up
   to 1000), which for "large samples" (>30K), which for low-skew
   regression targets, etc. **This is what a consuming project's
-  checkpoint inventory (e.g. CreditPFN's `docs/CHECKPOINTS.md`) is
+  checkpoint inventory is
   built from — when in doubt, this section of `TabPFN .txt` is
   ground truth.**
 - **Programmatic checkpoint name registry** used
@@ -455,10 +447,8 @@ input shapes / dtypes / NaN handling at the API boundary.
   `RegressorBatch`.
 - **`shuffle_and_chunk_data`**, TabPFN's own
   per-dataset row sub-sampler. Stratified for multiclass,
-  non-stratified for regression. Reference behaviour: our
-  `src/train/dataloader.py::_build_step_batch` performs the same
-  shape (subsample → 80/20 ctx/qry split → ordinal-encode) on the
-  fly per epoch, against the sanitized CSV directly.
+  non-stratified for regression. Reference behaviour for any
+  per-epoch subsample → context/query split → ordinal-encode step.
 - **`get_preprocessed_dataset_chunks`**, the
   helper that accepts a *list* of datasets and produces a
   `DatasetCollectionWithPreprocessing` ready for a multi-table
@@ -473,38 +463,34 @@ input shapes / dtypes / NaN handling at the API boundary.
   direction: how to dump a model object back to a `.ckpt`. PR #930
   (see the package CHANGELOG inside the dump) fixed it to set
   `architecture_name="tabpfn_v3"` for v3 configs and to persist
-  `inference_config_`, which is exactly the gap our own
-  `save_finetuned` had to close (see the checkpoint-format note
-  below).
+  `inference_config_` — the exact gap any custom checkpoint writer has
+  to close (see the checkpoint-format note below).
 - **Architecture registry** (`architectures/tabpfn_v2_6.py`,
   `tabpfn_v3.py`; `inference_config.py`) — the `architecture_name`
   strings the loader recognises and the `InferenceConfig` schema
   (pydantic, `extra="forbid"`).
 
-**The 4-key checkpoint contract (critical for `src/train/model.py`).**
+**The 4-key checkpoint contract.**
 A TabPFN checkpoint is a single `torch.save` dict with exactly four
 keys: `state_dict`, `config` (asdict of the pydantic
 `ArchitectureConfig`), `architecture_name`, and `inference_config`
 (asdict of `InferenceConfig`). Valid `architecture_name` values are
 `tabpfn_v2`, `tabpfn_v2_5`, `tabpfn_v2_6`, `tabpfn_v3` (a missing key
 defaults to `tabpfn_v2`; the legacy `"base"` string remaps to
-`tabpfn_v2_5`). Our `save_finetuned` writes all four keys; the only
-robustness gap is that the `architecture_name` fallback leans on the
-private upstream symbol `_resolve_architecture_name` (hardened, and
-`src/train/model.py` now RAISES rather than mislabelling an unknown
-architecture as `"base"` — 2026-06-23 audit fix). The
-`weights_only=False` load patch in `src/model/tabpfn_models.py` is
-necessary because PyTorch ≥ 2.6 rejects the embedded pydantic config
-objects by default.
+`tabpfn_v2_5`). Any writer must emit all four keys. Two traps: deriving
+`architecture_name` via the *private* upstream symbol
+`_resolve_architecture_name` is brittle (better to raise than to
+mislabel an unknown architecture as `"base"`), and loading such a
+checkpoint needs `weights_only=False`, because PyTorch ≥ 2.6 rejects the
+embedded pydantic config objects by default.
 
 **v2.6-vs-v3 criterion handling (regressors).** v3's
 `model.forward` takes `test_targets_MB`, so the loader STRIPS the
 `criterion.*` keys and rebuilds the bar-distribution from the model's
 `regression_borders` buffer; v2.6 has no `test_targets_MB`, so the
-loader REQUIRES the `criterion.*` keys. Our `save_finetuned` writes
-`criterion.*` for regressors — required by v2.6, harmlessly stripped
-by v3 — so a saved regressor checkpoint round-trips correctly for
-both architectures.
+loader REQUIRES the `criterion.*` keys. Writing `criterion.*` for regressors
+unconditionally — required by v2.6, harmlessly stripped by v3 — makes a
+saved regressor checkpoint round-trip for both architectures.
 
 **When to grep this file:** checkpoint names, the 4-key checkpoint
 schema, public API surface, inference-time preprocessing names,
@@ -523,8 +509,7 @@ finetuning machinery.
 API.
 
 **When to grep this file:** only if you're benchmarking against the
-hosted API. Not relevant for our self-hosted pretraining workflow on
-VSC.
+hosted API. Not relevant to a self-hosted training workflow.
 
 ---
 
@@ -558,8 +543,8 @@ this is the most authoritative non-code reference.
 - **`models.mdx`** — version comparison
   table.
 - **`improving-performance/preprocessing.mdx`** —
-  **most important section for our Stage 3 (`sanitize.py`)
-  design.** Documents:
+  **the most important section for designing an
+  upstream preprocessing step.** Documents:
   - `PREPROCESS_TRANSFORMS`: ensemble preprocessing names
     (`"quantile_uni"`, `"squashing_scaler_default"`, `"safepower"`,
     `"quantile_uni_coarse"`, `"kdi"`, `"robust"`, `"none"`).
@@ -572,8 +557,8 @@ this is the most authoritative non-code reference.
     `12.0` for classification and `None` for regression** — see the
     "Outlier handling" section below.
   - `POLYNOMIAL_FEATURES`, `FINGERPRINT_FEATURE`,
-    `SUBSAMPLE_SAMPLES`. None of these belong in
-    `config/data.yaml` — they are inference-time levers.
+    `SUBSAMPLE_SAMPLES`. None of these belong in a
+    training-time data config — they are inference-time levers.
 - **`capabilities/fine-tuning.mdx`** —
   documentation of the official `FinetunedTabPFNClassifier` and
   `FinetunedTabPFNRegressor` wrappers. Important caveat: "The
@@ -604,19 +589,16 @@ documented TabPFN configuration option. Faster than grepping
 **Upstream:** [github.com/automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN).
 
 **Related paper:**
-[2024 — Helli et al. — Drift-Resilient TabPFN](papers/2024_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf).
+[2024 — Helli et al. — Drift-Resilient TabPFN](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf).
 
 **What it is.** A research repo that fine-tunes / specialises TabPFN
 for distribution-shift robustness — explicitly modelling "training
 distribution drifts at inference time" rather than assuming i.i.d.
 
-**Why it's interesting for credit risk specifically:** credit-risk
-data is *defined* by macroeconomic regime drift. PD and LGD
-distributions shift dramatically between expansion and recession.
-A model that's been continued-pretrained on a credit-risk corpus
-might benefit from drift-aware training-time augmentations
-borrowed from this repo. Not a Stage 1–4 concern, but worth
-grepping during the training-loop design.
+**Why it matters.** Any domain whose data is defined by regime shift
+(finance, epidemiology, demand) may benefit from the drift-aware
+training-time augmentations implemented here rather than assuming
+i.i.d. context and query rows.
 
 **Contents in detail:** drift-aware loss formulations,
 distribution-shift simulation as a training-time augmentation,
@@ -640,10 +622,10 @@ ensemble idea documented across multiple TabPFN papers.
 search via OpenAutoML, a "many-class classifier" wrapper for >10
 target classes, a fingerprint-feature tool, etc.).
 
-**Why it's relevant:** at evaluation time, the standard reporting
-package compares plain TabPFN vs. `AutoTabPFN` (post-hoc ensemble).
-We will probably compare *our* CreditPFN against both, so the
-ensemble mechanics matter for fair comparison.
+**Why it's relevant:** the standard reporting package compares plain
+TabPFN vs. `AutoTabPFN` (post-hoc ensemble).
+A fair comparison usually reports against both, so the ensemble
+mechanics matter.
 
 **Contents in detail:** post-hoc ensemble definition (uses
 AutoGluon under the hood), RF-PFN tree-based hybrid (`rf_pfn`
@@ -662,7 +644,7 @@ or building strong baselines.
 example scripts).
 
 **Related paper:**
-[2025 — Rubachev et al. — On Finetuning Tabular Foundation Models](papers/2025_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf).
+[2025 — Rubachev et al. — On Finetuning Tabular Foundation Models](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf).
 
 **What it is.** The official `examples/` folder of the main TabPFN
 package. Its two finetuning scripts are the closest public analog of
@@ -686,18 +668,18 @@ pretraining sweeps over many datasets.
 
 **Official wrapper defaults (verified against the constants at the
 top of `finetune_classifier.py` / `finetune_regressor.py` in the
-dump).** These are the upstream `FinetunedTabPFN*` settings our
-`train.yaml` grid is calibrated against:
+dump).** These are the upstream `FinetunedTabPFN*` settings a
+finetuning grid should be calibrated against:
 
 | Wrapper | epochs | lr | `n_estimators_finetune` | ctx+query samples |
 |---|---|---|---|---|
 | `FinetunedTabPFNClassifier` | 30 | `2e-5` | 2 | — |
 | `FinetunedTabPFNRegressor` | 30 | `1e-5` | 8 | `n_finetune_ctx_plus_query_samples = 20_000` |
 
-CreditPFN uses `n_estimators_finetune = 2` on **both** tracks (the
-reference regressor uses 8 — a candidate to revisit for LGD) and a
-fixed-50-epoch schedule with divergence-abort instead of the 30-epoch
-default.
+Note the asymmetry: the official regressor uses **8** estimators during
+finetuning against the classifier's 2. A project that copies the
+classifier setting onto a regression track is silently departing from
+the reference.
 
 **Contents in detail (grep the `FILE: examples/...` headers):**
 
@@ -736,22 +718,21 @@ themselves, grep `tabpfn/finetuning/` inside `TabPFN .txt`.
 (the canonical repo for the TabPFN-Wide paper, Kolberg et al. 2026).
 
 **Related paper:**
-[2026 — Kolberg et al. — TabPFN-Wide](papers/2026_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf).
+[2026 — Kolberg et al. — TabPFN-Wide](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf).
 
 **What it is.** TabPFN-Wide — modifications for high-dimensional
 inputs, e.g. multi-omics or wide credit-bureau datasets with
 hundreds to thousands of columns.
 
-**Why it matters:** several credit datasets in our raw corpus
-already have >100 columns, so we need a story for wide data.
-TabPFN-Wide's answer is the **opposite** of ours: instead of
-reducing features, it *widens the synthetic prior* so the model
-natively handles hundreds-to-thousands of columns, and it uses
-`FeatureAgglomeration` only as a **baseline it compares against**,
-not as its method. Our `sanitize.py` step is unsupervised feature
-*selection* (keep real columns) — an independent, pragmatic cap;
-useful to read this repo for how the widening alternative works,
-**not** as the source of our design.
+**Why it matters:** any corpus with >100-column tables needs a story for
+wide data. TabPFN-Wide's answer is to *widen the synthetic prior* so the
+model natively handles hundreds-to-thousands of columns, rather than
+reducing features; it uses `FeatureAgglomeration` only as a **baseline
+it compares against**,
+not as its method. Unsupervised feature *selection* (keeping real
+columns) is an independent, pragmatic alternative; read this repo for
+how the widening approach works, **not** as a source for feature
+reduction.
 
 **Contents in detail:**
 
@@ -761,7 +742,7 @@ useful to read this repo for how the widening alternative works,
 - **The `load_checkpoint(self)` method** showing how
   the Wide trainer loads a *training-state* checkpoint
   (state_dict + optimizer state + scheduler state). Template for
-  resumable training in our SLURM jobs.
+  resumable training in cluster jobs.
 - **`FeatureAgglomeration` usage** (as a *baseline*). Two
   variants: `FeatureAgglomeration(n_clusters=n_features)` (default
   Euclidean+Ward) and `FeatureAgglomeration(
@@ -778,7 +759,7 @@ checkpoint resumption, anything wide/high-feature.
 
 **Related paper:**
 [2025 — Tanna et al. — TabTune: A Unified Library for Inference and
-Fine-Tuning Tabular Foundation Models](papers/2025_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf)
+Fine-Tuning Tabular Foundation Models](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf)
 ([arXiv:2511.02802](https://arxiv.org/abs/2511.02802)).
 
 **What it is.** A unified, sklearn-style wrapper that exposes ~10
@@ -797,41 +778,13 @@ LightGBM / XGBoost / CatBoost), and TabPFNv2.6 native FT (the
 official Prior Labs `FinetunedTabPFN*` API, surfaced through TabTune's
 unified pipeline).
 
-**Should we use TabTune?** **No, not for the training stage; possibly
-for the eval stage in the future.** Reasoning:
-
-1. *Training stage doesn't fit.* Real-TabPFN-style continued
-   pretraining iterates one transformer over a *corpus* of datasets
-   — an outer loop over many parents, each contributing context/
-   query batches. TabTune's pipelines are *per-dataset*: one
-   `TabularPipeline.fit()` call ↔ one dataset. Adopting TabTune for
-   training would replace our cross-dataset loop with a series of
-   per-dataset finetunes, which is a different research question.
-   Our `src/train/loop.py` already implements the cross-dataset
-   variant — reading sanitized CSVs directly via
-   `ProcessedDatasetLoader` and drawing a fresh random subsample
-   per epoch; no change needed.
-
-2. *Eval stage is potentially attractive.* The user's plan compares
-   TabPFN variants against XGBoost/CatBoost/LogReg/LinReg. TabTune
-   would give us the option to *also* compare against TabICL,
-   OrionMSP, Mitra, ContextTab, TabDPT, and LimiX with a single
-   library — much cheaper than wrapping each one ourselves. The
-   `TabularLeaderboard` API in particular looks like a near-drop-in
-   alternative to our `src/eval/benchmark.py`.
-
-3. *Cost.* TabTune pulls in every model's runtime as a dependency —
-   torch, transformers, several specific repo wheels. That's a
-   non-trivial install footprint on VSC. Worth doing only if the
-   thesis / paper actually compares against ≥ 3 of the non-TabPFN
-   foundation models.
-
-**Recommendation:** keep TabTune in the repo for reference, do not
-adopt it now. Revisit when the eval baseline list grows beyond
-{XGBoost, CatBoost, LogReg/LinReg, TabPFN-untuned, TabPFN-trained}.
-Specifically: if we add TabICL or any non-TabPFN foundation model as
-a comparison, swap our hand-written wrapper for TabTune at that point
-rather than building the 4th wrapper from scratch.
+**Scope note.** TabTune's pipelines are *per-dataset*: one
+`TabularPipeline.fit()` call corresponds to one dataset. It therefore
+does not natively express Real-TabPFN-style continued pretraining,
+which iterates one model over a *corpus* of tables. Its natural use is
+the evaluation side — a single library giving TabICL, OrionMSP, Mitra,
+ContextTab, TabDPT and LimiX baselines — at the cost of pulling in
+every model's runtime as a dependency.
 
 **When to grep this file:** when designing a new eval baseline that
 would otherwise need its own model-specific wrapper. The
@@ -850,7 +803,7 @@ paper (its README points to `SamuelGabriel/PFNs`, i.e. `PFNS.txt`,
 as the maintained successor).
 
 **Related paper:**
-[2021 — Müller et al. — Transformers Can Do Bayesian Inference](papers/2021_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf).
+[2021 — Müller et al. — Transformers Can Do Bayesian Inference](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf).
 
 **What it is.** Code accompanying Müller et al. 2021 — the original
 PFN paper, as the authors shipped it: `train.py`, `transformer.py`,
@@ -888,9 +841,8 @@ account management, SSH/MFA setup, **Genius / wICE / Mindwell**
 cluster hardware, SLURM job scripting, storage tiers, scientific
 software modules, and the various ways to acknowledge the VSC.
 
-**Why it matters here.** Continued pretraining runs on the **Mindwell
-B200** cluster; data prep and eval run on **wICE**. When writing the
-SLURM scripts under a consuming project's `scripts/slurm/` —
+**Why it matters here.** GPU training runs on the **Mindwell B200** partition; CPU data prep and
+eval run on **wICE**. When writing SLURM scripts —
 partitions, GPU allocation,
 walltimes, the Lustre/GPFS storage split — this dump is the canonical
 reference. Verified facts (as of the 2026-06-23 dump; grep the bolded
@@ -916,14 +868,13 @@ keywords):
   walltime ⇒ better backfill priority; `sam-balance -A <acct>` checks
   credits (B200 437.5 / H100 569.4 / A100 141.7 per GPU-min).
 * **Cross-cluster:** `--dependency` (afterok) across `-M` clusters is
-  **undocumented/unverified** — we treat it as unsupported and submit
-  data (wICE) / train (Mindwell) / eval (wICE) independently, sequenced
-  through the shared staging tier.
+  **undocumented/unverified** — safest to treat it as unsupported and
+  submit per-cluster stages independently, sequenced through the shared
+  staging tier.
 
 **When to grep this file:** writing/updating a SLURM script, debugging
 a job-submission error, choosing a partition or GPU type, or sizing
-storage. Consuming projects keep their distilled deployment recipe
-next to their SLURM scripts (e.g. CreditPFN's `docs/VSC_GUIDE.md`).
+storage.
 
 ---
 
@@ -934,20 +885,19 @@ next to their SLURM scripts (e.g. CreditPFN's `docs/VSC_GUIDE.md`).
 | Model definition | toy reimpl | full + wide modifications | uses real package | vendored/modified package |
 | Loads real `.ckpt`? | no (trains from scratch) | yes | yes | yes |
 | Has training loop? | yes (synthetic prior) | yes (sweep over real datasets) | yes (single-dataset finetune) | configs/results for single-dataset finetune |
-| Closest to *our* use case | training-loop structure | dataset-sweep structure | checkpoint mechanics | hyperparameters + PEFT/full-finetune evidence |
+| Closest to corpus-CPT | training-loop structure | dataset-sweep structure | checkpoint mechanics | hyperparameters + PEFT/full-finetune evidence |
 
-We will end up combining all four: V2-Finetuning's checkpoint
-loading + On-Finetuning's hyperparameter evidence + Wide's
-resumable training-state pattern + NanoTabPFN's clear training-loop
-scaffolding, applied to a multi-dataset corpus in the Real-TabPFN
-spirit.
+A corpus continued-pretraining implementation typically needs all four:
+V2-Finetuning's checkpoint loading, On-Finetuning's hyperparameter
+evidence, Wide's resumable training-state pattern, and NanoTabPFN's
+training-loop scaffolding.
 
 ---
 
 ### Outlier handling: what TabPFN actually does (verified)
 
 This is important enough to factor out into its own subsection,
-because it directly determines how `sanitize.py` should treat
+because it determines how an upstream preprocessing step should treat
 extreme values. The implementation lives in `TabPFN .txt` — grep the
 function `remove_outliers` and the public knob `OUTLIER_REMOVAL_STD`.
 
@@ -969,7 +919,7 @@ def remove_outliers(X, n_sigma=4, normalize_positions=-1, ...):
     X = min( log(1+|X|) + upper, X)
 ```
 
-**Three takeaways for our pipeline:**
+**Three takeaways for an upstream pipeline:**
 
 1. **TabPFN's z-score normalization is *not* a substitute for
    outlier handling.** Z-scoring is sensitive to the very outliers
@@ -983,11 +933,10 @@ def remove_outliers(X, n_sigma=4, normalize_positions=-1, ...):
    far more aggressive than what TabPFN does at inference and would
    create a train-vs-inference distribution mismatch.
 3. **`OUTLIER_REMOVAL_STD` is an *inference-time* parameter** — when
-   we pretrain by feeding tensors directly to the underlying torch
-   model, this step is not automatically applied for us. Our
-   `sanitize.py` therefore only normalises `±inf → NaN`; we delegate
-   true outlier handling to the package's own machinery at inference
-   time.
+   training feeds tensors directly to the underlying torch model, this
+   step is not applied automatically. An upstream step should therefore
+   normalise only `±inf → NaN` and delegate true outlier handling to the
+   package's own machinery at inference time.
 
 ### Fine-tuning wrappers: official package machinery
 
@@ -995,16 +944,13 @@ Independent of the data pipeline, `TabPFN Docs.txt`
 (`capabilities/fine-tuning.mdx`) and `TabPFN .txt` (grep
 `FinetunedTabPFNClassifier`) document `FinetunedTabPFNClassifier` /
 `FinetunedTabPFNRegressor`. These are the supported entry points
-for gradient-based adaptation of TabPFN. Our `src/train/loop.py`
-goes one level lower than these wrappers: it calls the underlying
-`PerFeatureTransformer.forward(x, y, ...)` directly with batches
-assembled on the fly by `ProcessedDatasetLoader`, which lets us
-iterate over a *corpus* of datasets (Real-TabPFN-style) rather
-than fine-tune on one dataset at a time. Our per-epoch subsample
-size is set in `config/data.yaml` (in the consuming project)
-(`finetuning.max_rows_per_epoch`: **20000** for v3/default, **9000**
-for v2.6), in the same spirit as the upstream
-`FinetunedTabPFNClassifier` per-fit row cap.
+for gradient-based adaptation of TabPFN. Corpus-level continued
+pretraining has to go one level lower than these wrappers, calling the
+underlying `PerFeatureTransformer.forward(x, y, ...)` directly with
+batches assembled on the fly, so the loop can iterate over a *corpus*
+of datasets rather than fine-tune one dataset at a time. Per-epoch
+subsample size then has to be capped per architecture, in the same
+spirit as the upstream `FinetunedTabPFNClassifier` per-fit row cap.
 
 ---
 

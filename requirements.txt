@@ -1,0 +1,22 @@
+# Dependencies for the maintenance scripts in scripts/ ONLY.
+#
+# This repository is a knowledge base, not a Python package: nothing here
+# is imported by consuming projects, and there is deliberately no
+# pyproject.toml / installable package. Downstream projects mount this
+# repo as a read-only folder and never install it.
+#
+#   python -m venv .venv
+#   .venv\Scripts\activate          (Windows)   |   source .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# Pinned loosely: these are dev tools, and a newer minor release breaking
+# a one-off maintenance run is cheaper than a stale pin nobody bumps.
+
+# scripts/extract_paper_text.py — PDF -> papers/text/<year>/*.txt
+pypdf>=5.1
+
+# scripts/refresh_repositories.py — re-dump repositories/*.txt from GitHub
+gitingest>=0.1.4
+
+# scripts/check_zotero_sync.py uses only the standard library (sqlite3),
+# so Zotero consistency checks work with no third-party dependency.

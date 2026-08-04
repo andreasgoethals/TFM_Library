@@ -2,8 +2,18 @@
 # scripts/refresh_repositories.py (see README).
 repositories/TabPFN Wide.txt
 
+# Per-project notes written by DOWNSTREAM repositories inside their copy of
+# this folder (see PROJECT_SPECIFIC.template.md). Ignored here so a consuming
+# project can keep its own notes next to the literature without ever dirtying
+# this repository's git status or accidentally pushing project-specific
+# material into the shared library.
+PROJECT_SPECIFIC.md
+
 # OS / editor junk
 Thumbs.db
 .DS_Store
 __pycache__/
 *.pyc
+
+# local virtualenv for the maintenance scripts
+.venv/
