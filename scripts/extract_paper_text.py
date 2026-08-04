@@ -30,6 +30,11 @@ def extract(pdf: Path) -> Path:
     out = out_dir / (pdf.stem + ".txt")
     reader = PdfReader(str(pdf))
     text = "\n\n".join((page.extract_text() or "") for page in reader.pages)
+    # Broken font maps sometimes make pypdf emit NUL and other control
+    # bytes; a single NUL makes grep treat the whole file as binary,
+    # defeating the point of these extractions. Strip everything below
+    # 0x20 except newline and tab.
+    text = "".join(ch for ch in text if ch in "\n\t" or ord(ch) >= 32)
     out.write_text(text, encoding="utf-8", newline="\n")
     print(f"{pdf.name}: {len(reader.pages)} pages, {len(text):,} chars -> {out.relative_to(_ROOT)}")
     return out

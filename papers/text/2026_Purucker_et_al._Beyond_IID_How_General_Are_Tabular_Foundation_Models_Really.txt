@@ -73,7 +73,7 @@ benchmark into TabArena’s [11] open-source ecosystem. To summarize,our contrib
 ❖ We manually curate 142 datasets from 1128 – following rigorous protocols – to obtain high-
 quality tabular datasets across scales and feature types, and publish DataFoundry, a Python
 framework and metadata schema for reproducible tabular data curation;
-❖ We systematically evaluate whether 3 state-of-the-art open-source TFMs generalize beyond
+❖ We systematically evaluate whether3 state-of-the-art open-source TFMs generalize beyond
 IID settings by comparing them with8strong traditional baselines across diverse tasks;
 ❖ We integrate all our contributions into TabArena’s open-source benchmark ecosystem, thereby
 avoiding fragmentation of the research community: code at https://tabarena.ai/code,
@@ -427,7 +427,7 @@ ablation studies. To investigate the performance with respect to dataset charact
 sub-benchmarks: one per task type (IID,Grouped,Temporal); four for dataset scale (Tinyfor
 datasets with 100≤n <1k training rows,Smallfor 1k≤n <10k ,Mediumfor 10k≤n <100k ,
 Largefor 100k≤n ); two for dataset dimensionality (Lowfor datasets with m≤100 columns after
-preprocessing,Highfor m >100); two for special feature types (Textfor datasets with text features,
+preprocessing,Highfor m >100 ); two for special feature types (Textfor datasets with text features,
 High Card.for datasets with at least one categorical column that has more than 50 categories); and
 finally the full benchmark containingAlldatasets.
 Figure 4 shows the Elo and Improvability for all methods on all datasets. Figure 5 presents the Elo
@@ -1699,13 +1699,13 @@ competitions/ieee-fraud-detection, 2019. Kaggle.
 https://kaggle.com/competitions/porto-seguro-safe-driver-prediction ,
 2017. Kaggle competition.
 [359] Kaggle. Rossmann store sales. https://www.kaggle.com/competitions/
-rossmann-store-sales/overview , 2015. Kaggle competition page. Accessed: 2026-
+rossmann-store-sales/overview, 2015. Kaggle competition page. Accessed: 2026-
 03-19.
 [360] Mario Sanz-Guerrero and Javier Arroyo. Credit risk meets large language models: Building a
 risk indicator from loan descriptions in p2p lending.Inteligencia Artificial, 28(75):220–247,
 2025.
 [361] Consumer Financial Protection Bureau. Consumer complaint database. https://www.
-consumerfinance.gov/data-research/consumer-complaints/ , 2025. Accessed:
+consumerfinance.gov/data-research/consumer-complaints/, 2025. Accessed:
 2026-01-23.
 [362] Matthew A Reyna, Christopher S Josef, Russell Jeter, Supreeth P Shashikumar, M Brandon
 Westover, Shamim Nemati, Gari D Clifford, and Ashish Sharma. Early prediction of sepsis
@@ -1800,7 +1800,7 @@ To illustrate, assume, we have a time index t∈T and are given training data Dp
 s≤t},{y s ∈Y:s≤t}) with the goal to learn to predict Y . In time-series forecasting tasks with a
 forecast horizon h, we fit on Dpast and predict Yfuture ={y s ∈Y:t < s≤t+h} – at time point t.
 In tabular temporal data tasks, we fit on Dpast at time point t and predict Yfuture ={y s ∈Y:t < s}
-at time point s, with s∈T, s > t, using Dpast and Xfuture ={x s }. That is, in temporal tabular tasks,
+at time point s, with s∈T, s > t , using Dpast and Xfuture ={x s }. That is, in temporal tabular tasks,
 we fit a model at time point t and deploy it to predict at time point s using data from s. Moreover,
 such tasks do not have a forecast horizon but a refit horizon, which determines the time until we refit
 the model on a newD past.
@@ -1858,7 +1858,7 @@ including comparing data statistics and comparing the dataset to popular dataset
 same domain. When the source remains unclear even after a thorough investigation, we
 leave it to the curator team’s subjective judgment to assess the dataset’s authenticity and
 uniqueness.
-No Few-shot Prediction Tasks: We exclude datasets that have fewer than 100 train samples after
+No Few-shot Prediction Tasks: We exclude datasets that have fewer than100 train samples after
 creating the train-test split. Such data, often called few-shot prediction tasks, require a
 fundamentally different validation protocol, as data scarcity creates unique challenges,
 such as the inability to split the data for cross-validation. At the same time, it enables
@@ -2197,9 +2197,9 @@ the model-agnostic preprocessing. For label-per-group datasets, we replace the g
 a transductive 50-dimensional group-encoding.
 Per group: we (a) sort all samples by a group time index, when available; (b) aggregate all features
 across samples (mean/std/min/max/last for numeric, count/last/nunique for non-numeric); (c) select
-the top 50 aggregations by variance when fitting the preprocessing; and (d) join the top 50 aggregated
+the top 50 aggregations by variance when fitting the preprocessing; and (d) join the top50 aggregated
 features back to all original samples. At test time, when given a new group as input, we replace the
-group’s index with these 50 aggregations computed over the group’s samples. This preprocessing
+group’s index with these50 aggregations computed over the group’s samples. This preprocessing
 assumes a predictive machine learning task in which all samples from a group are available when
 predicting. This is the case for alllabel-per-groupdatasets inBeyondArena.
 Compute Hardware.We run all our experiments on the Google Cloud Platform (GCP) [ 207]. We
@@ -2247,7 +2247,7 @@ D Results
 D.1 Inference Time Overview
 We show the Pareto front of Improvability vs. inference time in Figure D.1. We observe that CatBoost
 dominates the inference time Pareto front, while RealMLP is competitive by default. TabICLv2 and
-TabPFN-2.6 both require significantly longer inference time while achieving 2.5% Improvement over
+TabPFN-2.6 both require significantly longer inference time while achieving2.5% Improvement over
 a tuned CatBoost. A tuned RealMLP incurs an even larger inference time.
 D.2 BeyondArena Leaderboard as a Table
 Table D.1 shows the per-model performance across all datasets.
@@ -2348,14 +2348,14 @@ Because ranks are computed within each dataset, the test naturally accounts for 
 142 datasets are scored under every method.
 The Friedman test rejects the null hypothesis: the observed test statistic is χ2
 26 = 1374.9, giving
-p <10−273.
+p <10 −273.
 To go beyond this global statement and identify which specific pairs of methods differ, we follow
 up withpairwise Wilcoxon signed-ranktests [ 374] over all
- 27
+27
 2
-
+
 = 351 method pairs, with Holm
-correction. For each pair of methods (A, B)with normalized errors {eA
+correction. For each pair of methods (A, B) with normalized errors {eA
 i }N
 i=1 and {eB
 i }N
@@ -2379,7 +2379,7 @@ is scored under all 27 methods, so the methods can be rankedwithin each dataseta
 aggregates those within-dataset rankings across the 142 rows. Here, by contrast, each dataset belongs
 to exactly one scale category: the four scale groups are disjoint sets of datasets so Wilcoxon and
 Friedman are not suitable.
-Formally, let gi ∈ {1,2,3,4}denote the scale category of dataset i∈ {1, . . . , N}with N= 142 ,
+Formally, let gi ∈ {1,2,3,4} denote the scale category of dataset i∈ {1, . . . , N} with N= 142 ,
 and let ei be the TFM normalized error on dataset i. We rank the N datasets globally on ei from best
 (1) to worst (N) across all four groups combined, and let ¯Rg denote the mean rank within scale group
 g, withn g the number of datasets in that group. The hypotheses are:
@@ -2395,10 +2395,10 @@ N(N+ 1)
 4X
 g=1
 ng
-
+
 ¯Rg − N+ 1
 2
-2
+2
 ,
 which under H0 is approximately χ2-distributed with k−1 = 3 degrees of freedom. We reject H0 at
 significance levelα= 0.05when the correspondingp-value falls below0.05.
@@ -2408,9 +2408,9 @@ Kruskal-Wallis tells us that the four scale groups are not identically distribut
 whichpairs differ or in which direction. To localize where the change actually happens, we follow up
 with the two-sample analogue of Kruskal-Wallis:p airwise Mann-Whitney U tests[ 376] between
 every pair of scale categories, with Holm correction over the
- 4
+4
 2
-
+
 = 6comparisons (Table E.1).
 The pattern is clear. Tiny, small, and medium scales are statistically indistinguishable from each other
 (every pairwise padj >0.5 ): a TFM does not perform worse on a 50k-row dataset than on a 500-row
@@ -2441,19 +2441,19 @@ For each algorithm, across all 142 datasets, we have three matched observations:
 tuned error, and tuned-plus-ensembled error. The matched structure is the right setting for a
 Wilcoxon signed-rank test. We run two such tests per algorithm — (default → tuned) and (tuned →
 tuned+ensemble) — for a total of 16 tests jointly Holm-corrected.
-Formally, fix a traditional algorithm a∈ {CatBoost, LightGBM, Linear, RandomForest, RealMLP,
+Formally, fix a traditional algorithm a∈ { CatBoost, LightGBM, Linear, RandomForest, RealMLP,
 TabM, XGBoost, ExtraTrees}, and let edef
 i , etun
 i , eens
 i denote its normalized errors on dataset i∈
-{1, . . . ,142}when run with default hyperparameters, with tuned hyperparameters, and with tuned-
+{1, . . . ,142} when run with default hyperparameters, with tuned hyperparameters, and with tuned-
 plus-ensembled hyperparameters respectively. We test two paired hypotheses per algorithm:
-H (tune)
+H(tune)
 0 :the per-dataset differencesd (tune)
 i =e def
 i −e tun
 i are symmetric around0;
-H (ens)
+H(ens)
 0 :the per-dataset differencesd (ens)
 i =e tun
 i −e ens
@@ -2489,7 +2489,7 @@ For each of the 142 datasets, we summarize the head-to-head outcome with a singl
 ∆ = ¯e⋆
 TFM −¯e⋆
 GBDT, where ¯e⋆ is the minimum normalized error achieved by any member of that
-family on the dataset. Negative ∆ means the best TFM beat the best GBDT; positive ∆ means the
+family on the dataset. Negative ∆ means the best TFM beat the best GBDT; positive∆ means the
 opposite. We then correlate ∆ with a set of meta-features of our datasets usingSpearman’s rank
 correlationρ[377]. The eight meta-feature tests are jointly Holm-corrected.
 Two meta-features stand out (Table E.3): dataset size and the number of high-cardinality
@@ -2528,24 +2528,24 @@ gets its ownFriedman teston the methods restricted to its datasets, followed by 
 pairwise Wilcoxon testswithin that subset.
 For each subset s with Ns datasets, the Friedman test asks whether the 27 methods are equivalent
 within that subset:
-H (s)
+H(s)
 0 :all 27 methods have the same expected within-subset rank;
-H (s)
+H(s)
 1 :at least one method has a different expected rank within subsets.
-When H (s)
+When H(s)
 0 is rejected, we localize which method pairs differ by running pairwise Wilcoxon signed-
-rank tests within the subset. For each pair of methods(A, B)with paired per-dataset normalized-error
+rank tests within the subset. For each pair of methods(A, B) with paired per-dataset normalized-error
 differencesd i =e A
 i −e B
 i on theN s datasets in subsets:
-H (s,A,B)
+H(s,A,B)
 0 :the differencesd i are symmetrically distributed around zero;
-H (s,A,B)
+H(s,A,B)
 1 :the differences are not symmetric around zero (two-sided).
 Holm correction is applied jointly over all
- 27
+27
 2
-
+
 = 351pairs within each subset.
 A coherent picture emerges across the sub-benchmarks (Table E.4):TFMsare the top-1 method
 on IID, tiny/small, and low-dimensional data.Tuned and ensembled neural networks(RealMLP)
@@ -2556,9 +2556,9 @@ comparisons within the grouped subset survive Holm correction, meaning the ranki
 remaining methods is uncertain.
 49
 
-Table E.4: The Friedman test is significant (p <0.001) in every one of the 11 subsets: the per-subset
+Table E.4: The Friedman test is significant (p <0.001 ) in every one of the 11 subsets: the per-subset
 rankings are real. The fraction of pairwise comparisons that survive Holm correction within a subset
-(column “% sig. pairs”) varies considerably, from 75.5% down to 5.1%. A high fraction means the
+(column “% sig. pairs”) varies considerably, from75.5% down to 5.1%. A high fraction means the
 subset is large and homogeneous enough that most methods can be reliably ordered against each
 other; a low fraction (the grouped subset, with only 18 datasets) means that even though some method
 is clearly best, the ranking among the others is too noisy. We report the top method and its family
@@ -2611,15 +2611,15 @@ using only the first split of each dataset, we introduce BeyondArena-Core. We re
 TabArena-Lite to not only preserve aggregate rankings but also to preserve per-dataset rankings, by
 adjusting the split budget on a per-dataset basis to achieve a per-dataset stability ofΦ = 0.8.
 Formally, for each dataset d with Fd available splits, we define ρd as the mean off-diagonal Spearman
-correlation of dataset d’s Fd×Fd split-similarity matrix, i.e., averaged pairwise rank agreement across
+correlation of dataset d’sFd×Fd split-similarity matrix, i.e., averaged pairwise rank agreement across
 errors of methods between splits. For each stability target Φ∈ {0,0.6,0.8,0.9,0.95,1} and each
 datasetd, we determine a per-dataset split budget via Spearman-Brown extrapolation:
 kd(Φ) = min
-
+
 Fd,
- Φ (1−ρd)
+ Φ (1−ρd)
 ρd (1−Φ)
-
+
 , k d(1) :=F d.(1)
 We then recompute the leaderboard restricted to those tasks and overlay two views on a shared
 percentage-points axis: (i) aggregate per-method |∆Winrate| against the Φ = 1 reference (Mean and
@@ -2634,7 +2634,7 @@ model rankings, aligning with TabArena’s insights. The per-dataset jitter medi
 substantially from Full through Lite: individual datasets’ orderings become noticeably less stable as
 compute is reduced, even when the benchmark-wide ranking is preserved. In the worst case (Φ = 0),
 several datasets have a winrate delta of over 20%, which is approaching random noise and thus
-insufficient for effective dataset-level analysis. By adding splits to satisfy Φ, we efficiently increase
+insufficient for effective dataset-level analysis. By adding splits to satisfyΦ, we efficiently increase
 compute for the most unstable datasets, resulting in Core (Φ = 0.8) having all datasets with a mean
 winrate delta below10%while costing only60%more than Lite.
 Benchmark users and creators should use a Core-like subset (Φ = 0.8) when reporting per-dataset

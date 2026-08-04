@@ -397,19 +397,19 @@ n=1
 α(h)
 m,n yn, α (h)
 m,n = softmax n
-
+
 q(h)
 m ·k(h)
 n√Dh
-
+
 ,
 6
 
 that is: a (head-averaged) attention-weighted average of the in-context one-hot labels, which is then
 converted to logits vialog
- 
+
 clip(pm)
-
+
 . This formulation has two consequences. First, classes are no longer
 tied to fixed output positions of a parametric head so the decoder is naturally permutation-equivariant in
 the class indices. Second, decoding is non-parametric inC: the decoder’s parameters depend only on
@@ -683,15 +683,15 @@ Child node value combines
 & aggregates parents
 Per-node structural equation:
 General:X i =f i
- 
+
 pa(Xi)
-
+
 +ε i
 Specific (child3):
 X3 =f
- 
+
 X4, X2
-
+
 +ε 3
 ∗Computed in topological order overG(V, E)
 1

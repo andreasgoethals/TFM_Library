@@ -13,8 +13,8 @@ Why not auto-derive the URLs from the existing files?
     The pretty filenames (``NanoTabPFN.txt``) don't encode the
     upstream slug, and the flattened directory tree at the top of each
     file (``automl-nanotabpfn/``) is case-lossy. An explicit mapping is
-    the only correct option — and ``docs/REPOSITORIES.md`` is where
-    the canonical URLs are documented anyway.
+    the only correct option — and ``REPOSITORIES.md`` (repo root) is
+    where the canonical URLs are documented anyway.
 
 Skipped on purpose
     :data:`SKIP_NON_GIT` lists files whose upstream is not a Git repo
@@ -125,7 +125,7 @@ def _install_quiet_async_shutdown() -> None:
 # in here is enough to make `git pull && python refresh_repositories.py`
 # bring in a new snapshot under its existing name.
 #
-# Sources cross-checked against docs/REPOSITORIES.md.
+# Sources cross-checked against REPOSITORIES.md (repo root).
 
 REPOSITORIES: dict[str, str] = {
     "NanoTabPFN.txt":
@@ -158,9 +158,12 @@ REPOSITORIES: dict[str, str] = {
     "TabTune.txt":
         "https://github.com/Lexsi-Labs/TabTune",
     "TransformersCanDoBayesianInference.txt":
-        # Historical: same upstream as PFNS.txt — kept as a separate file
-        # for grep stability against the original 2021 PFN paper.
-        "https://github.com/SamuelGabriel/PFNs",
+        # The ORIGINAL (unmaintained) code release of the 2021 PFN paper —
+        # NOT the maintained successor (SamuelGabriel/PFNs, see PFNS.txt).
+        # Mapping it to the successor (as before 2026-07-17) silently
+        # turned this file into a byte-duplicate of PFNS.txt and lost the
+        # paper-era snapshot it exists to preserve.
+        "https://github.com/automl/TransformersCanDoBayesianInference",
     "VSC Documentation.txt":
         "https://github.com/hpcleuven/VscDocumentation",
 }
@@ -182,7 +185,7 @@ SKIP_NON_GIT: dict[str, str] = {
 def _default_repositories_dir() -> Path:
     """Resolve ``<repo-root>/repositories`` from this file's location.
 
-    Layout assumed:  ``<repo-root>/src/utils/refresh_repositories.py``.
+    Layout assumed:  ``<repo-root>/scripts/refresh_repositories.py``.
     """
     return Path(__file__).resolve().parents[1] / "repositories"
 
