@@ -164,9 +164,14 @@ template.
 - `repositories/TabPFN Wide.txt` (~366 MB) exceeds GitHub's file limit
   and is gitignored; regenerate locally with
   `python scripts/refresh_repositories.py --only "TabPFN Wide.txt"`.
-- `repositories/VSC Documentation.txt` is KU Leuven VSC cluster
-  documentation — not TFM literature, but kept here because the
-  consuming projects run on that cluster.
+- **`repositories/VSC Documentation.txt` is the one deliberate exception
+  to the TFM-only scope, and it is a load-bearing one — do not remove
+  it.** It is the full KU Leuven / Flemish Supercomputer Centre user
+  documentation. Every project consuming this library trains and evaluates
+  on VSC, so SLURM scripting, partition and GPU choice, the Lustre/GPFS
+  storage split, and credit accounting are shared questions across all of
+  them; having the answers greppable offline is worth far more than the
+  file costs. No further non-TFM files should be added.
 - This repository is **public**.
 
 ## Consuming projects

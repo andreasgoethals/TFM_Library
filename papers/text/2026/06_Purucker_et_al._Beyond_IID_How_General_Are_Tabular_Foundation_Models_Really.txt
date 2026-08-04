@@ -29,16 +29,6 @@ learning models still dominate on non-IID, large, and high-dimensional datasets.
 BeyondArena guides model research for the most demanding challenges in tabular
 data, enabling progress towards truly foundational tabular models.
 IID Grouped Temporal Tiny Small Medium Large Low High Text High Card. All
-500
-600
-700
-800
-900
-1000
-1100
-1200
-1300
-1400
 1500Elo (Best Model)
 Task Scale Dimensionality Features
 N=103 N=18 N=21 N=52 N=38 N=30 N=22 N=91 N=51 N=16 N=30 N=142
@@ -506,15 +496,6 @@ Figure 4:BeyondArena Leaderboard (Left=Elo, Right=Improvability).We show the per
 of 11 models across 142 datasets with the default hyperparameters, with tuning, and with tuning and
 post-hoc ensembling. The default performance of TFMs equals their in-context learning performance.
 IID Grouped Temporal Tiny Small Medium Large Low High Text High Card. All
-600
-700
-800
-900
-1000
-1100
-1200
-1300
-1400
 1500Elo
 Task Scale Dimensionality Features
 N=103 N=18 N=21 N=52 N=38 N=30 N=22 N=91 N=51 N=16 N=30 N=142
@@ -2003,18 +1984,6 @@ Physics & Astronomy
 Education
 Insurance
 Social Science
-38
-33
-18
-13
-10
-8
-7
-5
-3
-3
-3
-1
 Figure B.1:Dataset Domain Breakdown.We use the domain categories from TALENT [ 112] and
 indicate how many out of our142datasets stem from each domain.
 102 103 104 105 106
@@ -2149,14 +2118,6 @@ T abPFN-2.6
 14400 Seconds
 0.0 0.2 0.4 0.6 0.8 1.0
 Proportion of Model Configurations
-101
-102
-103
-104
-105
-106
-107
-108
 Cumulative training runtime (s)
 Cumulative model runtime distribution
 Figure C.1:Training runtime distribution across hyperparameter configurations.Each point
@@ -4345,15 +4306,6 @@ TabPFN-2.6 4.0±0.3 - -
 TabICLv23.9±0.4 - -
 101 102 103
 Train time (s)
-0
-25
-50
-75
-100
-125
-150
-175
-200
 T est Error (RMSE)
 Optimal
 Dataset: concrete_compressive_strength
@@ -5053,14 +5005,6 @@ TabPFN-2.6 13.0±0.0 - -
 TabICLv2 13.0±0.0 - -
 102 103 104
 Train time (s)
-0
-2500
-5000
-7500
-10000
-12500
-15000
-17500
 T est Error (RMSE)
 Optimal
 Dataset: early_learning_predictors
@@ -5775,14 +5719,6 @@ TabPFN-2.60.13±0.03 - -
 TabICLv20.13±0.04 - -
 101 102 103
 Train time (s)
-0
-10
-20
-30
-40
-50
-60
-70
 T est Error (RMSE)
 Optimal
 Dataset: garments_worker_productivity
@@ -10646,14 +10582,6 @@ TabPFN-2.6 4.0±0.2 - -
 TabICLv2 4.0±0.1 - -
 101 102 103 104
 Train time (s)
-0
-50
-100
-150
-200
-250
-300
-350
 T est Error (RMSE)
 Optimal
 Dataset: 5g_energy_consumption

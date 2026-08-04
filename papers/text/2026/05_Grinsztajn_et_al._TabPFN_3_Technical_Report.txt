@@ -667,15 +667,6 @@ num_classes:C
 . . .
 DAG Sampler
 Noise processes εi 1
-4
-2
-3
-5
-1
-4
-2
-3
-5
 zoom-in
 4 2
 3
@@ -3508,14 +3499,6 @@ known_dynamic: humidity
 1040
 known_dynamic: pressure
 0 40k 80k 120k 160k
-0
-1
-2
-3
-4
-5
-6
-7
 known_dynamic: rain_1h
 0 40k 80k 120k 160k
 0.0
@@ -3533,14 +3516,6 @@ known_dynamic: snow_1h
 30
 known_dynamic: temp
 0 40k 80k 120k 160k
-0
-2
-4
-6
-8
-10
-12
-14
 known_dynamic: wind_speed
 0 40k 80k 120k 160k
 0
@@ -3604,14 +3579,6 @@ known_dynamic: Open
 0.7
 known_dynamic: Promo
 0 10 20 30 40
-0
-1
-2
-3
-4
-5
-6
-7
 known_dynamic: SchoolHoliday
 0 10 20 30 40
 0.0
@@ -3803,14 +3770,6 @@ Chronos-2
 MASE=1.63, CRPS=0.28
 TiRex
 0 3000 6000 9000 12k
-4
-2
-0
-2
-4
-6
-8
-10
 HULL
 14.08k 14.12k 14.16k 14.2k
 MASE=1.19, CRPS=0.36

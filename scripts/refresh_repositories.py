@@ -19,8 +19,10 @@ Why not auto-derive the URLs from the existing files?
 Skipped on purpose
     :data:`SKIP_NON_GIT` lists files whose upstream is not a Git repo
     (Hugging Face model card, public docs site without a GitHub mirror,
-    …). They print as ``SKIP`` in the summary so it's clear they were
-    intentionally not touched.
+    …). :data:`SKIP_MANUAL` lists Git repos too large for gitingest's
+    clone timeout, refreshed by hand with the recipe below. Both print as
+    ``SKIP`` in the summary so it's clear they were intentionally not
+    touched — neither is an error.
 
 Safety guards
     * **Atomic swap.** Each refresh writes to a sibling temp file and
@@ -44,8 +46,26 @@ Running it
         python scripts/refresh_repositories.py --only "TabPFN .txt" --only "PFNS.txt"
         python scripts/refresh_repositories.py --force-shrink
 
+Very large repositories
+    gitingest clones before it filters, and the installed release
+    hardcodes a 60 s clone timeout that ``--timeout`` cannot raise. A
+    repository whose *history* is large therefore fails even when the
+    files you want are tiny (``TabForestPFN`` is 1.36 GB of experiment
+    artifacts around 1.2 MB of Python). Workaround — sparse-clone the
+    source files yourself, then point ``ingest`` at the local directory,
+    which has no timeout::
+
+        git clone --depth=1 --filter=blob:none --no-checkout <url> /tmp/x
+        cd /tmp/x && git sparse-checkout init --no-cone
+        git sparse-checkout set '/*.py' '/*.md' '<pkg>/**/*.py' && git checkout
+        python -c "from gitingest import ingest; ingest(source='/tmp/x', \\
+            output='repositories/<Name>.txt', include_patterns={'*.py','*.md'})"
+
+    Then fix the first tree line to the upstream slug
+    (``felixdenbreejen-tabforestpfn/``) so the dump looks like the others.
+
 Dependencies
-    ``pip install gitingest``  (https://pypi.org/project/gitingest/).
+    ``pip install -r requirements.txt``  (gitingest, pypdf).
 """
 
 from __future__ import annotations
@@ -126,10 +146,46 @@ def _install_quiet_async_shutdown() -> None:
 # bring in a new snapshot under its existing name.
 #
 # Sources cross-checked against REPOSITORIES.md (repo root).
+#
+# A value is either a bare URL string, or a dict for repositories that need
+# file filtering:
+#
+#     "Name.txt": {"url": "https://github.com/o/r",
+#                  "include": {"*.py", "*.md"},     # only these
+#                  "exclude": {"outputs/*"},        # drop these
+#                  "note": "why the filter exists"}
+#
+# Filtering matters more than it sounds: several TFM repositories commit
+# gigabytes of experiment artifacts, model checkpoints, or per-dataset
+# metadata stubs next to a few hundred KB of actual source. An unfiltered
+# dump of those is useless to grep and dwarfs the rest of this folder.
 
-REPOSITORIES: dict[str, str] = {
+_PY_DOCS = {"*.py", "*.md", "*.toml", "*.txt", "*.yaml", "*.yml", "*.cfg", "*.ipynb"}
+
+REPOSITORIES: dict[str, str | dict] = {
+    "CausalPFN.txt": {
+        # Inference + estimation only (no prior generator / pretraining).
+        # ~175 MB of the repo is benchmark data: 201 realcause CSVs and
+        # IHDP .npz archives. Code alone is well under 1 MB.
+        "url": "https://github.com/vdblm/CausalPFN",
+        "include": _PY_DOCS,
+        "note": "code only; excludes ~175 MB of benchmark CSV/npz data",
+    },
+    "LoCalPFN.txt":
+        # Tiny and entirely unique: retrieval + fine-tuning logic in ~8
+        # Python files. The repo's bulk is one committed TabPFN v1
+        # checkpoint (~103 MB), which the include-filter drops.
+        {"url": "https://github.com/layer6ai-labs/LoCalPFN",
+         "include": _PY_DOCS,
+         "note": "code only; excludes the committed 103 MB v1 checkpoint"},
     "NanoTabPFN.txt":
         "https://github.com/automl/nanoTabPFN",
+    "NanoTabICL.txt": {
+        # TabICLv2's own release (the paper points here): the open
+        # synthetic-data engine and pretraining code, not just inference.
+        "url": "https://github.com/soda-inria/nanotabicl",
+        "note": "TabICLv2 release — prior generator + pretraining code",
+    },
     "On Finetuning Tabular Foundation Models.txt":
         "https://github.com/yandex-research/tabpfn-finetuning",
     "PFNS.txt":
@@ -140,6 +196,13 @@ REPOSITORIES: dict[str, str] = {
         "https://github.com/automl/PFNs4BO",
     "TabDPT.txt":
         "https://github.com/layer6ai-labs/TabDPT-inference",
+    "TabICL.txt": {
+        # Fully open TFM: inference, weights, synthetic-data engine and
+        # pretraining code. High grep value precisely because the
+        # pretraining path is public, unlike the TabPFN line.
+        "url": "https://github.com/soda-inria/tabicl",
+        "note": "fully open — includes the prior generator and pretraining",
+    },
     "TabPFN .txt":                              # the trailing space is intentional
         "https://github.com/PriorLabs/tabPFN",
     "TabPFN Client.txt":
@@ -155,7 +218,20 @@ REPOSITORIES: dict[str, str] = {
     "TabPFN Wide.txt":
         # Canonical upstream for the TabPFN-Wide paper (Kolberg et al. 2026).
         "https://github.com/not-a-feature/TabPFN-Wide",
+    "TabSTAR.txt": {
+        # Complete text-aware stack: pretraining, LoRA finetuning, and
+        # baseline adapters. NOTE the default branch is `master`, not
+        # `main` — a /tree/main/ URL 404s here.
+        # 401 of its 536 .py files are per-dataset metadata stubs under
+        # tabstar_paper/datasets/annotated/ (~8.6 MB of noise).
+        "url": "https://github.com/alanarazi7/TabSTAR",
+        "include": _PY_DOCS,
+        "exclude": {"tabstar_paper/datasets/annotated/*"},
+        "note": "excludes 401 per-dataset metadata stubs; branch is master",
+    },
     "TabTune.txt":
+        # Vendors complete copies of ~13 other TFMs under tabtune/models/ —
+        # see the note in REPOSITORIES.md before adding any new TFM dump.
         "https://github.com/Lexsi-Labs/TabTune",
     "TransformersCanDoBayesianInference.txt":
         # The ORIGINAL (unmaintained) code release of the 2021 PFN paper —
@@ -166,6 +242,21 @@ REPOSITORIES: dict[str, str] = {
         "https://github.com/automl/TransformersCanDoBayesianInference",
     "VSC Documentation.txt":
         "https://github.com/hpcleuven/VscDocumentation",
+}
+
+# Files whose upstream is a Git repo but is too large for gitingest's
+# hardcoded 60 s clone timeout (which --timeout cannot raise). They are
+# refreshed by hand with the sparse-clone recipe in the module docstring, so
+# they are reported as SKIP rather than failing every maintenance run.
+SKIP_MANUAL: dict[str, str] = {
+    "TabForestPFN.txt":
+        "upstream is ~1.36 GB (19.5k files of experiment artifacts around "
+        "~1.2 MB of Python), so gitingest's 60 s clone timeout always trips. "
+        "Refresh with the sparse-clone recipe in this module's docstring: "
+        "git clone --depth=1 --filter=blob:none --no-checkout + "
+        "git sparse-checkout set '/*.py' '/*.md' 'tabularbench/**/*.py', then "
+        "ingest the local directory. Upstream is dead since 2024-05, so this "
+        "rarely needs doing.",
 }
 
 # Files that exist in repositories/ but cannot be refreshed by gitingest.
@@ -242,6 +333,23 @@ class _Result:
 # --------------------------------------------------------------------------- #
 
 
+def entry_url(entry: str | dict) -> str:
+    """URL of a REPOSITORIES value, which may be a bare string or a dict."""
+    return entry if isinstance(entry, str) else entry["url"]
+
+
+def entry_patterns(entry: str | dict) -> dict[str, set[str]]:
+    """gitingest include/exclude kwargs for a REPOSITORIES value."""
+    if isinstance(entry, str):
+        return {}
+    kw: dict[str, set[str]] = {}
+    if entry.get("include"):
+        kw["include_patterns"] = set(entry["include"])
+    if entry.get("exclude"):
+        kw["exclude_patterns"] = set(entry["exclude"])
+    return kw
+
+
 def refresh_one(
     filename: str,
     url: str,
@@ -249,6 +357,7 @@ def refresh_one(
     repositories_dir: Path,
     force_shrink: bool = False,
     timeout: int | None = None,
+    patterns: dict[str, set[str]] | None = None,
 ) -> _Result:
     """Refresh a single ``repositories/<filename>`` from ``url`` atomically.
 
@@ -293,7 +402,8 @@ def refresh_one(
 
     t0 = time.monotonic()
     try:
-        _ingest_with_optional_timeout(ingest, url, tmp, timeout=timeout)
+        _ingest_with_optional_timeout(ingest, url, tmp, timeout=timeout,
+                                      patterns=patterns or {})
     except Exception as exc:                                       # noqa: BLE001
         if tmp.exists():
             try:
@@ -343,7 +453,8 @@ def refresh_one(
 
 
 def _ingest_with_optional_timeout(ingest_fn, url: str, tmp: Path,
-                                  *, timeout: int | None) -> None:
+                                  *, timeout: int | None,
+                                  patterns: dict[str, set[str]] | None = None) -> None:
     """Call ``gitingest.ingest`` with an optional timeout kwarg.
 
     Newer gitingest releases accept ``timeout=``; older ones don't. We
@@ -351,7 +462,7 @@ def _ingest_with_optional_timeout(ingest_fn, url: str, tmp: Path,
     ``TypeError`` for an unexpected ``timeout`` arg is the signal; any
     other exception propagates so the caller's error handler sees it.
     """
-    kwargs = {"source": url, "output": str(tmp)}
+    kwargs = {"source": url, "output": str(tmp), **(patterns or {})}
     if timeout is not None:
         try:
             return ingest_fn(**kwargs, timeout=timeout)
@@ -427,7 +538,8 @@ def refresh_all(
 
     results: list[_Result] = []
     for i, filename in enumerate(targets, start=1):
-        url = REPOSITORIES[filename]
+        entry = REPOSITORIES[filename]
+        url = entry_url(entry)
         # Minimal in-flight signal — one line per file, no scrollback noise.
         print(f"  [{i:>2}/{len(targets)}] {filename!s}",
               file=sys.stderr, flush=True)
@@ -435,15 +547,17 @@ def refresh_all(
             refresh_one(filename, url,
                         repositories_dir=repositories_dir,
                         force_shrink=force_shrink,
-                        timeout=timeout)
+                        timeout=timeout,
+                        patterns=entry_patterns(entry))
         )
 
     # Skipped files — only on a full run; --only callers know what they're doing.
     if only is None:
-        for filename in sorted(SKIP_NON_GIT):
-            results.append(
-                _Result(filename, None, "SKIP", reason=SKIP_NON_GIT[filename])
-            )
+        for source in (SKIP_NON_GIT, SKIP_MANUAL):
+            for filename in sorted(source):
+                results.append(
+                    _Result(filename, None, "SKIP", reason=source[filename])
+                )
 
     return results
 

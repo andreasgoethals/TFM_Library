@@ -53,6 +53,31 @@ def iter_pdfs() -> list[Path]:
     )
 
 
+def _strip_line_number_gutters(text: str, min_run: int = 8) -> str:
+    """Drop the numbered margin that ICLR/NeurIPS submission templates print.
+
+    Those templates put a line number beside every line, and pypdf emits
+    them as a long run of bare integers before the page body. In the worst
+    case seen here (den Breejen 2024) they were 48 % of the file, which
+    makes the extraction useless to grep and skews any word counting.
+
+    Only runs of at least ``min_run`` consecutive bare-integer lines are
+    removed, so a short column of numbers inside a real table survives.
+    """
+    lines = text.split("\n")
+    keep = [True] * len(lines)
+    run: list[int] = []
+    for i, line in enumerate(lines + [""]):        # sentinel flushes the tail
+        if line.strip().isdigit():
+            run.append(i)
+            continue
+        if len(run) >= min_run:
+            for j in run:
+                keep[j] = False
+        run = []
+    return "\n".join(l for l, k in zip(lines, keep) if k)
+
+
 def extract(pdf: Path) -> Path:
     from pypdf import PdfReader
 
@@ -65,6 +90,7 @@ def extract(pdf: Path) -> Path:
     # defeating the point of these extractions. Strip everything below
     # 0x20 except newline and tab.
     text = "".join(ch for ch in text if ch in "\n\t" or ord(ch) >= 32)
+    text = _strip_line_number_gutters(text)
     out.write_text(text, encoding="utf-8", newline="\n")
     print(f"{pdf.parent.name}/{pdf.name}: {len(reader.pages)} pages, "
           f"{len(text):,} chars -> {out.relative_to(_ROOT)}")
@@ -96,10 +122,38 @@ def main() -> int:
             print(f"MISSING TEXT : {p.relative_to(_ROOT)}")
         for p in orph:
             print(f"ORPHAN TEXT  : {p.relative_to(_ROOT)}")
+        # Quality checks. These exist because 27 of the original extractions
+        # turned out to be Latin-1 with CRLF endings — i.e. produced by
+        # something other than this script — which mangled every non-ASCII
+        # author name and crashed any tool reading them as UTF-8.
+        bad = 0
+        for p in sorted(_TEXT.glob("*/*.txt")):
+            raw = p.read_bytes()
+            rel = p.relative_to(_ROOT)
+            try:
+                body = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                print(f"NOT UTF-8    : {rel}  (re-run extraction)")
+                bad += 1
+                continue
+            if b"\r\n" in raw:
+                print(f"CRLF ENDINGS : {rel}  (.gitattributes wants LF)")
+                bad += 1
+            if any(b < 9 or b == 11 or 13 < b < 32 for b in raw):
+                print(f"CONTROL BYTES: {rel}  (breaks grep)")
+                bad += 1
+            run = longest = 0
+            for line in body.split("\n"):
+                run = run + 1 if line.strip().isdigit() else 0
+                longest = max(longest, run)
+            if longest >= 8:
+                print(f"LINE GUTTER  : {rel}  ({longest} bare-integer lines)")
+                bad += 1
         total = len(iter_pdfs())
         print(f"{total} PDFs, {total - len(miss)} extracted, "
-              f"{len(miss)} missing, {len(orph)} orphaned")
-        return 1 if (miss or orph) else 0
+              f"{len(miss)} missing, {len(orph)} orphaned, "
+              f"{bad} quality issue(s)")
+        return 1 if (miss or orph or bad) else 0
 
     if args.all:
         miss = missing()

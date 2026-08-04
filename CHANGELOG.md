@@ -4,6 +4,129 @@ Human-readable log of library updates, newest first. Consuming projects pin
 a commit of this repo — read this to decide whether to bump your pin.
 One line per change; date every entry.
 
+## 2026-08-04 (e) — six new code dumps; all dumps refreshed
+
+- **Six new snapshots** (16 → 22 dumps), all requested by the owner:
+  - **`TabICL.txt`** (32,794 lines) — the most valuable addition. The only
+    *fully open* competitive TFM: complete synthetic prior generator
+    (`prior/`, `prior/graph_lib/`), pretraining loop with the **Muon
+    optimiser** (`train/_muon.py`), the 3-stage curriculum scripts for v1
+    **and** v2, plus finetuning, forecasting and SHAP extensions. Nothing
+    else here exposes how a frontier TFM is actually *trained*.
+  - **`NanoTabICL.txt`** — TabICLv2's minimal release: `model.py` +
+    `prior.py`, the shortest readable path to a whole TFM.
+  - **`LoCalPFN.txt`** — the only k-NN-retrieval context implementation
+    here (~58 KB). No upstream LICENSE: read, don't redistribute.
+  - **`TabSTAR.txt`** — text-aware pretraining, LoRA, checkpoint
+    averaging, `verbalize.py`. Default branch is `master`, not `main`.
+  - **`CausalPFN.txt`** — amortised CATE/ATE estimation (inference only;
+    the simulated-DGP prior is unreleased).
+  - **`TabForestPFN.txt`** — the forest-prior generators; historical
+    (upstream dead since 2024-05).
+- **`refresh_repositories.py` now supports per-repository file filters.**
+  Values in `REPOSITORIES` may be `{"url", "include", "exclude", "note"}`
+  instead of a bare URL. Needed because several TFM repos commit gigabytes
+  of experiment artifacts, checkpoints or metadata stubs around a few
+  hundred KB of source — CausalPFN (~175 MB of benchmark data), LoCalPFN
+  (a 103 MB committed checkpoint), TabSTAR (401 per-dataset stubs).
+- **New `SKIP_MANUAL` category.** `TabForestPFN.txt` cannot be refreshed by
+  gitingest at all: upstream is 1.36 GB and gitingest hardcodes a 60 s
+  clone timeout that `--timeout` cannot raise. It is now reported as SKIP
+  with the sparse-clone recipe rather than failing every run, and the
+  recipe is in the module docstring.
+- **All 19 refreshable dumps re-dumped** (18 OK). Several grew
+  substantially since the last snapshot — `TabPFN .txt` 77,938 → 84,092
+  lines, `TabTune.txt` 162,653 → 168,086, `TabPFN V2 Finetuning.txt`
+  4,331 → 4,835. Overview-table line counts refreshed accordingly.
+- **`On Finetuning Tabular Foundation Models.txt` is now an archive — do
+  not `--force-shrink` it.** Upstream has **deleted its entire `exp/`
+  directory**: 636 files, including all **342 `report.json` experiment
+  reports**, with `lib/` code unchanged and nothing added. A fresh dump
+  would be 37 % of the size and would destroy the hyperparameter evidence
+  the "Verified config facts" table is built from — data that no longer
+  exists upstream. The shrink guard blocks this and reports a FAIL on every
+  run; that FAIL is correct and should be left alone. Warning added to
+  REPOSITORIES.md.
+- **`VSC Documentation.txt` is now documented as the one deliberate
+  exception to the TFM-only scope**, in README.md, AGENTS.md and
+  REPOSITORIES.md, with an explicit "never remove this" note: every
+  consuming project runs on VSC, so it is shared infrastructure knowledge.
+
+## 2026-08-04 (d) — text extractions repaired; TabTune coverage documented
+
+- **All 41 text extractions regenerated.** 27 of the 31 pre-existing files
+  were **Latin-1 encoded with CRLF endings** — so they were never produced
+  by `scripts/extract_paper_text.py` (which writes UTF-8/LF) but carried
+  over from the original import. Every non-ASCII author name was mangled
+  (`Samuel Mu¨ller`, `M\xfcller`) and any tool decoding them as UTF-8
+  crashed outright. All are now uniform UTF-8 with LF, and diacritics
+  render correctly.
+- **New extraction filter: submission line-number gutters.** ICLR/NeurIPS
+  templates print a line number beside every line, which pypdf emitted as
+  long runs of bare integers — 1,491 of 3,135 lines (48%) in the den
+  Breejen extraction. Runs of ≥8 are now stripped; shorter numeric columns
+  inside real tables survive.
+- **`extract_paper_text.py --check` now validates quality, not just
+  presence**: flags non-UTF-8 files, CRLF endings, control bytes, and
+  line-number gutters, and exits non-zero. `maintain.py` therefore catches
+  this class of corruption automatically from now on.
+- **REPOSITORIES.md: documented what `TabTune.txt` actually contains.**
+  That dump silently vendors complete copies of 13 model implementations
+  (`tabpfnv3/` 117 files, `tabpfnv26/` 101, `orion_msp/` 30,
+  `orion_bix/` 33, `contexttab/` 14, `limix/`, `mitra/`, `tabicl/`,
+  `tabiclv2/`, `tabdpt/`, …), verified by file count. Consequence:
+  **separate dumps of Orion-MSP, Orion-BiX or ConTextTab would be
+  redundant** — spot-checked byte-identical, and the vendored
+  `orionmsp_v15/` is newer than the standalone repo. Also noted that
+  ConTextTab's upstream was renamed to `SAP-samples/sap-rpt-1-oss`, so the
+  URL printed in the paper is dead.
+
+## 2026-08-04 (c) — ten papers added
+
+Added on the owner's request, imported from the Zotero "Foundation Models"
+collection. Corpus goes 31 → 41 papers. Each got the full five-step
+treatment (file + text extraction + SUMMARIES entry and overview row +
+SYNTHESIS timeline row, thematic integration and appendix card).
+
+- **Nagler 2023 — Statistical Foundations of Prior-Data Fitted Networks**
+  (ICML 2023). The theory of *why* PFN in-context learning works: a
+  frequentist reading in which variance vanishes for free but bias
+  vanishes only under localisation, which PFN transformers do not
+  guarantee. Integrated into the Foundations section, since it predicts
+  the later success of retrieval-based localisation.
+- **den Breejen 2024 — TabForestPFN.** Origin of the tree/forest prior
+  and of the finding that prior *realism* and prior *adaptability* are
+  different axes — the observation Mitra later formalised.
+- **Thomas 2024 — LoCalPFN** (NeurIPS 2024). Retrieval + fine-tuning;
+  SOTA on 95 TabZilla datasets. The empirical answer to Nagler's bias
+  analysis and the ancestor of TabDPT's retrieval.
+- **Bouadi 2025 — Orion-MSP** and **Bouadi 2026 — Orion-BiX** (WWW '26).
+  The two Lexsi Labs architectures behind TabTune and the Tanna
+  fine-tuning study, both already held — closing an obvious gap.
+- **Spinaci 2025 — ConTextTab** (NeurIPS 2025) and **Arazi 2025 —
+  TabSTAR** (NeurIPS 2025). The semantics axis: per-modality embeddings
+  on real tables, and target-aware text representations with scaling laws
+  in dataset *count*. Prompted a new paragraph in the scaling section,
+  since semantics is signal a synthetic SCM prior cannot contain even in
+  principle.
+- **Balazadeh Meresht 2025 — CausalPFN** (NeurIPS 2025). Fourth member of
+  the causal-PFN cluster, and the model CausalFM loses to on ACIC2016 —
+  needed to read that comparison honestly.
+- **Tanna 2026 — Data Presentation Over Architecture.** On imbalanced
+  credit data, **context construction explains more AUC variance than the
+  choice of TFM**: balanced/hybrid sampling adds 3–4 points, exceeding the
+  between-model spread. Added as its own weakness in SYNTHESIS (§3b),
+  because every other comparison in the corpus holds context construction
+  fixed while varying the model.
+- **Feuer 2024 — TuneTables** (NeurIPS 2024). Context optimisation —
+  compress a large dataset into a small *learned* context — as the third
+  distinct answer to adapting a frozen PFN, alongside retrieval
+  (LoCalPFN) and weight updates (Real-TabPFN). Notable as the only method
+  in the corpus where a constraint (a fairness objective) can be imposed
+  on the context itself. Its "prefer PEFT to protect the prior" premise
+  is what Rubachev 2025 later overturned for v2, so the two are now
+  filed together deliberately.
+
 ## 2026-08-04 (b) — restructure: project-neutral, chronological, self-maintaining
 
 **Breaking for consumers: every paper path changed.** Papers are now

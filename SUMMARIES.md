@@ -34,10 +34,14 @@ inside your project's copy of this folder and write them there.
 | 2021 | Müller et al. | Transformers Can Do Bayesian Inference | Foundational PFN paper: a transformer trained on synthetic samples from a prior approximates the prior's posterior in-context. | [pdf](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) |
 | 2023 | Hollmann et al. | TabPFN — A Transformer That Solves Small Tabular Classification Problems in a Second | First TabPFN: PFN trained on a tabular SCM prior, beats AutoML baselines on small datasets. | [pdf](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf) |
 | 2023 | Müller et al. | PFNs4BO — In-Context Learning for Bayesian Optimization | PFN as a drop-in surrogate for Gaussian-Process BO. | [pdf](papers/2023/05_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf) |
+| 2023 | Nagler | **Statistical Foundations of Prior-Data Fitted Networks** | The theory of *why* PFN in-context learning works — and its limit: a frequentist reading in which variance vanishes but bias only vanishes with proper localisation, which the transformer does not guarantee. | [pdf](papers/2023/07_Nagler_Statistical_Foundations_of_Prior_Data_Fitted_Networks.pdf) |
 | 2024 | Breugel and Schaar | Why Tabular Foundation Models Should Be a Research Priority | Position paper: tabular FMs are an under-invested high-leverage area. | [pdf](papers/2024/06_Breugel_and_Schaar_Why_Tabular_Foundation_Models_Should_Be_a_Research_Priority.pdf) |
 | 2024 | Helli et al. | Drift-Resilient TabPFN | Trains TabPFN with a drift-injecting synthetic prior, generalises better under distribution shift. | [pdf](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) |
 | 2024 | Hoo et al. | The Tabular Foundation Model TabPFN Outperforms Specialized Time Series Forecasting Models | TabPFN-TS: forecasting framed as tabular regression on timestamp-derived features (no lags); an 11M-param frozen TabPFN beats Chronos-Mini and matches Chronos-Large. | [pdf](papers/2024/12_Hoo_et_al._The_Tabular_Foundation_Model_TabPFN_Outperforms_Specialized_Time_Series_Forecasting_Models_Based_on.pdf) |
 | 2024 | Rundel et al. | Interpretable Machine Learning for TabPFN | Adapts SHAP / partial-dependence / interaction analysis to TabPFN's in-context inference path. | [pdf](papers/2024/03_Rundel_et_al._Interpretable_Machine_Learning_for_TabPFN.pdf) |
+| 2024 | den Breejen et al. | **TabForestPFN** — Fine-tuned In-Context Learning Transformers are Excellent Tabular Data Classifiers | Swaps TabPFN's SCM prior for a *forest* generator producing unrealistic tables with complex decision boundaries; fine-tuning ICL transformers then beats GBDTs. The tree-prior ancestor of Mitra. | [pdf](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf) |
+| 2024 | Thomas et al. | **LoCalPFN** — Retrieval & Fine-Tuning for In-Context Tabular Models | Retrieves a k-NN neighbourhood as the context and fine-tunes end-to-end, breaking v1's size ceiling; SOTA on 95 TabZilla datasets. Ancestor of TabDPT's retrieval. | [pdf](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) |
+| 2024 | Feuer et al. | **TuneTables** — Context Optimization for Scalable Prior-Data Fitted Networks | Compresses a large dataset into a small *learned* context (prompt tuning for PFNs), lifting TabPFN v1's ~1000-row ceiling; best average rank over 19 algorithms on 98 datasets while tuning <5% of parameters. | [pdf](papers/2024/12_Feuer_et_al._TuneTables_Context_Optimization_for_Scalable_Prior_Data_Fitted_Networks.pdf) |
 | 2025 | Garg et al. | **Real-TabPFN** — Improving Tabular Foundation Models via Continued Pre-training With Real-World Data | **The reference continued-pretraining recipe.** Continue-pretrains TabPFNv2 on 71 curated real datasets; +0.022 ROC-AUC on the OpenML AutoML benchmark. | [pdf](papers/2025/07_Garg_et_al._Real_TabPFN_Improving_Tabular_Foundation_Models_via_Continued_Pre_training_With_Real_World_Data.pdf) |
 | 2025 | Hollmann et al. | Accurate predictions on small data with a tabular foundation model | The TabPFNv2 paper (Nature). Production-grade architecture with alternating-attention, NaN handling, ensemble preprocessing. | [pdf](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf) |
 | 2025 | Liu and Ye | TabPFN Unleashed — A Scalable and Effective Solution to Tabular Classification Problems | Inference-time tricks (stratified context, bootstrap, query subsampling) that push v2 past its 10k-row limit. | [pdf](papers/2025/02_Liu_and_Ye_TabPFN_Unleashed_A_Scalable_and_Effective_Solution_to_Tabular_Classification_Problems.pdf) |
@@ -51,6 +55,10 @@ inside your project's copy of this folder and write them there.
 | 2025 | Ye et al. | A Closer Look at TabPFN v2 — Understanding Its Strengths and Extending Its Capabilities | Empirical analysis identifying v2 weaknesses and proposing patches that became v2.5 specialist checkpoints. | [pdf](papers/2025/06_Ye_et_al._A_Closer_Look_at_TabPFN_v2_Understanding_Its_Strengths_and_Extending_Its_Capabilities.pdf) |
 | 2025 | Zhang et al. | Mitra — Mixed Synthetic Priors for Enhancing Tabular Foundation Models | A "mixed" synthetic prior interpolating between TabPFN's and ForestPFN's priors. | [pdf](papers/2025/10_Zhang_et_al._Mitra_Mixed_Synthetic_Priors_for_Enhancing_Tabular_Foundation_Models.pdf) |
 | 2025 | Zhang et al. | TabPFN — One Model to Rule Them All | Survey-style win aggregation across many domains. | [pdf](papers/2025/11_Zhang_et_al._TabPFN_One_Model_to_Rule_Them_All.pdf) |
+| 2025 | Bouadi et al. | **Orion-MSP** — Multi-Scale Sparse Attention for Tabular In-Context Learning | Multi-scale features + block-sparse attention + Perceiver memory for bidirectional flow between stages; scales to wide tables. | [pdf](papers/2025/11_Bouadi_et_al._Orion_MSP_Multi_Scale_Sparse_Attention_for_Tabular_In_Context_Learning.pdf) |
+| 2025 | Spinaci et al. | **ConTextTab** — A Semantics-Aware Tabular In-Context Learner | Table-native ICL with per-modality (text/date/number) embeddings trained on large-scale *real* tables; new standard on the semantically rich CARTE benchmark. | [pdf](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf) |
+| 2025 | Arazi et al. | **TabSTAR** — A Tabular Foundation Model for Tabular Data with Text Fields | Unfreezes a text encoder and conditions on *target tokens* for semantically target-aware representations; no dataset-specific parameters, and pretraining shows scaling laws in dataset count. | [pdf](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) |
+| 2025 | Balazadeh Meresht et al. | **CausalPFN** — Amortized Causal Effect Estimation via In-Context Learning | One transformer trained on simulated ignorable DGPs returns calibrated CATE/ATE for new observational tables out of the box; best average rank over 310 tasks. | [pdf](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) |
 | 2026 | Grinsztajn et al. | **TabPFN-2.5** — Advancing the State of the Art in Tabular Foundation Models | Successor architecture (18–24 layers, 50 k×2000 limit) and the family of v2.5 checkpoints. | [pdf](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) |
 | 2026 | Hoo et al. | From Tables to Time — Extending TabPFN-v2 to Time Series Forecasting | Native time-axis attention version of TabPFN. | [pdf](papers/2026/01_Hoo_et_al._From_Tables_to_Time_Extending_TabPFN_v2_to_Time_Series_Forecasting.pdf) |
 | 2026 | Klein and Hoffart | Position — Foundation Models for Tabular Data within Systemic Contexts Need Grounding | Position paper from SAP: tabular FMs trained on isolated tables miss the operational context (business rules, code, data models) that gives data meaning. Proposes Semantically Linked Tables (SLT) and FMSLT as a new model class. | [pdf](papers/2026/01_Klein_and_Hoffart_Position_Foundation_Models_for_Tabular_Data_within_Systemic_Contexts_Need_Grounding.pdf) |
@@ -62,6 +70,8 @@ inside your project's copy of this folder and write them there.
 | 2026 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The current frontier of the TabPFN line.** New three-stage architecture (column-wise → row-wise → ICL), scales to 1M rows on a single H100, many-class attention decoder, "Thinking" test-time-compute mode. Synthetic-prior only, +200 Elo over TabPFN-2.6 on TabArena-medium. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
 | 2026 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets, IID + temporal + grouped splits): TFM ICL wins tiny/small IID data but **loses to tuned RealMLP/GBDTs under temporal & grouped splits**, with the gap growing with sample size and high-cardinality categoricals. Fine-tuning explicitly untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026 | Kong and Das (Google) | **TabFM** — Introducing TabFM: A zero-shot foundation model for tabular data | *Blog post, not a paper.* Google's TabPFN+TabICL **hybrid** (alternating row/column attention → row compression → ICL over row embeddings), trained on hundreds of millions of synthetic SCM datasets; TabArena Elo vs tuned GBDTs; shipping into **BigQuery `AI.PREDICT`**. | [pdf](papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf) |
+| 2026 | Bouadi et al. | **Orion-BiX** — Bi-Axial Attention for Tabular In-Context Learning | Bi-axial encoder (standard / grouped / hierarchical / relational attention fused by multi-CLS) plus a label-aware ICL head with hierarchical routing for large label spaces. | [pdf](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf) |
+| 2026 | Tanna et al. | **Data Presentation Over Architecture** — Resampling Strategies for Credit Risk Prediction with TFMs | On Home Credit and Lending Club, **how the context window is built explains more AUC variance than which TFM you pick**: balanced/hybrid sampling adds 3–4 AUC points over uniform, exceeding the spread between TFM families. | [pdf](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf) |
 
 ---
 
@@ -147,6 +157,53 @@ designing the prior generator.
 
 ---
 
+## 2023 — Nagler — Statistical Foundations of Prior-Data Fitted Networks
+
+**Venue:** ICML 2023 (PMLR v202) · Thomas Nagler, LMU Munich / Munich
+Center for Machine Learning ·
+**PDF:** [open](papers/2023/07_Nagler_Statistical_Foundations_of_Prior_Data_Fitted_Networks.pdf)
+
+**Where it fits.** The theory paper the rest of this corpus leans on
+without always citing. Müller 2021 justified PFNs with a Bayesian
+argument; Nagler asks what actually happens statistically, and arrives at
+a *frequentist* reading that explains PFN behaviour more completely —
+including the phenomenon nobody had accounted for, that accuracy keeps
+improving when a PFN is fed datasets far larger than anything it saw in
+pretraining.
+
+**What it contains.** The central move is to stop treating the network as
+an approximate posterior and treat it as a **pre-tuned but untrained
+predictor**: a fixed function of the context set. Under that lens the
+usual bias–variance decomposition applies, and two conditions emerge:
+
+* **Variance vanishes** if the predictor's sensitivity to any *individual*
+  training sample vanishes as the context grows. The transformer
+  architecture, with attention averaging over context rows, delivers this
+  — which is why PFNs behave stably and improve with more context.
+* **Bias vanishes only if the predictor is appropriately *localised*
+  around the test feature** — i.e. it must weight nearby context points
+  more than distant ones. **Current PFN transformer implementations do
+  not guarantee this.**
+
+So PFNs get the variance half of consistency for free and the bias half
+not at all. That asymmetry is the paper's real contribution and it is
+predictive: it says a PFN will look excellent in-distribution and
+plateau or mislead where localisation matters, and it tells architects
+what to fix.
+
+**Strengths and limitations.** This is the only rigorous account of *why*
+the paradigm works, and it is constructive rather than merely critical —
+"design for localisation" is actionable, and the later retrieval-based
+models (LoCalPFN, TabDPT) can be read as exactly that fix arrived at
+empirically. Its limitations are those of theory: the results are
+asymptotic, they concern classification with a fixed pretraining
+distribution, and they say nothing about how much bias a given
+architecture actually carries on a given table. It also predates
+TabPFN v2, so the analysis is of the v1-era architecture — though the
+argument is about attention-based context aggregation in general and
+transfers.
+
+
 ## 2024 — Breugel and Schaar — Why Tabular Foundation Models Should Be a Research Priority
 
 **arXiv:** [2405.01147](https://arxiv.org/abs/2405.01147) ·
@@ -194,6 +251,46 @@ differs from training by a continuous shift. The vanilla TabPFN
 prior is implicitly i.i.d.; under drift, it cannot recover.
 
 ---
+
+## 2024 — den Breejen et al. — TabForestPFN
+
+**Venue:** ICLR 2025 submission / OpenReview `pE0UM18TQh` (the copy held
+here is the double-blind review version) ·
+**PDF:** [open](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf)
+
+**Where it fits.** The origin of the **tree-based prior**, and therefore
+the direct ancestor of Mitra's prior-mixing framework. It is also an
+early, clean statement of the finding Rubachev 2025 later confirmed at
+scale: fine-tuning a TFM is not a compromise but a large win.
+
+**What it contains.** Two findings that interact.
+
+* **Fine-tuning gives ICL transformers complex decision boundaries.**
+  The paper extends TabPFN to the fine-tuning setting and reports a
+  significant performance boost, then observes *why*: fine-tuned
+  ICL-transformers can form decision boundaries that ordinary neural
+  networks do not produce.
+* **So pretrain on data that has complex boundaries, even if it is
+  unrealistic.** They build a **forest dataset generator** — synthetic
+  tables sampled from decision-tree/forest structures, explicitly
+  described as unrealistic — and pretrain **TabForest** on it. It
+  fine-tunes better the more complex the pretraining data, and beats
+  TabPFN on some real datasets after fine-tuning *despite worse zero-shot
+  performance*, precisely because the prior is unrealistic.
+* **TabForestPFN** is the combination: pretrain on both the TabPFN
+  generator and the forest generator, yielding good zero-shot *and*
+  excellent fine-tuning performance.
+
+**Strengths and limitations.** The zero-shot/fine-tuned trade-off is the
+insight worth carrying: prior realism buys zero-shot quality, prior
+*complexity* buys adaptability, and they are not the same axis. This
+directly motivates Mitra's later claim that priors should be selected on
+measured criteria rather than realism intuitions. Limitations: the copy
+held here is an anonymous review version rather than a camera-ready, so
+final numbers may differ; it is classification-only; and its gains are
+demonstrated in the fine-tuning regime, which means they do not transfer
+to a frozen-ICL deployment.
+
 
 ## 2024 — Hoo et al. — TabPFN Outperforms Specialized Time Series Forecasting Models
 
@@ -251,6 +348,87 @@ The headline argument is that TabPFN is *no harder* to
 interpret than a GBDT once the right tooling is in place.
 
 ---
+
+## 2024 — Feuer et al. — TuneTables
+
+**Venue:** NeurIPS 2024 · NYU / U. Freiburg / U. Maryland / Abacus.AI ·
+[DOI 10.52202/079017-2654](https://doi.org/10.52202/079017-2654) ·
+arXiv [2402.11137](https://arxiv.org/abs/2402.11137) ·
+**PDF:** [open](papers/2024/12_Feuer_et_al._TuneTables_Context_Optimization_for_Scalable_Prior_Data_Fitted_Networks.pdf)
+
+**Where it fits.** The paper that defined the *context-optimisation*
+branch of TFM adaptation, and the specific piece of prior art Rubachev
+2025 later argued against. Where LoCalPFN localises the context by
+retrieval and Real-TabPFN changes the weights, TuneTables changes what
+the context *is* — making it the third distinct answer to "how do you
+adapt a frozen PFN?".
+
+**What it contains.** The problem is stated bluntly: TabPFN performs very
+well on small tables but is not designed to predict for datasets larger
+than ~1000 rows, and that ceiling blocks adoption. TuneTables lifts it by
+**compressing a large dataset into a smaller learned context** — a
+parameter-efficient fine-tuning strategy in which the context itself is
+optimised rather than the network, the tabular analogue of prompt tuning.
+
+The evaluation is unusually broad for the era: **nineteen algorithms
+across 98 datasets**, where TuneTables achieves the **best average
+performance**, outperforming boosted trees including CatBoost, while
+**optimising fewer than 5% of TabPFN's parameters**. Two secondary
+results widen its relevance: the learned context can be read as an
+**interpretability tool**, and because the context is optimised against
+an objective, it can be optimised against a **fairness objective** to
+mitigate bias — a mechanism entirely different from FairPFN's
+prior-level approach to the same goal. Code and raw results are open.
+
+**Strengths and limitations.** The efficiency argument is strong (a
+sub-5%-parameter method beating tuned CatBoost), the evaluation is wide,
+and the fairness-by-context-optimisation idea is genuinely novel — it
+makes the context a place where constraints can be imposed, which no
+other paper here exploits. The limitations are what the later literature
+seized on: it targets TabPFN **v1**, whose row ceiling v2 raised
+architecturally, so part of the motivation evaporated; and Rubachev 2025
+found that for v2 the "use parameter-efficient methods to avoid
+destroying the prior" premise does not hold — full fine-tuning matches
+PEFT variants while converging faster. Classification only.
+
+
+## 2024 — Thomas et al. — LoCalPFN
+
+**Venue:** NeurIPS 2024 · Layer 6 AI, Toronto ·
+[DOI 10.52202/079017-3442](https://doi.org/10.52202/079017-3442) ·
+**PDF:** [open](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf)
+
+**Where it fits.** The retrieval branch of the adaptation literature, and
+— read alongside [Nagler 2023](#2023--nagler--statistical-foundations-of-prior-data-fitted-networks)
+— arguably the empirical answer to his localisation gap. Same lab as
+TabDPT, whose FAISS-retrieved contexts are the successor idea.
+
+**What it contains.** The diagnosis is that in-context learning had shown
+promise on small tables but failed to scale to large, complex ones. The
+fix combines two mechanisms that each address one half of the problem:
+
+* **Retrieval** — instead of passing a global sample as context, collect
+  the **k nearest neighbours of the query** and pass that local subset,
+  so the model is conditioned on the region of feature space it is being
+  asked about.
+* **Fine-tuning on the retrieved context** — task-specific fine-tuning is
+  then performed with those neighbours in context, jointly rather than as
+  a post-hoc step.
+
+Applied to TabPFN, this yields the **locally-calibrated PFN (LoCalPFN)**,
+evaluated on the **95 TabZilla datasets** curated from OpenML, where it
+sets a new state of the art — including against *tuned* tree-based
+models — and shows a large gain over the base in-context model.
+
+**Strengths and limitations.** The retrieve-then-fine-tune pairing is
+theoretically well-motivated (it is localisation, which Nagler shows is
+what the bias term needs) and is the largest single reported jump over
+base TabPFN in the v1 era. The costs are real: retrieval makes inference
+per-query rather than per-dataset, which complicates deployment and
+assumes exchangeable rows; the method is classification-focused; and it
+is built on TabPFN v1, so the scaling ceilings it lifts were partly
+lifted by v2 architecturally instead.
+
 
 <a id="real-tabpfn"></a>
 
@@ -781,6 +959,160 @@ preferred.
 
 ---
 
+## 2025 — Balazadeh Meresht et al. — CausalPFN
+
+**Venue:** NeurIPS 2025 · University of Toronto / Vector Institute /
+Layer 6 AI ·
+**PDF:** [open](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf)
+
+**Where it fits.** The fourth member of the causal-PFN cluster in this
+library, alongside Do-PFN, FairPFN and CausalFM — and the one the others
+are measured against. CausalFM's own ablations report losing to
+CausalPFN on ACIC2016, which makes holding it necessary to read that
+comparison honestly.
+
+**What it contains.** The problem framing is practical rather than
+theoretical: dozens of specialised causal estimators exist, and
+*choosing* one for a given dataset takes substantial manual effort and
+domain expertise. CausalPFN amortises that choice. A single transformer
+is trained once on a large library of **simulated data-generating
+processes that satisfy ignorability**, and then infers causal effects for
+new observational datasets out of the box — mapping raw observations
+directly to effects with no task-specific adjustment, and supplying
+**calibrated uncertainty** on Bayesian principles.
+
+Evaluation covers heterogeneous and average treatment effect estimation
+on **IHDP, Lalonde and ACIC** — 310 tasks in total — where it achieves
+the best average rank by precision in estimating heterogeneous effects
+while being much faster than EconML, deep-learning, BART and GRF
+baselines. It is also competitive on real-world uplift-modelling tasks.
+
+**Strengths and limitations.** The combination of best-average-rank,
+order-of-magnitude speed, calibrated uncertainty, and released code makes
+this the most deployable model in the causal-PFN group. The central
+caveat is in its own construction: the prior assumes **ignorability**,
+so unlike Do-PFN it does not target the unconfoundedness-violated regime,
+and CausalFM's impossibility result argues that mixing identifiable and
+non-identifiable settings in one prior is what degrades posteriors — a
+theoretical objection CausalPFN's strong empirics do not settle. Its
+benchmarks are also the standard semi-synthetic ones, which resemble the
+simulated priors it trains on.
+
+
+## 2025 — Arazi et al. — TabSTAR
+
+**Venue:** NeurIPS 2025 · Technion — Israel Institute of Technology ·
+**PDF:** [open](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf)
+
+**Where it fits.** The text-field branch of the TFM family, and now part
+of the TabPFN lineage in a literal sense: its first author is a
+co-author on the TabPFN-3 report, and TabPFN-3-Plus reports
+state-of-the-art on the TabSTAR benchmark. Purucker's BeyondArena also
+adopts that benchmark as one of its dataset sources.
+
+**What it contains.** The critique of prior work is specific: methods
+that bring language-model capability to tables mostly use **static,
+target-agnostic** text representations — a column's text is embedded the
+same way regardless of what is being predicted — which limits how useful
+the embedding can be. TabSTAR instead:
+
+* **unfreezes a pretrained text encoder**, so textual representations
+  adapt during tabular pretraining rather than being fixed features; and
+* **takes target tokens as input**, giving the model the context it needs
+  to learn *task-specific* embeddings — the "semantically target-aware
+  representations" of the name.
+
+The architecture has **no dataset-specific parameters**, which is what
+makes transfer across datasets possible at all. It reports
+state-of-the-art on medium and large classification datasets with text
+features, and — the forward-looking result — its **pretraining exhibits
+scaling laws in the number of datasets**, implying the approach improves
+with more pretraining corpora rather than saturating.
+
+**Strengths and limitations.** The target-aware embedding idea is a real
+advance over static text features, and dataset-count scaling laws are the
+kind of evidence the field mostly lacks. Limitations: classification with
+text features is a narrower setting than the general tabular problem, so
+it is not a drop-in TabPFN competitor; unfreezing a text encoder makes it
+far heavier than table-native models; and the reliance on natural-language
+column content limits transfer to numeric-only domains.
+
+
+## 2025 — Spinaci et al. — ConTextTab
+
+**Venue:** NeurIPS 2025 (spotlight) · SAP France / SAP SE ·
+**PDF:** [open](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf)
+
+**Where it fits.** The synthesis of the two halves of the tabular-ICL
+field, and the empirical companion to SAP's own position paper on
+grounding (Klein & Hoffart 2026, also held here). It sits exactly between
+the table-native models and the LLM-based ones.
+
+**What it contains.** The framing is a clean statement of a real
+trade-off. Table-native ICL architectures (TabPFN, TabICL) are
+architecturally efficient and well-adapted to table structure, but
+training *exclusively on synthetic data* means they cannot exploit the
+semantics and world knowledge that real tables carry — a column called
+`country` is just a categorical to them. LLM-based tabular learners
+(TabuLa-8B) have the semantics and world knowledge but can only ingest a
+small context because of architectural limits.
+
+ConTextTab keeps the table-native framework and adds semantics two ways:
+**specialised embeddings per data modality** (text, dates, numbers rather
+than one generic encoder) and **training on large-scale real-world
+tabular data** instead of synthetic tables. It is competitive with SOTA
+across a broad set of benchmarks and **sets a new standard on the
+semantically rich CARTE benchmark**, particularly in the low-data regime.
+Code and checkpoints are released.
+
+**Strengths and limitations.** This is the strongest evidence that column
+*semantics* are a real source of signal that the synthetic-prior line
+discards by construction — a different argument from Real-TabPFN's, which
+is about distributional realism rather than meaning. The obvious
+limitation is the mirror of the synthetic camp's: training on real tables
+raises contamination questions, and the gains concentrate where columns
+carry natural-language meaning, which is exactly where a purely numeric
+domain gains least.
+
+
+## 2025 — Bouadi et al. — Orion-MSP
+
+**arXiv:** [2511.02818](https://arxiv.org/abs/2511.02818) · Lexsi Labs
+(India / France) ·
+**PDF:** [open](papers/2025/11_Bouadi_et_al._Orion_MSP_Multi_Scale_Sparse_Attention_for_Tabular_In_Context_Learning.pdf)
+
+**Where it fits.** One of the two Orion architectures from Lexsi Labs —
+the models benchmarked by that lab's own TabTune library and
+fine-tuning study, both of which this library already holds. Holding the
+tooling papers without the model papers left an obvious gap.
+
+**What it contains.** The paper names three limitations of TabPFN- and
+TabICL-style architectures and addresses each:
+
+1. **Single-scale feature processing** overlooks hierarchical
+   dependencies → **multi-scale processing** to capture feature
+   interactions at several granularities.
+2. **Dense attention scales quadratically in table width** →
+   **block-sparse attention** combining windowed, global and random
+   patterns, keeping long-range connectivity at lower cost.
+3. **Strictly sequential components** prevent iterative refinement →
+   a **Perceiver-style memory** allowing safe bidirectional information
+   flow between components, so the column and row stages can inform each
+   other instead of running once in sequence.
+
+The reported result is matching or surpassing state-of-the-art while
+scaling to high-dimensional tables. Weights and code are public.
+
+**Strengths and limitations.** The bidirectional-memory point is a
+genuine architectural observation: the three-stage consensus design
+(column → row → ICL) is strictly feed-forward, and there is no principled
+reason it should be. The limitations are those of the whole Orion line:
+evaluation is by the authors of the benchmark library used to evaluate
+it — Lexsi Labs' own TabTune and fine-tuning study place Orion models at
+or near the top of their leaderboards — so independent replication
+matters more here than usual, and no calibration analysis is reported.
+
+
 <a id="tabpfn-25"></a>
 
 ## 2026 — Grinsztajn et al. — TabPFN-2.5
@@ -1124,6 +1456,91 @@ findings:
   a misleading model-selection signal.
 
 ---
+
+## 2026 — Tanna et al. — Data Presentation Over Architecture
+
+**arXiv:** [2605.18635](https://arxiv.org/abs/2605.18635) · Lexsi Labs ·
+**PDF:** [open](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf)
+
+**Where it fits.** The most directly applied paper in this library: TFMs
+evaluated on real credit-default prediction, by the Lexsi Labs group
+behind TabTune and the Orion models. It is the natural counterpart to
+Purucker's BeyondArena — where that paper shows *split protocol* changes
+TFM rankings, this one shows *context construction* does.
+
+**What it contains.** The premise is that because TFMs predict by
+in-context learning, their output is sensitive to **how the context
+window is built** — which, under severe class imbalance, is a design
+decision nobody had systematically varied. The study benchmarks **four
+classical models and five TFMs** (TabPFN, TabICL, Orion-MSP, Orion-BiX
+among them) on **Home Credit** and **Lending Club**, crossing **seven
+context-construction strategies** with **context sizes from 1K to 50K**.
+
+The headline finding is a genuine reordering of priorities:
+
+* **The choice of context strategy explains more variance in AUC-ROC than
+  the choice of TFM family.** Balanced and hybrid sampling add **3–4 AUC
+  points** over uniform sampling, and that gap **exceeds the spread
+  between TFMs**.
+* With a **balanced context of 5K–10K examples**, the strongest TFMs reach
+  the AUC of classical baselines trained on the *full* data — while also
+  recovering meaningful **default-class recall** that default-threshold
+  GBDTs do not. The paper notes that well-tuned GBDTs can collapse to
+  majority-class prediction under severe imbalance, yielding near-zero
+  minority recall at high aggregate accuracy.
+* Conclusion: **context construction, not architecture choice, is the
+  primary deployment lever** for TFMs in imbalanced settings.
+
+**Strengths and limitations.** For anyone deploying a TFM on imbalanced
+data this is the most actionable result in the corpus, and the recall
+finding matters more than the AUC one: it identifies a failure mode of
+the incumbent method rather than just a ranking. Limitations are scope —
+two datasets, classification only, no LGD-style regression, and no
+temporal splits, which is precisely the axis BeyondArena shows to be
+decisive for credit data. Class imbalance and split protocol are
+therefore two separate levers, and this paper isolates only the first.
+Author-affiliation caveat as with the rest of the Orion line: the TFMs
+being compared include the authors' own.
+
+
+## 2026 — Bouadi et al. — Orion-BiX
+
+**Venue:** ACM Web Conference 2026 (WWW '26), April 13–17 2026, Dubai ·
+[DOI 10.1145/3774904.3792937](https://doi.org/10.1145/3774904.3792937) ·
+Lexsi Labs (Paris / Mumbai / London) ·
+**PDF:** [open](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf)
+
+**Where it fits.** The second Orion architecture, and the sibling of
+Orion-MSP. Both are the models behind Lexsi Labs' TabTune library and
+fine-tuning benchmark, which this library holds.
+
+**What it contains.** A four-page conference paper, so the contribution
+is stated compactly. Orion-BiX combines **bi-axial attention** with
+**meta-learned in-context reasoning** for few-shot tabular learning:
+
+* the encoder **alternates standard, grouped, hierarchical and relational
+  attention**, fusing their outputs by **multi-CLS summarisation** to
+  capture local and global dependencies in one pass — a richer mix than
+  TabICL's flat row encoder;
+* a **label-aware ICL head** adapts on the fly and scales to large label
+  spaces through **hierarchical decision routing**, which is this line's
+  answer to the many-class ceiling that TabPFN-3 solves with a retrieval
+  decoder;
+* it ships as a **scikit-learn-compatible** model, consistent with the
+  Orion/TabTune emphasis on usability.
+
+It reports outperforming gradient-boosting baselines and remaining
+competitive with state-of-the-art TFMs on public benchmarks.
+
+**Strengths and limitations.** The label-aware ICL head and hierarchical
+routing are a reasonable alternative to attention-based many-class
+decoding, and episodic meta-training is a defensible fit for the few-shot
+regime. But at four pages this is a short paper: there is no room for
+ablations separating the four attention types, no calibration analysis,
+and the claim is "competitive with" rather than beating the frontier. As
+with Orion-MSP, the evaluation is by the same lab that produces the
+benchmark library, so treat the leaderboard position as self-reported.
+
 
 <a id="tabpfn-3"></a>
 

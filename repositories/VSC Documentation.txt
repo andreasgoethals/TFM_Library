@@ -38,6 +38,7 @@ Directory structure:
     │   ├── what_are_standard_terms_used_in_hpc.rst
     │   ├── _static/
     │   │   └── css/
+    │   │       ├── disclaimer-block.css
     │   │       └── vsc.css
     │   ├── _templates/
     │   │   ├── 404.html
@@ -99,6 +100,7 @@ Directory structure:
     │   │       └── vaughan_hardware.rst
     │   ├── brussel/
     │   │   ├── tier1_sofia.rst
+    │   │   ├── tier1_sofia_changelog.rst
     │   │   ├── tier2_hardware.rst
     │   │   ├── vub_docs.rst
     │   │   └── tier2_hardware/
@@ -1799,7 +1801,7 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_css_files = ['css/vsc.css']
+html_css_files = ['css/vsc.css', 'css/disclaimer-block.css']
 
 # Extra files to be copied into the website build directory
 html_extra_path = ['robots.txt']
@@ -1930,10 +1932,13 @@ myst_heading_anchors = 2
 myst_enable_extensions = ["colon_fence"]
 
 # -- RST Prolog --------------------------------------------------------------
-# Non-brakable space
+# Special formatting
 rst_prolog = """
 .. |nbsp| unicode:: U+00A0
    :trim:
+.. |br| raw:: html
+
+   <br />
 """
 # Badges
 rst_prolog += """
@@ -1952,6 +1957,9 @@ rst_prolog += """
 .. |UG| replace:: :bdg-secondary:`UGent`
 .. |UH| replace:: :bdg-info:`UHasselt`
 .. |VUB| replace:: :bdg-primary:`VUB`
+.. |sofia| raw:: html
+
+   <span class="sd-badge sd-bg-sofia">sofia</span>
 """
 ### Links used multiple times across the documentation ###
 # Links to VSC and VSC sites
@@ -1966,9 +1974,13 @@ rst_prolog += """
 .. _VSC Account - New/Join VO: https://account.vscentrum.be/django/vo/join
 .. _VSC Firewall: https://firewall.vscentrum.be
 .. _VSC Training: https://www.vscentrum.be/vsctraining
-.. _KU Leuven Open OnDemand page: https://ondemand.hpc.kuleuven.be/
 .. _Service Catalog: https://icts.kuleuven.be/sc/HPC
 .. _training waiting list: https://admin.kuleuven.be/icts/onderzoek/hpc/HPCintro-waitinglist
+.. _KU Leuven OnDemand: https://ondemand.hpc.kuleuven.be/
+.. _UAntwerp OnDemand: https://portal.hpc.uantwerpen.be/
+.. _UGent OnDemand: https://login.hpc.ugent.be/
+.. _VUB OnDemand: https://portal.hpc.vub.be/
+.. _sofia OnDemand: https://portal.sofia.vub.be/
 """
 # Links to hardware specifications
 rst_prolog += """
@@ -1979,6 +1991,9 @@ rst_prolog += """
 .. _AMD EPYC 9384X: https://www.amd.com/en/products/processors/server/epyc/4th-generation-9004-and-8004-series/amd-epyc-9384x.html
 .. _AMD EPYC 9535: https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9535.html
 .. _AMD EPYC 9335: https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9335.html
+.. _AMD EPYC 9654: https://www.amd.com/en/products/processors/server/epyc/4th-generation-9004-and-8004-series/amd-epyc-9654.html
+.. _AMD EPYC 9655: https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9655.html
+.. _AMD EPYC 9965: https://www.amd.com/en/products/processors/server/epyc/9005-series/amd-epyc-9965.html
 .. _AMD Instinct MI100: https://www.amd.com/en/products/accelerators/instinct/mi100.html
 .. _Intel Xeon E5-2650v4: https://www.intel.com/content/www/us/en/products/sku/91767/intel-xeon-processor-e52650-v4-30m-cache-2-20-ghz/specifications.html
 .. _Intel Xeon E5-2680v2: https://www.intel.com/content/www/us/en/products/sku/75277/intel-xeon-processor-e52680-v2-25m-cache-2-80-ghz/specifications.html
@@ -1992,6 +2007,7 @@ rst_prolog += """
 .. _NVIDIA L40S: https://www.nvidia.com/en-us/data-center/l40s/
 .. _NVIDIA Tesla P100: https://www.nvidia.com/en-in/data-center/tesla-p100/
 .. _NVIDIA GeForce 1080Ti: https://www.nvidia.com/en-us/geforce/10-series/#1080-ti-spec
+.. _NVIDIA RTX 5000 Ada: https://www.nvidia.com/en-us/products/workstations/rtx-5000/
 """
 # Links to Globus
 rst_prolog += """
@@ -2988,7 +3004,7 @@ Please provide the following information:
 ================================================
 FILE: source/user_support_addresses.rst
 ================================================
-* VSC Sites:
+* VSC sites:
 
   * KU Leuven/Hasselt University: hpcinfo@kuleuven.be
 
@@ -3001,9 +3017,13 @@ FILE: source/user_support_addresses.rst
   * Vrije Universiteit Brussel: hpc@vub.be, see also the
     `VUB-HPC website <https://hpc.vub.be>`_ for information specific to VUB
 
-* Tier-1 VSC Services:
+* VSC Tier-1 services:
 
-  * Tier-1 compute: compute@vscentrum.be
+  * Tier-1 compute:
+
+    * **sofia**: support@vscentrum.be
+
+    * Hortense: compute@vscentrum.be
 
   * Tier-1 cloud: cloud@vscentrum.be
 
@@ -3246,6 +3266,20 @@ OpenACC
 
 
 ================================================
+FILE: source/_static/css/disclaimer-block.css
+================================================
+.admonition.disclaimer {
+    border-left: 4px solid #f25224;
+}
+
+.admonition.disclaimer .admonition-title {
+    background-color: #f25224;
+    color: white;
+}
+
+
+
+================================================
 FILE: source/_static/css/vsc.css
 ================================================
 html[data-theme="light"] {
@@ -3405,6 +3439,16 @@ html[data-theme="dark"] a.nav-link:hover img.icon-link-image {
 .service-card-orch .sd-card .sd-card-body {
     background: #FFCC29;  /* fallback for old browsers */
     background: linear-gradient(to bottom, #FFCC2933, #FFCC2966);
+}
+
+/* sofia badge custom color */
+html[data-theme="light"] .sd-bg-sofia {
+    background-color: #003399;
+    color: white;
+}
+html[data-theme="dark"] .sd-bg-sofia {
+    background-color: #75b9e5;
+    color: black;
 }
 
 /* hide caption lable in code-blocks */
@@ -3673,6 +3717,12 @@ FILE: source/accounts/clusters_mfa.rst
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
+    .. grid-item-card:: |vub|
+       :columns: 12 4 4 4
+       
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 
 
@@ -3698,15 +3748,20 @@ FILE: source/accounts/clusters_ssh_key.rst
     .. grid-item-card:: |VUB|
        :columns: 12 4 4 4
 
-       * Tier-1 :ref:`sofia <sofia cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
        * Tier-2 :ref:`Anansi <Anansi cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 
 
 ================================================
 FILE: source/accounts/generating_keys.rst
 ================================================
+.. _ssh keys:
+
 ##################
 Cryptographic Keys
 ##################
@@ -4383,6 +4438,17 @@ FILE: source/accounts/hpc_for_education.rst
       - reserving compute resources (only if neccessary and upon decision by site admins) 
       - technical support during the trainings (either on-site or remote)
 
+      .. admonition:: Disclaimer
+         :class: disclaimer
+
+         Requests for reserving resources will be processed by the HPC support team.
+         It may happen that for technical or administrative reasons, the request cannot
+         be granted.
+
+         More importantly, the VSC cannot guarantee that the reserved resources be
+         available during the reservation in case of unforeseen circumstances,
+         such as hardware failures, critical security vulnerabilities or urgent maintenance.
+
       To ask for support, follow the steps below:
 
       #. Submit a request to
@@ -4447,6 +4513,7 @@ FILE: source/accounts/hpc_for_education.rst
       :sync: vub
 
       To request HPC support for education, please contact the :ref:`VUB support team <contact VSC>`.
+
 
 
 ================================================
@@ -4644,7 +4711,7 @@ Keys that are lost (*i.e.* stolen or deleted file of the private key) or locked
 ================================================
 FILE: source/accounts/mfa_login.rst
 ================================================
-.. _mfa_leuven:
+.. _mfa_login:
 
 Multi Factor Authentication (MFA)
 =================================
@@ -4661,6 +4728,7 @@ VSC clusters:
 Login to Open OnDemand
 ----------------------
 
+|KULUH|
 Users from all VSC sites can access the Open OnDemand portal at KU Leuven site.
 For that, proceed to the :ref:`Open OnDemand portal <ood>`.
 If you are affiliated with KU Leuven, click on the KU Leuven logo.
@@ -4694,20 +4762,36 @@ You can acquire such an SSH certificate as follows:
   * macOS: use the default :ref:`OpenSSH agent`
   * Linux: use the default :ref:`OpenSSH agent`
 
-* Connect to either the cluster's login node or to ``firewall.vscentrum.be``
-  with your terminal application of choice and with agent forwarding enabled.
-  With e.g. OpenSSH you can do:
+.. tab-set::
+   :sync-group: vsc-sites
 
-  .. code-block:: bash
+   .. tab-item:: KU Leuven/UHasselt
+      :sync: kuluh
 
-     ssh -A vsc98765@login.hpc.kuleuven.be
-     # or
-     ssh -A vsc98765@firewall.vscentrum.be
+      * Connect to either the cluster's login node or to ``firewall.vscentrum.be``
+        with your terminal application of choice and with agent forwarding enabled.
+        With e.g. OpenSSH you can do:
 
-  PuTTY users can find the agent forwarding option under the
-  'Connection -> SSH -> Auth' tab.
-  OpenSSH users may also automatically
-  enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
+        .. code-block:: bash
+
+           ssh -A vsc98765@login.hpc.kuleuven.be
+           # or
+           ssh -A vsc98765@firewall.vscentrum.be
+
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      * Connect to ``firewall.vscentrum.be`` with your terminal application of
+        choice and with agent forwarding enabled. With e.g. OpenSSH you can do:
+
+        .. code-block:: bash
+
+           ssh -A vsc98765@firewall.vscentrum.be
+
+PuTTY users can find the agent forwarding option under the
+'Connection -> SSH -> Auth' tab.
+OpenSSH users may also automatically
+enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
 
 * You will then be shown a URL which you will need to open in a browser:
 
@@ -4729,13 +4813,14 @@ You can acquire such an SSH certificate as follows:
 
 * You will be forwarded to the Identity Provider (IdP) of your institute,
   and you need to login in a usual way using your registered credentials.
-  For KU Leuven users, the page looks like the following:
+
+  |kuluh| For KU Leuven users, the page looks like the following:
 
   .. _idp_page:
   .. figure:: mfa_login/idp_page.PNG
      :alt: idp_page
 
-* If you are already connected to the internal network, then you will be only asked to
+* |kuluh| If you are already connected to the internal network, then you will be only asked to
   identify yourself with the MFA authenticator app on your personal phone:
 
   .. _reauthenticate_phone:
@@ -5767,7 +5852,7 @@ that you are prompted for the passphrase at each connection you make to a
 cluster. To avoid the need to re-type it each time, you can setup an internal
 SSH agent in :ref:`MobaXterm <terminal mobaxterm>` that will take care of
 unlocking your SSH private key or SSH certificate for
-:ref:`Multi-Factor Authentication <mfa_leuven>` when you open the application.
+:ref:`Multi-Factor Authentication <mfa_login>` when you open the application.
 The SSH agent will save the passphrase after you have introduced it once.
 
 Prerequisites
@@ -8054,10 +8139,20 @@ at Langley.
 ================================================
 FILE: source/brussel/tier1_sofia.rst
 ================================================
+.. _sofia cluster:
+
 .. grid:: 2
    :class-container: bg-transparent
 
    .. grid-item::
+      :columns: 12 12 6 6
+
+      .. image:: images/sofia-sun.png
+         :width: 98%
+         :class: bg-transparent
+
+   .. grid-item::
+      :columns: 12 12 6 6
 
       .. image:: images/sofia-supercomputer-logo.png
          :width: 100%
@@ -8067,150 +8162,213 @@ FILE: source/brussel/tier1_sofia.rst
          :width: 100%
          :class: only-dark bg-transparent sd-my-2
 
-   .. grid-item::
+.. grid:: 4
+    :gutter: 4
 
-      .. image:: images/sofia-sun.png
-         :width: 98%
-         :class: bg-transparent
+    .. grid-item-card:: Hardware
+       :columns: 12 6 3 3
+       :link: sofia_hardware
+       :link-type: ref
+       :text-align: center
 
+    .. grid-item-card:: Storage
+       :columns: 12 6 3 3
+       :link: sofia_storage
+       :link-type: ref
+       :text-align: center
 
-.. _sofia cluster:
+    .. grid-item-card:: Globus
+       :columns: 12 6 3 3
+       :link: sofia_globus
+       :link-type: ref
+       :text-align: center
 
+    .. grid-item-card:: Data Retention
+       :columns: 12 6 3 3
+       :link: sofia_retention_policy
+       :link-type: ref
+       :text-align: center
+
+    .. grid-item-card:: Web Portal
+       :columns: 12 6 3 3
+       :link: sofia_web_portal
+       :link-type: ref
+       :text-align: center
+
+    .. grid-item-card:: Terminal
+       :columns: 12 6 3 3
+       :link: sofia_terminal_ssh
+       :link-type: ref
+       :text-align: center
+
+    .. grid-item-card:: Jobs
+       :columns: 12 6 3 3
+       :link: sofia_job_submission
+       :link-type: ref
+       :text-align: center
+
+    .. grid-item-card:: Changelog
+       :columns: 12 6 3 3
+       :link: sofia_changelog
+       :link-type: ref
+       :text-align: center
+
+###############
 sofia @ VUB-HPC
-===============
-
-.. contents::
-    :depth: 3
-    :local:
-    :backlinks: none
-
-General information
--------------------
-
-.. important::
-
-   The pilot phase is complete, and **sofia** is currently offline for
-   maintenance as we prepare the system for full production.  Approved
-   applications from the June 1 cut-off will be activated by July 2026, and
-   starting grants will also open in July.  Please contact :ref:`Tier-1 support
-   <sofia_help>` if you have any questions.
+###############
 
 **sofia** is the 4th VSC Tier-1 cluster, following *muk* (hosted by HPC-UGent, 2012-2016),
-*BrENIAC* (hosted by HPC-Leuven, 2016-2022) and *Hortense* (hosted by HPC-Ugent, 2021-2027).
+:ref:`BrENIAC<breniac hardware>` (hosted by HPC-Leuven, 2016-2022) and
+:ref:`Hortense<Hortense hardware>` (hosted by HPC-Ugent, 2021-2027).
 
-It will be available in the second half of 2026, is hosted by Vrije Universiteit Brussel,
-and maintained and supported by the VUB-HPC team.
+**sofia** is in production since July 7th 2026 and is hosted by Vrije Universiteit Brussel.
 
-.. _sofia_hardware_details:
+.. _sofia_help:
+
+Getting help
+============
+
+Any questions, comments or problems related to Tier-1 **sofia** can be addressed to the central
+support for VSC Tier-1 services:
+
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
+
+   .. button-link:: mailto:support@vscentrum.be
+      :color: info
+      :expand:
+
+      :fa:`envelope` **support@vscentrum.be**
+
+Questions regarding Tier-1 Hortense should be send to:
+`compute@vscentrum.be <mailto:compute@vscentrum.be>`_.
+
+.. _sofia_hardware:
 
 Hardware details
-----------------
+================
 
-The **sofia** cluster consists of the following partitions:
+The **sofia** cluster consists of the following compute partitions:
 
-- ``zen5_dense``: CPU partition:
-   - 56 compute nodes, each with:
-       - 2x AMD EPYC 9965 192-Core CPU (Turin Dense) 2.25 GHz ("Zen 5c" microarchitecture, 384 cores per node)
-       - 770 GiB usable RAM (~2 GiB/core), 7.6 GiB swap (local SSD)
-       - 1.4 TiB SSD local disk
-- ``zen5_himem``: large-memory partition:
-   - 16 compute nodes, each with:
-       - 2x AMD EPYC 9655 96-Core CPU (Turin) 2.6 GHz ("Zen 5" microarchitecture, 192 cores per node)
-       - 1.5 TiB usable RAM (~8 GiB/core), 7.6 GiB swap (local SSD)
-       - 1.4 TiB SSD local disk
-- ``zen4_h200``: GPU partition:
-   - 22 compute nodes, each with:
-       - 2x AMD EPYC 9654 96-Core CPU (Genoa) 2.4 GHz (192 cores per node)
-       - 8x NVIDIA H200-SXM5 (141 GiB GPU memory), Nvlink4
-       - 1.5 TiB usable RAM (~8 GiB/CPU core), 7.6 GiB swap (local SSD)
-       - 1.4 TiB SSD local disk
-- ``zen5_vis``: interactive and debug partition:
-   - 4 compute nodes, each with:
-       - 2x AMD EPYC 9655 96-Core CPU (Turin) 2.6 GHz ("Zen 5" microarchitecture, 192 cores per node)
-       - 2x NVIDIA RTX 5000 Ada Generation (32 GiB GPU memory)
-       - 1.5 TiB usable RAM (~8 GiB/CPU core), 7.6 GiB swap (local SSD)
-       - 1.4 TiB SSD local disk
+===================  =============================  ============================  =============================  ===============================
+Slurm partition      ``zen5_dense``                 ``zen5_himem``                ``zen4_h200``                  ``zen5_vis``
+===================  =============================  ============================  =============================  ===============================
+**Nodes**            56                             16                            22                             4
+**GPUs per node**                                                                 8x `NVIDIA H200`_ (Hopper)     2x `NVIDIA RTX 5000 Ada`_ (Ada)
+**GPU memory**                                                                    140 GB                         32 GB
+**CPUs per node**    2x 192-core `AMD EPYC 9965`_   2x 96-core `AMD EPYC 9655`_   2x 96-core `AMD EPYC 9654`_    2x 96-core `AMD EPYC 9655`_ 
+                     |br| (Zen5c Turin)             |br| (Zen5 Turin)             |br| (Zen4 Genoa)              |br| (Zen5 Turin)
+**CPU memory**       742 GB                         1493 GB                       1493 GB                        1493 GB
+                     |br| 1.9 GB/core               |br| 7.7 GB/core              |br| 7.7 GB/core               |br| 7.7 GB/core
+**Local disk**       1.4 TB SDD                     1.4 TB SDD                    1.4 TB SDD                     1.4 TB SDD
+**Interconnect**     200 Gbps                       400 Gbps                      800 Gbps                       400 Gbps
+                     |br| NDR-IB                    |br| NDR-IB                   |br| NDR-IB                    |br| NDR-IB
+===================  =============================  ============================  =============================  ===============================
 
 Shared infrastructure:
 
 - *storage*: 4.3 PiB shared scratch storage, IBM Storage Scale System
 - *interconnect*: NVIDIA Quantum-2 InfiniBand, fat tree network with 2:1 blocking
-   - ~400 Gb/s for GPU and large-memory partition
-   - ~200 Gb/s for CPU partition
 
 .. _sofia_getting_access:
 
 Getting access
---------------
+==============
 
-.. _sofia_access_policy:
+The **sofia** VSC Tier-1 cluster can only be accessed by people with an active
+`Tier-1 compute project <https://www.vscentrum.be/compute>`__ .
+Everyone is welcome to request a *starting grant* or *collaborative grant* to
+prepare for their Tier-1 compute project application.
 
-Access policy
-*************
+.. _sofia_web_portal:
 
-**The sofia VSC Tier-1 cluster can only be accessed by people with an active Tier-1 compute project.**
+Web portal
+----------
 
-Tier-1 compute project resources are always allocated for a given period.
-After this period expires, the users of this project lose access to all resources granted within that project.
-This includes storage in addition to compute resources (CPU and GPU).
+The Tier-1 cluster **sofia** has its own :ref:`OnDemand Web Portal<compute
+portal>`. Users with an active project in **sofia** can access it at `sofia
+OnDemand`_.
 
-As soon as a project expires, project members:
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
 
-* will no longer be able to use any remaining CPU cycles, GPU cycles or credits
-* will no longer have access to the dedicated project folders
-* will lose access to the Tier-1 cluster, unless they have another active project
+   .. button-link:: https://portal.sofia.vub.be/
+      :color: primary
+      :expand:
 
-See https://www.vscentrum.be/compute for more information on requesting access, rules and regulations.
+      web portal: :fas:`circle-play` **sofia OnDemand**
+
+More information about the usage of the web portal is available at
+:ref:`compute portal`.
+
+.. _sofia_terminal_ssh:
+
+Terminal interface
+------------------
+
+You can use SSH to connect to the :ref:`terminal interface<terminal interface>`
+of the Tier-1 cluster **sofia** with your VSC account. 
+
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
+
+   **login.sofia.vub.be**
+
+There are two ways to authenticate with SSH to **sofia**, with an :ref:`SSH
+key<ssh keys>` in your VSC account page or with :ref:`Multi-factor
+Authentication (MFA)<mfa_login>`. Different restrictions apply to each:
+
+SSH certificates with MFA (any public network)
+    Set up your SSH connection to connect to **sofia** with your VSC ID and a
+    SSH certificate via MFA as described in :ref:`mfa-with-ssh-agent`.
+    You can connect to **sofia** from any network with this
+    method of authentication.
+
+SSH keys in VSC Account Page (Flemish university networks)
+    Configure your :ref:`SSH client<terminal ssh>` as you have already done for
+    other VSC Tier-2 clusters to connect to **sofia** with your
+    VSC ID and your SSH key of choice in your VSC account page.
+    This method of authentication is restricted to the Flemish university
+    networks. This means that you need to connect to **sofia** from within your
+    university premises, use your university :ref:`VPN<vpn>` or connect from
+    another VSC Tier-2 compute cluster.
 
 
 .. _sofia_login_nodes:
 
-Login nodes (SSH)
-*****************
+Login nodes
+^^^^^^^^^^^
 
-You can use SSH to connect to the login nodes of the Tier-1 **sofia** cluster
-with your VSC account.  From within the Flemish university network, use your
-VSC-id to connect to ``sofia.hpc.vub.be``.
+There are two login nodes in **sofia**: ``login01`` and ``login02``.
 
-.. note::
-   If you are not inside the Flemish university network you can ``ssh`` into **sofia** from the login nodes
-   of any Tier-2 cluster. Do not forget to set up your SSH keys there or to forward your SSH agent.
+Upon login you will be assigned to either of these login nodes. If you need to
+access a *specific* login node (for example because you have a ``screen`` or
+``tmux`` session running there), you can jump between login nodes with the
+commands ``ssh login01`` or ``ssh login02``.
 
-More general information about SSH login is available in the
-:ref:`terminal
-interface` section. Note that for access from abroad an extra step is needed. See the VUB tab at
-:ref:`location_access_restrictions`.
+.. warning::
 
-There are 2 login nodes for **sofia**: ``login01`` and ``login02``, both running the Rocky Linux release 9.7 operating system.
-When logging in using SSH, you will be assigned to either of these login nodes,
-based on the IP address of the host you are connecting from.
-
-If you need to access a *specific* login node (for example because you have a ``screen`` or ``tmux`` session
-running there), just run "``ssh login01``" to jump to ``login01`` if you were logged in to ``login02``,
-or vice versa. Make sure your SSH keys are properly configured or forwarded.
-
-.. note::
-  The available resources on the **sofia** login nodes are shared by everyone who is logged in there.
-
-  **Please only use the sofia login nodes as an access portal!**
-
-  For resource-intensive interactive tasks, like software compilation, testing software or job scripts, etc.,
-  please use an interactive job, preferentially on the ``zen5_vis`` partition,
-  either via ``salloc -p zen5_vis`` or in the future through the
-  :ref:`sofia_web_portal`.
+   Compute intensive tasks are not allowed on the login nodes. Please use an
+   interactive job, preferentially on the ``zen5_vis`` partition, either via
+   ``salloc -p zen5_vis`` or through the :ref:`sofia_web_portal`.
 
 .. _sofia_login_nodes_host_keys:
 
-Host keys
-+++++++++
+SSH Host keys
+^^^^^^^^^^^^^
 
-The first time you log in to the **sofia** login nodes, a fingerprint of the host key will be shown.
-Before confirming the connection, verify the correctness of the host key, to ensure you are
-connecting to the correct system.
+The first time you log in to the **sofia** login nodes, a fingerprint of the
+host key will be shown. Before confirming the connection, please verify the
+correctness of the host key to ensure you are connecting to the correct system.
 
-The type of fingerprint that will be shown depends on the version and configuration of your SSH client.
-
-**Please verify that the fingerprint of the host key is *one* of the following**:
+The fingerprint that will be shown depends on the version and configuration of
+your SSH client, check that the one shown corresponds to one of the following:
 
 * for ECDSA host key:
 
@@ -8227,41 +8385,178 @@ The type of fingerprint that will be shown depends on the version and configurat
   * ``5e:2e:21:11:c6:8e:1e:1f:c9:7c:d2:38:c7:f6:f9:35`` (MD5)
   * ``vS9fAoDO52dWCXS/obPS5u95irhJiKo1PfV4dyJl2Mg`` (SHA256)
 
-.. _sofia_web_portal:
+.. _sofia_retention_policy:
 
-Web portal
-**********
+Access and retention policy
+---------------------------
 
-The **sofia** web portal is not yet be available during the pilot phase.
+The resources of a Tier-1 compute project are always allocated for a given
+period of time. Once the project expires, users of the project will not be able
+to use any more resources granted within that project.
 
-More information about the usage of the web portal is available at :ref:`compute portal`.
+.. attention::
+
+   Data retention of project data is **60 days**.
+
+Use of resources stops at the end of the day of the last day of the project.
+Users of the project will still be able to access their data for 60 days after
+that date. The following details the changes at each stage once a project ends:
+
+End date of the project:
+    * :fas:`times` SSH login to **sofia**
+    * :fas:`times` OnDemand Web portal of **sofia**
+    * :fas:`times` write data to **sofia** project directory
+    * :fas:`check` access data in **sofia** `project directory <https://app.globus.org/file-manager?origin_id=d9e37ac8-6279-45a6-8622-0e7811aa8ace&origin_path=%2Fsofia%2Fprojects%2F>`__ via :ref:`Globus <sofia_globus>`
+    * :fas:`check` access data in **sofia** `home directory <https://app.globus.org/file-manager?origin_id=d9e37ac8-6279-45a6-8622-0e7811aa8ace&origin_path=%2Fsofia%2Fuser%2F>`__ via :ref:`Globus <sofia_globus>`
+
+60 days after end of project:
+    * :fas:`times` all project data in **sofia** deleted
+
+.. _sofia_project_members:
+
+Managing project members
+-------------------------
+
+Only users who are members of a Tier-1 compute project can access its
+resources on **sofia**. The project manager can add other users to the
+project via the `VSC hub <https://hub.vscentrum.be>`__.
+
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
+
+   .. button-link:: https://hub.vscentrum.be
+      :color: primary
+      :expand:
+
+      :fas:`users` **VSC hub**
+
+#. Log in to the `VSC hub <https://hub.vscentrum.be>`__ with your VSC account.
+#. Open your project and go to its **Team** tab.
+#. Click **Add** and select either **Member**, if the user has already
+   logged in to the VSC hub before, or **Invite by email**, if the user has
+   never logged in there yet.
+
+.. warning::
+
+   Gaining access to the ``bsofia_proj_202x_yyy`` user group through
+   `account.vscentrum.be <https://account.vscentrum.be>`__ is **not**
+   sufficient to access **sofia**. You must instead be added as a member of
+   the project itself in the `VSC hub <https://hub.vscentrum.be>`__.
+
+.. note::
+
+   Users with a single word Full name (Gecos) in
+   `account.vscentrum.be <https://account.vscentrum.be>`__ will not be able
+   to properly use the `VSC hub <https://hub.vscentrum.be>`__ and might see
+   **No association** when attempting to join a project.
+   To resolve this, go to
+   `account.vscentrum.be <https://account.vscentrum.be>`__, click
+   **Edit account**, and change your Full name (Gecos) to be at least two
+   words (e.g. your first name followed by your last name). Then log out
+   and back in again to `VSC hub <https://hub.vscentrum.be>`__.
+
+.. _sofia_resource_usage:
+
+Consult your project resource usage
+-------------------------------------
+
+You can consult your project's resource usage directly in the
+`VSC hub <https://hub.vscentrum.be>`__.
+
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
+
+   .. button-link:: https://hub.vscentrum.be
+      :color: primary
+      :expand:
+
+      :fas:`chart-line` **VSC hub**
+
+Open your project in the `VSC hub <https://hub.vscentrum.be>`__ and go to
+its **Resources** tab to see the compute resources allocated to your
+project and how much of them have been used.
+
+.. seealso::
+
+   More information on requesting access, rules and regulations can be found in
+   https://www.vscentrum.be/compute.
+
+.. _sofia_storage:
 
 Storage
--------
+=======
+
+The Tier-1 cluster **sofia** has 4.3 PiB of very fast storage. This is a shared
+storage available on all login and compute nodes of the cluster. It is used to
+provide scratch storage for jobs (*i.e.* `project directories <https://portal.sofia.vub.be/pun/sys/dashboard/files/fs/sofia/projects>`__),
+as well as user's home directories and it also holds the installations of scientific
+software.
+
+.. _sofia_globus:
+
+Globus on sofia
+---------------
+
+The **sofia** scratch storage can be accessed via the :ref:`globus platform`.
+You can find the link to the endpoints of **sofia** in Globus in the link
+below.
+
+.. card::
+   :width: 50%
+   :margin: 2 4 auto auto
+   :text-align: center
+
+   .. button-link:: /globus/collections.html#id3
+      :color: secondary
+      :expand:
+
+      :fas:`cloud-upload-alt` **sofia Globus Collections**
+
+.. note::
+
+   Remember to back up your project data in **sofia**. Data will be deleted 60
+   days after the project has expired. See our
+   :ref:`retention policy<sofia_retention_policy>`.
 
 Home directory
-**************
+--------------
 
-Similar to *Hortense*, the userâ€™s ``$HOME`` directory is located on the scratch
-file system and is distinct from the userâ€™s ``$VSC_HOME``.  The advantage of
-this setup is that **sofia** remains accessible even if the userâ€™s home
-institution cluster is down.
+The userâ€™s ``$HOME`` directory in **sofia** is located on its own scratch file
+system and is distinct from the userâ€™s ``$VSC_HOME`` found in other Tier-2
+clusters. The quota for ``$HOME`` is 50 GB and 256.000 files.
 
-$VSC_HOME and $VSC_DATA
-***********************
+Users will have a default account setup upon their first login to
+**sofia**. If you want copy any configuration files or customizations (*e.g.*
+``.bashrc`` or any other dot files) from your Tier-2 cluster, you can do so
+through :ref:`Globus <sofia_globus>`.
+The size of the ``$HOME`` is larger so it can be used to install custom
+software or keep tools across projects.
 
-The :ref:`storage hardware`, specifically ``$VSC_HOME`` and ``$VSC_DATA``, is accessible, but **only on the
-login nodes**, and **only during the pilot phase**. These will be removed when
-the pilot phase concludes. We highly recommend using :ref:`Globus <sofia_scratch_globus>`
-for file transfer between **sofia** and Tier-2 storage.
+One advantage of this setup is that **sofia** remains accessible even if the
+Tier-2 infrastructure on the userâ€™s home institution is down.
 
-Node-local scratch and in-memory storage
-****************************************
+VSC_DATA
+--------
 
-Each node in the cluster, including the login nodes, provides local non-shared storage for temporary data:
+Your ``$VSC_DATA`` storage, which is hosted in your home institute, is not
+directly accessible from **sofia**.
 
-* Temporary storage on local node hard drive: ``$VSC_SCRATCH_NODE``, ``$TMPDIR``, ``/tmp`` and ``/var/tmp``;
-* Temporary storage on local node memory (RAM): ``/dev/shm``.
+Users can access their ``$VSC_DATA`` storage with  :ref:`Globus <sofia_globus>`
+and transfer any needed data in there to their project directory in the scratch
+storage of **sofia**.
+
+Node-local scratch
+------------------
+
+Each node in the cluster, including the login nodes, provides local storage for
+temporary data that is not shared or visible to other users.
+
+* Temporary storage on local node hard drive: ``$VSC_SCRATCH_NODE``, ``$TMPDIR``, ``/tmp`` and ``/var/tmp``
+* Temporary storage on local node memory (RAM): ``/dev/shm``
 
 .. note::
 
@@ -8269,54 +8564,46 @@ Each node in the cluster, including the login nodes, provides local non-shared s
    at the end of the active session**. For compute nodes this is at the end
    of your job and for login nodes whenever you log out of the cluster.
 
-.. _sofia_scratch_globus:
-
-sofia scratch via Globus
-************************
-
-Accessing the **sofia** shared scratch storage via Globus is not yet possible during the pilot phase.
-
-More general information about Globus is available at :ref:`globus platform`.
-
 .. _sofia_job_submission:
 
 Job submission
---------------
+==============
 
-**sofia** uses the :ref:`Slurm job scheduler<running jobs>`. Only Slurm-native
-commands are supported for managing your jobs.
+The Tier-1 cluster **sofia** uses the :ref:`Slurm job scheduler<running jobs>`.
+Only Slurm-native commands are supported for managing your jobs.
 
-Users must specify a Slurm partition when submitting jobs. Loading a
-``cluster`` module is not required.
+Users must specify one of the available :ref:`partitions <sofia_hardware>` when submitting jobs.
+Loading a ``cluster`` module is not required.
 
 .. _sofia_job_environment:
 
 Job environment
-***************
+---------------
 
-In **sofia**, both batch and interactive jobs start in a clean environment. This
-differs from the default Slurm behavior (``--export=ALL``). The reason is
-twofold:
+In **sofia**, both batch and interactive jobs start in a clean session environment. This
+differs from the default Slurm behavior (``--export=ALL``). This approach
+provides the following advantages:
 
-* reproducibility: it ensures your jobs run consistently regardless of your current shell state
-* architecture alignment: it forces software modules to reload when moving
-  between different hardware architectures, ensuring access to the correct and
-  optimized software.
+* **reproducibility**: your jobs run consistently regardless of your current shell state
+* **architecture alignment**: software modules will always be loaded for the
+  hardware architectures in use, ensuring access to the correct and
+  optimized software binaries
 
 Propagating specific environment variables to your job can be done with the
-``--export=<environment_variables>`` option.
+``--export=<environment_variables>`` option in Slurm. See :ref:`slurm_job_env`
+for more information.
 
 If your workflow requires your full shell environment to be propagated, please
 refer to the VUB-HPC documentation on `how to copy your full shell environment into your job
-<https://hpc.vub.be/docs/faq/advanced/#how-can-i-copy-the-login-shell-environment-to-my-jobs>`_.
+<https://hpc.vub.be/docs/faq/advanced/#how-can-i-copy-the-login-shell-environment-to-my-jobs>`__.
 
 .. _sofia_job_memory:
 
 Job memory
-**********
+^^^^^^^^^^
 
 The CPU memory allocated to Slurm jobs scales linearly with the
-number of allocated CPU cores. See :ref:`sofia_hardware_details` for the
+number of allocated CPU cores. See :ref:`sofia_hardware` for the
 memory per core available in each partition.
 
 All jobs must use the default memory allocation. Memory overrides ``--mem``,
@@ -8331,11 +8618,12 @@ all jobs follow the same linear memory-per-core allocation.
 .. _sofia_job_gpu:
 
 GPU jobs
-********
+^^^^^^^^
 
 In the ``zen4_h200`` partition, Slurm jobs are allocated a fixed ratio of
 ``24`` CPU cores per GPU (1/8 of the CPU cores on a node).  Job requests
-that do not follow this ratio will be rejected.
+that do not follow this ratio will be rejected. The allocated CPU memory
+will scale at the same ratio.
 
 We recommend the following ``#SBATCH`` directives to request GPU resources.
 The example below requests 2 GPUs on a single node, with 1 task allocated per
@@ -8354,15 +8642,63 @@ because insufficient CPU cores available on the node. It also helps keep
 benchmark results representative of production runs by ensuring that all jobs
 use the same core-to-GPU ratio.
 
-.. _sofia_help:
+.. toctree::
+   :hidden:
 
-Getting help
--------------
+   tier1_sofia_changelog
 
-For questions and problems related to Tier-1 **sofia**, please contact the central
-support address for Tier-1 support: `support@vscentrum.be <mailto:support@vscentrum.be>`_.
 
-Questions regarding Tier-1 Hortense will need to go to: `compute@vscentrum.be <mailto:compute@vscentrum.be>`_.
+
+
+================================================
+FILE: source/brussel/tier1_sofia_changelog.rst
+================================================
+.. _sofia_changelog:
+
+######################
+Tier-1 sofia changelog
+######################
+
+2026-07-24
+----------
+* Updated Open OnDemand to version 4.2.3.
+
+
+2026-07-21
+----------
+* Updated the kernel to version 5.14.0-687.26.1.
+
+
+2026-07-15
+----------
+* Planned intervention on cooling: firmware upgrade of the CDU and fix the CDU monitoring.
+
+
+2026-07-13
+----------
+* Create new `Globus collection <https://app.globus.org/file-manager/collections/d9e37ac8-6279-45a6-8622-0e7811aa8ace>`__
+  for sofia: the existing one had an incorrect configuration that caused absolute paths to not work.
+  The previous is marked as legacy and will be removed by October 1.
+
+
+2026-07-09
+----------
+
+* Planned intervention on the cooling system.
+* Compute nodes shut down for 6 hours (unscheduled) to fix a new water leak in
+  the cooling system.
+
+
+2026-07-07
+----------
+
+* **sofia** enters production
+
+
+2026-07-06
+----------
+
+* Operating system upgraded to Rocky Linux 9.8.
 
 
 
@@ -11410,9 +11746,12 @@ FILE: source/compute/jobs/clusters_slurm.rst
     .. grid-item-card:: |VUB|
        :columns: 12 4 4 4
 
-       * Tier-1 :ref:`sofia <sofia cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
        * Tier-2 :ref:`Anansi <Anansi cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 
 
@@ -12159,6 +12498,8 @@ Dependency type               What it does
 **singleton**                 Job can start after all previously launched jobs with the same name and same user have ended.
                               This can be useful to collate results after running a batch of related jobs.
 ============================  =====================
+
+.. _slurm_job_env:
 
 The job environment
 -------------------
@@ -15265,10 +15606,12 @@ VSC clusters that support an Open OnDemand web portal:
        | Tier-2 :ref:`Anansi <Anansi cluster>`
        | Tier-2 :ref:`Hydra <Hydra cluster>`
 
-.. _KU Leuven OnDemand: https://ondemand.hpc.kuleuven.be/
-.. _UAntwerp OnDemand: https://portal.hpc.uantwerpen.be/
-.. _UGent OnDemand: https://login.hpc.ugent.be/
-.. _VUB OnDemand: https://portal.hpc.vub.be/
+       |sofia|
+
+       :fas:`circle-play` `sofia OnDemand`_
+
+       | Tier-1 :ref:`sofia <sofia cluster>`
+
 
 You can log in using the credentials of your home institution or your VSC
 credentials. SSH keys are not required to use the web portal.
@@ -15375,6 +15718,10 @@ VSC clusters that support the Desktop app:
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
 
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
+
 
 .. tip::
 
@@ -15422,6 +15769,19 @@ For improved graphics performance, we recommend the following workflow:
       :sync: vub
 
       #. Select the ``Anansi`` cluster and request some fraction of a GPU.
+      #. In the desktop environment, open a terminal window and load the
+         module of your graphical software.
+      #. Launch the executable with ``vglrun`` to enable hardware
+         acceleration:
+
+         .. code-block:: bash
+
+            vglrun <executable>
+
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      #. Select the ``zen5_vis`` partition and request a GPU.
       #. In the desktop environment, open a terminal window and load the
          module of your graphical software.
       #. Launch the executable with ``vglrun`` to enable hardware
@@ -15490,6 +15850,11 @@ Additional site-specific constraints are listed below.
 
       (N/A)
 
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      (N/A)
+
 
 
 ================================================
@@ -15515,6 +15880,12 @@ modifying and creating files or directories are available as well.
 
    .. tab-item:: VUB
       :sync: vub
+
+      From the 'Files' menu, you can access all ``$VSC_*`` folders available to
+      you.
+
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
 
       From the 'Files' menu, you can access all ``$VSC_*`` folders available to
       you.
@@ -15856,6 +16227,23 @@ job will be queued.
              ``Select Path`` button below the text field to select it from a
              file browser.
 
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      .. list-table:: Shared resources (part 2)
+         :header-rows: 1
+         :widths: 20 80
+
+         * - Resource
+           - Description
+         * - Working Directory
+           - Specify the working directory for your app, or use the handy
+             ``Select Path`` button below the text field to select it from a
+             file browser.
+         * - Account
+           - Select the credit account you want to deduct the credits from.  The
+             accounts associated with your VSC-id will be displayed in a
+             drop-down menu.
 
 .. _choosing_your_resources:
 
@@ -15929,6 +16317,18 @@ your job resources:
          per core.  To get more memory, just request additional cores in the
          resources form.
 
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      For light-weight (testing) work, we recommend using the zen5_vis
+      partition.
+
+      .. note::
+
+         The allocated CPU memory in your session is fixed at a default value
+         per core.  To get more memory, just request additional cores in the
+         resources form.
+
 Once you have passed the testing phase, and you want to start conducting
 experiments, we recommend that you make the switch to batch jobs instead, as
 they will not require your presence to start your code.
@@ -15991,6 +16391,17 @@ environment (as elaborated below).
       (default = ``~/.jupyter/jupyter_server_config.py``), this config will take
       priority over your 'Working directory' in the resources form.
 
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      The top-level notebook directory is the selected 'Working directory' in
+      the resources form. Note however, if you have set ``c.ServerApp.root_dir``
+      in your `Jupyter configuration file
+      <https://jupyter-server.readthedocs.io/en/stable/other/full-config.html>`_
+      (default = ``~/.jupyter/jupyter_server_config.py``), this config will take
+      priority over your 'Working directory' in the resources form.
+
+
 
 .. _jupyterlab_pure_module_env:
 
@@ -16025,6 +16436,15 @@ listed Python module).
       - ``Scipy-bundle`` - data science packages like ``scipy``, ``numpy``, ``pandas``
       - ``matplotlib`` - plotting library and :ref:`matplotlib_lab_extension`
 
+   .. tab-item:: Tier-1 sofia
+      :sync: sofia
+
+      A large number of widely used Python packages are already available by
+      default. The following modules are always loaded with JupyterLab:
+
+      - ``Python-bundle-PyPI`` - packages for general usage
+      - ``Scipy-bundle`` - data science packages like ``scipy``, ``numpy``, ``pandas``
+      - ``matplotlib`` - plotting library and :ref:`matplotlib_lab_extension`
 
 If you need additional Python packages, you can load extra modules with Python
 packages via ``module load`` commands in the 'Pre-run Scriptlet' of the
@@ -16055,6 +16475,10 @@ VSC clusters that support different Jupyter kernels:
 
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 The following table shows the kernels available in JupyterLab and the
 corresponding modules that have to be loaded to enable them:
@@ -16258,6 +16682,10 @@ VSC clusters that support the 'Software Modules' Lab extension:
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
 
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
+
 The 'Software Modules' Lab extension is enabled by default in your JupyterLab
 session.  You can load software modules from the tab with a *hexagon* icon on
 the left panel of JupyterLab. This tab shows a long list of modules: the loaded
@@ -16317,6 +16745,10 @@ VSC clusters that support the matplotlib Lab extension:
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
 
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
+
 To activate the Lab extension in your notebook, use the ``%matplotlib ipympl`` or
 ``%matplotlib widget`` magic command. To ensure your plot is always shown, make
 sure to generate a figure object before plotting, e.g. with ``plt.figure()`` or
@@ -16345,6 +16777,10 @@ VSC clusters that support the Dask Lab extension:
 
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 #. In the resources form, tick the 'Load the dask module' checkbox to make sure
    the Dask Lab extension is loaded before starting JupyterLab.
@@ -16393,6 +16829,10 @@ VSC clusters that support the Bash kernel extension:
 
        * Tier-2 :ref:`Anansi <Anansi cluster>`
        * Tier-2 :ref:`Hydra <Hydra cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
 
 By default, the 'Bash' kernel is loaded in your environment, starting from the 2023a toolchain.
 To use it in a notebook, you need to choose the 'Bash' or 'Python 3 (ipykernel)' jupyter  kernels
@@ -16557,6 +16997,30 @@ Who can use MATLAB
 Before you connect
 ~~~~~~~~~~~~~~~~~~
 
+MATLAB automatically generates several hidden folders in your ``$VSC_HOME``,
+including the folder ``.MathWorks``, which can become quite big over time. To
+prevent ``$VSC_HOME`` from filling up, we recommend creating symlinks to
+redirect this folder to your ``$VSC_DATA`` directory. If this folder already
+exists, you can safely delete it. Execute the following commands to accomplish
+this:
+
+.. code-block:: bash
+
+    rm -rf ~/.MathWorks
+    mkdir -pv $VSC_DATA/.MathWorks
+    ln -sv $VSC_DATA/.MathWorks ~/.MathWorks
+
+Please refrain from running MATLAB on the login nodes; but, in case you had
+opened MATLAB on the login nodes, you might have to kill any existing
+MathWorksServiceHost processes running there:
+
+.. code-block:: bash
+
+    # look for the PID of the MathWorksServiceHost process
+    ps aux | grep MathWorksServiceHost
+    kill <process_id>
+
+
 .. tab-set::
    :sync-group: vsc-sites
 
@@ -16566,22 +17030,7 @@ Before you connect
       Currently MATLAB ``R2024b`` is the only available version for this app.
       If older MATLAB versions are needed, you may start a :ref:`noVNC desktop <ood_desktop>`
       session instead, and load your desired MATLAB version from the terminal.
-
-   .. tab-item:: VUB
-      :sync: vub
-
-      MATLAB automatically generates several hidden folders in your ``$VSC_HOME``,
-      including the folder ``.MathWorks``, which can become quite big over time. To
-      prevent ``$VSC_HOME`` from filling up, we recommend creating symlinks to
-      redirect this folder to your ``$VSC_DATA`` directory. If this folder already
-      exists, you can safely delete it. Execute the following commands to automate the
-      process:
-
-      .. code-block:: bash
-
-         rm -rv ~/.MathWorks
-         mkdir -pv $VSC_DATA/.MathWorks
-         ln -sv $VSC_DATA/.MathWorks ~/.MathWorks
+      
 
 Launching MATLAB
 ~~~~~~~~~~~~~~~~
@@ -24820,7 +25269,6 @@ For more information, see:
 
    $ vsc-rproject create --help
 
-
 .. note::
 
    Alternatively, you may also want to  modify your default settings more permanently via ``vsc-rproject configure``.
@@ -24840,6 +25288,22 @@ The ``activate`` sub-command can be used to activate an already existing vsc-Rpr
 Activating a vsc-Rproject environment will load all the relevant modules listed in the modules file and
 set the ``$VSC_RPROJECT`` environment variable which can be used to access the root directory of the project.
 
+.. note::
+
+   To open a project via the commandline, you simply need to launch R from within your project root folder: 
+
+   .. code:: bash
+
+      vsc-rproject activate MyProject
+      cd $VSC_RPROJECT
+      R
+
+Once your project has been opened in R (either in :ref:`RStudio <vsc_rproject_and_rstudio_server>`  or via the commandline),
+you should see a welcome message pointing you to the project folder and listing all known library paths. 
+The first library path should point to the project's own library itself. When loading packages 
+(e.g. ``library(<packagename>)``) or installing packages (e.g. ``install.packages(<packagename>)``) R prioritizes
+the first library path.
+
 .. _deactivating_a_project:
 
 Deactivating a project
@@ -24852,7 +25316,6 @@ Additionally, it will unset the ``$VSC_RPROJECT`` variable.
 .. code:: bash
 
    $ vsc-rproject deactivate
-
 
 .. _default_project_configuration:
 
@@ -24885,6 +25348,8 @@ If at any point you wish to reset your configuration to the the original default
 
    $ vsc-rproject configure --reset
 
+.. _vsc_rproject_and_rstudio_server:
+
 vsc-Rproject and RStudio Server
 -------------------------------
 
@@ -24899,8 +25364,8 @@ When launching a new session via the :ref:`Studio Server <rstudio-server>` app i
    The R module selected in the OnDemand form must match the R module that was used to create the project!
    Otherwise dependency conflicts may arise as RStudio Server will replace the modules loaded via the pre-run scriplet.
 
-Once inside the RStudio session, you still need to open the RStudio Project via the interface.
-
+In order to use this  project within the RStudio session, you still need to open the RStudio Project via the interface:
+File > Open Project...
 
 
 
@@ -27010,7 +27475,7 @@ software in your computer.
 .. note::
 
    |KUL| Logging in to a KU Leuven cluster with SSH requires
-   :ref:`Multi Factor Authentication<mfa_leuven>`.
+   :ref:`Multi Factor Authentication<mfa_login>`.
 
 .. _terminal linux system:
 
@@ -28477,7 +28942,7 @@ VSC clusters.
         :sync: kuluh
 
         You will be then prompted to copy/paste the firewall link into your
-        browser and complete the :ref:`Multi Factor Authentication (MFA) <mfa_leuven>`
+        browser and complete the :ref:`Multi Factor Authentication (MFA) <mfa_login>`
         procedure. With PuTTY, users only need to highlight the link with their
         mouse in order to copy it to the clipboard.
 
@@ -33140,8 +33605,8 @@ and maintained and supported by the HPC-UGent team.
 
 In 2023 a second phase was added, more than doubling the existing capacity of the system.
 
-End of 2025, the decommissioning process of cluster Hortense will start.
-This is in anticipation of the 4th VSC Tier-1 cluster that will become available at the VUB datacenter from end 2025.
+Mid 2026, the gradual decommissioning process of cluster Hortense started.
+This is in parallel with the advent of the 4th VSC Tier-1 cluster sofia that became available at the VUB datacenter.
 
 
 .. _hortense_hardware_details:
@@ -33151,26 +33616,10 @@ Hardware details
 
 Hortense consists of the following partitions:
 
-- ``dodrio/cpu_rome_rhel9``: phase 1 main partition:
-   - 342 workernodes, each with:
-       - 2x 64-core AMD Epyc 7H12 CPU 2.6 GHz ("Rome" microarchitecture, 128 cores per node)
-       - 238 GiB usable RAM (~1.85GB/core), no swap
-       - 480 GB SSD local disk
-- ``dodrio/cpu_rome_512_rhel9``: large-memory partition:
-   - 42 workernodes, each with:
-       - 2x 64-core AMD Epyc 7H12 CPU 2.6 GHz ("Rome" microarchitecture, 128 cores per node)
-       - 488 GiB usable RAM (~3.8GB/core), no swap
-       - 480 GB SSD local disk
 - ``dodrio/cpu_milan_rhel9``: phase 2 main partition:
    - 384 workernodes, each with:
        - 2x 64-core AMD Epyc 7763 CPU 2.45 GHz ("Milan" microarchitecture, 128 cores per node)
        - 238 GiB usable RAM (~1.85GB/core), no swap
-       - 480 GB SSD local disk
-- ``dodrio/gpu_rome_a100_40_rhel9``: GPU partition:
-   - 20 workernodes, each with:
-       - 2x 24-core AMD Epyc 7402 CPU 2.8 GHz (48 cores per node)
-       - 4x NVIDIA A100-SXM4 (40 GB GPU memory), NVLink3
-       - 238 GiB usable RAM (~4.95GB/CPU core), no swap
        - 480 GB SSD local disk
 - ``dodrio/gpu_rome_a100_80_rhel9``: phase 2 GPU partition:
    - 20 workernodes, each with:
@@ -33185,8 +33634,7 @@ Hortense consists of the following partitions:
        - 1 NVIDIA L4 (24 GB GPU memory)
        - 488 GiB usable RAM (~3.8GB/oversubscribed core), no swap
        - 100 GB SSD local disk
-- ``dodrio/cpu_rome_all_rhel9``: combination of ``cpu_rome_rhel9`` and ``cpu_rome_512_rhel9``
-- ``dodrio/gpu_rome_a100_rhel9``: combination of ``gpu_rome_a100_40_rhel9`` and ``gpu_rome_a100_80_rhel9``
+- ``dodrio/gpu_rome_a100_rhel9``: same as ``gpu_rome_a100_80_rhel9`` (kept for historical reasons)
 
 Shared infrastructure:
 
@@ -33879,18 +34327,34 @@ to give you access to all the available resources.
 Gradual decommissioning
 -----------------------
 
-End 2025, the gradual decommissioning of Tier-1 Compute Hortense will be initiated.
-Around this time, the 4th VSC Tier-1 cluster will become available at the VUB datacenter.
+On 11 July 2026, the entire first phase of Tier1 Hortense was decommissioned.
+This phase was actually already end of life November 2025, but was kept online until the advent of the new VSC Tier-1 supercomputer sofia.
 
-TÌµhÌµeÌµ ÌµeÌµnÌµtÌµiÌµrÌµeÌµ ÌµRÌµoÌµmÌµeÌµ ÌµpÌµaÌµrÌµtÌµiÌµtÌµiÌµoÌµnÌµ ÌµiÌµsÌµ ÌµeÌµnÌµdÌµ ÌµoÌµfÌµ ÌµlÌµiÌµfÌµeÌµ ÌµNÌµoÌµvÌµeÌµmÌµbÌµeÌµrÌµ Ìµ2Ìµ0Ìµ2Ìµ5Ìµ,Ìµ ÌµaÌµnÌµdÌµ ÌµwÌµiÌµlÌµlÌµ ÌµbÌµeÌµ ÌµsÌµhÌµuÌµtÌµ
-dÌµoÌµwÌµnÌµ ÌµbÌµyÌµ ÌµeÌµnÌµdÌµ Ìµ2Ìµ0Ìµ2Ìµ5Ìµ.Ìµ
-ÌµTÌµhÌµiÌµsÌµ ÌµiÌµmÌµpÌµlÌµiÌµeÌµsÌµ ÌµtÌµhÌµaÌµtÌµ ÌµtÌµhÌµeÌµ ÌµpÌµaÌµrÌµtÌµiÌµtÌµiÌµoÌµnÌµsÌµ cÌµpÌµuÌµ_ÌµrÌµoÌµmÌµeÌµ, cÌµpÌµuÌµ_ÌµrÌµoÌµmÌµeÌµ_ÌµaÌµlÌµlÌµ,
-cÌµpÌµuÌµ_ÌµrÌµoÌµmÌµeÌµ_Ìµ5Ìµ1Ìµ2Ìµ, dÌµeÌµbÌµuÌµgÌµ_ÌµrÌµoÌµmÌµeÌµ wÌµiÌµlÌµlÌµ ÌµaÌµlÌµlÌµ ÌµdÌµiÌµsÌµaÌµpÌµpÌµeÌµaÌµrÌµ.Ìµ
-ÌµDÌµeÌµpÌµeÌµnÌµdÌµiÌµnÌµgÌµ ÌµoÌµnÌµ ÌµVÌµSÌµCÌµ ÌµpÌµlÌµaÌµnÌµsÌµ,Ìµ ÌµtÌµhÌµeÌµ aÌµ1Ìµ0Ìµ0Ìµ_Ìµ4Ìµ0Ìµ pÌµaÌµrÌµtÌµiÌµtÌµiÌµoÌµnÌµ ÌµmÌµaÌµyÌµ ÌµaÌµlÌµsÌµoÌµ ÌµdÌµiÌµsÌµaÌµpÌµpÌµeÌµaÌµrÌµ.Ìµ
-HÌµoÌµwÌµeÌµvÌµeÌµrÌµ,Ìµ ÌµtÌµhÌµeÌµrÌµeÌµ ÌµcÌµuÌµrÌµrÌµeÌµnÌµtÌµlÌµyÌµ ÌµiÌµsÌµ ÌµnÌµoÌµ ÌµcÌµoÌµnÌµfÌµiÌµrÌµmÌµaÌµtÌµiÌµoÌµnÌµ ÌµrÌµeÌµgÌµaÌµrÌµdÌµiÌµnÌµgÌµ ÌµtÌµhÌµiÌµsÌµ.Ìµ
+This implies that all partitions of this phase will disappear and will no longer be available:
+    - cpu_rome_rhel9
+    - cpu_rome_512_rhel9
+    - cpu_rome_all_rhel9
+    - gpu_rome_a100_40_rhel9
 
-Update 1 November 2025: The operational phase of the 4th Tier-1 has, unfortunately, 
-suffered a delay. As a result, the VSC has decided to keep the entire Rome partition active until end June 2026.
+Decommissioned partitions:
+
+- ``dodrio/cpu_rome_rhel9``: phase 1 main partition:
+   - 342 workernodes, each with:
+       - 2x 64-core AMD Epyc 7H12 CPU 2.6 GHz ("Rome" microarchitecture, 128 cores per node)
+       - 238 GiB usable RAM (~1.85GB/core), no swap
+       - 480 GB SSD local disk
+- ``dodrio/cpu_rome_512_rhel9``: large-memory partition:
+   - 42 workernodes, each with:
+       - 2x 64-core AMD Epyc 7H12 CPU 2.6 GHz ("Rome" microarchitecture, 128 cores per node)
+       - 488 GiB usable RAM (~3.8GB/core), no swap
+       - 480 GB SSD local disk
+- ``dodrio/gpu_rome_a100_40_rhel9``: GPU partition:
+   - 20 workernodes, each with:
+       - 2x 24-core AMD Epyc 7402 CPU 2.8 GHz (48 cores per node)
+       - 4x NVIDIA A100-SXM4 (40 GB GPU memory), NVLink3
+       - 238 GiB usable RAM (~4.95GB/CPU core), no swap
+       - 480 GB SSD local disk
+- ``dodrio/cpu_rome_all_rhel9``: combination of ``cpu_rome_rhel9`` and ``cpu_rome_512_rhel9``
 
 
 Migration to RHEL9 operating system
@@ -33966,7 +34430,8 @@ cluster name    # nodes    Processor architecture                               
 =============== ========== =========================================================== ===================== =========================== ======================= ===================
 doduo (default) 128        2 x 48-core AMD EPYC 7552 (Rome @ 2.2 GHz)                  250 GiB               180 GB SSD                  HDR-100 InfiniBand      RHEL 9
 gallade         16         2 x 64-core AMD EPYC 7773X (Milan-X @ 2.2 GHz)              940 GiB               1.5 TB NVME                 HDR-100 InfiniBand      RHEL 9
-shinx           48         2 x 96-core AMD EPYC 9654 (Genoa @ 2.4 GHz)                 370 GiB               500GB NVME 	             NDR-200 InfiniBand 	 RHEL 9
+shinx           48         2 x 96-core AMD EPYC 9654 (Genoa @ 2.4 GHz)                 370 GiB               500GB NVME                  NDR-200 InfiniBand      RHEL 9
+skiddo          28         2 x 128-core AMD EPYC 9755 (Turin @ 2.7 GHz)                720 GiB               900 GB NVME                 NDR-200 InfiniBand      RHEL 9
 =============== ========== =========================================================== ===================== =========================== ======================= ===================
 
 Interactive debug cluster
@@ -34206,7 +34671,7 @@ Available collections
 The VSC hosts a number of collections:
 
 
-.. list-table:: Overview of collections for HPC systems
+.. list-table:: Overview of collections for Tier-2 Compute systems
    :header-rows: 1
 
    * - Name
@@ -34221,10 +34686,6 @@ The VSC hosts a number of collections:
      - `VSC UGent Tier2 filesystems <https://app.globus.org/file-manager/collections/e9247cdf-2c76-42ef-81d4-1c3f772ce719/overview>`_
      - No
      - Yes
-   * - UGent Tier-1
-     - `VSC UGent Tier1 projects <https://app.globus.org/file-manager/collections/ce533ba6-0b81-4640-bdc6-f3a6ff2d4b74/overview>`_
-     - No
-     - No
    * - UAntwerpen Tier-2
      - `VSC UAntwerpen Tier2 filesystems <https://app.globus.org/file-manager/collections/6a13242d-6506-4b3d-a49c-ac981b35ab7d/overview>`_
      - No
@@ -34253,6 +34714,26 @@ The VSC hosts a number of collections:
      - `VSC KU Leuven archive directories <https://app.globus.org/file-manager/collections/64cb7bf2-492b-4489-ab7f-f80c252a7d92/overview>`_
      - No  
      - No  
+
+.. list-table:: Overview of collections for Tier-1 Compute
+   :header-rows: 1
+
+   * - Name
+     - Collection
+     - High assurance
+     - Guest collections
+   * - Tier-1 Hortense
+     - `VSC UGent Tier1 projects <https://app.globus.org/file-manager/collections/ce533ba6-0b81-4640-bdc6-f3a6ff2d4b74/overview>`_
+     - No
+     - No
+   * - Tier-1 **sofia** (pilot)
+     - `VSC sofia pilot <https://app.globus.org/file-manager?origin_id=a3485425-436e-40cc-9061-31a9c8366ffa&origin_path=%2Fsofia%2Fscratch%2Fpilot%2F>`_
+     - No
+     - Yes
+   * - Tier-1 **sofia** (projects)
+     - `VSC sofia projects <https://app.globus.org/file-manager?origin_id=d9e37ac8-6279-45a6-8622-0e7811aa8ace&origin_path=%2Fsofia%2Fprojects%2F>`_
+     - No
+     - Yes
 
 .. list-table:: Overview of collections for Tier-1 Data
    :header-rows: 1

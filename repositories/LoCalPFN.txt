@@ -1,0 +1,1714 @@
+Directory structure:
+└── layer6ai-labs-localpfn/
+    ├── README.md
+    ├── config.py
+    ├── dataset.py
+    ├── main.py
+    ├── pfn.py
+    ├── utils.py
+    └── methods/
+        ├── ftknn.py
+        ├── pfknn.py
+        └── vanilla.py
+
+================================================
+FILE: README.md
+================================================
+# LoCalPFN
+
+This is the codebase pertaining to the paper [Retrieval & Fine-Tuning for In-Context Tabular Models](https://papers.nips.cc/paper_files/paper/2024/hash/c40daf14d7a6469e65116507c21faeb7-Abstract-Conference.html), published in the main conference track of [Advances in Neural Information Processing Systems 37 (NeurIPS 2024)](https://papers.nips.cc/paper_files/paper/2024).
+
+## Preparation
+Please download the TabZilla datasets by first cloning the repo
+```
+git clone https://github.com/naszilla/tabzilla
+```
+And download the datasets
+```
+cd tabzilla
+python tabzilla_data_preprocessing.py --process_all
+```
+After that, please clone this repo and softlink the TabZilla dataset folder
+```
+git clone git@github.com:layer6ai-labs/LoCalPFN.git
+cd LoCalPFN
+mkdir datasets
+ln -s datasets ~/tabzilla
+```
+
+## Run Instructions
+### TabPFN-kNN
+```
+python main.py --exp_name="default_knn" knn
+```
+
+### LoCalPFN
+```
+python main.py --exp_name="localpfn" ft
+```
+
+# Citation
+```
+@inproceedings{thomas2024retrieval,
+  title={Retrieval \& Fine-Tuning for In-Context Tabular Models},
+  author={Thomas, Valentin and Ma, Junwei and Hosseinzadeh, Rasa and Golestan, Keyvan and Yu, Guangwei and Volkovs, Maksims and Caterini, Anthony},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2024}
+}
+```
+
+
+
+================================================
+FILE: config.py
+================================================
+import argparse
+import getpass
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="PFN Inference")
+
+    # general
+    parser.add_argument("--exp_name", type=str, default="default")
+    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed (default: 42)"
+    )
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default="./models_diff/prior_diff_real_checkpoint_n_0_epoch_42.cpkt",
+    )
+    parser.add_argument("--inf_temperature", type=float, default=0.8)
+
+    # toy dataset
+    parser.add_argument("--datasets", choices=["toy", "tabzilla"], default="tabzilla")
+    parser.add_argument(
+        "--toy_dataset_name", choices=["moons", "blobs"], default="moons"
+    )
+    parser.add_argument("--n_samples", type=int, default=1000)
+
+    # tabzilla
+    parser.add_argument(
+        "--datasets_directory",
+        type=str,
+        default=f"/home/{getpass.getuser()}/tabzilla/TabZilla/datasets/",
+    )
+    parser.add_argument("--split", type=int, default=0)
+    parser.add_argument("--disable_normalize_data", action="store_true")
+    parser.add_argument("--use_nan_datasets", action="store_true")
+    parser.add_argument("--clipping_val", type=int, default=10)
+    parser.add_argument("--numerical_only", action="store_true")
+    parser.add_argument(
+        "--filter_size",
+        choices=["small", "small_and_medium", "medium", "medium_and_large", "all"],
+        default="medium",
+    )
+    parser.add_argument("--filter_feature", type=int, default=100)
+    parser.add_argument("--filter_class", type=int, default=10)
+    parser.add_argument("--add_noise_std", type=float, default=0)
+
+    parser.add_argument("--only_dataset", type=str, default="")
+    parser.add_argument("--dataset_list_path", type=str, default="")
+    parser.add_argument("--timing", action="store_true")
+
+    # methods
+    sub_parser = parser.add_subparsers(dest="method", required=False)
+
+    # knn
+    knn_parser = sub_parser.add_parser("knn")
+    knn_parser.add_argument("--dynamic", action="store_true")
+    knn_parser.add_argument("--context_length", type=int, default=1000)
+    knn_parser.add_argument("--use_one_hot_emb", action="store_true")
+    knn_parser.add_argument("--onehot_retrieval", action="store_true")
+    knn_parser.add_argument(
+        "--class_choice", choices=["equal", "balance"], default="equal"
+    )
+    knn_parser.add_argument("--batch_size", type=int, default=512)
+    knn_parser.add_argument("--batch_size_inf", type=int, default=512)
+    knn_parser.add_argument(
+        "--ensemble_dist_folder",
+        type=str,
+        default="results/tabzilla/default_distill_pfn0/data/",
+    )
+    knn_parser.add_argument(
+        "--embedding", choices=["raw"], default="raw"
+    )
+
+    # vanilla
+    vanilla_parser = sub_parser.add_parser("vanilla")
+    vanilla_parser.add_argument("--context_length", type=int, default=1000)
+    vanilla_parser.add_argument("--use_one_hot_emb", action="store_true")
+    vanilla_parser.add_argument(
+        "--class_choice", choices=["equal", "balance"], default="equal"
+    )
+    vanilla_parser.add_argument("--batch_size", type=int, default=512)
+    vanilla_parser.add_argument("--ensemble_dist", action="store_true")
+    vanilla_parser.add_argument(
+        "--ensemble_dist_folder",
+        type=str,
+        default="results/tabzilla/default_distill_pfn0/data/",
+    )
+    vanilla_parser.add_argument("--integrated", action="store_true")
+    vanilla_parser.add_argument("--ensemble", action="store_true")
+
+    # LoCalPFN
+    ft_parser = sub_parser.add_parser("ft")
+    ft_parser.add_argument("--lr", type=float, default=1e-5)
+    ft_parser.add_argument("--opt_weight_decay", type=float, default=0.01)
+    ft_parser.add_argument("--context_length", type=int, default=1000)
+    ft_parser.add_argument("--train_query_length", type=int, default=1000)
+
+    ft_parser.add_argument(
+        "--class_choice", choices=["equal", "balance"], default="equal"
+    )
+    ft_parser.add_argument("--batch_size", type=int, default=2)
+    ft_parser.add_argument("--batch_size_inf", type=int, default=512)
+
+    ft_parser.add_argument("--num_epochs", type=int, default=21)
+    ft_parser.add_argument(
+        "--early_stopping_metric",
+        choices=["negloss", "acc", "f1", "auc"],
+        default="auc",
+    )
+    ft_parser.add_argument("--early_stopping_rounds", type=int, default=100)
+    ft_parser.add_argument("--eval_interval", type=int, default=1)
+    ft_parser.add_argument("--embedding", type=str, default="raw")
+    ft_parser.add_argument("--use_one_hot_emb", action="store_true")
+
+    ft_parser.add_argument("--scheduler", action="store_true")
+    ft_parser.add_argument("--num_steps", type=int, default=30)
+    ft_parser.add_argument("--better_selection", action="store_true")
+
+    ft_parser.add_argument("--onehot_retrieval", action="store_true")
+    ft_parser.add_argument("--save_data", action="store_true")
+    ft_parser.add_argument("--exact_knn", action="store_true")
+    
+
+    ft_parser.add_argument(
+        "--splits_evaluated", choices=["valid", "valid_test", "all"], default="valid"
+    )
+
+    return parser.parse_args()
+
+
+
+================================================
+FILE: dataset.py
+================================================
+from sklearn.datasets import make_blobs, make_moons
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+import numpy as np
+import os
+import gzip
+import json
+
+
+def compute_one_hot_embedding_for_retrieval(X, meta_data):
+    cat_idx = meta_data["cat_idx"]
+    cat_dims = meta_data["cat_dims"]
+
+    new_X = []
+    for i in range(X.shape[1]):
+        try:
+            if i in cat_idx:
+                # k is the index of i in cat_idx
+                k = cat_idx.index(i)
+                if cat_dims[k] < 100:
+                    new_X.append(np.eye(cat_dims[k])[X[:, i].astype(int)])
+                else:
+                    new_X.append(X[:, i].reshape(-1, 1))
+            else:
+                new_X.append(X[:, i].reshape(-1, 1))
+        except:
+            breakpoint()
+    return np.concatenate(new_X, axis=1)
+
+
+def compute_one_hot_embedding(X, meta_data):
+    cat_idx = meta_data["cat_idx"]
+    cat_dims = meta_data["cat_dims"]
+    non_cat_idx = np.setdiff1d(np.arange(X.shape[1]), cat_idx)
+
+    new_X = []
+    new_dim = X.shape[1]
+    for i in range(X.shape[1]):
+        if i in cat_idx:
+            # k is the index of i in cat_idx
+            k = cat_idx.index(i)
+            if new_dim + cat_dims[k] - 1 < 100:
+                new_dim += cat_dims[k] - 1
+                new_X.append(np.eye(cat_dims[k])[X[:, i].astype(int)])
+            else:
+                new_X.append(X[:, i].reshape(-1, 1))
+        else:
+            new_X.append(X[:, i].reshape(-1, 1))
+    return np.concatenate(new_X, axis=1)
+
+
+def compute_fourier_embedding(X, meta_data):
+    X_fft = np.fft.fft(X, axis=1)
+    return np.concatenate([np.real(X_fft), np.imag(X_fft)], axis=1)
+
+
+class PFNDataset:
+    def __init__(self, args):
+        self.args = args
+        self.datasets = args.datasets
+
+        if self.datasets == "toy":
+            self.dataset_names = [args.toy_dataset_name]
+        elif self.datasets == "tabzilla":
+            if args.only_dataset:
+                self.dataset_names = [args.only_dataset]
+                return
+            elif args.dataset_list_path:
+                with open(args.dataset_list_path, "r") as f:
+                    self.dataset_names = list([l.strip() for l in f])
+                    return
+
+            all_dataset_names = os.listdir(args.datasets_directory)
+            self.dataset_names = []
+
+            # filter
+            for dataset_name in all_dataset_names:
+                metadata_path = os.path.join(
+                    args.datasets_directory, dataset_name, "metadata.json"
+                )
+                with open(metadata_path, "r") as f:
+                    dataset_info = json.load(f)
+
+                    if dataset_info["target_type"] == "regression":
+                        continue
+                    if args.numerical_only and len(dataset_info["cat_idx"]) > 0:
+                        continue
+                    if dataset_info["num_instances"] < 2000 and args.filter_size in [
+                        "medium",
+                        "medium_and_large",
+                    ]:
+                        continue
+                    if dataset_info["num_instances"] > 200_000 and args.filter_size in [
+                        "medium",
+                        "small_and_medium",
+                    ]:
+                        continue
+                    if dataset_info["num_instances"] >= 2000 and args.filter_size in [
+                        "small"
+                    ]:
+                        continue
+                    if dataset_info["num_features"] > args.filter_feature:
+                        continue
+                    if dataset_info["num_classes"] > args.filter_class:
+                        continue
+                    if not args.use_nan_datasets and dataset_info["name"] in [
+                        "openml__cjs__14967",
+                        "openml__higgs__146606",
+                        "openml__jm1__3904",
+                        "openml__sick__3021",
+                    ]:
+                        continue
+
+                self.dataset_names.append(dataset_name)
+            self.dataset_names = sorted(self.dataset_names)
+        elif self.datasets == "cc18":
+            self.dataset_names = []  # TODO
+        else:
+            raise ValueError(f"Unsupported dataset: {self.datasets}")
+
+    def __len__(self):
+        return len(self.dataset_names)
+
+    @classmethod
+    def generate_toy_data(cls, args):
+        if args.toy_dataset_name == "blobs":
+            centers = [(-1, 1), (1, -1), (-1, -1), (1, 1)]
+            X, y = make_blobs(
+                n_samples=args.n_samples,
+                centers=centers,
+                shuffle=True,
+                random_state=args.seed,
+                cluster_std=1,
+            )
+            y = y % 2  # Ensuring binary labels
+        elif args.toy_dataset_name == "moons":
+            X, y = make_moons(
+                n_samples=args.n_samples,
+                noise=0.1,
+                shuffle=True,
+                random_state=args.seed,
+            )
+        else:
+            raise ValueError(f"Unsupported dataset name: {args.toy_dataset_name}")
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=args.seed
+        )
+        X_train, X_valid, y_train, y_valid = train_test_split(
+            X_train, y_train, test_size=0.5, random_state=args.seed
+        )
+
+        scaler = StandardScaler().fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_valid = scaler.transform(X_valid)
+        X_test = scaler.transform(X_test)
+
+        X_train = np.clip(X_train, -args.clipping_val, args.clipping_val)
+        X_valid = np.clip(X_valid, -args.clipping_val, args.clipping_val)
+        X_test = np.clip(X_test, -args.clipping_val, args.clipping_val)
+
+        return {
+            "X_train": X_train,
+            "X_valid": X_valid,
+            "X_test": X_test,
+            "y_train": y_train,
+            "y_valid": y_valid,
+            "y_test": y_test,
+            "dataset_info": {"name": args.toy_dataset_name},
+        }
+
+    @classmethod
+    def load_tabzilla_data(cls, args, dataset_name):
+        X_path = os.path.join(args.datasets_directory, dataset_name, "X.npy.gz")
+        y_path = os.path.join(args.datasets_directory, dataset_name, "y.npy.gz")
+        metadata_path = os.path.join(
+            args.datasets_directory, dataset_name, "metadata.json"
+        )
+        split_indices_path = os.path.join(
+            args.datasets_directory, dataset_name, "split_indeces.npy.gz"
+        )
+
+        with gzip.GzipFile(X_path, "r") as f:
+            X = np.load(f, allow_pickle=True)
+        with gzip.GzipFile(y_path, "r") as f:
+            y = np.load(f)
+        with gzip.GzipFile(split_indices_path, "rb") as f:
+            split_indices = np.load(f, allow_pickle=True)
+
+        with open(metadata_path, "r") as f:
+            dataset_info = json.load(f)
+
+        if args.add_noise_std > 0:
+            if len(dataset_info["cat_idx"]) == 0:
+                X += np.random.normal(0, args.add_noise_std, size=X.shape)
+
+        # TODO
+        if np.any(np.isnan(X.astype(float))):
+            print("Found None: ", dataset_info["name"])
+            return None
+
+        y_unique = np.unique(y)
+        y -= np.min(y_unique)
+        if args.use_one_hot_emb:
+            X_one_hot = compute_one_hot_embedding(X, dataset_info)
+        else:
+            X_one_hot = compute_one_hot_embedding_for_retrieval(X, dataset_info)
+
+        train_indices, val_indices, test_indices = (
+            split_indices[args.split]["train"],
+            split_indices[args.split]["val"],
+            split_indices[args.split]["test"],
+        )
+        X_train, X_val, X_test = (
+            X[train_indices, :],
+            X[val_indices, :],
+            X[test_indices, :],
+        )
+        X_train_one_hot, X_val_one_hot, X_test_one_hot = (
+            X_one_hot[train_indices, :],
+            X_one_hot[val_indices, :],
+            X_one_hot[test_indices, :],
+        )
+        y_train, y_val, y_test = y[train_indices], y[val_indices], y[test_indices]
+
+        if not args.disable_normalize_data:
+            scaler = StandardScaler()
+            scaler.fit(X_train)
+
+            X_train = scaler.transform(X_train)
+            X_val = scaler.transform(X_val)
+            X_test = scaler.transform(X_test)
+            # clipping
+            X_train = np.clip(X_train, -args.clipping_val, args.clipping_val)
+            X_val = np.clip(X_val, -args.clipping_val, args.clipping_val)
+            X_test = np.clip(X_test, -args.clipping_val, args.clipping_val)
+
+            scaler_one_hot = StandardScaler()
+            scaler_one_hot.fit(X_train_one_hot)
+            X_train_one_hot = scaler_one_hot.transform(X_train_one_hot)
+            X_val_one_hot = scaler_one_hot.transform(X_val_one_hot)
+            X_test_one_hot = scaler_one_hot.transform(X_test_one_hot)
+            # clipping
+            X_train_one_hot = np.clip(
+                X_train_one_hot, -args.clipping_val, args.clipping_val
+            )
+            X_val_one_hot = np.clip(
+                X_val_one_hot, -args.clipping_val, args.clipping_val
+            )
+            X_test_one_hot = np.clip(
+                X_test_one_hot, -args.clipping_val, args.clipping_val
+            )
+        else:
+            X = X.astype(float)
+
+        if args.use_one_hot_emb:
+            X_train = X_train_one_hot
+            X_val = X_val_one_hot
+            X_test = X_test_one_hot
+
+        return {
+            "X_train": X_train,
+            "X_valid": X_val,
+            "X_test": X_test,
+            "X_train_one_hot": X_train_one_hot,
+            "X_valid_one_hot": X_val_one_hot,
+            "X_test_one_hot": X_test_one_hot,
+            "y_train": y_train,
+            "y_valid": y_val,
+            "y_test": y_test,
+            "dataset_info": dataset_info,
+        }
+
+    def load(self):
+        if self.datasets == "toy":
+            yield from [PFNDataset.generate_toy_data(self.args)]
+        elif self.datasets == "tabzilla":
+            for dataset_name in self.dataset_names:
+                yield PFNDataset.load_tabzilla_data(self.args, dataset_name)
+        elif self.datasets == "cc18":
+            pass
+        else:
+            raise ValueError(f"Unsupported dataset: {self.datasets}")
+
+
+
+================================================
+FILE: main.py
+================================================
+import numpy as np
+import torch
+import scipy
+import os
+import pandas as pd
+
+from config import parse_args
+from pfn import PFN
+from methods.ftknn import train_ft_knn, eval_ft_knn
+from methods.pfknn import eval_pfknn
+from methods.vanilla import eval_tabpfn
+
+from dataset import PFNDataset
+from utils import setup_experiment, compute_metrics, save_numpy, create_dataloaders
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    pfnDataset = PFNDataset(args)
+    datasets = pfnDataset.load()
+    writer, results_file, experiment_path = setup_experiment(args)
+
+    model, _ = PFN.load_old(device=args.device, path=args.model_path)
+    model.eval()
+
+    num_datasets = 0
+    for data in datasets:
+        if not data:  # in case data contains None
+            print("data contains None")
+            continue
+
+        dataset_name = data["dataset_info"]["name"]
+        print(dataset_name)
+
+        num_datasets += 1
+
+        create_dataloaders(args, data)
+
+        import time
+        t0 = time.time()
+
+        # Train and Eval
+        if args.method == "vanilla": # sub-sampling
+            loss, pred = eval_tabpfn(args, model, data, data["test_loader"])
+            save_numpy(f"{experiment_path}/data/{dataset_name}/y_pred_best.npy", pred)
+
+        elif args.method == "knn": # TabPFN-kNN
+            if args.dynamic:
+                args.context_length = min(
+                    int(10 * np.sqrt(len(data["X_train"]))), args.context_length
+                )
+            loss, pred = eval_pfknn(args, model, data, data["test_loader"])
+            save_numpy(f"{experiment_path}/data/{dataset_name}/y_pred_best.npy", pred)
+
+        elif args.method == "ft": # LoCalPFN
+            model, _ = PFN.load_old(device=args.device, path=args.model_path)
+            model.train()
+
+            train_ft_knn(args, model, data, writer, experiment_path)
+            model.load_state_dict(
+                torch.load(f"{experiment_path}/data/{dataset_name}/model_best.pth")
+            )
+            model.eval()
+            loss, pred = eval_ft_knn(args, model, data["test_loader"], data)
+
+            save_numpy(f"{experiment_path}/data/{dataset_name}/y_pred_best.npy", pred)
+
+        else:
+            raise ValueError("Invalid Method")
+
+        total_time = time.time() - t0
+
+        # Logging
+        if args.method in ["vanilla", "knn", "dist", "ft", "dt"]:
+            pred = scipy.special.softmax(pred, axis=1)
+
+        acc, f1, auc = compute_metrics(data["y_test"], pred)
+        if args.timing:
+            print(
+                "Best: Loss: {:.4f}, Accuracy: {:.4f}, F1: {:.4f}, AUC: {:.4f}, Time: {:6f}".format(
+                    loss, acc, f1, auc, total_time
+                )
+            )
+            results_file.write(f"{dataset_name},{acc},{f1},{auc},{total_time}\n")
+            results_file.flush()
+        else:
+            print(
+                "Best: Loss: {:.4f}, Accuracy: {:.4f}, F1: {:.4f}, AUC: {:.4f}".format(
+                    loss, acc, f1, auc
+                )
+            )
+            results_file.write(f"{dataset_name},{acc},{f1},{auc}\n")
+            results_file.flush()
+
+    if not args.timing:
+        df = pd.read_csv(
+            os.path.join(experiment_path, "results.csv"),
+            sep=",",
+            header=None,
+            names=["name", "acc", "f1", "auc"],
+        )
+        medians = df.iloc[-num_datasets:, 1:].astype(float).median()
+        print(medians)
+        medians.to_csv(results_file, mode="a", header=True, index=False)
+
+
+
+
+================================================
+FILE: pfn.py
+================================================
+import torch
+import numpy as np
+import torch.nn as nn
+from torch.nn import TransformerEncoderLayer
+import torch.nn.functional as F
+
+
+def maskmean(x, mask, dim):
+    x = torch.where(mask, x, 0)
+    return x.sum(dim=dim, keepdim=True) / mask.sum(dim=dim, keepdim=True)
+
+
+def maskstd(x, mask, dim=0):
+    num = mask.sum(dim=dim, keepdim=True)
+    mean = maskmean(x, mask, dim=0)
+    diffs = torch.where(mask, mean - x, 0)
+    return ((diffs**2).sum(dim=0, keepdim=True) / (num - 1)) ** 0.5
+
+
+def normalize_data(data, eval_pos):
+    mask = ~torch.isnan(data[:eval_pos])
+    mean = maskmean(data[:eval_pos], mask, dim=0)
+    std = maskstd(data[:eval_pos], mask, dim=0) + 1e-6
+    data = (data - mean) / std
+    return torch.clip(data, min=-100, max=100)
+
+
+def clip_outliers(X, eval_pos, n_sigma=4):
+    assert len(X.shape) == 3, "X must be T,B,H"
+    mask = ~torch.isnan(X[:eval_pos])
+    mean = maskmean(X[:eval_pos], mask, dim=0)
+    cutoff = n_sigma * maskstd(X[:eval_pos], ~torch.isnan(X[:eval_pos]), dim=0)
+    mask = mask & (X[:eval_pos] >= mean - cutoff) & (X[:eval_pos] <= mean + cutoff)
+    cutoff = n_sigma * maskstd(X[:eval_pos], ~torch.isnan(X[:eval_pos]), dim=0)
+    return torch.clip(X, mean - cutoff, mean + cutoff)
+
+
+def convert_to_torch_tensor(input):
+    if isinstance(input, np.ndarray):
+        return torch.from_numpy(input)
+    elif torch.is_tensor(input):
+        return input
+    else:
+        raise TypeError("Input must be a NumPy array or a PyTorch tensor.")
+
+
+class PFN(nn.Module):
+    def __init__(
+        self,
+        dropout,
+        embedding_normalization,
+        n_out,
+        nhead,
+        nhid,
+        ninp,
+        nlayers,
+        norm_first,
+        num_features,
+    ):
+        super().__init__()
+        self.n_out = n_out
+        self.embedding_normalization = embedding_normalization
+        self.transformer_encoder = nn.ModuleList(
+            [
+                TransformerEncoderLayer(
+                    activation="gelu",
+                    d_model=ninp,
+                    dim_feedforward=nhid,
+                    dropout=dropout,
+                    nhead=nhead,
+                    norm_first=norm_first,
+                )
+                for _ in range(nlayers)
+            ]
+        )
+        self.num_features = num_features
+        self.encoder = nn.Linear(num_features, ninp)
+        self.y_encoder = nn.Linear(1, ninp)
+        self.decoder = nn.Sequential(
+            nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out)
+        )
+
+    def forward(
+        self,
+        x_src,
+        y_src,
+        eval_pos,
+        normalization,
+        outlier_clipping,
+        nan_replacement,
+        used_features=None,
+    ):
+        if normalization:
+            x_src = normalize_data(x_src, eval_pos)
+        if outlier_clipping:
+            x_src = clip_outliers(x_src, eval_pos, n_sigma=4)
+        # check if this is after or before the clip outliers
+        if used_features is not None:
+            x_src = x_src / (used_features / 100)
+        if nan_replacement is not None:
+            x_src = torch.nan_to_num(x_src, nan=nan_replacement)
+        x_src = self.encoder(x_src)
+        if self.embedding_normalization:
+            x_src = F.normalize(x_src, p=2, dim=-1)
+        y_src = self.y_encoder(y_src.unsqueeze(-1))
+        train_x = x_src[:eval_pos] + y_src[:eval_pos]
+        src = torch.cat([train_x, x_src[eval_pos:]], 0)
+        condition = torch.arange(src.shape[0]).to(src.device) >= eval_pos
+        attention_mask = condition.repeat(src.shape[0], 1)
+        for layer in self.transformer_encoder:
+            src = layer(src, attention_mask)
+        src = self.decoder(src)
+        return src[eval_pos:]
+
+    def predict(
+        self,
+        device,
+        nan_replacement,
+        normalization,
+        outlier_clipping,
+        return_logits,
+        temperature,
+        test_x,
+        train_x,
+        train_y,
+    ):
+        to_numpy = not torch.is_tensor(train_x)
+        train_x, train_y, test_x = (
+            convert_to_torch_tensor(train_x).to(device).float(),
+            convert_to_torch_tensor(train_y).to(device).float(),
+            convert_to_torch_tensor(test_x).to(device).float(),
+        )
+        dim = train_x.dim()
+        if dim == 2:
+            train_x = train_x.unsqueeze(1)
+            test_x = test_x.unsqueeze(1)
+            train_y = train_y.unsqueeze(1)
+        else:
+            assert False, "Predict only supports one dataset at a time"
+
+        seq_len, batch_size, n_features = train_x.shape
+        num_classes = len(torch.unique(train_y))
+        test_seq_len = test_x.shape[0]
+        full_x = torch.cat((train_x, test_x), dim=0)
+        zero_feature_padding = torch.zeros(
+            (
+                seq_len + test_seq_len,
+                batch_size,
+                self.num_features - n_features,
+            )
+        ).to(device)
+        full_x = torch.cat([full_x, zero_feature_padding], -1)
+
+        y_padding = torch.zeros((test_seq_len, batch_size)).to(device)
+        full_y = torch.cat([train_y, y_padding], dim=0)
+
+        # forward
+        output = self.forward(
+            eval_pos=seq_len,
+            nan_replacement=nan_replacement,
+            normalization=normalization,
+            outlier_clipping=outlier_clipping,
+            x_src=full_x,
+            y_src=full_y,
+        )
+        output = output[..., :num_classes] / temperature
+        if not return_logits:
+            output = torch.nn.functional.softmax(output, dim=-1)
+        if dim == 2:
+            output.squeeze_(1)
+        if to_numpy:
+            output = output.detach().cpu().numpy()
+        return output
+
+    @classmethod
+    def load(cls, path, device):
+        model_state, config = torch.load(path, map_location=device)
+        assert config["max_num_classes"] > 2
+        model = PFN(
+            dropout=config["dropout"],
+            embedding_normalization=config["embedding_normalization"],
+            n_out=config["max_num_classes"],
+            nhead=config["nhead"],
+            nhid=config["emsize"] * config["nhid_factor"],
+            ninp=config["emsize"],
+            nlayers=config["nlayers"],
+            norm_first=config["norm_first"],
+            num_features=config["max_num_features"],
+        )
+
+        module_prefix = "module."
+        model_state = {k.replace(module_prefix, ""): v for k, v in model_state.items()}
+        model.load_state_dict(model_state)
+        model.to(device)
+        model.eval()
+        return model, config
+
+    @classmethod
+    def load_old(cls, path, device):
+        model_state, _, config = torch.load(path, map_location=device)
+        assert config["max_num_classes"] > 2
+        model = PFN(
+            dropout=config["dropout"],
+            embedding_normalization=False,
+            n_out=config["max_num_classes"],
+            nhead=config["nhead"],
+            nhid=config["emsize"] * config["nhid_factor"],
+            ninp=config["emsize"],
+            nlayers=config["nlayers"],
+            norm_first=False,
+            num_features=config["num_features"],
+        )
+
+        module_prefix = "module."
+        model_state = {
+            k.replace(module_prefix, "").replace("layers.", ""): v
+            for k, v in model_state.items()
+        }
+        del model_state["criterion.weight"]
+        model.load_state_dict(model_state)
+        model.to(device)
+        model.eval()
+        return model, config
+
+
+
+
+================================================
+FILE: utils.py
+================================================
+import numpy as np
+import os
+import faiss
+# from faiss import StandardGpuResources
+import random
+import torch
+import torch.nn as nn
+import shutil
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+
+def fix_missing(X_nni, y_nni, sizes_per_class, indices_X_nni, y_train):
+    classes, counts = np.unique(y_train, return_counts=True)
+    missing = False
+    for c, count in zip(classes, counts):
+        if count < sizes_per_class[c]:
+            missing = True
+            break
+    if not missing:
+        return X_nni, y_nni
+
+    new_X_nni, new_y_nni = [], []
+    offset = 0
+    for c, size in enumerate(sizes_per_class):
+        missing_indices = np.where(indices_X_nni[c][0] == -1)[0]
+        if len(missing_indices) > 0:
+            miss_idx = missing_indices[0]
+        else:
+            miss_idx = size
+        new_X_nni.append(X_nni[offset : offset + miss_idx])
+        new_y_nni.append(y_nni[offset : offset + miss_idx])
+        offset += size
+    X_nni = np.concatenate(new_X_nni, axis=0)
+    y_nni = np.concatenate(new_y_nni)
+
+    return X_nni, y_nni
+
+
+def create_dataloaders(args, data):
+    for split in ["train", "valid", "test"]:
+        X, y = data["X_" + split], data["y_" + split]
+        X_one_hot = data["X_" + split + "_one_hot"]
+        if (args.method == "ft") or (args.method == "knn"):
+            data[split + "_loader"] = DataLoader(
+                TensorDataset(
+                    torch.Tensor(X), torch.Tensor(y), torch.Tensor(X_one_hot)
+                ),
+                batch_size=args.batch_size if split == "train" else args.batch_size_inf,
+                shuffle=True if split == "train" else False,
+                drop_last=False,
+                num_workers=0,
+            )
+        else:
+            if split == "train":
+                data[split + "_loader"] = DataLoader(
+                    TensorDataset(torch.Tensor(X), torch.Tensor(y)),
+                    batch_size=args.batch_size,
+                    shuffle=True,
+                    drop_last=False,
+                    num_workers=0,
+                )
+            else:
+                data[split + "_loader"] = DataLoader(
+                    TensorDataset(torch.Tensor(X), torch.Tensor(y)),
+                    batch_size=args.batch_size,
+                    shuffle=False,
+                    num_workers=0,
+                )
+
+
+def clone_linear_layer(layer, device="cpu"):
+    if not isinstance(layer, nn.Linear):
+        raise ValueError("Provided layer must be an instance of torch.nn.Linear")
+
+    cloned_layer = nn.Linear(
+        layer.in_features, layer.out_features, bias=(layer.bias is not None)
+    )
+    cloned_layer.weight.data = layer.weight.data.to(device).clone()
+    if layer.bias is not None:
+        cloned_layer.bias.data = layer.bias.data.to(device).clone()
+
+    return cloned_layer
+
+
+def save_numpy(file_path, x):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    np.save(file_path, x)
+
+
+def pad_x(X, num_features=100):
+    seq_len, batch_size, n_features = X.shape
+    zero_feature_padding = torch.zeros(
+        (seq_len, batch_size, num_features - n_features), device=X.device
+    )
+    return torch.cat([X, zero_feature_padding], -1)
+
+
+def compute_metrics(y_target, y_pred):
+    acc = accuracy_score(y_target, y_pred.argmax(1))
+    f1 = f1_score(y_target, y_pred.argmax(1), average="weighted")
+
+    if len(np.unique(y_target)) == 2:
+        auc = roc_auc_score(y_target, y_pred[:, 1])
+    else:
+        auc = roc_auc_score(y_target, y_pred, multi_class="ovo")
+
+    return acc, f1, auc
+
+
+def get_sizes_per_class(args, y_train, num_classes, context_length=None):
+    assert num_classes <= 10, "can only handle up to 10 classes"
+
+    if not context_length:
+        context_length = args.context_length
+
+    if args.class_choice == "equal":
+        min_num_items = 2
+        sizes_per_class = [
+            max(int(context_length * sum(y_train == c) / len(y_train)), min_num_items)
+            for c in range(num_classes)
+        ]
+
+        # add the remaining in case of leftovers
+        residual = context_length - sum(sizes_per_class)
+        if residual <= 0:
+            max_idx = np.argmax(np.array(sizes_per_class))
+            sizes_per_class[max_idx] += residual
+        else:
+            min_idx = np.argmax(np.array(sizes_per_class))
+            sizes_per_class[min_idx] += residual
+    elif args.class_choice == "balance":
+        sizes_per_class = [context_length // num_classes] * num_classes
+        # add the remaining in case of leftovers
+        sizes_per_class[0] += context_length - sum(sizes_per_class)
+    else:
+        raise NotImplementedError
+
+    return sizes_per_class
+
+
+def setup_experiment(args):
+    # Create directories and files
+    experiment_path = f"results/{args.datasets}/{args.exp_name}"
+
+    if os.path.exists(experiment_path):
+        # Remove the folder and then recreate it
+        print("Folder exists, removing its content and recreating it.")
+        shutil.rmtree(experiment_path)
+        os.makedirs(experiment_path)
+        os.makedirs(experiment_path + "/data")
+    else:
+        print("Folder does not exist, creating it.")
+        os.makedirs(experiment_path)
+        os.makedirs(experiment_path + "/data")
+
+    # Initialize writers and files
+    writer = SummaryWriter(experiment_path)
+    results_file_path = os.path.join(experiment_path, "results.csv")
+    results_file = open(results_file_path, "w")
+
+    # Seed for reproducibility
+    seed_everything(args.seed)
+
+    # Write setups to the results file
+    for arg, value in vars(args).items():
+        results_file.write(f"{arg},{value}\n")
+    results_file.flush()
+
+    return writer, results_file, experiment_path
+
+
+def seed_everything(seed: int):
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+
+
+class MulticlassFaiss:
+    def __init__(self, embX, X_orig, y, metric="L2", gpu_id=0, sizes_per_class=None):
+        assert isinstance(embX, np.ndarray), "X must be a numpy array"
+        assert isinstance(y, np.ndarray), "y must be a numpy array"
+        if embX.dtype != np.float32:
+            embX = embX.astype(np.float32)
+
+        self.X = X_orig
+        self.y = y
+
+        self.sizes_per_class = sizes_per_class
+
+        self.n_classes = len(np.unique(y))
+        if metric == "L2":
+            self.indexes = [
+                faiss.IndexFlatL2(embX.shape[1]) for _ in range(self.n_classes)
+            ]
+        elif metric == "IP":
+            self.indexes = [
+                faiss.IndexFlatIP(embX.shape[1]) for _ in range(self.n_classes)
+            ]
+        else:
+            raise NotImplementedError
+
+        for index, Xs in zip(
+            self.indexes, [embX[y == i] for i in range(self.n_classes)]
+        ):
+            index.add(Xs)
+
+    def get_knn_indices(self, queries, ks):
+        if isinstance(queries, torch.Tensor):
+            queries = queries.cpu().numpy()
+
+        if isinstance(ks, int):
+            ks = [ks] * self.n_classes
+        assert (
+            len(ks) == self.n_classes
+        ), "ks must have the same length as the number of classes"
+
+        knns = [index.search(queries, k) for index, k in zip(self.indexes, ks)]
+        indices_Xs = [x[1] for x in knns]
+        ys = np.concatenate([np.ones(k) * i for i, k in enumerate(ks)])
+        return indices_Xs, ys
+
+    def get_knn(self, queries, ks=None):
+        if isinstance(queries, torch.Tensor):
+            queries = queries.cpu().numpy()
+        queries = queries.astype(np.float32)
+
+        if ks is None:
+            assert self.sizes_per_class is not None
+            ks = self.sizes_per_class
+
+        if isinstance(ks, int):
+            ks = [ks] * self.n_classes
+        assert (
+            len(ks) == self.n_classes
+        ), "ks must have the same length as the number of classes"
+
+        knns = [index.search(queries, k) for index, k in zip(self.indexes, ks)]
+        indices_Xs = [x[1] for x in knns]
+        Xs = [self.X[self.y == i][indices] for i, indices in enumerate(indices_Xs)]
+        Xs = np.concatenate(Xs, axis=1)
+        ys = [self.y[self.y == i][indices] for i, indices in enumerate(indices_Xs)]
+        ys = np.concatenate(ys, axis=1)
+        distances = [x[0] for x in knns]
+        distances = np.concatenate(distances, axis=1)
+
+        # because TabPFN is seq len first, batch size second...
+        swap01 = lambda x: np.swapaxes(x, 0, 1)
+        return swap01(Xs), swap01(ys), swap01(distances), indices_Xs
+
+
+class SingleclassFaiss:
+    def __init__(self, X, y, metric="L2", gpu_id=0):
+        assert isinstance(X, np.ndarray), "X must be a numpy array"
+        assert isinstance(y, np.ndarray), "y must be a numpy array"
+        if X.dtype != np.float32:
+            X = X.astype(np.float32)
+        self.y = y
+
+        # self.gpu_resources = StandardGpuResources()
+        if metric == "L2":
+            self.index = faiss.IndexFlatL2(X.shape[1])
+        elif metric == "IP":
+            self.index = faiss.IndexFlatIP(X.shape[1])
+        else:
+            raise NotImplementedError
+
+        self.index.add(X)
+
+    def get_knn_indices(self, queries, k):
+        if isinstance(queries, torch.Tensor):
+            queries = queries.cpu().numpy()
+        assert isinstance(k, int)
+
+        knns = self.index.search(queries, k)
+        indices_Xs = knns[1]
+        ys = self.y[indices_Xs]
+        return indices_Xs, ys
+
+
+
+
+================================================
+FILE: methods/ftknn.py
+================================================
+import os
+import scipy
+from collections import defaultdict
+from tqdm import trange
+
+import numpy as np
+import torch
+
+from utils import (
+    get_sizes_per_class,
+    compute_metrics,
+    pad_x,
+    SingleclassFaiss,
+    clone_linear_layer,
+)
+
+def train_ft_knn(args, model, data, writer, experiment_path):
+    X_train, y_train = data["X_train"], data["y_train"]
+    X_train_one_hot = data["X_train_one_hot"]
+    dataset_name = data["dataset_info"]["name"]
+
+    datasets_evaluated = {
+        "valid": ["valid"],
+        "valid_test": ["valid", "test"],
+        "all": ["valid", "test", "train"],
+    }
+
+    if args.better_selection:
+        # Shuffle X_train and y_train
+        indices = np.arange(len(X_train))
+        np.random.shuffle(indices)
+        X_train = X_train[indices]
+        y_train = y_train[indices]
+
+        selection_counts = (
+            np.ones(len(X_train), dtype=np.longlong)
+            * args.num_steps
+            * args.num_epochs
+            * args.batch_size
+            * 100
+        )
+
+    # Class balance and initialization checks
+    num_classes = len(np.unique(y_train))
+    num_features = X_train.shape[1]
+    if any(sum(y_train == c) == 0 for c in range(num_classes)):
+        raise Exception("Error: Missing class in this split...")
+
+    opt = torch.optim.AdamW(
+        model.parameters(), lr=args.lr, weight_decay=args.opt_weight_decay
+    )
+        
+    if args.scheduler:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=args.num_epochs * args.num_steps, eta_min=args.lr / 10
+        )
+
+    num_retrievals = [
+        min(int(10 * np.sqrt(len(data["X_train"]))), args.context_length),
+        args.train_query_length,
+    ]
+    
+    sizes_per_class = get_sizes_per_class(
+        args, y_train, num_classes, context_length=sum(num_retrievals)
+    )
+
+    best_metric, best_epoch = -np.inf, 0
+    saved_data = defaultdict(list)
+    for epoch in trange(args.num_epochs):
+        embedding_layer = clone_linear_layer(model.encoder, device="cpu")
+
+        faiss_knn = SingleclassFaiss(
+            X_train_one_hot if args.onehot_retrieval else X_train,
+            y_train,
+        )
+
+        # Eval
+        if epoch % args.eval_interval == 0:
+            prev_best_metric = best_metric
+
+            for split in datasets_evaluated[args.splits_evaluated]:
+                loss, pred = eval_ft_knn(args, model, data[split + "_loader"], data)
+                acc, f1, auc = compute_metrics(
+                    data["y_" + split], scipy.special.softmax(pred, axis=1)
+                )
+
+                # Calculate metric for early stopping
+                if args.early_stopping_metric == "negloss":
+                    metric = -loss
+                elif args.early_stopping_metric == "acc":
+                    metric = acc
+                elif args.early_stopping_metric == "f1":
+                    metric = f1
+                elif args.early_stopping_metric == "auc":
+                    metric = auc
+                else:
+                    raise ValueError("Invalid early stopping metric")
+
+                if split == "valid" and metric > prev_best_metric:
+                    best_epoch = epoch
+                    best_metric = metric
+                    os.makedirs(
+                        experiment_path + f"/data/{dataset_name}/", exist_ok=True
+                    )
+                    torch.save(
+                        model.state_dict(),
+                        experiment_path + f"/data/{dataset_name}/model_best.pth",
+                    )
+
+                writer.add_scalar(dataset_name + "/loss/" + split, loss, epoch)
+                writer.add_scalar(dataset_name + "/acc/" + split, acc, epoch)
+                writer.add_scalar(dataset_name + "/f1/" + split, f1, epoch)
+                writer.add_scalar(dataset_name + "/auc/" + split, auc, epoch)
+
+                if args.save_data:
+                    saved_data[f"loss_{split}"].append(loss)
+                    saved_data[f"acc_{split}"].append(acc)
+                    saved_data[f"f1_{split}"].append(f1)
+                    saved_data[f"auc_{split}"].append(auc)
+
+            writer.flush()
+            if best_epoch + args.early_stopping_rounds < epoch:
+                print("Early Stopping: ", best_epoch, epoch)
+                break
+
+        # Training
+        total_loss = 0.0
+
+        count = 0
+        for X_b, y_b, X_oh_b in data["train_loader"]:
+            count += 1
+            if count > args.num_steps:
+                break
+
+            if args.better_selection:
+                selected_index = np.random.choice(
+                    len(X_train), 2, p=selection_counts / selection_counts.sum()
+                )
+                X_b, y_b = X_train[selected_index], y_train[selected_index]
+
+            indices_X_nni, y_nni = faiss_knn.get_knn_indices(
+                X_oh_b if args.onehot_retrieval else X_b.numpy(),
+                sum(sizes_per_class),
+            )
+            X_nni = X_train[indices_X_nni]
+            X_nni = np.swapaxes(X_nni, 0, 1)
+            y_nni = np.swapaxes(y_nni, 0, 1)
+
+            if args.better_selection:
+                for neighbors in indices_X_nni:
+                    selection_counts[neighbors.flatten()] -= 1
+
+            size = sum(sizes_per_class)
+            missing_indices = np.where(indices_X_nni[0] == -1)[0]
+            if len(missing_indices) > 0:
+                miss_idx = missing_indices[0]
+                X_nni = X_nni[:miss_idx]
+                y_nni = y_nni[:miss_idx]
+
+            if args.exact_knn:
+                X_nni, y_nni = X_nni[::-1].copy(), y_nni[::-1].copy()
+                eval_pos = num_retrievals[0]
+                assert eval_pos == len(X_nni) - 1
+
+            else:
+                rand_perm_indices = np.random.permutation(len(X_nni))
+                X_nni, y_nni = X_nni[rand_perm_indices], y_nni[rand_perm_indices]
+
+                eval_pos = num_retrievals[0]
+
+            if eval_pos >= len(X_nni):
+                print("eval pos is smaller than X_nni")
+                eval_pos = len(X_nni) - 1
+
+            X_nni, y_nni = (
+                pad_x(torch.Tensor(X_nni)).to(args.device),
+                torch.Tensor(y_nni).to(args.device),
+            )
+            y_label = y_nni[eval_pos:, :].flatten()
+
+            logits = model(
+                x_src=X_nni,
+                y_src=y_nni,
+                eval_pos=eval_pos,
+                normalization=True,
+                outlier_clipping=False,
+                nan_replacement=False,
+                used_features=num_features,
+            )[..., :num_classes]
+
+            logits = logits.reshape([-1, num_classes])
+            batch_loss = torch.nn.functional.cross_entropy(
+                logits, y_label.long(), reduction="none"
+            )
+            total_loss += batch_loss.mean().detach()
+
+            batch_loss.mean().backward()
+            opt.step()
+            opt.zero_grad()
+            if args.scheduler:
+                scheduler.step()
+
+        loss = total_loss / count
+
+        writer.add_scalar(
+            dataset_name + "/loss/train", loss.detach().cpu().numpy(), epoch
+        )
+        writer.add_scalar(dataset_name + "/lr", opt.param_groups[0]["lr"], epoch)
+
+    if args.save_data:
+        os.makedirs(experiment_path + f"/data/{dataset_name}/", exist_ok=True)
+        np.savez(experiment_path + f"/data/{dataset_name}/saved_data.npz", **saved_data)
+
+
+@torch.no_grad()
+def eval_ft_knn(args, model, data_loader, data):
+    num_features = data_loader.dataset.tensors[0].shape[-1]
+    num_classes = len(np.unique(data_loader.dataset.tensors[1]))
+    X_train, y_train = data["X_train"], data["y_train"]
+    X_train_one_hot = data["X_train_one_hot"]
+
+    y_pred = []
+    loss = 0
+
+    num_retrieval = min(
+        int(10 * np.sqrt(len(data["X_train"]))), args.context_length
+    )
+    
+    faiss_knn = SingleclassFaiss(
+        X_train_one_hot if args.onehot_retrieval else X_train,
+        y_train,
+    )
+
+    for X, y, X_oh in data_loader:
+        X_cuda, y_cuda = X.to(args.device), y.to(args.device)
+
+        indices_X_nni, y_nni = faiss_knn.get_knn_indices(
+            X_oh if args.onehot_retrieval else X.numpy(),
+            num_retrieval,
+        )
+        X_nni = X_train[indices_X_nni]
+        X_nni = np.swapaxes(X_nni, 0, 1)
+        y_nni = np.swapaxes(y_nni, 0, 1)
+
+        missing_indices = np.where(indices_X_nni[0] == -1)[0]
+        if len(missing_indices) > 0:
+            miss_idx = missing_indices[0]
+            X_nni = X_nni[:miss_idx]
+            y_nni = y_nni[:miss_idx]
+
+        X_nni, y_nni = (
+            pad_x(torch.Tensor(X_nni).to(args.device)),
+            torch.Tensor(y_nni).to(args.device),
+        )
+        X_cuda, y_cuda = pad_x(X_cuda.unsqueeze(0)), y_cuda.unsqueeze(0)
+
+        logits = model(
+            x_src=torch.cat([X_nni, X_cuda], dim=0),
+            y_src=torch.cat([y_nni, y_cuda], dim=0),
+            eval_pos=len(X_nni),
+            normalization=True,
+            outlier_clipping=False,
+            nan_replacement=False,
+            used_features=num_features,
+        )[..., :num_classes]
+
+        logits = logits.squeeze(0)
+        loss += (
+            torch.nn.functional.cross_entropy(
+                logits, y_cuda.long().squeeze(0), reduction="none"
+            )
+            .detach()
+            .sum()
+        )
+        y_pred.append(logits)
+
+    loss = (loss / len(data_loader.dataset)).cpu().numpy()
+    y_pred = torch.cat(y_pred, dim=0).detach().cpu().numpy()
+
+    return loss, y_pred
+
+
+
+
+================================================
+FILE: methods/pfknn.py
+================================================
+from tqdm import tqdm
+import numpy as np
+import torch
+
+from utils import MulticlassFaiss, get_sizes_per_class, pad_x, SingleclassFaiss
+
+@torch.no_grad()
+def eval_pfknn(args, model, data, data_loader, normalize_data=True):
+    X_train = data["X_train_one_hot"] if args.use_one_hot_emb else data["X_train"]
+    y_train = data["y_train"]
+    X_train_one_hot = data["X_train_one_hot"]
+
+    # checks
+    num_classes = len(np.unique(y_train))
+    if any(sum(y_train == c) == 0 for c in range(num_classes)):
+        raise Exception("Error: Missing class in this split...")
+
+    faiss_knn = SingleclassFaiss(
+        X_train_one_hot if args.onehot_retrieval else X_train,
+        y_train,
+    )
+    sizes_per_class = get_sizes_per_class(args, y_train, num_classes)
+
+    # eval
+    y_pred = []
+    loss = 0
+
+    for X, y, X_oh in tqdm(data_loader):
+        cur_batch_size, cur_num_features = X.shape[0], X.shape[1]
+
+        indices_X_nni, y_nni = faiss_knn.get_knn_indices(
+            X_oh if args.onehot_retrieval else X.numpy(),
+            sum(sizes_per_class),
+        )
+        X_nni = X_train[indices_X_nni]
+        X_nni = np.swapaxes(X_nni, 0, 1)
+        y_nni = np.swapaxes(y_nni, 0, 1)
+
+        X_nni, y_nni = (
+            pad_x(torch.Tensor(X_nni)).to(args.device),
+            torch.Tensor(y_nni).to(args.device),
+        )
+        X, y = pad_x(X.unsqueeze(0)).to(args.device), y.unsqueeze(0).to(args.device)
+
+        missing_indices = np.where(indices_X_nni[0] == -1)[0]
+        if len(missing_indices) > 0:
+            miss_idx = missing_indices[0]
+            X_nni = X_nni[:miss_idx]
+            y_nni = y_nni[:miss_idx]
+
+        logits = model(
+            x_src=torch.cat([X_nni, X], dim=0),
+            y_src=torch.cat([y_nni, y], dim=0),
+            eval_pos=len(X_nni),
+            normalization=normalize_data,
+            outlier_clipping=False,
+            nan_replacement=False,
+            used_features=cur_num_features,
+        )
+
+        logits = logits.squeeze(0)[:, :num_classes]
+        loss += (
+            torch.nn.functional.cross_entropy(
+                logits, y.long().squeeze(0), reduction="none"
+            )
+            .detach()
+            .sum()
+        )
+        y_pred.append(logits)
+
+    loss = (loss / len(data_loader)).cpu().numpy()
+    y_pred = torch.cat(y_pred, dim=0).detach().cpu().numpy()
+
+    return loss, y_pred
+
+
+
+================================================
+FILE: methods/vanilla.py
+================================================
+from tqdm import tqdm
+import numpy as np
+import torch
+
+from utils import MulticlassFaiss, get_sizes_per_class, pad_x
+
+
+def random_initialization(args, data, num_classes, num_features):
+    X_train, y_train = data["X_train"], data["y_train"]
+
+    sizes_per_class = get_sizes_per_class(args, y_train, num_classes)
+
+    # Create y_dist
+    y_init = torch.Tensor(
+        np.concatenate([np.array([c] * size) for c, size in enumerate(sizes_per_class)])
+    ).to(args.device)
+
+    # Sample with replacement when using small datasets
+    # sample_replacement = len(X_train) < args.context_length
+    sample_replacement = False
+    for c, size in enumerate(sizes_per_class):
+        if size > sum(y_train == c):
+            sample_replacement = True
+            break
+
+    X_init = torch.Tensor(
+        np.concatenate(
+            [
+                X_train[y_train == c][
+                    np.random.choice(
+                        sum(y_train == c), size, replace=sample_replacement
+                    ),
+                    :,
+                ]
+                for c, size in enumerate(sizes_per_class)
+            ],
+            0,
+        )
+    ).to(args.device)
+    return X_init, y_init
+
+
+@torch.no_grad()
+def eval_tabpfn(args, model, data, data_loader):
+    X_train = data["X_train_one_hot"] if args.use_one_hot_emb else data["X_train"]
+    y_train = data["y_train"]
+
+    # checks
+    num_classes = len(np.unique(y_train))
+    if any(sum(y_train == c) == 0 for c in range(num_classes)):
+        raise Exception("Error: Missing class in this split...")
+
+    sizes_per_class = get_sizes_per_class(args, y_train, num_classes)
+    X_init, y_init = random_initialization(args, data, num_classes, X_train.shape[1])
+
+    # eval
+    y_pred = []
+    loss = 0
+
+    for X, y in tqdm(data_loader):
+        cur_batch_size, cur_num_features = X.shape[0], X.shape[1]
+
+        # X_nni = np.swapaxes(X_nni, 0, 1)
+        X_ctx = X_init.unsqueeze(0).repeat(cur_batch_size, 1, 1)
+        X_ctx = np.swapaxes(X_ctx, 0, 1)
+        y_ctx = y_init.unsqueeze(0).repeat(cur_batch_size, 1)
+        y_ctx = np.swapaxes(y_ctx, 0, 1)
+        X_ctx, y_ctx = pad_x(X_ctx).to(args.device), y_ctx.to(args.device)
+        # y_nni = y_nni.reshape(-1, 1).repeat(cur_batch_size, axis=1)
+
+        # X_nni, y_nni = pad_x(torch.Tensor(X_nni)).to(args.device), torch.Tensor(y_nni).to(args.device)
+        X, y = pad_x(X.unsqueeze(0)).to(args.device), y.unsqueeze(0).to(args.device)
+
+        logits = model(
+            x_src=torch.cat([X_ctx, X], dim=0) / (cur_num_features / 100),
+            y_src=torch.cat([y_ctx, y], dim=0),
+            eval_pos=len(X_ctx),
+            normalization=True,
+            outlier_clipping=False,
+            nan_replacement=False,
+        )
+
+        logits = logits.squeeze(0)[:, :num_classes]
+        loss += (
+            torch.nn.functional.cross_entropy(
+                logits, y.long().squeeze(0), reduction="none"
+            )
+            .detach()
+            .sum()
+        )
+        y_pred.append(logits)
+
+    loss = (loss / len(data_loader)).cpu().numpy()
+    y_pred = torch.cat(y_pred, dim=0).detach().cpu().numpy()
+
+    return loss, y_pred
+
+@torch.no_grad()
+def eval_tabpfn_original(args, data, data_loader):
+    from tabpfn import TabPFNClassifier
+
+    classifier = TabPFNClassifier(device="cuda:0", N_ensemble_configurations=32)
+
+    X_train = data["X_train_one_hot"] if args.use_one_hot_emb else data["X_train"]
+    y_train = data["y_train"]
+
+    # checks
+    num_classes = len(np.unique(y_train))
+    if any(sum(y_train == c) == 0 for c in range(num_classes)):
+        raise Exception("Error: Missing class in this split...")
+
+    sizes_per_class = get_sizes_per_class(args, y_train, num_classes)
+    X_init, y_init = random_initialization(args, data, num_classes, X_train.shape[1])
+
+    # eval
+    y_pred = []
+    loss = 0
+
+    for X, y in tqdm(data_loader):
+        cur_batch_size, cur_num_features = X.shape[0], X.shape[1]
+
+        # X_nni = np.swapaxes(X_nni, 0, 1)
+        X_ctx = X_init.unsqueeze(0).repeat(cur_batch_size, 1, 1)
+        X_ctx = np.swapaxes(X_ctx, 0, 1)
+        y_ctx = y_init.unsqueeze(0).repeat(cur_batch_size, 1)
+        y_ctx = np.swapaxes(y_ctx, 0, 1)
+        X_ctx, y_ctx = pad_x(X_ctx).to(args.device), y_ctx.to(args.device)
+        # y_nni = y_nni.reshape(-1, 1).repeat(cur_batch_size, axis=1)
+
+        # X_nni, y_nni = pad_x(torch.Tensor(X_nni)).to(args.device), torch.Tensor(y_nni).to(args.device)
+        X, y = pad_x(X.unsqueeze(0)).to(args.device), y.unsqueeze(0).to(args.device)
+
+        logits = model(
+            x_src=torch.cat([X_ctx, X], dim=0) / (cur_num_features / 100),
+            y_src=torch.cat([y_ctx, y], dim=0),
+            eval_pos=len(X_ctx),
+            normalization=True,
+            outlier_clipping=False,
+            nan_replacement=False,
+        )
+
+        classifier.fit(X_train, y_train)
+        y_pred = classifier.predict_proba(X_test)
+
+        logits = logits.squeeze(0)[:, :num_classes]
+        loss += (
+            torch.nn.functional.cross_entropy(
+                logits, y.long().squeeze(0), reduction="none"
+            )
+            .detach()
+            .sum()
+        )
+        y_pred.append(logits)
+
+    loss = (loss / len(data_loader)).cpu().numpy()
+    y_pred = torch.cat(y_pred, dim=0).detach().cpu().numpy()
+
+    return loss, y_pred
+
+
+@torch.no_grad()
+def eval_pfknn_ensemble_dist(args, model, data, data_loader, pred_folder=""):
+    X_train = data["X_train_one_hot"] if args.use_one_hot_emb else data["X_train"]
+    y_train = data["y_train"]
+
+    # checks
+    num_classes = len(np.unique(y_train))
+    if any(sum(y_train == c) == 0 for c in range(num_classes)):
+        raise Exception("Error: Missing class in this split...")
+
+    faiss_knn = MulticlassFaiss(X_train, y_train)
+    sizes_per_class = get_sizes_per_class(args, y_train, num_classes)
+
+    # eval
+    y_pred = []
+    loss = 0
+
+    for X, y in tqdm(data_loader):
+        cur_batch_size, cur_num_features = X.shape[0], X.shape[1]
+
+        indices_X_nni, y_nni = faiss_knn.get_knn_indices(X, sizes_per_class)
+        X_nni = np.concatenate(
+            [X_train[y_train == i][indices] for i, indices in enumerate(indices_X_nni)],
+            axis=1,
+        )
+        X_nni = np.swapaxes(X_nni, 0, 1)
+        y_nni = y_nni.reshape(-1, 1).repeat(cur_batch_size, axis=1)
+
+        X_nni, y_nni = (
+            pad_x(torch.Tensor(X_nni)).to(args.device),
+            torch.Tensor(y_nni).to(args.device),
+        )
+        X, y = pad_x(X.unsqueeze(0)).to(args.device), y.unsqueeze(0).to(args.device)
+
+        dataset_name = data["dataset_info"]["name"]
+        X_dist = torch.Tensor(np.load(f"{pred_folder}/Xdist_best.npy")).to(args.device)
+        y_dist = torch.Tensor(np.load(f"{pred_folder}/ydist_best.npy")).to(args.device)
+        X_dist = X_dist.unsqueeze(1).repeat(1, cur_batch_size, 1)
+        y_dist = y_dist.unsqueeze(1).repeat(1, cur_batch_size)
+        X_dist = pad_x(X_dist)
+
+        logits = model(
+            x_src=torch.cat([X_dist, X_nni, X], dim=0) / (cur_num_features / 100),
+            y_src=torch.cat([y_dist, y_nni, y], dim=0),
+            eval_pos=len(X_dist) + len(X_nni),
+            normalization=True,
+            outlier_clipping=False,
+            nan_replacement=False,
+        )
+
+        logits = logits.squeeze(0)[:, :num_classes]
+        loss += (
+            torch.nn.functional.cross_entropy(
+                logits, y.long().squeeze(0), reduction="none"
+            )
+            .detach()
+            .sum()
+        )
+        y_pred.append(logits)
+
+    loss = (loss / len(data_loader)).cpu().numpy()
+    y_pred = torch.cat(y_pred, dim=0).detach().cpu().numpy()
+
+    return loss, y_pred
+
+
+

@@ -1,0 +1,405 @@
+Orion-Bix: Bi-Axial Attention for Tabular In-Context Learning
+Mohamed Bouadi
+mohamed.bouadi@lexsi.ai
+Lexsi Labs
+Paris, France
+Pratinav Seth
+Aditya Tanna
+pratinav.seth@lexsi.ai
+aditya.tanna@lexsi.ai
+Lexsi Labs
+Mumbai, India
+Vinay Kumar Sankarapu
+v.k@lexsi.ai
+Lexsi Labs
+London, United Kingdom
+Abstract
+Tabular data drive most real-world machine learning applications,
+yet building general-purpose models for them remains difficult.
+Mixed numeric and categorical fields, weak feature structure, and
+limited labeled data make scaling and generalization challenging. To
+this end, we introduce Orion-Bix, a tabular foundation model that
+combines biaxial attention with meta-learned in-context reason-
+ing for few-shot tabular learning. Its encoder alternates standard,
+grouped, hierarchical, and relational attention, fusing their outputs
+through multi-CLS summarization to capture both local and global
+dependencies efficiently. A label-aware in-context learning (ICL)
+head adapts on the fly and scales to large label spaces via hierarchi-
+cal decision routing. Delivered as a scikit-learn–compatible founda-
+tion model, it outperforms gradient-boosting baselines and remains
+competitive with state-of-the-art tabular foundation models on
+public benchmarks, showing that biaxial attention with episodic
+meta-training enables robust, few-shot-ready tabular learning.
+CCS Concepts
+•Computing methodologies → Supervised learning by clas-
+sification; Neural networks; Machine learning.
+Keywords
+Tabular Foundation Models, Transformer-based Models, Bi-Axial
+Attention, Tabular In-Context Learning
+ACM Reference Format:
+Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu.
+2026. Orion-Bix: Bi-Axial Attention for Tabular In-Context Learning. In
+Proceedings of the ACM Web Conference 2026 (WWW ’26), April 13–17,
+2026, Dubai, United Arab Emirates. ACM, New York, NY, USA, 4 pages.
+https://doi.org/10.1145/3774904.3792937
+1 Introduction
+Tabular data remain the most common form of real-world data, span-
+ning domains such as healthcare, finance, and scientific research.
+Despite major advances in deep learning for language processing
+and vision [7], gradient-boosted trees (GBTs) remain state-of-the-
+art for tabular prediction. Recently, tabular in-context learning (ICL)
+has emerged, adapting the ICL paradigm—central to large language
+This work is licensed under a Creative Commons Attribution 4.0 International License.
+WWW ’26, Dubai, United Arab Emirates
+© 2026 Copyright held by the owner/author(s).
+ACM ISBN 979-8-4007-2307-0/2026/04
+https://doi.org/10.1145/3774904.3792937
+models—to tabular data, enabling pretraining across diverse tables
+and rapid task adaptation without gradient updates.
+TabPFN [2] pioneered this approach by meta-training a trans-
+former on synthetic datasets generated via structural causal models.
+Its encoder–decoder design lets test samples attend to training ex-
+amples for zero-shot prediction, but alternating column- and row-
+wise attentions make large training sets computationally costly. Tab-
+DPT [4] achieves comparable performance using similarity-based
+retrieval, though its diffusion process adds overhead. TabPFN-v2 [3]
+extended row-based encoding to datasets exceeding 10,000 samples.
+TabICL [5] further refined this with a table-native transformer com-
+prising column embeddings, row interactions, and an ICL head. Its
+SetTransformer-based column encoder and label-aware in-context
+learner achieve state-of-the-art results, but its row encoder (tf_row)
+applies a single homogeneous attention over all features, ignoring
+local groupings, multi-scale interactions, and structured aggrega-
+tion. This limitation is pronounced in high-dimensional, heteroge-
+neous tables where features naturally form semantic groups (e.g.,
+demographics, vitals, labs) and dependencies span multiple scales.
+Additionally, TabICL treats synthetic tables as individual supervised
+tasks rather than support/query episodes, producing an implicit
+few-shot signal that may misalign with test-time objectives.
+To address these limitations, we introduceOrion-Bix1, which en-
+hances TabICL with two key improvements: (1) abiaxial row encoder
+replacing tf_row with complementary attention modes—standard
+cross-feature, grouped, hierarchical, and relational—aggregated via
+multiple CLS tokens, explicitly modeling local groups, coarse-scale
+interactions, and global patterns; and (2) a meta-learning training
+regime that constructs support/query episodes from synthetic tables,
+optionally using kNN-based support selection, aligning training
+with few-shot test-time objectives. Orion-Bix preserves TabICL’s
+strengths in column-wise SetTransformer embeddings and label-
+aware ICL while addressing its row-level and training limitations.
+2 Orion-Bix: Proposed Approach
+Orion-Bix retains two core TabICL [5] components: the SetTrans-
+former column encoder and the label-aware in-context learner,
+while introducing two major changes: (1) a biaxial row encoder
+that replaces the single-stagetf_row and provides structured multi-
+scale feature reasoning, and (2) a meta-learning training regime that
+constructs explicit support/query episodes from synthetic tables,
+optionally using kNN-based support selection.
+1The code and model checkpoint are available at https://github.com/Lexsi-Labs/Orion-
+BiX
+8673
+
+WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bouadi, Pratinav Seth, Aditya Tanna and Vinay Kumar Sankarapu
+2.1 Problem Setting and Data Representation
+We consider a tabular task with a table 𝑋 ∈ R𝑛×𝑚 and labels
+𝑦 ∈ { 0, . . . , 𝐶−1}𝑛. Rows are split into a support set of size 𝑛train
+and a query set of size 𝑛test. During inference and meta-training,
+Orion-Bix receives 𝑋 and the support labels
+𝑦train = 𝑦1:𝑛train .
+For batched tasks,
+𝑋 ∈ R𝐵×𝑛×𝑚, 𝑑 ∈ N𝐵,
+where 𝑑𝑏 records the number of active (non-padding) features for
+task 𝑏. The objective is tabular in-context learning: predict all query
+labels conditioned solely on support rows and their labels.
+2.2 Column-wise Embedding
+We adopt the original TabICL [5] column-wise embedder to map
+each feature to a 𝑑-dimensional representation per cell. The em-
+bedder uses a Set Transformer, 𝑇 𝐹col, that treats each column as a
+permutation-invariant set of values across all rows.
+Concretely, given the input table 𝑋 ∈ R𝐵×𝑛×𝑚, the embedder:
+• Transposes to (𝐵, 𝑚, 𝑛) and treats each of the 𝑚 columns as
+a set of 𝑛 values.
+• Applies 𝑇 𝐹col to each column set, producing per-cell weights
+and biases: 𝑊 , 𝐵 ∈ R𝐵×𝑚×𝑛×𝑑.
+• Forms the column embeddings via element-wise affine trans-
+formation: 𝐸 = 𝑊 ⊙ 𝑋 + 𝐵 ∈ R𝐵×𝑛×𝑚′ ×𝑑, where 𝑚′ =
+𝑚 + 𝑁CLS includes reserved slots for CLS tokens.
+This stage is responsible for distribution-aware, type-agnostic
+feature normalization and preserves TabICL’s strengths in modeling
+per-column statistics.
+2.3 Biaxial Row Encoder: Multi-Scale Feature
+Interactions
+The column embeddings 𝐸 ∈ R𝐵×𝑛×𝑚′ ×𝑑 provide per-cell feature
+representations. The row encoder must transform these into row-
+level summaries suitable for in-context reasoning. TabICL’s row
+encoder applies a single Transformer stack over the feature dimen-
+sion, treating all columns as a flat sequence. This forces one homo-
+geneous attention pattern to capture (i) local dependencies within
+semantically related feature subsets, (ii) long-range cross-column
+interactions, and (iii) global aggregation into a single row vector.
+In high-dimensional, heterogeneous tables, this uniform treat-
+ment introduces three limitations: (i) no explicit feature group-
+ing, despite tables containing natural substructures (e.g., demo-
+graphics, vitals, lab tests); (ii) weak multi-scale structure, since
+local and global relationships must be modeled through the same at-
+tention mode; and (iii) a representation bottleneck, as collapsing
+a row into a single embedding mixes distinct informational modes.
+To overcome this, Orion-Bix replaces the flat row encoder with
+a biaxial attention module that applies multiple, specialized feature-
+space attentions and aggregates their outputs through multi-CLS
+tokens, enabling structured, multi-scale row representations.
+2.3.1 Input Reshaping. Starting from the column embeddings 𝐸 ∈
+R𝐵×𝑛×𝑚′ ×𝑑, we reshape to treat each row’s features as a sequence:
+𝐸 → 𝑋 ′ ∈ R(𝐵·𝑛) ×𝑚′ ×𝑑,
+where each element 𝑋 ′
+𝑖 ∈ R𝑚′ ×𝑑 represents one row’s sequence of
+feature embeddings.
+2.3.2 Bi-Axial Attention Block. Each BiAxialAttentionBlock ap-
+plies four attention modules in sequence over the feature axis:
+(1) Standard attention: full cross-feature self-attention captur-
+ing generic dependencies:
+𝑋1 = Attnstd (𝑋0, 𝑋0, 𝑋0),
+(2) Grouped attention: local attention within𝐺 feature groups
+of size ⌊𝑚′/𝐺⌋. Within each group, we apply a local atten-
+tion:
+𝑋2 = Attngroup(𝑋1),
+(3) Hierarchical attention: coarse-scale interactions between
+two large partitions of the feature set 𝑋2 = [𝑋 (1)
+2 ; 𝑋 (2)
+2 ]:
+ˆ𝑋 (1)
+2 = Attnhier (𝑋 (1)
+2 , 𝑋 (2)
+2 , 𝑋 (2)
+2 ),
+ˆ𝑋 (2)
+2 = Attnhier (𝑋 (2)
+2 , ˆ𝑋 (1)
+2 , ˆ𝑋 (1)
+2 ).
+(4) Relational attention: a second full self-attention over al-
+ready structured features:
+𝑋3 = Attnrel( ˆ𝑋2, ˆ𝑋2, ˆ𝑋2),
+2.3.3 Multi-CLS Aggregation. Each of the previous blocks intro-
+duces 𝑁CLS learnable class tokens that attend over the feature se-
+quence:
+CLS′ = CLSAttn(CLS, 𝑋3) ∈ R(𝐵·𝑛) ×𝑁CLS ×𝑑 .
+Stacking 𝐿row blocks refines these summaries. After flattening,
+𝑅 ∈ R𝐵×𝑛× (𝑁CLS ·𝑑 )
+is passed to the in-context learner. Multiple CLS tokens prevent
+information bottlenecks and allow Orion-BiX to jointly model local
+interactions within feature groups and global relational patterns
+across all features,
+2.4 In-Context Learner
+The in-context learner mirrors TabICL:
+• It receives row representations 𝑅 ∈ R𝐵×𝑛×𝑑row and support
+labels 𝑦train ∈ { 0, . . . , 𝐶 − 1}𝐵×𝑛train .
+• Support labels are one-hot encoded, linearly projected, and
+added to support row embeddings.
+• A Transformer with a split mask enforces: support rows
+attend to support only; query rows attend to support but not
+to each other.
+• An MLP produces logits in R𝐶max, where 𝐶max is the native
+maximum number of classes.
+• For tasks with 𝐶 > 𝐶max, hierarchical classification trees
+compose node-wise probabilities by the chain rule.
+2.5 Meta-Training with Synthetic Episodic Data
+TabICL trains on synthetic tables drawn from a configurable prior,
+but each table is treated as a single supervised task. Few-shot struc-
+ture is only partially encoded through attention masks, leading to (i)
+an implicit support–query signal and (ii) uncontrolled support se-
+lection, where updates may depend on redundant or uninformative
+examples.
+8674
+
+Orion-Bix: Bi-Axial Attention for Tabular In-Context Learning WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates
+Orion-Bix adopts an explicit meta-learning formulation on top
+of a similar synthetic prior. Synthetic tables are sampled over wide
+ranges of feature counts, label spaces, and distributions, and an
+EpisodeGenerator converts each table into many small support–
+query episodes. Episodes are created either by random splits or by
+kNN-based support selection that ensures both relevance and di-
+versity. A MetaLearningDataset streams episodes in manageable
+chunks, and a MetaLearningTrainer processes thousands per up-
+date using micro-batching, gradient accumulation, mixed precision,
+and optional distributed data parallelism (DDP).
+This episodic approach provides four advantages: (i) alignment
+with the test-time objective, since the model is always optimized
+in the regime in which it is evaluated; (ii) richer task diversity,
+as each synthetic table yields many distinct episodes; (iii) higher-
+quality supports, with kNN selection reducing redundant updates;
+and (iv) scalable, stable optimization enabled by micro-batching
+and distributed training.
+2.6 Inference Pipeline and Practical Interface
+Preprocessing and Feature Engineering. Given a table𝑋, Orion-Bix
+preprocessor automatically: (i) detects numerical and categorical
+columns and converts all features to numeric form; (ii) imputes miss-
+ing values for both types; (iii) applies an optional normalization
+scheme (none, power, quantile, or robust); (iv) clips outliers beyond
+a configurable 𝑧-score; and (v) generates alternative column orders
+via feature shuffling (e.g., circular shifts, random, Latin patterns).
+Ensemble of Transformed Views. The preprocessor produces mul-
+tiple transformed views of the dataset, each defined by a normal-
+ization choice and feature permutation. For each view, a support–
+query split is created and passed through Orion-Bix to obtain logits
+for the query rows. Across views, logits are class-aligned, aver-
+aged to form an ensemble prediction, and optionally converted
+to probabilities via temperature-scaled softmax. This multi-view
+ensembling improves stability and robustness, particularly under
+skewed distributions or strong feature-order sensitivity.
+3 Experimental Evaluation
+We evaluate Orion-Bix against TabICL and other baselines to high-
+light the benefits of biaxial attention and meta-learning. Our exper-
+iments focus on three aspects: (i) domain-specific performance on
+datasets with natural feature structure, (ii) support set quality to
+assess robustness, and (iii) few-shot learning curves across varying
+support sizes. These analyses target the improvements motivating
+Orion-Bix: structured multi-scale feature interactions and enhanced
+few-shot adaptation.
+3.1 Evaluation Setup
+3.1.1 Datasets. We construct domain-specific evaluation suites by
+grouping datasets from public benchmarks (e.g., TALENT [6] and
+OpenML-CC18 [1]) according to application domain, allowing as-
+sessment in contexts where feature structure and heterogeneity are
+most relevant. The domains are: Medical Finance. These domains
+exhibit the high-dimensional, structured, and multi-scale features
+that Orion-Bix is designed to handle.
+3.1.2 Evaluation Metrics. For each dataset, we report overall clas-
+sification accuracy (ACC), class-weighted F1 to account for imbal-
+ance, and mean rank across datasets within each domain based on
+accuracy. All models use official train/test splits unless noted.
+3.2 Domain-Specific Performance
+Table 1: Domain-specific performance for Medical, Finance
+and Energy datasets from the benchmark suites. Formatting:
+Bold = 1st place; underlined = 2nd place within each group.
+Models Medical Finance
+Rank ACC F1 Rank ACC F1
+XGBoost 6.32 0.7834 0.7669 6.62 0.7958 0.7885
+RandomForest 6.38 0.7779 0.7752 7.32 0.8052 0.8001
+CatBoost 6.36 0.7784 0.7594 5.82
+0.8117 0.8015
+LightGBM 5.32 0.7949 0.7614 6.17 0.8095 0.7974
+TabICL 5.54 0.7819 0.7696 6.60 0.8125
+0.7942
+Orion-Bix 4.10 0.7893 0.7759 5.39 0.8206 0.8125
+TabPFN 5.04 0.7984 0.7857 7.17 0.8094 0.7919
+Mitra 10.77 0.3935 0.2863 13.67 0.5340 0.4250
+ContextTab 8.66 0.6681 0.6129 11.25 0.7430 0.6834
+TabDPT 6.86 0.7764 0.7641 8.00 0.8080 0.7960
+Table 1 reports results on Medical, Finance, and Energy domains.
+Orion-Bix achieves the best mean rank in Medical (4.10) and Fi-
+nance (5.39), outperforming TabICL and showing competitive per-
+formance against gradient-boosted baselines.
+• Medical. Orion-Bix attains rank 4.10 (vs. TabICL 5.54), accu-
+racy 0.7893, and F1 0.7759. While TabPFN slightly exceeds
+accuracy (0.7984), Orion-Bix’s superior ranking indicates
+more consistent performance across diverse datasets. The
+gains reflect the benefit of biaxial attention on grouped and
+hierarchical features typical in medical data.
+• Finance. Orion-Bix leads with rank 5.39 (vs. TabICL 6.60), ac-
+curacy 0.8206 (vs. 0.8125), and F1 0.8125 (vs. 0.7942). Finance
+datasets feature strong hierarchies and multi-scale dependen-
+cies, where biaxial attention better captures structured rela-
+tionships, notably improving F1 by +1.83 points over TabICL.
+These results highlight two design benefits of Orion-Bix:
+(1) Biaxial attention for structured features: Gains are largest
+in domains with natural feature groups and hierarchies, con-
+firming that modeling local (grouped), coarse-scale (hierar-
+chical), and global (relational) interactions improves repre-
+sentations over a single attention stack.
+(2) Multi-CLS aggregation: Maintaining multiple CLS tokens
+preserves distinct feature aspects, capturing both rare pat-
+terns and common global signals, leading to more robust
+predictions.
+3.3 Few-Shot Performance
+We assess performance as a function of support set size,
+𝑘 ∈ { 5, 10, 20, 32, 64, 128}, to test whether Orion-Bix’s meta-learning
+benefits are most pronounced in the very few-shot regime.
+Protocol. For each dataset and support size 𝑘, 𝑘 examples are
+sampled from the training set (all classes represented) to form the
+support set. Models are evaluated on the full test set, repeated across
+8675
+
+WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates Mohamed Bouadi, Pratinav Seth, Aditya Tanna and Vinay Kumar Sankarapu
+(a) Accuracy vs Support Size on
+TALENT Benchmark.
+(b) Accuracy vs Support Size on
+OpenML-CC18 Benchmark.
+Figure 1: Accuracy of Orion-Bix and TabICL across different
+support sizes in few-shot experiments.
+multiple seeds, and results are averaged. Accuracy is then plotted
+against support size.
+Results. Figure 1 shows:
+• Orion-Bix attains the best accuracy for very low shot sizes
+(𝑘 ≤ 32), outperforming all three baselines by 2–4 points,
+indicating meta-training on diverse episodes improves data
+efficiency.
+• Accuracy increases monotonically with 𝑘 for all models;
+gains are largest from 𝑘 = 5 to 𝑘 = 32, while improvements
+beyond 𝑘 = 64 are small, indicating diminishing returns from
+additional support examples.
+• As 𝑘 grows, the gap narrows: on TALENT, Orion-Bix stays
+clearly best across all 𝑘, while on OpenML-CC18 TabPFN
+continues improving and slightly surpasses Orion-Bix at
+𝑘 = 128. In both cases, TabPFN and Orion-Bix remain well
+ahead of TabICL and TabDPT. Overall, Orion-Bix is strongest
+in the few-shot regime.
+3.4 Support Set Quality Analysis
+We study how support set selection affects few-shot performance by
+comparing random vs. diverse (kNN-based) sampling at inference.
+This tests whether Orion-Bix’s meta-learning, which constructs
+diverse support/query episodes during pre-training, improves ro-
+bustness to support quality.
+Protocol. Each test dataset is split 80/20 into train/test sets. A
+support set of size 𝑘 = 32 is drawn using: (i) Uniform sampling,
+ensuring all classes are represented, and (ii) Diverse (kNN-based),
+selecting examples close to test queries and maximally diverse.
+Models are evaluated with standard ICL on the same support/query
+splits, repeated across multiple seeds for statistical significance.
+Motivation. This protocol measures inference-time robustness: di-
+verse selection simulates a scenario where practitioners can actively
+choose informative support examples, while random selection rep-
+resents default, arbitrary support sampling.
+Results. Figure 2 shows that: (1) Uniform sampling slightly out-
+performs kNN-based selection (by 3–5 points), indicating few-shot
+performance is not highly sensitive to support curation; (2) Orion-
+Bix consistently exceeds TabICL under both schemes, with relative
+Figure 2: Accuracy of Orion-Bix and TabICL on OpenML
+and TALENT benchmarks. Bars indicate support selection
+strategies, averaged over datasets for each model.
+ordering unchanged, suggesting meta-training improves overall in-
+context generalization rather than depending on a specific support
+selection heuristic.
+4 Conclusion
+In summary, Orion-Bix preserves the core strengths of TabICL
+while adding a biaxial row encoder and an episodic meta-learning
+schedule that directly targets few-shot in-context performance.
+Acknowledgments
+We thank the authors of TabICL [5] for publicly releasing their code,
+which served as the basis of our proposed model.
+References
+[1] Bernd Bischl, Giuseppe Casalicchio, Matthias Feurer, Pieter Gijsbers, Frank Hutter,
+Michel Lang, Rafael G Mantovani, Jan N van Rijn, and Joaquin Vanschoren. 2017.
+Openml benchmarking suites. arXiv preprint arXiv:1708.03731 (2017).
+[2] Noah Hollmann, Samuel Müller, Katharina Eggensperger, and Frank Hutter. 2023.
+TabPFN: A Transformer That Solves Small Tabular Classification Problems in a
+Second. In The Eleventh International Conference on Learning Representations, ICLR
+2023, Kigali, Rwanda, May 1-5, 2023. OpenReview.net. https://openreview.net/
+forum?id=cp5PvcI6w8_
+[3] Noah Hollmann, Samuel Müller, Lennart Purucker, Arjun Krishnakumar, Max
+Körfer, Shi Bin Hoo, Robin Tibor Schirrmeister, and Frank Hutter. 2025. Accurate
+predictions on small data with a tabular foundation model. Nat. 637, 8044 (2025),
+319–326. doi:10.1038/S41586-024-08328-6
+[4] Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Hamidreza Kamkari, Alex
+Labach, Jesse C. Cresswell, Keyvan Golestan, Guangwei Yu, Maksims Volkovs, and
+Anthony L. Caterini. 2024. TabDPT: Scaling Tabular Foundation Models. CoRR
+abs/2410.18164 (2024). arXiv:2410.18164 doi:10.48550/ARXIV.2410.18164
+[5] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. 2025.
+TabICL: A Tabular Foundation Model for In-Context Learning on Large Data.
+CoRR abs/2502.05564 (2025). arXiv:2502.05564 doi:10.48550/ARXIV.2502.05564
+[6] Han-Jia Ye, Si-Yang Liu, Hao-Run Cai, Qi-Le Zhou, and De-Chuan Zhan. 2024.
+A closer look at deep learning methods on tabular datasets. arXiv preprint
+arXiv:2407.00956 (2024).
+[7] Fei Yu, Hongbo Zhang, Prayag Tiwari, and Benyou Wang. 2024. Natural language
+reasoning, a survey. Comput. Surveys 56, 12 (2024), 1–39.
+8676

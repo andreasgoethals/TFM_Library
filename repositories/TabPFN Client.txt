@@ -21,11 +21,16 @@ Directory structure:
     │       ├── config.py
     │       ├── constants.py
     │       ├── estimator.py
+    │       ├── options.py
     │       ├── prompt_agent.py
     │       ├── server_config.yaml
     │       ├── service_wrapper.py
     │       ├── ui.py
+    │       ├── utils.py
     │       ├── foundry/
+    │       │   ├── __init__.py
+    │       │   └── estimator.py
+    │       ├── hosted/
     │       │   ├── __init__.py
     │       │   └── estimator.py
     │       └── sagemaker/
@@ -43,15 +48,19 @@ Directory structure:
     │   │   └── test_tabpfn_classifier.py
     │   └── unit/
     │       ├── __init__.py
+    │       ├── conftest.py
     │       ├── test_browser_auth.py
     │       ├── test_client.py
     │       ├── test_estimator.py
+    │       ├── test_options.py
     │       ├── test_prompt_agent.py
+    │       ├── test_sagemaker_invocation_timeout.py
     │       ├── test_service_wrapper.py
     │       ├── test_tabpfn_classifier.py
     │       ├── test_tabpfn_regressor.py
     │       ├── test_text_features.py
-    │       └── test_thinking_validation.py
+    │       ├── test_thinking_validation.py
+    │       └── test_validate_test_set.py
     ├── .github/
     │   ├── CODEOWNERS
     │   ├── dependabot.yml
@@ -289,7 +298,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tabpfn-client"
-version = "0.3.1"
+version = "0.4.1"
 requires-python = ">=3.10"
 
 description = "API access for TabPFN: Foundation model for tabular data"
@@ -319,13 +328,14 @@ dependencies = [
     "scikit-learn>=1.3.1,<=1.9.0",
     "sseclient-py>=1.8.0,<=1.9.0",
     "tqdm>=4.63.0,<=4.67.3",
-    "typing_extensions>=4.12.2,<=4.15.0",
-    "xxhash>=1.1.0,<=3.6.0",
+    "typing_extensions>=4.12.2,<=4.16.0",
+    "xxhash>=1.1.0,<=3.8.1",
     "backoff>=2.2.0,<=2.2.1",
     "rich>=13.7.0,<=15.0.0",
     "tabpfn-common-utils>=0.2.10,<=0.2.19",
     "google-crc32c>=1.5.0,<=1.8.0",
     "pyarrow>=14.0.0,<=23.0.1",
+    "pydantic-settings>=2.14.2,<=2.14.2",
 ]
 
 [project.optional-dependencies]
@@ -353,11 +363,11 @@ norecursedirs = [
 
 [dependency-groups]
 dev = [
-    "pytest==8.4.2",
-    "respx==0.22.0",
-    "ruff==0.15.16",
+    "respx==0.23.1",
+    "pytest==9.0.3",
+    "ruff==0.15.21",
     "licensecheck==2025.1.0",
-    "basedpyright~=1.32.1"
+    "basedpyright~=1.39.9"
 ]
 
 
@@ -1382,6 +1392,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.14.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5c/b5/8f48e906c3e0205276e8bd8cb7512217a87b2685304d64be27cad5b3019f/pydantic_settings-2.14.2.tar.gz", hash = "sha256:c19dd64b19097f1de80184f0cc7b0272a13ae6e170cbf240a3e27e381ed14a5f", size = 237700, upload-time = "2026-06-19T13:44:56.324Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/c1/6e422f34e569cf8e18df68d1939c81c099d2b61e4f7d9621c8a77560799c/pydantic_settings-2.14.2-py3-none-any.whl", hash = "sha256:a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440", size = 61715, upload-time = "2026-06-19T13:44:55.02Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1392,7 +1416,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "8.4.2"
+version = "9.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
@@ -1403,9 +1427,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
 ]
 
 [[package]]
@@ -1418,6 +1442,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3", size = 342432, upload-time = "2024-03-01T18:36:20.211Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
+]
+
+[[package]]
+name = "python-dotenv"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
 ]
 
 [[package]]
@@ -1475,7 +1508,7 @@ wheels = [
 
 [[package]]
 name = "requests"
-version = "2.32.5"
+version = "2.33.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -1483,9 +1516,9 @@ dependencies = [
     { name = "idna" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517, upload-time = "2025-08-18T20:46:02.573Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/64/8860370b167a9721e8956ae116825caff829224fbca0ca6e7bf8ddef8430/requests-2.33.0.tar.gz", hash = "sha256:c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652", size = 134232, upload-time = "2026-03-25T15:10:41.586Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738, upload-time = "2025-08-18T20:46:00.542Z" },
+    { url = "https://files.pythonhosted.org/packages/56/5d/c814546c2333ceea4ba42262d8c4d55763003e767fa169adc693bd524478/requests-2.33.0-py3-none-any.whl", hash = "sha256:3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b", size = 65017, upload-time = "2026-03-25T15:10:40.382Z" },
 ]
 
 [[package]]
@@ -1850,6 +1883,7 @@ dependencies = [
     { name = "password-strength" },
     { name = "pyarrow" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "rich" },
     { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scikit-learn", version = "1.9.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1885,6 +1919,7 @@ requires-dist = [
     { name = "password-strength", specifier = "<=0.0.3.post2,>=0.0.3.post2" },
     { name = "pyarrow", specifier = ">=14.0.0,<=23.0.1" },
     { name = "pydantic", specifier = ">=2.11.7,<=2.13.4" },
+    { name = "pydantic-settings", specifier = "<=2.14.2,>=2.14.2" },
     { name = "rich", specifier = ">=13.7.0,<=15.0.0" },
     { name = "scikit-learn", specifier = ">=1.3.1,<=1.9.0" },
     { name = "sseclient-py", specifier = ">=1.8.0,<=1.9.0" },
@@ -1899,7 +1934,7 @@ provides-extras = ["sagemaker"]
 dev = [
     { name = "basedpyright", specifier = "~=1.32.1" },
     { name = "licensecheck", specifier = "==2025.1.0" },
-    { name = "pytest", specifier = "==8.4.2" },
+    { name = "pytest", specifier = "==9.0.3" },
     { name = "respx", specifier = "==0.22.0" },
     { name = "ruff", specifier = "==0.15.16" },
 ]
@@ -2030,11 +2065,11 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.3"
+version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
 ]
 
 [[package]]
@@ -2519,6 +2554,9 @@ class ModelLimit(BaseModel):
     max_cols: int
     test_set_max_rows_w_full_regression_output: int
     test_set_max_cells: int
+    # Optional until all deployed servers send it; estimator.py falls back to
+    # its local default when absent.
+    predict_row_pairs_budget: int | None = None
 
 
 class ModelVersion(str, Enum):
@@ -2825,18 +2863,7 @@ import backoff
 import httpx
 from omegaconf import DictConfig, OmegaConf
 from tabpfn_client.browser_auth import BrowserAuthHandler
-from tabpfn_client.constants import (
-    dedup_datasets_enabled,
-    force_reupload_enabled,
-    force_async_enabled,
-    TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD,
-    TABPFN_CLIENT_TIMEOUT,
-    TABPFN_CLIENT_UPLOAD_TIMEOUT,
-    TABPFN_CLIENT_API_URL,
-    TABPFN_CLIENT_POLL_INTERVAL,
-    TABPFN_CLIENT_POLL_TIMEOUT,
-    _ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES,
-)
+from tabpfn_client.constants import ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES
 from tabpfn_common_utils import utils as common_utils
 from tabpfn_common_utils.utils import Singleton
 from tabpfn_client.api_models import (
@@ -2860,6 +2887,7 @@ from tabpfn_client.api_models import (
     RegressorConfig,
     PredictionTask,
 )
+from tabpfn_client.options import get_opts
 
 logger = logging.getLogger(__name__)
 
@@ -2988,7 +3016,7 @@ class ClientOptions:
 
     # Note: timeout=None does not fallback to the client default, rather it disables
     # the timeout altogether.
-    timeout: float = TABPFN_CLIENT_TIMEOUT
+    timeout: float = get_opts().TABPFN_CLIENT_TIMEOUT
     headers: dict[str, str] = field(default_factory=dict)
 
 
@@ -3007,7 +3035,7 @@ class ServiceClient(Singleton):
     server_config = SERVER_CONFIG
     server_endpoints = SERVER_CONFIG["endpoints"]
     base_url = (
-        TABPFN_CLIENT_API_URL
+        get_opts().TABPFN_CLIENT_API_URL
         or f"{server_config.protocol}://{server_config.host}:{server_config.port}"
     )
     # NOTE: HTTP/1.1 only. HTTP/2 used to be selectively enabled for the
@@ -3026,7 +3054,7 @@ class ServiceClient(Singleton):
     # tradeoff is one-sided.
     httpx_client = httpx.Client(
         base_url=base_url,
-        timeout=TABPFN_CLIENT_TIMEOUT,
+        timeout=get_opts().TABPFN_CLIENT_TIMEOUT,
         headers={"Prior-Client-Version": get_client_version()},
         follow_redirects=True,
     )
@@ -3062,6 +3090,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def authorize(cls, access_token: str):
+        get_opts().TABPFN_TOKEN = access_token
         cls._access_token = access_token
         cls.httpx_client.headers.update(
             {"Authorization": f"Bearer {cls.get_access_token()}"}
@@ -3146,15 +3175,15 @@ class ServiceClient(Singleton):
                         f"the server limit of {limits.dataset_max_size_bytes} bytes."
                     )
             if (
-                total_mem_usage <= _ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES
-                and not force_async_enabled()
+                total_mem_usage <= ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES
+                and not get_opts().TABPFN_CLIENT_FORCE_ASYNC
             ):
                 async_mode = False
 
         x_bytes, x_crc32c_hash = _serialize_to_parquet(df_X)
         y_bytes, y_crc32c_hash = _serialize_to_parquet(df_y)
 
-        if dedup_datasets_enabled():
+        if get_opts().TABPFN_CLIENT_DEDUP_DATASETS:
             x_dedup_hash = x_crc32c_hash
             y_dedup_hash = y_crc32c_hash
         else:
@@ -3169,7 +3198,7 @@ class ServiceClient(Singleton):
                 format="parquet", hash=y_dedup_hash, size_bytes=len(y_bytes)
             ),
             description=description,
-            force_reupload=force_reupload_enabled(),
+            force_reupload=get_opts().TABPFN_CLIENT_FORCE_REUPLOAD,
         )
         res = cls.httpx_client.post(
             url="/tabpfn/prepare_train_set_upload",
@@ -3260,7 +3289,7 @@ class ServiceClient(Singleton):
     def _wait_for_fit(
         cls,
         fitted_train_set_id: UUID,
-        timeout: float = TABPFN_CLIENT_POLL_TIMEOUT,
+        timeout: float = get_opts().TABPFN_CLIENT_POLL_TIMEOUT,
         headers: dict[str, str] | None = None,
     ) -> None:
         """Poll ``GET /tabpfn/fit/{id}`` until the fit reaches a terminal state.
@@ -3281,7 +3310,7 @@ class ServiceClient(Singleton):
                     f"within {timeout} seconds."
                 )
 
-            time.sleep(min(TABPFN_CLIENT_POLL_INTERVAL, remaining))
+            time.sleep(min(get_opts().TABPFN_CLIENT_POLL_INTERVAL, remaining))
 
             try:
                 res = cls._get_fit_status(fitted_train_set_id, headers=headers)
@@ -3398,7 +3427,7 @@ class ServiceClient(Singleton):
 
         x_test_bytes, x_test_crc32c_hash = _serialize_to_parquet(df_x_test)
 
-        if dedup_datasets_enabled():
+        if get_opts().TABPFN_CLIENT_DEDUP_DATASETS:
             x_test_dedup_hash = x_test_crc32c_hash
         else:
             x_test_dedup_hash = None
@@ -3410,7 +3439,7 @@ class ServiceClient(Singleton):
                 hash=x_test_dedup_hash,
                 size_bytes=len(x_test_bytes),
             ),
-            force_reupload=force_reupload_enabled(),
+            force_reupload=get_opts().TABPFN_CLIENT_FORCE_REUPLOAD,
         )
         res = cls.httpx_client.post(
             url="/tabpfn/prepare_test_set_upload",
@@ -3529,7 +3558,7 @@ class ServiceClient(Singleton):
             return
 
         with ThreadPoolExecutor(
-            max_workers=min(TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD, num_chunks)
+            max_workers=min(get_opts().TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD, num_chunks)
         ) as pool:
             futures = {
                 pool.submit(
@@ -3574,7 +3603,7 @@ class ServiceClient(Singleton):
             url,
             content=chunk,
             headers=headers,
-            timeout=TABPFN_CLIENT_UPLOAD_TIMEOUT,
+            timeout=get_opts().TABPFN_CLIENT_UPLOAD_TIMEOUT,
         )
         if resp.status_code == 200:
             return
@@ -4187,6 +4216,7 @@ from tabpfn_client.service_wrapper import UserAuthenticationClient
 from tabpfn_client.constants import CACHE_DIR
 from tabpfn_client.prompt_agent import PromptAgent
 from tabpfn_client.ui import console, warn
+from tabpfn_client.options import reload_opts
 
 
 CONNECTION_ERROR = RuntimeError(
@@ -4204,6 +4234,7 @@ class Config:
 
     is_initialized = False
     use_server = False
+    token: str | None = None
 
 
 def init(use_server=True):
@@ -4224,6 +4255,8 @@ def init(use_server=True):
     if Config.is_initialized:
         # Only do the following if the initialization has not been done yet
         return
+
+    reload_opts()
 
     if use_server:
         try:
@@ -4346,45 +4379,8 @@ FILE: src/tabpfn_client/constants.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
-from __future__ import annotations
 
-import os
-import logging
-from enum import Enum
-from functools import cache
 from pathlib import Path
-from typing import Any
-from tabpfn_client.api_models import ModelLimit
-
-logger = logging.getLogger(__name__)
-
-
-# TODO: This should be exported by a tabpfn-types package at some point.
-class ModelVersion(str, Enum):
-    V2 = "v2"
-    V2_5 = "v2.5"
-    V2_6 = "v2.6"
-    V3 = "v3"
-
-    def model_limit(self, model_limits: dict[Any, ModelLimit]) -> ModelLimit:
-        """Resolve limit of a model to the same or closest previous version limit.
-
-        Raises:
-            ValueError: If no model limits are registered at or below the model version.
-        """
-        sorted_versions = sorted(model_limits.keys())
-        for k in reversed(sorted_versions):
-            if k <= self:
-                return model_limits[k]
-        raise ValueError(f"No model limits registered at or below {self}")
-
-    @staticmethod
-    def from_model_path(model_path: str) -> ModelVersion:
-        for version in ModelVersion:
-            if f"-{version.value}-" in model_path:
-                return version
-        raise ValueError(f"Invalid model path: {model_path}")
-
 
 CACHE_DIR = Path(__file__).parent.resolve() / ".tabpfn"
 
@@ -4394,62 +4390,7 @@ URL_PRIOR_LABS_TERMS_AND_CONDITIONS = (
 )
 URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE = "https://github.com/PriorLabs/tabpfn-extensions/blob/main/src/tabpfn_extensions/many_class/many_class_classifier.py"  # noqa: E501
 
-TABPFN_TOKEN = os.getenv("TABPFN_TOKEN")
-
-# Client specific constants
-TABPFN_CLIENT_API_URL = os.getenv("TABPFN_CLIENT_API_URL")
-TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD = int(
-    os.getenv("TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD", 8)
-)
-TABPFN_CLIENT_TIMEOUT = float(os.getenv("TABPFN_CLIENT_TIMEOUT", 900.0))
-TABPFN_CLIENT_UPLOAD_TIMEOUT = float(os.getenv("TABPFN_CLIENT_UPLOAD_TIMEOUT", 7200.0))
-TABPFN_CLIENT_FORCE_ASYNC = os.getenv("TABPFN_CLIENT_FORCE_ASYNC")
-TABPFN_CLIENT_POLL_INTERVAL = float(os.getenv("TABPFN_CLIENT_POLL_INTERVAL", 5.0))
-TABPFN_CLIENT_POLL_TIMEOUT = float(
-    os.getenv("TABPFN_CLIENT_POLL_TIMEOUT", 7200.0)  # 2 hours
-)
-
-_ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES = 50 * 1024 * 1024
-
-
-@cache
-def ci_mode_enabled() -> bool:
-    val = os.getenv("TABPFN_CLIENT_CI_MODE")
-    return str(val).lower() in {"1", "true", "yes", "on"}
-
-
-@cache
-def force_async_enabled() -> bool:
-    val = os.getenv("TABPFN_CLIENT_FORCE_ASYNC")
-    return str(val).lower() in {"1", "true", "yes", "on"}
-
-
-@cache
-def force_reupload_enabled() -> bool:
-    # `DISABLE_DS_CACHING` is legacy, we keep it for backward compatibility.
-    # Note: The new env var has the opposite meaning.
-    force_reupload = os.getenv("TABPFN_CLIENT_FORCE_REUPLOAD")
-    disable_caching = os.getenv("DISABLE_DS_CACHING")
-
-    if force_reupload is not None:
-        enabled = str(force_reupload).lower() in {"1", "true", "yes", "on"}
-    elif disable_caching is not None:
-        enabled = str(disable_caching).lower() in {"1", "true", "yes", "on"}
-    else:
-        enabled = False
-
-    return enabled
-
-
-@cache
-def dedup_datasets_enabled() -> bool:
-    val = os.getenv("TABPFN_CLIENT_DEDUP_DATASETS", True)
-    enabled = str(val).lower() in {"1", "true", "yes", "on"}
-
-    if not enabled:
-        logger.warning("Dataset deduplication is disabled.")
-
-    return enabled
+ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES = 50 * 1024 * 1024
 
 
 
@@ -4484,11 +4425,9 @@ from tabpfn_client.client import (
     ThinkingEffort,
 )
 from tabpfn_client.config import Config, init
-from tabpfn_client.constants import (
-    ci_mode_enabled,
-    URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE,
-    ModelVersion,
-)
+from tabpfn_client.constants import URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE
+from tabpfn_client.api_models import ModelVersion
+from tabpfn_client.utils import model_limit_from_version, model_version_from_path
 from tabpfn_client.service_wrapper import InferenceClient
 from tabpfn_client.api_models import (
     RegressorTabPFNConfig,
@@ -4498,6 +4437,7 @@ from tabpfn_client.api_models import (
     ClassifierConfig,
     RegressorConfig,
 )
+from tabpfn_client.options import get_opts
 
 try:
     from torch import Tensor  # type: ignore
@@ -4524,6 +4464,13 @@ DEFAULT_V3_MODEL_PATH = "v3_default"
 _AUTO_MODEL_PATH_ALIASES: frozenset[str | None] = frozenset({None, "auto", "default"})
 
 THINKING_TIMEOUT_MAX_S = 40 * 60
+
+# Prediction compute scales with n_train_rows * n_test_rows, so the API caps
+# their product. The effective per-call test row limit therefore shrinks as
+# the fitted training set grows (e.g. 1M training rows -> 250k test rows).
+# The server sends its budget via get_model_limits (`predict_row_pairs_budget`);
+# this is only the fallback for servers that predate that field.
+FALLBACK_PREDICT_ROW_PAIRS_BUDGET = 250_000 * 1_000_000
 
 _VALID_THINKING_EFFORT_LEVELS = frozenset({"medium", "high"})
 
@@ -4863,7 +4810,14 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
             predict_params=predict_params,
         )
 
-        validate_test_set(X, output_type, tabpfn_config.model_path)
+        validate_test_set(
+            X,
+            output_type,
+            tabpfn_config.model_path,
+            train_rows=self._last_train_X.shape[0]
+            if self._last_train_X is not None
+            else None,
+        )
         X_clean = _clean_text_features(X)
 
         if (
@@ -5201,7 +5155,14 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
             predict_params=predict_params,
         )
 
-        validate_test_set(X, output_type, tabpfn_config.model_path)
+        validate_test_set(
+            X,
+            output_type,
+            tabpfn_config.model_path,
+            train_rows=self._last_train_X.shape[0]
+            if self._last_train_X is not None
+            else None,
+        )
         X_clean = _clean_text_features(X)
 
         if (
@@ -5246,6 +5207,8 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         self._last_meta = result.metadata
 
         output = result.y_pred
+        if output_type == "quantiles" and isinstance(output, np.ndarray):
+            return list(output) if output.ndim == 2 else [output]
         if output_type == "full":
             try:
                 from tabpfn.regressor import FullSupportBarDistribution  # type: ignore
@@ -5378,6 +5341,7 @@ def validate_test_set(
     X: pd.DataFrame | np.ndarray,
     output_type: str | None,
     model_path: str | None = None,
+    train_rows: int | None = None,
 ):
     """Check the integrity of the test data."""
 
@@ -5388,12 +5352,17 @@ def validate_test_set(
     if not model_path:
         limit = limits.model_limits[limits.default_model_version]
     else:
-        model_version = ModelVersion.from_model_path(model_path)
-        limit = model_version.model_limit(limits.model_limits)
+        model_version = model_version_from_path(model_path)
+        limit = model_limit_from_version(model_version, limits.model_limits)
 
-    if X.shape[0] > limit.test_set_max_rows:
+    max_rows = limit.test_set_max_rows
+    if train_rows:
+        budget = limit.predict_row_pairs_budget or FALLBACK_PREDICT_ROW_PAIRS_BUDGET
+        max_rows = min(max_rows, budget // train_rows)
+
+    if X.shape[0] > max_rows:
         raise ValueError(
-            f"The number of test rows ({X.shape[0]}) exceeds the maximum of {limit.test_set_max_rows}. "
+            f"The number of test rows ({X.shape[0]}) exceeds the maximum of {max_rows}. "
             "Split the test set across multiple calls to reduce the number of rows."
         )
     if X.shape[1] > limit.max_cols:
@@ -5465,7 +5434,7 @@ def _clean_text_features(X):
 
 
 def run_task(task: Callable, message: str, with_spinner: bool = True) -> Any:
-    if not with_spinner or ci_mode_enabled():
+    if not with_spinner or get_opts().TABPFN_CLIENT_CI_MODE:
         result = task()
     else:
         start = time.time()
@@ -5490,6 +5459,44 @@ def run_task(task: Callable, message: str, with_spinner: bool = True) -> Any:
         sys.stdout.write(f"\r{minutes:02d}:{seconds:02d} {message}... Done!\n")
         sys.stdout.flush()
     return result
+
+
+
+================================================
+FILE: src/tabpfn_client/options.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2025.
+#  Licensed under the Apache License, Version 2.0
+
+from pydantic_settings import BaseSettings
+
+
+class Options(BaseSettings):
+    TABPFN_TOKEN: str | None = None
+    TABPFN_CLIENT_API_URL: str | None = None
+    TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD: int = 8
+    TABPFN_CLIENT_TIMEOUT: float = 900.0
+    TABPFN_CLIENT_UPLOAD_TIMEOUT: float = 7200.0
+    TABPFN_CLIENT_POLL_INTERVAL: float = 5.0
+    TABPFN_CLIENT_POLL_TIMEOUT: float = 7200.0  # 2 hours
+    TABPFN_CLIENT_CI_MODE: bool = False
+    TABPFN_CLIENT_FORCE_ASYNC: bool = False
+    TABPFN_CLIENT_FORCE_REUPLOAD: bool = False
+    TABPFN_CLIENT_DEDUP_DATASETS: bool = True
+
+
+_opts: Options = Options()
+
+
+# TODO(refactor): Some opts are used in the http client which is initialized as a class
+# variable of the ServiceClient singleton. These cannot be updated after importing.
+def reload_opts() -> None:
+    global _opts
+    _opts = Options()
+
+
+def get_opts() -> Options:
+    return _opts
 
 
 
@@ -6328,6 +6335,7 @@ from tabpfn_client.api_models import (
     ClassifierConfig,
     RegressorConfig,
 )
+from tabpfn_client.options import get_opts
 
 
 logger = logging.getLogger(__name__)
@@ -6410,8 +6418,8 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
     @classmethod
     def try_reuse_existing_token(cls) -> tuple[bool, str | None]:
         if ServiceClient.get_access_token() is None:
-            if constants.TABPFN_TOKEN:
-                access_token = constants.TABPFN_TOKEN
+            if get_opts().TABPFN_TOKEN:
+                access_token = get_opts().TABPFN_TOKEN
             else:
                 if not cls.CACHED_TOKEN_FILE.exists():
                     return False, None
@@ -6449,7 +6457,7 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
         # the client it can only be used or unset, never set.
         # Note: we should prefix with the module to make sure the variable is not
         # only mutated in the local module binding.
-        constants.TABPFN_TOKEN = None
+        get_opts().TABPFN_TOKEN = None
 
     @classmethod
     def retrieve_greeting_messages(cls):
@@ -6768,6 +6776,39 @@ __all__ = [
 
 
 ================================================
+FILE: src/tabpfn_client/utils.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2025.
+#  Licensed under the Apache License, Version 2.0
+
+from typing import Any
+from tabpfn_client.api_models import ModelLimit, ModelVersion
+
+
+def model_limit_from_version(
+    model_version: ModelVersion, model_limits: dict[Any, ModelLimit]
+) -> ModelLimit:
+    """Resolve limit of a model to the same or closest previous version limit.
+
+    Raises:
+        ValueError: If no model limits are registered at or below the model version.
+    """
+    sorted_versions = sorted(model_limits.keys())
+    for k in reversed(sorted_versions):
+        if k <= model_version:
+            return model_limits[k]
+    raise ValueError(f"No model limits registered at or below {model_version}")
+
+
+def model_version_from_path(model_path: str) -> ModelVersion:
+    for version in ModelVersion:
+        if f"-{version.value}-" in model_path:
+            return version
+    raise ValueError(f"Invalid model path: {model_path}")
+
+
+
+================================================
 FILE: src/tabpfn_client/foundry/__init__.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2026.
@@ -7044,6 +7085,306 @@ class TabPFNRegressor(_FoundryBase, RegressorMixin):
 
 
 ================================================
+FILE: src/tabpfn_client/hosted/__init__.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""HTTP client for a self-hosted TabPFN inference container.
+
+from tabpfn_client.hosted import TabPFNClassifier, TabPFNRegressor
+"""
+
+from tabpfn_client.hosted.estimator import TabPFNClassifier, TabPFNRegressor
+
+
+__all__ = ["TabPFNClassifier", "TabPFNRegressor"]
+
+
+
+================================================
+FILE: src/tabpfn_client/hosted/estimator.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""scikit-learn estimators for a TabPFN inference container reached over HTTP.
+
+Mirrors the `tabpfn_client.TabPFNClassifier` / `TabPFNRegressor` surface;
+each `predict*` call POSTs to the user-supplied `endpoint_url` (the full
+scoring URL, including the `/predict` path). `fit()` does not call the
+endpoint â€” it just stores `X` / `y` on the estimator. The training data
+is shipped to the endpoint on the next `predict*` call, where the actual
+fit runs.
+
+Auth is optional: when `api_key` is set it is sent as `Bearer <api_key>`,
+otherwise no `Authorization` header is added.
+
+Cached predict is opt-in via the `model_id` constructor argument.
+When set (and `fit()` has not been called), `predict*` sends
+`context.model_id` and omits the training data, letting the endpoint
+reuse an already-fit model. Calling `fit()` on the estimator supersedes
+the constructor `model_id` â€” the freshly-stored training data is
+shipped on the next `predict*`, matching sklearn's re-fit semantics.
+To make the endpoint build a reusable cache in the first
+place, set `fit_mode="fit_with_cache"`; the endpoint then returns a
+`model_id` in its response, captured on the fitted attribute
+`self.model_id_` so callers can construct a follow-up estimator with
+`model_id=prior.model_id_`. `model_path` is similarly optional and
+only sent when set; some deployments reject overrides.
+
+`model_id` lives on the constructor (not on `predict`) so the sklearn
+estimator contract stays intact: `predict(X)` / `predict_proba(X)` work
+with `Pipeline`, `GridSearchCV`, `cross_validate`, etc.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Literal, Optional
+
+import httpx
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
+from sklearn.utils.validation import check_is_fitted
+
+
+def _to_jsonable(X: Any) -> list:
+    """Coerce numpy / pandas inputs to plain Python lists for JSON."""
+    if isinstance(X, pd.DataFrame):
+        return X.values.tolist()
+    if isinstance(X, pd.Series):
+        return X.tolist()
+    if isinstance(X, list):
+        return X
+    return np.asarray(X).tolist()
+
+
+class _HostedBase(BaseEstimator):
+    """Shared HTTP plumbing for the endpoint-backed TabPFN estimators."""
+
+    _TASK: str = ""  # overridden by subclasses
+
+    def __init__(
+        self,
+        endpoint_url: str,
+        api_key: Optional[str] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+        model_id: Optional[str] = None,
+        model_path: Optional[str] = None,
+        fit_mode: Optional[
+            Literal["fit_preprocessors", "low_memory", "fit_with_cache", "batched"]
+        ] = None,
+        n_estimators: int = 8,
+        softmax_temperature: float = 0.9,
+        balance_probabilities: bool = False,
+        average_before_softmax: bool = False,
+        inference_precision: Literal["autocast", "auto"] = "auto",
+        random_state: Optional[int] = 0,
+        inference_config: Optional[Dict[str, Any]] = None,
+        n_preprocessing_jobs: int = 4,
+        memory_saving_mode: Optional[bool | Literal["auto"]] = None,
+        categorical_features_indices: Optional[List[int]] = None,
+        timeout_s: float = 300.0,
+    ):
+        self.endpoint_url = endpoint_url
+        self.api_key = api_key
+        self.extra_headers = extra_headers
+        self.model_id = model_id
+        self.model_path = model_path
+        self.fit_mode = fit_mode
+        self.n_estimators = n_estimators
+        self.softmax_temperature = softmax_temperature
+        self.balance_probabilities = balance_probabilities
+        self.average_before_softmax = average_before_softmax
+        self.inference_precision = inference_precision
+        self.random_state = random_state
+        self.inference_config = inference_config
+        self.n_preprocessing_jobs = n_preprocessing_jobs
+        self.memory_saving_mode = memory_saving_mode
+        self.categorical_features_indices = categorical_features_indices
+        self.timeout_s = timeout_s
+
+    def _build_tabpfn_config(self) -> Dict[str, Any]:
+        cfg: Dict[str, Any] = {
+            "n_estimators": self.n_estimators,
+            "softmax_temperature": self.softmax_temperature,
+            "average_before_softmax": self.average_before_softmax,
+            "inference_precision": self.inference_precision,
+            "random_state": self.random_state,
+            "inference_config": self.inference_config,
+            "n_preprocessing_jobs": self.n_preprocessing_jobs,
+        }
+        if self.memory_saving_mode is not None:
+            cfg["memory_saving_mode"] = self.memory_saving_mode
+        if self.categorical_features_indices is not None:
+            cfg["categorical_features_indices"] = self.categorical_features_indices
+        if self.model_path is not None:
+            cfg["model_path"] = self.model_path
+        if self.fit_mode is not None:
+            cfg["fit_mode"] = self.fit_mode
+        if self._TASK == "classification":
+            cfg["balance_probabilities"] = self.balance_probabilities
+        return cfg
+
+    def _headers(self) -> Dict[str, str]:
+        headers: Dict[str, str] = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        # The API key is optional because some deployments do not require it
+        if self.api_key is not None:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        if self.extra_headers:
+            headers.update(self.extra_headers)
+        return headers
+
+    def _http_client(self) -> httpx.Client:
+        # Cache the httpx.Client so repeated predict* calls reuse the TCP /
+        # TLS connection (keep-alive) instead of redoing the handshake on
+        # every request.
+        client = getattr(self, "_cached_client", None)
+        if client is not None:
+            return client
+        client = httpx.Client(timeout=self.timeout_s)
+        self._cached_client = client
+        return client
+
+    def __getstate__(self) -> Dict[str, Any]:
+        # httpx.Client isn't pickleable; strip the cache for sklearn pickling.
+        state = self.__dict__.copy()
+        state.pop("_cached_client", None)
+        return state
+
+    def fit(self, X: Any, y: Any) -> "_HostedBase":
+        X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
+        y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
+        if X_arr.shape[0] != y_arr.shape[0]:
+            raise ValueError(
+                f"X and y must have the same number of samples; "
+                f"got X={X_arr.shape}, y={y_arr.shape}"
+            )
+        self.X_train_ = X_arr
+        self.y_train_ = y_arr
+        # New training data invalidates any cached model_id captured from a
+        # prior predict; otherwise `predict(X, model_id=self.model_id_)` would
+        # keep hitting the old server-side model.
+        self.model_id_ = None
+        if self._TASK == "classification":
+            self.classes_ = np.unique(y_arr)
+        return self
+
+    def _invoke(
+        self,
+        X_test: Any,
+        output_type: str,
+        predict_params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        params: Dict[str, Any] = {"output_type": output_type}
+        if predict_params:
+            params.update(predict_params)
+
+        body: Dict[str, Any] = {
+            "task_config": {
+                "task": self._TASK,
+                "tabpfn_config": self._build_tabpfn_config(),
+                "predict_params": params,
+            },
+            "X_test": _to_jsonable(X_test),
+        }
+
+        # Precedence: a completed fit() wins over the constructor's model_id.
+        # Rationale â€” if the caller ran fit(new_X, new_y) on an estimator that
+        # was constructed with model_id set, they have re-trained; the cached
+        # id is now stale relative to the new data. Falls back to the cached
+        # path only when fit() was never called.
+        has_training_data = hasattr(self, "X_train_") and hasattr(self, "y_train_")
+        if has_training_data:
+            # y_train on the wire is 2D (n_samples, 1).
+            y_arr = np.asarray(self.y_train_)
+            if y_arr.ndim == 1:
+                y_arr = y_arr.reshape(-1, 1)
+            body["X_train"] = _to_jsonable(self.X_train_)
+            body["y_train"] = y_arr.tolist()
+        elif self.model_id is not None:
+            body["context"] = {"model_id": self.model_id}
+        else:
+            # Neither path available â€” raise the standard sklearn error.
+            check_is_fitted(self, ["X_train_", "y_train_"])
+
+        resp = self._http_client().post(
+            self.endpoint_url,
+            json=body,
+            headers=self._headers(),
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+
+        returned_id = payload.get("model_id")
+        if returned_id is not None:
+            self.model_id_ = returned_id
+
+        return payload
+
+
+class TabPFNClassifier(_HostedBase, ClassifierMixin):
+    """TabPFN classifier backed by a self-hosted inference endpoint.
+
+    Example:
+        from tabpfn_client.hosted import TabPFNClassifier
+        clf = TabPFNClassifier(
+            endpoint_url="https://<your-endpoint>/predict",
+            api_key="<optional-bearer-token>",
+        )
+        clf.fit(X_train, y_train)
+        clf.predict(X_test)
+        clf.predict_proba(X_test)
+    """
+
+    _TASK = "classification"
+
+    def predict(self, X: Any) -> np.ndarray:
+        result = self._invoke(X, output_type="preds")
+        return np.asarray(result["prediction"])
+
+    def predict_proba(self, X: Any) -> np.ndarray:
+        result = self._invoke(X, output_type="probas")
+        return np.asarray(result["prediction"])
+
+
+class TabPFNRegressor(_HostedBase, RegressorMixin):
+    """TabPFN regressor backed by a self-hosted inference endpoint.
+
+    Example:
+        from tabpfn_client.hosted import TabPFNRegressor
+        reg = TabPFNRegressor(
+            endpoint_url="https://<your-endpoint>/predict",
+            api_key="<optional-bearer-token>",
+        )
+        reg.fit(X_train, y_train)
+        reg.predict(X_test)
+        reg.predict(X_test, output_type="quantiles", quantiles=[0.1, 0.5, 0.9])
+    """
+
+    _TASK = "regression"
+
+    def predict(
+        self,
+        X: Any,
+        output_type: str = "mean",
+        quantiles: Optional[list] = None,
+    ) -> np.ndarray:
+        predict_params: Dict[str, Any] = {}
+        if quantiles is not None:
+            predict_params["quantiles"] = quantiles
+        result = self._invoke(
+            X,
+            output_type=output_type,
+            predict_params=predict_params,
+        )
+        return np.asarray(result["prediction"])
+
+
+
+================================================
 FILE: src/tabpfn_client/sagemaker/__init__.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2026.
@@ -7144,6 +7485,7 @@ class _SagemakerBase(BaseEstimator):
         s3_prefix: str = "async-io",
         async_poll_interval_s: float = 2.0,
         async_timeout_s: float = 60 * 60,
+        invocation_timeout_s: Optional[int] = None,
     ):
         self.endpoint_name = endpoint_name
         self.region_name = region_name
@@ -7169,6 +7511,11 @@ class _SagemakerBase(BaseEstimator):
         self.s3_prefix = s3_prefix
         self.async_poll_interval_s = async_poll_interval_s
         self.async_timeout_s = async_timeout_s
+        # Server-side cap (seconds, 1-3600) the endpoint may spend on one async
+        # request before it is failed. Left as the service default when None;
+        # raise it for long-running requests. Distinct from `async_timeout_s`,
+        # which only bounds how long the client polls for the result.
+        self.invocation_timeout_s = invocation_timeout_s
 
     @property
     def _thinking_active(self) -> bool:
@@ -7328,13 +7675,16 @@ class _SagemakerBase(BaseEstimator):
             Body=body_bytes,
             ContentType="application/json",
         )
-        resp = self._runtime_client().invoke_endpoint_async(
-            EndpointName=self.endpoint_name,
-            InputLocation=f"s3://{self.s3_bucket}/{input_key}",
-            ContentType="application/json",
-            Accept="application/json",
-            InferenceId=inference_id,
-        )
+        invoke_kwargs: Dict[str, Any] = {
+            "EndpointName": self.endpoint_name,
+            "InputLocation": f"s3://{self.s3_bucket}/{input_key}",
+            "ContentType": "application/json",
+            "Accept": "application/json",
+            "InferenceId": inference_id,
+        }
+        if self.invocation_timeout_s is not None:
+            invoke_kwargs["InvocationTimeoutSeconds"] = int(self.invocation_timeout_s)
+        resp = self._runtime_client().invoke_endpoint_async(**invoke_kwargs)
         out_bucket, out_key = resp["OutputLocation"].removeprefix("s3://").split("/", 1)
         fail_location = resp.get("FailureLocation")
         fail_bucket, fail_key = (None, None)
@@ -7477,7 +7827,7 @@ from sklearn.model_selection import train_test_split
 
 # from tabpfn_client import UserDataClient
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
-from tabpfn_client.constants import ModelVersion
+from tabpfn_client.api_models import ModelVersion
 
 logging.basicConfig(level=logging.INFO)
 
@@ -7674,7 +8024,7 @@ import pytest
 from sklearn.datasets import load_breast_cancer, load_diabetes
 from sklearn.model_selection import train_test_split
 
-from tabpfn_client.constants import ModelVersion
+from tabpfn_client.api_models import ModelVersion
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
 
 # ---------------------------------------------------------------------------
@@ -8080,6 +8430,7 @@ from tabpfn_client import init, reset
 from tabpfn_client import TabPFNClassifier
 from tests.mock_tabpfn_server import with_mock_server
 from tabpfn_client.service_wrapper import UserAuthenticationClient
+from tabpfn_client.options import get_opts
 
 
 class TestTabPFNClassifier(unittest.TestCase):
@@ -8202,7 +8553,7 @@ class TestTabPFNClassifier(unittest.TestCase):
             ),
         ]
 
-        with patch("tabpfn_client.client.TABPFN_CLIENT_POLL_INTERVAL", 0):
+        with patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0):
             tabpfn.fit(self.X_train, self.y_train)
 
         self.assertEqual(status_route.call_count, 2)
@@ -8240,6 +8591,42 @@ class TestTabPFNClassifier(unittest.TestCase):
 FILE: tests/unit/__init__.py
 ================================================
 [Empty file]
+
+
+================================================
+FILE: tests/unit/conftest.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""Isolate process-global client state between unit tests.
+
+Several tests mutate the module-global ``options._opts`` (e.g. via
+``set_access_token`` / ``ServiceClient.authorize``) or the ``TABPFN_TOKEN``
+environment variable. Without isolation that state leaks into later tests and
+makes ordering-dependent assertions (such as ``test_reload_opts``) fail. Snapshot
+both before each test and restore afterwards so tests cannot pollute one another.
+"""
+
+import os
+
+import pytest
+
+import tabpfn_client.options as options
+
+
+@pytest.fixture(autouse=True)
+def _restore_global_client_state():  # pyright: ignore[reportUnusedFunction]
+    saved_opts = options._opts.model_copy(deep=True)
+    saved_token = os.environ.get("TABPFN_TOKEN")
+    try:
+        yield
+    finally:
+        options._opts = saved_opts
+        if saved_token is None:
+            os.environ.pop("TABPFN_TOKEN", None)
+        else:
+            os.environ["TABPFN_TOKEN"] = saved_token
+
 
 
 ================================================
@@ -8515,6 +8902,7 @@ from tabpfn_client.client import (
     NeedsRefittingError,
     ServiceClient,
 )
+from tabpfn_client.options import get_opts
 from tabpfn_client.api_models import (
     ClassifierConfig,
     RegressorConfig,
@@ -8914,7 +9302,7 @@ class TestServiceClient(unittest.TestCase):
 
         with (
             patch.object(ServiceClient, "_upload_to_gcs"),
-            patch("tabpfn_client.client.TABPFN_CLIENT_POLL_INTERVAL", 0),
+            patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0),
         ):
             result = ServiceClient.fit(
                 self.X_train,
@@ -8953,7 +9341,7 @@ class TestServiceClient(unittest.TestCase):
 
         with (
             patch.object(ServiceClient, "_upload_to_gcs"),
-            patch("tabpfn_client.client.TABPFN_CLIENT_POLL_INTERVAL", 0),
+            patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0),
         ):
             with self.assertRaises(RuntimeError) as cm:
                 ServiceClient.fit(
@@ -9386,6 +9774,28 @@ def test_sklearn_compatible(
 
 
 ================================================
+FILE: tests/unit/test_options.py
+================================================
+import os
+from tabpfn_client.options import reload_opts
+
+
+def test_reload_opts():
+    from tabpfn_client.options import get_opts
+    from tabpfn_client import set_access_token
+
+    assert get_opts().TABPFN_TOKEN is None
+
+    set_access_token("dummy_token")
+    assert get_opts().TABPFN_TOKEN == "dummy_token"
+
+    os.environ["TABPFN_TOKEN"] = "dummy_token_from_env"
+    reload_opts()
+    assert get_opts().TABPFN_TOKEN == "dummy_token_from_env"
+
+
+
+================================================
 FILE: tests/unit/test_prompt_agent.py
 ================================================
 import unittest
@@ -9508,6 +9918,70 @@ class TestPromptAgent(unittest.TestCase):
 
 
 ================================================
+FILE: tests/unit/test_sagemaker_invocation_timeout.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""Unit tests for the async `InvocationTimeoutSeconds` pass-through on the
+SageMaker estimators. boto3 is mocked, so these run without the extra."""
+
+import json
+import unittest
+from io import BytesIO
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+
+from tabpfn_client.sagemaker import TabPFNClassifier
+
+
+def _fake_s3_client() -> MagicMock:
+    s3 = MagicMock()
+    # `_invoke_async` reads `s3.exceptions.NoSuchKey` as an exception class.
+    s3.exceptions.NoSuchKey = type("NoSuchKey", (Exception,), {})
+    s3.get_object.return_value = {
+        "Body": BytesIO(json.dumps({"prediction": [[0, 1]], "metadata": {}}).encode())
+    }
+    return s3
+
+
+class TestSagemakerInvocationTimeout(unittest.TestCase):
+    def _invoke_async_kwargs(self, invocation_timeout_s):
+        clf = TabPFNClassifier(
+            endpoint_name="ep",
+            region_name="us-east-1",
+            use_async=True,
+            s3_bucket="bucket",
+            async_poll_interval_s=0.0,
+            invocation_timeout_s=invocation_timeout_s,
+        )
+        runtime = MagicMock()
+        runtime.invoke_endpoint_async.return_value = {
+            "OutputLocation": "s3://bucket/out.json"
+        }
+        with (
+            patch.object(clf, "_runtime_client", return_value=runtime),
+            patch.object(clf, "_s3_client", return_value=_fake_s3_client()),
+        ):
+            clf.fit(np.zeros((3, 2)), np.array([0, 1, 0]))
+            clf.predict(np.zeros((2, 2)))
+        return runtime.invoke_endpoint_async.call_args.kwargs
+
+    def test_timeout_passed_through(self):
+        kwargs = self._invoke_async_kwargs(1234)
+        self.assertEqual(kwargs["InvocationTimeoutSeconds"], 1234)
+
+    def test_timeout_omitted_by_default(self):
+        kwargs = self._invoke_async_kwargs(None)
+        self.assertNotIn("InvocationTimeoutSeconds", kwargs)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+
+================================================
 FILE: tests/unit/test_service_wrapper.py
 ================================================
 import unittest
@@ -9519,6 +9993,7 @@ from pathlib import Path
 from tests.mock_tabpfn_server import with_mock_server
 from tabpfn_client.service_wrapper import UserAuthenticationClient, UserDataClient
 from tabpfn_client.client import ServiceClient
+from tabpfn_client.options import get_opts
 
 
 class TestUserAuthClient(unittest.TestCase):
@@ -9641,10 +10116,8 @@ class TestUserAuthClient(unittest.TestCase):
 
     @with_mock_server()
     def test_reset_cache_unsets_tabpfn_token_constant(self, mock_server):
-        import tabpfn_client.constants as constants
-
         # Ensure we take the env-token path (no cached token file).
-        with patch.object(constants, "TABPFN_TOKEN", "dummy_env_token"):
+        with patch.object(get_opts(), "TABPFN_TOKEN", "dummy_env_token"):
             # Make the token invalid so that the reset path is triggered.
             mock_server.router.get(mock_server.endpoints.protected_root.path).respond(
                 401
@@ -9656,7 +10129,7 @@ class TestUserAuthClient(unittest.TestCase):
 
             self.assertFalse(is_valid_token)
             self.assertIsNone(access_token)
-            self.assertIsNone(constants.TABPFN_TOKEN)
+            self.assertIsNone(get_opts().TABPFN_TOKEN)
 
     def test_reset_cache_without_token_set(self):
         # assert no exception is raised
@@ -11443,6 +11916,46 @@ class TestTabPFNRegressorInference(unittest.TestCase):
             self.assertEqual(predict_params.output_type, "quantiles")
             self.assertEqual(predict_params.quantiles, quantiles)
 
+    def test_predict_quantiles_returns_list_matching_local_tabpfn(self):
+        """Server returns a stacked (n_quantiles, n_samples) array; predict()
+        normalizes it to a list of per-quantile arrays, matching local tabpfn."""
+        regressor = TabPFNRegressor()
+        regressor.fitted_ = True
+        test_X = np.random.randn(20, 5)
+        quantiles = [0.1, 0.5, 0.9]
+
+        with patch.object(InferenceClient, "predict") as mock_predict:
+            mock_predict.return_value = PredictionResult(
+                y_pred=np.random.randn(len(quantiles), 20), metadata={}
+            )
+            output = regressor.predict(
+                test_X, output_type="quantiles", quantiles=quantiles
+            )
+
+        assert isinstance(output, list)
+        self.assertEqual(len(output), len(quantiles))
+        for arr in output:
+            self.assertIsInstance(arr, np.ndarray)
+            self.assertEqual(arr.shape, (20,))
+
+    def test_predict_single_quantile_returns_list_of_one_array(self):
+        """A single quantile may arrive squeezed to 1D; it must still become a
+        list of one (n_samples,) array, matching local tabpfn."""
+        regressor = TabPFNRegressor()
+        regressor.fitted_ = True
+        test_X = np.random.randn(20, 5)
+
+        with patch.object(InferenceClient, "predict") as mock_predict:
+            mock_predict.return_value = PredictionResult(
+                y_pred=np.random.randn(20), metadata={}
+            )
+            output = regressor.predict(test_X, output_type="quantiles", quantiles=[0.5])
+
+        assert isinstance(output, list)
+        self.assertEqual(len(output), 1)
+        self.assertIsInstance(output[0], np.ndarray)
+        self.assertEqual(output[0].shape, (20,))
+
     def test_predict_full_adds_criterion_with_optional_dependencies(self):
         regressor = TabPFNRegressor()
         regressor.fitted_ = True
@@ -12177,6 +12690,103 @@ class TestThinkingValidator:
 
 
 ================================================
+FILE: tests/unit/test_validate_test_set.py
+================================================
+from typing import Any
+from unittest.mock import patch
+
+import numpy as np
+import pytest
+
+from tabpfn_client.api_models import GetModelLimitsResponse
+from tabpfn_client.client import ServiceClient
+from tabpfn_client.estimator import FALLBACK_PREDICT_ROW_PAIRS_BUDGET, validate_test_set
+
+
+def _limits(
+    test_set_max_rows: int = 1_000_000,
+    predict_row_pairs_budget: int | None = FALLBACK_PREDICT_ROW_PAIRS_BUDGET,
+) -> GetModelLimitsResponse:
+    model_limit: dict[str, Any] = {
+        "train_set_max_rows": 1_000_000,
+        "train_set_max_cells": 100_000_000,
+        "test_set_max_rows": test_set_max_rows,
+        "test_set_max_cells": 100_000_000,
+        "test_set_max_rows_w_full_regression_output": 400,
+        "max_cols": 2_000,
+        "max_classes": 10,
+    }
+    if predict_row_pairs_budget is not None:
+        model_limit["predict_row_pairs_budget"] = predict_row_pairs_budget
+    return GetModelLimitsResponse.model_validate(
+        {
+            "default_model_version": "v3",
+            "max_model_limit": model_limit,
+            "model_limits": {"v3": model_limit},
+            "dataset_max_size_bytes": 100_000_000,
+        }
+    )
+
+
+def _X(n_rows: int) -> np.ndarray:
+    return np.zeros((n_rows, 1))
+
+
+def _validate(
+    n_test_rows: int,
+    train_rows: int | None = None,
+    limits: GetModelLimitsResponse | None = None,
+):
+    with patch.object(
+        ServiceClient, "get_model_limits", return_value=limits or _limits()
+    ):
+        validate_test_set(_X(n_test_rows), None, train_rows=train_rows)
+
+
+def test_static_limit_applies_without_train_rows():
+    _validate(1_000_000)
+    with pytest.raises(ValueError, match="exceeds the maximum of 1000000"):
+        _validate(1_000_001)
+
+
+def test_adaptive_limit_shrinks_with_train_rows():
+    # 1M train rows -> 250k test rows per call
+    _validate(250_000, train_rows=1_000_000)
+    with pytest.raises(ValueError, match="exceeds the maximum of 250000"):
+        _validate(250_001, train_rows=1_000_000)
+
+
+def test_adaptive_limit_never_exceeds_static_limit():
+    # Small train sets leave the static cap binding
+    small_train = FALLBACK_PREDICT_ROW_PAIRS_BUDGET // 1_000_000 // 10
+    _validate(1_000_000, train_rows=small_train)
+    with pytest.raises(ValueError, match="exceeds the maximum of 1000000"):
+        _validate(1_000_001, train_rows=small_train)
+
+
+def test_server_sent_budget_takes_precedence():
+    # Half the fallback budget -> 125k test rows for 1M train rows
+    limits = _limits(predict_row_pairs_budget=125_000 * 1_000_000)
+    _validate(125_000, train_rows=1_000_000, limits=limits)
+    with pytest.raises(ValueError, match="exceeds the maximum of 125000"):
+        _validate(125_001, train_rows=1_000_000, limits=limits)
+
+
+def test_fallback_budget_applies_when_server_omits_it():
+    # Older servers don't send predict_row_pairs_budget
+    limits = _limits(predict_row_pairs_budget=None)
+    _validate(250_000, train_rows=1_000_000, limits=limits)
+    with pytest.raises(ValueError, match="exceeds the maximum of 250000"):
+        _validate(250_001, train_rows=1_000_000, limits=limits)
+
+
+def test_no_limits_available_skips_validation():
+    with patch.object(ServiceClient, "get_model_limits", return_value=None):
+        validate_test_set(_X(2_000_000), None, train_rows=1_000_000)
+
+
+
+================================================
 FILE: .github/CODEOWNERS
 ================================================
 * @PriorLabs/engineering
@@ -12287,7 +12897,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+      - uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
         with:
           version: "0.9.9"
           cache-python: true
@@ -12338,7 +12948,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -12361,7 +12971,7 @@ jobs:
       # REFER: https://github.com/actions/setup-python#caching-packages-dependencies
       - name: Setup pip cache
         id: pip-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ matrix.dependency-set }}-${{ hashFiles('pyproject.toml', 'requirements-generated.txt', 'dev-requirements-generated.txt')}}

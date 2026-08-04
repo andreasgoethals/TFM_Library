@@ -52,6 +52,15 @@ downstream edit can ever reach this repository.
    Benchmarks, non-foundation-model tabular deep learning, general ML
    methods, and domain application papers are **out of scope** even when
    the corpus cites them heavily.
+
+   **There is exactly one deliberate exception, and it is important:**
+   `repositories/VSC Documentation.txt`, the KU Leuven / Flemish
+   Supercomputer Centre user documentation. **Never remove or deprioritise
+   it.** Every consuming project runs on VSC, so SLURM scripting, partition
+   and GPU selection, the Lustre/GPFS storage split, and credit accounting
+   are recurring questions for all of them, and having the answers greppable
+   offline is worth more than the file costs. Do not add further non-TFM
+   files without the owner's explicit request.
 3. **Papers are added ONLY when the owner explicitly says so** (or adds
    one themselves). Never collect papers proactively. When the owner does
    ask, follow all five steps:

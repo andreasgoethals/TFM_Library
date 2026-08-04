@@ -14,36 +14,89 @@ fresh dump of a public GitHub repo, the upstream URL is linked.
 
 ## Overview table
 
-Line counts are as of the 2026-07-17 snapshots; they drift on every
+Line counts are as of the 2026-08-04 refresh; they drift on every
 refresh, so treat them as rough sizes only.
 
 | File | Lines | GitHub | Paper | What it gives us |
 |------|-------|--------|-------|------------------|
-| `Huggingface TabPFN.txt` | 551 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
-| `NanoTabPFN.txt` | 1,103 | [automl/nanoTabPFN](https://github.com/automl/nanoTabPFN) | [Pfefferle 2025](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) | Cleanest end-to-end reference of a PFN training loop. Cleanest structural template for a PFN training loop. |
-| `On Finetuning Tabular Foundation Models.txt` | 77,581 | [yandex-research/tabpfn-finetuning](https://github.com/yandex-research/tabpfn-finetuning) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | Yandex research repo for TabPFNv2 full/PEFT finetuning: experiment configs, reports, LoRA utilities, vendored TabPFN changes, and practical LR/early-stopping recipes. |
+| `CausalPFN.txt` | 6,636 | [vdblm/CausalPFN](https://github.com/vdblm/CausalPFN) | [Balazadeh Meresht 2025](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) | Amortised causal-effect ICL: the `CausalEstimator` API and the transformer head. Inference/estimation only — no prior generator. Filtered to code (upstream carries ~175 MB of benchmark data). |
+| `Huggingface TabPFN.txt` | 552 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
+| `LoCalPFN.txt` | 1,714 | [layer6ai-labs/LoCalPFN](https://github.com/layer6ai-labs/LoCalPFN) | [Thomas 2024](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) | The retrieval + fine-tuning recipe in ~8 files: `methods/ftknn.py` (LoCalPFN) and `methods/pfknn.py` (TabPFN-kNN). The only k-NN-context implementation in this folder. **No LICENSE upstream** — read, don't redistribute. |
+| `NanoTabICL.txt` | 665 | [soda-inria/nanotabicl](https://github.com/soda-inria/nanotabicl) | [Qu 2026](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) | TabICLv2's minimal release: `model.py` + `prior.py` only. The shortest readable path to a complete TFM — architecture and prior in two files. |
+| `NanoTabPFN.txt` | 1,103 | [automl/nanoTabPFN](https://github.com/automl/nanoTabPFN) | [Pfefferle 2025](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) | Cleanest end-to-end reference of a PFN training loop; the structural template to copy. |
+| `On Finetuning Tabular Foundation Models.txt` | 90,496 | [yandex-research/tabpfn-finetuning](https://github.com/yandex-research/tabpfn-finetuning) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | Yandex research repo for TabPFNv2 full/PEFT finetuning: experiment configs, reports, LoRA utilities, vendored TabPFN changes, and practical LR/early-stopping recipes. |
 | `PFNS.txt` | 29,093 | [SamuelGabriel/PFNs](https://github.com/SamuelGabriel/PFNs) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | Implementations of every encoder step that runs *inside* every TabPFN forward pass (NaN handling, normalisation, …). Delimits what an upstream preprocessing step should *not* duplicate. |
 | `PFNs4BO.txt` | 7,455 | [automl/PFNs4BO](https://github.com/automl/PFNs4BO) | [Müller 2023](papers/2023/05_Muller_et_al._PFNs4BO_In_Context_Learning_for_Bayesian_Optimization.pdf) | PFN-as-Bayesian-optimisation surrogate. Tangential to tabular prediction; relevant only for PFN-as-BO-surrogate work. |
-| `TabDPT.txt` | 3,168 | [layer6ai-labs/TabDPT-inference](https://github.com/layer6ai-labs/TabDPT-inference) | [Ma 2026](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) | Inference code for the real-data-only competitor to TabPFN. Comparison baseline. |
-| `TabPFN .txt` | 77,938 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for training/finetuning work. |
-| `TabPFN Client.txt` | 12,672 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Irrelevant to self-hosted training; only for benchmarking the hosted API. |
+| `TabForestPFN.txt` | 27,827 | [FelixdenBreejen/TabForestPFN](https://github.com/FelixdenBreejen/TabForestPFN) | [den Breejen 2024](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf) | The **forest/tree prior generators** (`synthetic_generator_forest.py`, `_tabpfn.py`, `_cuts.py`, `_mix.py`) plus pretrain/finetune trainers. Dead upstream since 2024-05; filtered to code from a 1.36 GB repo. |
+| `TabICL.txt` | 32,794 | [soda-inria/tabicl](https://github.com/soda-inria/tabicl) | [Qu 2025](papers/2025/05_Qu_et_al._TabICL_A_Tabular_Foundation_Model_for_In_Context_Learning_on_Large_Data.pdf), [Qu 2026](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) | **The most valuable dump here after `TabPFN .txt`.** The only *fully open* competitive TFM: complete synthetic prior generator (`prior/`, `prior/graph_lib/`), pretraining loop with the **Muon optimiser** (`train/_muon.py`), the 3-stage curriculum scripts for v1 **and** v2, finetuning, forecasting and SHAP extensions. |
+| `TabDPT.txt` | 3,174 | [layer6ai-labs/TabDPT-inference](https://github.com/layer6ai-labs/TabDPT-inference) | [Ma 2026](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) | Inference code for the real-data-only competitor to TabPFN. Comparison baseline. |
+| `TabPFN .txt` | 84,092 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for training/finetuning work. |
+| `TabPFN Client.txt` | 13,282 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Irrelevant to self-hosted training; only for benchmarking the hosted API. |
 | `TabPFN Docs.txt` | 7,797 | _GitHub source removed_ — refresh manually from [docs.priorlabs.ai/overview](https://docs.priorlabs.ai/overview) | — | The docs.priorlabs.ai source. Documents *intent* of every config knob; faster to grep than the implementation in `TabPFN .txt`. |
-| `TabPFN Drift-Resilient.txt` | 138,551 | [automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN) | [Helli 2024](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) | Drift-aware training augmentation. The reference for drift-aware training-time augmentation. |
-| `TabPFN Extensions.txt` | 21,784 | [PriorLabs/tabpfn-extensions](https://github.com/PriorLabs/tabpfn-extensions) | — | `AutoTabPFN` post-hoc ensembling, RF-PFN, embeddings, HPO. Source of evaluation baselines. |
-| `TabPFN V2 Finetuning.txt` | 4,331 | [PriorLabs/TabPFN/examples](https://github.com/PriorLabs/TabPFN/tree/main/examples) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | The `finetune_classifier.py` and `finetune_regressor.py` reference scripts built on the official `FinetunedTabPFN*` wrappers. |
-| `TabPFN Wide.txt` | 2,279,103 | [not-a-feature/TabPFN-Wide](https://github.com/not-a-feature/TabPFN-Wide) | [Kolberg 2026](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) | Continued-pretraining for extreme-feature-count regimes via a feature-widening prior (it argues *against* feature reduction; not the source of our agglomeration). Gitignored (~366 MB); regenerate locally. |
-| `TabTune.txt` | 162,653 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. A convenient source of non-TabPFN eval baselines; it does **not** natively support Real-TabPFN-style multi-dataset continued pretraining. |
+| `TabPFN Drift-Resilient.txt` | 138,551 | [automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN) | [Helli 2024](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) | The reference implementation for drift-aware training-time augmentation. |
+| `TabPFN Extensions.txt` | 21,845 | [PriorLabs/tabpfn-extensions](https://github.com/PriorLabs/tabpfn-extensions) | — | `AutoTabPFN` post-hoc ensembling, RF-PFN, embeddings, HPO. Source of evaluation baselines. |
+| `TabPFN V2 Finetuning.txt` | 4,835 | [PriorLabs/TabPFN/examples](https://github.com/PriorLabs/TabPFN/tree/main/examples) | [Rubachev 2025](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf) | The `finetune_classifier.py` and `finetune_regressor.py` reference scripts built on the official `FinetunedTabPFN*` wrappers. |
+| `TabSTAR.txt` | 8,743 | [alanarazi7/TabSTAR](https://github.com/alanarazi7/TabSTAR) | [Arazi 2025](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) | Text-aware TFM, end to end: `pretraining/` (`pretrainer.py`, `unfreezing.py`), `training/` (`lora.py`, `checkpoint_averaging.py`), `preprocessing/verbalize.py`, and baseline adapters for tabpfnv2/tabicl/tabdpt/carte. Default branch is `master`; 401 metadata stubs excluded. |
+| `TabPFN Wide.txt` | 2,279,103 | [not-a-feature/TabPFN-Wide](https://github.com/not-a-feature/TabPFN-Wide) | [Kolberg 2026](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) | Continued-pretraining for extreme-feature-count regimes via a feature-widening prior (it argues *against* feature reduction, and uses FeatureAgglomeration only as a baseline). Gitignored (~366 MB); regenerate locally. |
+| `TabTune.txt` | 168,086 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. A convenient source of non-TabPFN eval baselines; it does **not** natively support Real-TabPFN-style multi-dataset continued pretraining. |
 | `TransformersCanDoBayesianInference.txt` | 12,325 | [automl/TransformersCanDoBayesianInference](https://github.com/automl/TransformersCanDoBayesianInference) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | The original (unmaintained) code release of the 2021 PFN paper. Historical; useful for explaining what a PFN is. |
-| `VSC Documentation.txt` | 38,120 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | Full Sphinx source of the VSC supercomputer documentation. SLURM job scripting, **Mindwell B200 / wICE H100+A100** partitions, Lustre/GPFS + project-staging storage tiers, account / credit management. The reference when writing SLURM scripts. |
+| `VSC Documentation.txt` | 38,601 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | Full Sphinx source of the VSC supercomputer documentation. SLURM job scripting, **Mindwell B200 / wICE H100+A100** partitions, Lustre/GPFS + project-staging storage tiers, account / credit management. The reference when writing SLURM scripts. |
+
+## Check `TabTune.txt` before adding any new TFM dump
+
+`TabTune.txt` does far more coverage work than its one-line index entry
+suggests: TabTune **vendors complete copies** of most other tabular
+foundation models, so their implementations are already greppable here.
+Verified file counts under `tabtune/models/` in the current dump:
+
+| Vendored model | Files | | Vendored model | Files |
+|---|---|---|---|---|
+| `tabpfnv3/` | 117 | | `orion_msp/` | 30 |
+| `tabpfnv26/` | 101 | | `orionmsp_v15/` | 29 |
+| `tabpfn/` | 40 | | `regression/` | 16 |
+| `tabiclv2/` | 36 | | `contexttab/` | 14 |
+| `orion_bix/` | 33 | | `tabdpt/` | 7 |
+| `tabicl/` | 30 | | `limix/` | 6 |
+| | | | `mitra/` | 5 |
+
+Two consequences. First, **a separate dump of Orion-MSP, Orion-BiX or
+ConTextTab would be redundant** — spot-checking `orion_msp/attention.py`
+against upstream showed byte-identical content after line-ending
+normalisation, and the vendored `orionmsp_v15/` is *newer* than the
+standalone repository. Adding them would only create duplicate grep hits
+with no way to tell which copy you are reading. Second, when you *do* need
+one of these implementations, grep `TabTune.txt` for
+`FILE: tabtune/models/<model>/` rather than assuming it is absent.
+
+The exception is provenance: TabTune is a third-party wrapper, so if you
+need to cite or diff a *canonical* upstream implementation, go to that
+project's own repository. Note that ConTextTab's has been renamed —
+`SAP-samples/contexttab` now redirects to
+[`SAP-samples/sap-rpt-1-oss`](https://github.com/SAP-samples/sap-rpt-1-oss)
+(same checkpoint, rebranded `sap-rpt-1-oss`), so the URL printed in the
+paper is dead as a literal string.
 
 ## Layout
 
 This file lives at the repo root; the dumps live in
-[`repositories/`](repositories/) — sixteen flat `.txt` files, one per
+[`repositories/`](repositories/) — 22 flat `.txt` files, one per
 upstream source, named exactly as in the table above (`TabPFN .txt`
 keeps its intentional trailing space). Line counts are in the table;
 the only file not tracked by git is `TabPFN Wide.txt` (~366 MB,
 gitignored — regenerate with `python scripts/refresh_repositories.py`).
+
+### The one deliberate exception to the TFM-only scope
+
+`VSC Documentation.txt` is **not** tabular-foundation-model literature —
+it is the full KU Leuven / Flemish Supercomputer Centre user
+documentation. It is here on purpose and **must not be removed**: every
+project that consumes this library runs its training and evaluation on
+VSC, so the same SLURM, storage-tier and credit questions come up in all
+of them, and answering them offline from a grep is worth far more than
+the file costs. Treat it as shared infrastructure knowledge that happens
+to live beside the literature. It is the *only* non-TFM file in this
+folder, and no further exceptions should be added without the owner
+saying so.
 
 ---
 
@@ -176,6 +229,16 @@ layout.
 
 **Related paper:**
 [2025 - Rubachev et al. - On Finetuning Tabular Foundation Models](papers/2025/06_Rubachev_et_al._On_Finetuning_Tabular_Foundation_Models_1.pdf).
+
+> **This dump is now an archive — do not `--force-shrink` it.** As of the
+> 2026-08-04 refresh, upstream has **deleted its entire `exp/` directory**:
+> 636 files, including all **342 `report.json` experiment reports**. The
+> `lib/` code (29 files) is unchanged and nothing new was added. A fresh
+> dump would therefore be 37 % of the size and would silently destroy the
+> hyperparameter evidence the "Verified config facts" table below is built
+> from — data that no longer exists anywhere upstream. The shrink guard in
+> `scripts/refresh_repositories.py` currently blocks this, reporting it as
+> a FAIL on every run; that FAIL is **correct and should be left alone**.
 
 **What it is.** A Yandex Research code dump for the Rubachev et al.
 TabPFNv2 finetuning study. It is much larger than the Prior Labs
@@ -967,3 +1030,204 @@ spirit as the upstream `FinetunedTabPFNClassifier` per-fit row cap.
 - `TabPFN Docs.txt` and `Huggingface TabPFN.txt` have no git
   upstream (`SKIP_NON_GIT` in the script): refresh them manually
   from docs.priorlabs.ai and the Hugging Face model cards.
+
+---
+
+## `TabICL.txt`
+
+**Upstream:** [github.com/soda-inria/tabicl](https://github.com/soda-inria/tabicl).
+
+**Related papers:**
+[2025 — Qu et al. — TabICL](papers/2025/05_Qu_et_al._TabICL_A_Tabular_Foundation_Model_for_In_Context_Learning_on_Large_Data.pdf),
+[2026 — Qu et al. — TabICLv2](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf).
+
+**What it is — and why it is the highest-value non-TabPFN dump here.**
+Every other frontier TFM in this collection is closed where it matters
+most: Prior Labs has never released v2's prior-generation code, and the
+v2.5/v3 priors are undisclosed. TabICL is the exception. This repository
+ships the **entire pipeline** for a model that beats Real-TabPFN-2.5 on
+TabArena: the synthetic data engine, the pretraining loop, the curriculum,
+the optimiser, and the inference path. If you need to know how a
+competitive tabular foundation model is actually *built* rather than
+merely used, this is the only complete answer in the folder.
+
+**Contents in detail (127 files; grep the `FILE:` headers).**
+
+- **`src/tabicl/prior/` — the synthetic prior generator.** The part no
+  TabPFN release includes. `_mlp_scm.py` and `_tree_scm.py` are the two
+  SCM families (the MLP/tree mixture the papers describe), `_graph_scm.py`
+  the graph-structured variant, `_hp_sampling.py` the hyperparameter
+  sampler that decides each synthetic dataset's shape, `_activations.py`
+  the function library, `_reg2cls.py` the regression→classification
+  discretisation, and `_dataset.py` / `_genload.py` the generation and
+  loading path. `__main__.py` means the generator is runnable standalone.
+- **`src/tabicl/prior/graph_lib/` — a sub-library for random DAGs.**
+  `_graph.py`, `_node_function.py`, `_multi_function.py`, `_weights.py`,
+  `_matrix.py`, `_points.py`, `_properties.py`, plus an `eval/` folder of
+  plotting scripts (`plot_random_dag.py`, `plot_random_dataset.py`,
+  `plot_random_function.py`) that visualise what the prior actually
+  samples. Read these to see a prior rather than infer it from a paper.
+- **`src/tabicl/train/` — pretraining.** `_run.py` is the loop,
+  `_train_config.py` the configuration surface, `_optim.py` the optimiser
+  setup, and **`_muon.py` is the Muon implementation** — the optimiser
+  TabICLv2 credits for part of its gain, and which the papers reference
+  but no other dump here contains.
+- **`scripts/train_stage{1,2,3}.sh`** and
+  **`scripts/train_v2_{clf,reg}_stage{1,2,3}.sh`** — the three-stage size
+  curriculum as actually invoked, for v1 and for v2's classifier and
+  regressor. These are the closest thing available to a reproducible
+  recipe for pretraining a TFM from scratch.
+- **`src/tabicl/_finetune/`** — `base.py`, `classifier.py`, `regressor.py`,
+  `data.py`: gradient adaptation on top of the released weights.
+- **`src/tabicl/forecast/`** — a time-series extension (`_engine.py`,
+  `_forecaster.py`, `transforms/_calendar.py`, `_seasonality.py`), the
+  TabICL analogue of TabPFN-TS.
+- **`src/tabicl/shap/`** — `_shap.py`, `_shapiq.py`: interpretability
+  hooks, comparable to what Rundel 2024 built for TabPFN.
+- **`src/tabicl/_unsupervised/`** and `docs/` (Sphinx API reference).
+
+**When to grep this file:** any question of the form "how is a TFM
+actually trained?" — prior sampling, curriculum staging, optimiser choice,
+loss construction — and any comparison of TabICL's design against the
+TabPFN line. Also the reference for Muon.
+
+---
+
+## `NanoTabICL.txt`
+
+**Upstream:** [github.com/soda-inria/nanotabicl](https://github.com/soda-inria/nanotabicl)
+— the release the TabICLv2 paper points to.
+
+**Related paper:**
+[2026 — Qu et al. — TabICLv2](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf).
+
+**What it is.** Four files: `README.md`, `LICENSE`, **`model.py`** and
+**`prior.py`**. A deliberately minimal TabICL — the `nanoTabPFN` idea
+applied to the TabICL line, and the shortest readable path from "what is
+a TFM" to working code, since architecture and data generation are one
+file each.
+
+**Why keep it along`TabICL.txt`:** the full repository is 127 files, and
+the prior alone spans two packages. When the question is *pedagogical*
+("what is the minimum that makes this work?") this is the better file;
+when it is *operational* ("what does the real thing do?") use `TabICL.txt`.
+Pairs naturally with `NanoTabPFN.txt` for a TabPFN-vs-TabICL comparison at
+comparable, readable scale.
+
+---
+
+## `TabForestPFN.txt`
+
+**Upstream:** [github.com/FelixdenBreejen/TabForestPFN](https://github.com/FelixdenBreejen/TabForestPFN)
+(MIT; **dead since 2024-05**). Note the README still carries the arXiv v1
+title, "Why In-Context Learning Transformers are Tabular Data
+Classifiers" — the paper was retitled at v2.
+
+**Related paper:**
+[2024 — den Breejen et al. — TabForestPFN](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf).
+
+**What it is.** The origin of the tree-based prior. The dump is filtered
+to source: upstream is ~1.36 GB across ~19,500 files, almost all of it
+`outputs_done/` experiment artifacts, around ~1.2 MB of actual Python.
+
+**Contents worth grepping.**
+
+- **The synthetic generators** — `synthetic_generator_forest.py` (the
+  paper's contribution: tables sampled from decision-tree/forest
+  structures, deliberately unrealistic but with complex decision
+  boundaries), `synthetic_generator_tabpfn.py` (their reimplementation of
+  the TabPFN-style prior), `_cuts.py`, and `_mix.py` (the combination that
+  produces TabForestPFN).
+- **`pretrain.py`, `trainer_pretrain.py`, `trainer_finetune.py`** — both
+  training stages, which is what lets you check the paper's claim that
+  fine-tuning quality tracks pretraining-data complexity.
+
+**When to grep this file:** designing or critiquing a tree-flavoured
+prior, or tracing where Mitra's prior-mixing framework came from. Treat it
+as historical — it targets TabPFN v1 and has not been touched since 2024.
+
+---
+
+## `LoCalPFN.txt`
+
+**Upstream:** [github.com/layer6ai-labs/LoCalPFN](https://github.com/layer6ai-labs/LoCalPFN).
+**No LICENSE file upstream** — treat as all-rights-reserved: read and
+learn from it, do not vendor it.
+
+**Related paper:**
+[2024 — Thomas et al. — LoCalPFN](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf).
+
+**What it is.** Unusually compact — eight Python files, ~58 KB — and
+entirely unique in this folder: the only implementation of
+**retrieval-based context construction**. `methods/ftknn.py` is LoCalPFN
+itself (k-NN retrieval plus end-to-end fine-tuning), `methods/pfknn.py`
+the simpler TabPFN-kNN baseline, with `pfn.py`, `dataset.py`, `config.py`,
+`utils.py` and `main.py` around them. Fine-tuning is present; there is no
+prior or pretraining.
+
+**When to grep this file:** implementing or evaluating retrieved contexts,
+and as the concrete counterpart to Nagler's localisation argument — this
+is what "localise the predictor around the query" looks like in code.
+Compare against `TabDPT.txt`, whose FAISS retrieval is the same lab's
+later take.
+
+---
+
+## `TabSTAR.txt`
+
+**Upstream:** [github.com/alanarazi7/TabSTAR](https://github.com/alanarazi7/TabSTAR)
+(MIT; actively maintained). **The default branch is `master`, not `main`**
+— a `/tree/main/` URL 404s.
+
+**Related paper:**
+[2025 — Arazi et al. — TabSTAR](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf).
+
+**What it is.** A complete text-aware TFM stack, and the only dump here
+that shows a **pretrained language encoder being unfrozen and trained
+jointly with tabular data**. Filtered to exclude the 401 per-dataset
+metadata stubs under `tabstar_paper/datasets/annotated/`.
+
+**Contents in detail.**
+
+- **`tabstar_paper/pretraining/`** — `pretrainer.py`, `dataloaders.py`,
+  `unfreezing.py` (the text-encoder unfreezing schedule), `hdf5.py`; with
+  `do_pretrain.py` / `do_finetune.py` as entry points.
+- **`src/tabstar/training/`** — `trainer.py`, **`lora.py`**,
+  `checkpoint_averaging.py`. The LoRA implementation is directly
+  comparable to the one in `On Finetuning Tabular Foundation Models.txt`.
+- **`src/tabstar/preprocessing/verbalize.py`** — how columns and target
+  tokens are turned into text for the encoder. The mechanical answer to
+  "what does target-aware representation mean".
+- **`src/tabstar/arch/`** — the architecture, and **baseline adapters** for
+  tabpfnv2, tabicl, tabdpt and carte, useful as a worked example of
+  wrapping several TFMs behind one interface.
+
+**When to grep this file:** anything involving free-text columns, column
+semantics, LoRA on a TFM, or checkpoint averaging.
+
+---
+
+## `CausalPFN.txt`
+
+**Upstream:** [github.com/vdblm/CausalPFN](https://github.com/vdblm/CausalPFN)
+(Apache-2.0; actively maintained; `pip install causalpfn`).
+
+**Related paper:**
+[2025 — Balazadeh Meresht et al. — CausalPFN](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf).
+
+**What it is.** The inference and estimation path of the causal-PFN
+cluster's most deployable model. `src/causalpfn/causal_estimator.py` is
+the user-facing estimator, `models/icl_model.py` and `transformer_layer.py`
+the architecture, `evaluation.py` the metrics. **There is no prior
+generator and no pretraining code** — the simulated-DGP library that makes
+CausalPFN work is not released, so this dump answers "how do I *use* an
+amortised causal estimator", not "how do I train one".
+
+It also ships a benchmark harness with econml / CATENets / GRF / BART /
+IPW baselines, which is a useful reference for how causal methods are
+compared. Filtered to code: upstream carries ~175 MB of benchmark data
+(201 realcause CSVs, IHDP `.npz`).
+
+**When to grep this file:** wiring a CATE/ATE estimator into an evaluation
+pipeline, or comparing the causal-PFN head against classical estimators.
+

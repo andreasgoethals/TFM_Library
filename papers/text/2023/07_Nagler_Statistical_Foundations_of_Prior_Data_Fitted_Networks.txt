@@ -1,0 +1,1574 @@
+Statistical Foundations of Prior-Data Fitted Networks
+Thomas Nagler 1 2
+Abstract
+Prior-data fitted networks (PFNs) were recently
+proposed as a new paradigm for machine learn-
+ing. Instead of training the network to an ob-
+served training set, a fixed model is pre-trained
+offline on small, simulated training sets from a
+variety of tasks. The pre-trained model is then
+used to infer class probabilities in-context on fresh
+training sets with arbitrary size and distribution.
+Empirically, PFNs achieve state-of-the-art perfor-
+mance on tasks with similar size to the ones used
+in pre-training. Surprisingly, their accuracy fur-
+ther improves when passed larger data sets during
+inference. This article establishes a theoretical
+foundation for PFNs and illuminates the statisti-
+cal mechanisms governing their behavior. While
+PFNs are motivated by Bayesian ideas, a purely
+frequentistic interpretation of PFNs as pre-tuned,
+but untrained predictors explains their behavior.
+A predictor’s variance vanishes if its sensitivity to
+individual training samples does and the bias van-
+ishes only if it is appropriately localized around
+the test feature. The transformer architecture used
+in current PFN implementations ensures only the
+former. These findings shall prove useful for de-
+signing architectures with favorable empirical be-
+havior.
+1. Introduction
+1.1. PFNs in a Nutshell
+Prior-data fitted networks (PFNs) were proposed by M¨uller
+et al. (2022) as a new approach to machine learning, mo-
+tivated by ideas from Bayesian nonparametrics and meta-
+learning. The goal is to compute a posterior predictive
+distribution (PPD) for a test feature given observed training
+data. To approximate the PPD, a transformer network is
+1Department of Statistics, LMU Munich, Munich, Germany
+2Munich Center for Machine Learning, Munich, Germany. Corre-
+spondence to: Thomas Nagler <t.nagler@lmu.de>.
+Proceedings of the 40 th International Conference on Machine
+Learning, Honolulu, Hawaii, USA. PMLR 202, 2023. Copyright
+2023 by the author(s).
+trained offline through meta-learning. After simulating sev-
+eral training data sets from a variety of tasks, a transformer
+network imitating the PPD on these sets is trained. After
+this pre-training phase, the network is treated as fixed. In
+the inference phase, a fresh training set and some test fea-
+tures are passed to the pre-trained network, which computes
+predictions for the test labels in a single forward pass.
+This approach is different from usual machine learning meth-
+ods. Here, one would set up a model for the relationship
+between label and feature, and train the model parameters
+on a specific data set. The main benefit of PFNs is that no
+training or tuning is necessary at the inference stage, and
+predictions are delivered in split seconds.
+1.2. Empirical Findings
+Empirically, M¨uller et al. (2022) found that PFNs can in-
+deed approximate a given PPD and perform well on real
+prediction tasks. While this pilot study was limited to tiny
+data sets, the TabPFN model of Hollmann et al. (2022) made
+a leap forward to classification tasks on moderately large
+tabular data sets. In particular, they pre-train a network
+with simulated data sets of size up to n ≈ 1000 and report
+state-of-the-art performance on several benchmarks. And
+surprisingly, the network’s predictions continue to improve
+at the inference stage when fed data sets with more than
+1000 samples. This is an example of in-context learning
+(ICL): a pre-trained network learns from the context pro-
+vided in the prompt (here: the fresh training data) without
+updating its parameters.
+1.3. Summary
+The main contribution of this work is establishing the theo-
+retical foundation for PFNs and identifying statistical mech-
+anisms explaining their empirical behavior.
+• Theoretical framework (Section 2): As a prelimi-
+nary step, we give precise definitions of the PPD, the
+statistical model behind it, and its PFN approximation.
+• When PPDs can learn (Section 3): Since PPDs are
+the main motivation behind PFNs, we first ask when
+a PPD can learn from training data. This can be ap-
+proached from the perspective of Bayesian nonpara-
+metrics (Ghosal & van der Vaart, 2017). If the prior
+1
+
+Statistical Foundations of Prior-Data Fitted Networks
+has large enough support and does not concentrate too
+much away from the true hypothesis, one can guaran-
+tee that the PPD converges to a close approximation of
+the true predictive distribution.
+• How PFNs approximate PPDs (Section 4): The opti-
+mal PFN approximation is characterized by a Kullback-
+Leibler criterion. To allow for accurate approximation
+of the conditional class probabilities, we need suffi-
+ciently complex PFN models and prior. Practically, a
+PFN is trained on simulated data sets. The larger these
+data sets are, the more complex the PPD we approxi-
+mate. The training set size can therefore be understood
+as a regularizer on the expected complexity of the net-
+work. The Monte-Carlo approximation of the optimal
+PFN is discussed briefly, but rather uneventful and of
+minor importance for PFNs’ inference behavior.
+• Why PFNs can learn (Section 5): The most intriguing
+question is: Why can a pre-trained network still learn
+in the inference phase? Although we know now why
+a PPD does, a PFN is not a valid PPD, and it is only
+trained to approximate the PPD for limited training
+sizes. The learning phenomenon can be understood
+through a purely frequentistic interpretation of PFNs
+as untrained predictors with many hyperparameters.
+During pre-training, these hyperparameters are tuned
+to be optimal for a set of tasks defined by the ‘prior’.
+Whether the PFN predictor can learn at inference de-
+pends on its structural properties. We show that the
+variance of a fixed network vanishes if its sensitivity
+to individual samples does, and that the network’s bias
+can only vanish if it is sufficiently localized.
+• Insights on specific PFNs (Section 6): We look at
+some specific PFN models: window smoothers, clas-
+sification trees, and transformer networks. The exam-
+ples cover cases where the bias is constant, increasing,
+or decreasing with n. We show that if the model is
+well-designed, it can implicitly select or average over
+sub-models, making the bias decrease with the sample
+size. Transformer networks allow for vanishing vari-
+ance and model selection through multi-head attention,
+but not for localization. However, TabPFN’s bias can
+be improved further with a simple post-hoc localization
+method.
+Section 7 concludes with suggestions for future research.
+All proofs are given in Appendix A.
+1.4. Related Work
+In-context-learning in large language models The re-
+cent interest in ICL was spurred by the success of large
+language models (LLMs). These models are pre-trained on
+a sequence prediction task on a large corpus of text. When
+deployed, large models show the ability to solve tasks that
+they haven’t seen during pre-training (e.g., mathematical
+reasoning problems), only from the prompt context (Brown
+et al., 2020; Wei et al., 2022). In particular, no parameter
+updates are conducted after deployment. ICL has become
+a new paradigm for natural language processing and is inti-
+mately linked to the transformer architecture (Vaswani et al.,
+2017). Dong et al. (2023) provide an up-to-date survey
+of the large body of LLM-related research on in-context
+learning.
+In-context-learning on numeric data ICL has also been
+observed in more classical statistical learning tasks: classifi-
+cation and regression from tabular data. M ¨uller et al. (2022)
+proposed the concept of PFNs and illustrated the abilities of
+a transformer model on toy examples. The TabPFN model
+of Hollmann et al. (2022) implements a matured version
+of this idea and shows superb performance on benchmarks
+with small tabular data. Concurrently, Nguyen & Grover
+(2022) proposed Transformer Neural Processes following
+essentially the same idea. They also consider non- iid set-
+tings and show promising results in applications to image
+completion, contextual bandits, and Bayesian Optimization.
+This paper illuminates the statistical foundations of such
+models in the iid-setting and disentangles the prior from the
+model architecture.
+Mechanics of transformer-based ICL Garg et al. (2022)
+show that transformers can learn target functions generated
+from linear models, two-layer neural networks, and decision
+trees. Several other works provide arguments and experi-
+ments on how in-context learning emerges through implicit
+gradient descent (Dai et al., 2022; von Oswald et al., 2022;
+Aky¨urek et al., 2023). Olsson et al. (2022) identify a pattern
+of several attention heads working together, closely related
+to the discussion after Theorem 6.3 in this paper. Kirsch
+et al. (2022) experimentally investigates other architectural
+features (layers, memory, etc.). This work sheds further
+light on the mechanisms and architectural features enabling
+ICL.
+Overall, the current work complements the existing ICL lit-
+erature, by providing a theoretical foundation for the empir-
+ical findings and deriving new insights from the perspective
+of statistical generalization theory.
+2. Theoretical Framework
+2.1. Statistical Model
+Consider a classification problem with class label Y ∈ Y
+and features X ∈ X ⊆ Rd. Suppose we have iid training
+data Dn = (Yi, Xi)n
+i=1 from some distribution p0. The goal
+is to predict the conditional class probabilities p0(y | x) =
+2
+
+Statistical Foundations of Prior-Data Fitted Networks
+P(Y = y | X = x). From the perspective of Bayesian
+nonparametrics, we view p0 as a realization of a random,
+infinite-dimensional parameter p ∈ P with distribution Π.
+The distribution Π is called prior and expresses our beliefs
+about p before seeing any data. Under this model, data sets
+Dn ∪ (Y, X) are generated by the following mechanism:
+1. Draw p ∼ Π.
+2. Draw iid samples Dn = (Yi, Xi)n
+i=1 and (Y, X) from
+model p.
+2.2. Posterior Predictive Distribution
+For every n, the statistical model gives the tuple (Dn ∪
+(Y, X), p) a well-defined joint distribution. For every n, we
+can then approximate p0(y | x) by the posterior predictive
+distribution (PPD)
+π(y | x, Dn) = P(Y = y | X = x, Dn).
+This defines a family of PPDs indexed by n. If the prior Π
+factorizes into independent parts for p(y | x) and p(x), the
+PPD can be written as
+π(y | x, Dn) =
+Z
+p(y | x)dΠ(p | D n), (1)
+where the posterior Π(· | D n) is the conditional distribution
+of p given the data Dn. The PPD π(y | x, Dn) is then
+simply the posterior mean over conditional distributions
+p(y | x).
+Remark 2.1. In their implementation of PFNs, M¨uller et al.
+(2022) and Hollmann et al. (2022) use priors that factorize as
+above, but do not mention it explicitly to justify (1). Priors
+that do not factorize this way would lead to a different form
+of π(y | x, D):
+π(y | x, Dn) =
+Z
+p(y | x)dΠ(p | x, Dn),
+Here, observing the test feature x would be informative
+about the conditional distribution p(y | x), which is unintu-
+itive.
+2.3. PFNs
+A PFN is a numerical approximation of the family of PPDs.
+It is based on the insight that, for all n, the PPDs maximize
+the expected conditional likelihood
+EΠ[log q(Y | X, Dn)], (2)
+where EΠ is an expectation over (Y, X) ∪ Dn generated as
+in Section 2.1 (see, M¨uller et al., 2022, Section 3).
+Theorem 2.2. Let
+Q =
+
+q : (Y × X )n+1
+i=1 → [0, 1],
+X
+y∈Y
+q(y | ·, ·) = 1
+
+,
+denote the set of all conditional probability functions. Then
+π in (1) satisfies
+π = arg max
+q∈Q
+EΠ[log q(Y | X, Dn)].
+Remark 2.3. Maximizing (2) can also be interpreted as
+minimizing expected KL divergence between q(· | X, Dn)
+and π(· | X, Dn).
+To approximate the PPDs, we train a modelqθ parametrized
+by θ. To be precise, for every parameter value θ, there is an
+entire family of functions
+{qθ,n : (Y × X )n+1
+i=1 → [0, 1], n ∈ N},
+but we shall not make this explicit in notation. To find the
+best parameters for given PPDs, M¨uller et al. (2022) propose
+to solve
+θ∗ = arg max
+θ
+EΠN EΠ[log qθ(Y | X, DN)], (3)
+where ΠN is a probability distribution over the sample size
+N. The expectation over N makes qθ∗ mimic the family of
+PPDs, not just its nth element.
+The model qθ will normally be misspecified; that is, there
+is no parameter θ such that qθ equals π. In this case, (3)
+defines a KL-optimal approximation of π over the class
+{qθ : θ ∈ Θ}. In practice, the expectation in (3) is approxi-
+mated by Monte-Carlo integration, i.e., averaging over iid
+data sets (Yj, Xj) ∪ D(j) of size Nj + 1 generated as in
+Section 2.1 and Nj ∼ ΠN . We approximate θ∗ by solving
+bθ = arg max
+θ
+mX
+j=1
+log qθ(Yj | Xj, D(j)). (4)
+This is of course an idealization of the training process.
+Sophisticated PFNs are large and usually trained in a single
+epoch. The maximum in (4) is never reached. This does
+not affect the main results of the following sections, which
+largely consider arbitrary θ.
+Remark 2.4. Hollmann et al. (2022) use a transformer net-
+work (Vaswani et al., 2017) forqθ. For such architectures,
+any fixed network qθ accepts an arbitrary number of feature
+vectors x1, . . . ,xntest and a data set Dn of arbitrary length.
+The output qθ(· | x1, . . . ,xntest, Dn) are ntest vectors of con-
+ditional class probabilities. Each vector contains predictions
+for the conditional class probabilities p(· | xj). The test
+size ntest is irrelevant in what follows, so we take ntest = 1
+for simplicity.
+3. When PPDs can Learn
+The PPDs
+π(y | x, Dn) =
+Z
+p(y | x)dΠ(p | D n)
+3
+
+Statistical Foundations of Prior-Data Fitted Networks
+are fully characterized by the prior Π. If Dn is a data set
+generated from p0, we hope that Π(p | x, Dn) concentrates
+around p0 as the size ofDn increases. Setting a good prior is
+tricky in a nonparametric context. Finding a prior supporting
+a large enough subset of possible functions isn’t trivial. And
+even if, the prior may wash out very slowly or not at all if
+it puts too much mass in unfavorable regions (see, Ghosal
+& van der Vaart, 2017, Sections 1.2–1.3). But also if p0 is
+outside the support P = {p: Π(p) > 0} of Π, PPDs can
+learn from data if the prior is sufficiently well-behaved:
+Theorem 3.1. Under conditions (A1) and (A2), there is
+p∗ ∈ P such that
+π(y | x, Dn)
+n→∞
+→ p∗(y | x) almost surely,
+for P0-almost every (y, x). Moreover, p∗ is a KL-optimal
+approximation of p0 in P.
+Exact conditions and a proof are given in Appendix A.2. If
+P is sufficiently large, the KL-optimalp∗ ∈ P is close to p0.
+This explains why PPDs can learn when fed more data. If
+this was not the case, trying to approximate them with PFNs
+would be pointless. And the better we choose Π, the more
+attractive the PPDs become as an approximation target.
+4. PFN Approximation of the PPD
+Four factors influence the PFN approximation (4): the data
+prior Π, the size prior ΠN , the model qθ, and the Monte-
+Carlo size m. Since a PFN is pre-trained, the model class
+{qθ : θ ∈ Θ} can be considered fixed relative to the number
+of Monte-Carlo sets m. The approximation quality ofbθ then
+follows from standard results on empirical risk minimization.
+In particular, we can expect bθ = θ∗ + Op(m−1/2), see
+Appendix B for more details. The other factors are more
+interesting.
+If Π consists of only simple models, the optimal PFN qθ∗
+likely also produces only simple functions of (y, x). Con-
+versely, simple models {qθ : θ ∈ Θ} cannot benefit much
+from complexΠ. For the pre-trained PFN to work well on di-
+verse tasks, we need sufficient capacity in both{qθ : θ ∈ Θ}
+and Π.
+When pre-training the PFN via(4), we sample data sets D(j)
+with random sample size Nj. Let us define the KL-optimal
+parameter θ∗
+n for a given sample size:
+θ∗
+n = arg max
+θ
+EΠ[log qθ(Y | X, Dn)].
+The PPD π(y | x, Dn) we are trying to approximate changes
+with n. Hence, the KL-optimal parameter θ∗
+n may change
+with n as well. Seen as a function of (y, x), we should
+expect the complexity of π(y | x, Dn) to increase in n.
+Similarly, we should expect the parameter θ∗
+n to favor more
+complex models. At the other extreme, n = 1, the true PPD
+is close to the average model in our prior and normally close
+to constant. The training set sizes Nj can thus be seen as a
+regularizer on model complexity. By optimizing an average
+over random sizes Nj, θ∗ also averages θ∗
+Nj . The distri-
+bution ΠN lets us emphasize some ranges of sample sizes
+more than others. The TabPFN of Hollmann et al. (2022)
+was trained with a uniform distribution over {1, . . . ,1023}
+for ΠN . The restriction to small sample sizes has computa-
+tional reasons: the cost of evaluating a transformer network
+scales quadratically in Nj.
+Since TabPFN has never seen sample sizes larger than
+around 1000 during pre-training, it is curious that it im-
+proves its predictions when fed larger data sets. Whether
+such behavior occurs depends in a non-obvious way on
+the family {q bθ(· | · , Dn), n ∈ N}. The family learned by
+TabPFN seems to have some structure that allows extrap-
+olating nicely to larger n. This structure may come from
+the architecture of the network qθ or from learning θ∗ for a
+given Π. The following section looks closer into the mecha-
+nisms at play.
+5. Why PFNs can Learn In-Context
+There is no reason to believe the PFN behaves like a PPD
+family for some (implicit) prior when encountering sample
+sizes never seen in pre-training. So even though PPDs serve
+as a theoretical motivation for PFNs, Theorem 3.1 does not
+apply to q bθ. So why does a PFN q bθ pre-trained on up to
+1000 samples improve when feeding larger data sets during
+inference?
+5.1. PFNs as Untrained Predictors
+To understand what is going on, we take a frequentist per-
+spective. For any data size n encountered at inference, we
+may treat the pre-tuned network q bθ(y | x, ·) as an untrained
+predictor for p0(y | x), i.e., a function (Y × X )n → P Y |X
+that maps a data set Dn to an element of the space PY |X
+of conditional distribution functions. In that view, θ is a
+collection of tuning parameters of the predictor, selected
+through meta-learning in the pre-training phase. Further,
+the ‘priors’Π and ΠN are simply distributions over tasks
+for which we want the predictor to do well.
+Now decompose the estimation error into bias and variance
+components:
+qθ(y | x, Dn) − p0(y | x)
+= qθ(y | x, Dn) − EDn∼pn
+0 [qθ(y | x, Dn)]| {z }
+variance
++ EDn∼pn
+0 [qθ(y | x, Dn)] − p0(y | x)| {z }
+bias
+.
+Empirically, the error above decreases with n. So what
+structural features of PFNs can explain this?
+4
+
+Statistical Foundations of Prior-Data Fitted Networks
+5.2. Symmetry
+Standard transformers are symmetric functions of the indi-
+vidual samples in Dn. If the samples in Dn are iid, this is
+most natural.
+Lemma 5.1. Let f : (Y × X )n → P Y |X be any predictor.
+Then there is a symmetrized version ef of f such that, for
+every probability measure P ,
+EDn∼P n[ef(Dn)] = EDn∼P n P [f(Dn)],
+and VarDn∼P n[ef(Dn)] ≤ VarDn∼P n[f(Dn)].
+Thus, using symmetric f is optimal in an MSE sense. How-
+ever, symmetry itself does not have any meaningful conse-
+quences for learning. For example, q(y | x, Dn) = 1/|Y| is
+a symmetric function that is incapable of learning anything.
+5.3. Variance and Diminishing Sensitivity
+There is other structure we can reasonably expect from qθ.
+When passed larger data sets Dn, the influence of individual
+elements should diminish. This allows to bound the variance
+of the predictor qθ. Formally, suppose there are α > 0 and
+L < ∞, such that for large enough n and almost all data
+sets Dn, D′
+n differing only in one sample,
+qθ
+
+y | x, Dn
+
+− qθ(y | x, D′
+n)
+ ≤ Ln−α. (5)
+Theorem 5.2. If (5) holds, then
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ ≲ n1/2−α
+with high probability.
+If α > 1/2, we get limn→∞ n1/2−α = 0, so the variance
+caused by Dn vanishes. In that case, the difference above
+vanishes almost surely.
+Lemma 5.3. If (5) holds with α > 1/2, then
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+n→∞
+→ 0 almost surely.
+This only partially explains how pre-trained PFNs can still
+learn at inference. The remaining error is due to bias.
+5.4. Bias and the Need for Locality
+The bias is determined by the behavior of the sequence
+E[qθ(y | x, Dn)]. It is reasonable to assume that
+E[qθ(y | x, Dn)]
+n→∞
+→ qθ(y | x),
+for some function qθ. Without a specific model qθ at hand,
+we cannot say much more. In Section 6 we shall see exam-
+ples where the bias is constant, and other examples where
+the bias decreases or increases with n.
+We can give necessary conditions for a vanishing bias, how-
+ever. A predictor that has vanishing bias on a sufficiently
+rich class of functions must be local: asymptotically, only
+samples (Yi, Xi) ∈ D n with Xi close to x should con-
+tribute to qθ(y | x, Dn).
+Theorem 5.4. Let P be a set of distributions. Suppose that
+for every p ∈ P ,
+EDn∼pn[qθ(y | x, Dn)]
+n→∞
+→ p(y | x). (6)
+If (5) holds, there is a sequence ϵn → 0 for everyep ∈ P ,
+such that almost surely,
+qθ(y | x, Dn) − qθ(y | x,eDn)
+ n→∞
+→ 0, (7)
+where Dn = (Yi, Xi)n
+i=1 and eDn = (Y ′
+i , Xi)n
+i=1 with
+Y ′
+i
+(
+= Yi, if ∥Xi − x∥ ≤ ϵn,
+∼ep(· | Xi), if ∥Xi − x∥ > ϵ n.
+So if qθ is unbiased for rich enough P, we can flip the labels
+of samples away from x almost arbitrarily without changing
+the behavior of qθ; only samples (Yi, Xi) with Xi close to
+x matter.
+The result bears little meaning if the class P is too small,
+and meaningless if P contains only one p. Even for rich
+P, it only provides necessary conditions for a vanishing
+bias. A constant predictor qθ = 1 is local in the sense of
+(7), but its bias does not change with n. However, if P is
+rich and the bias does vanish for all p ∈ P , the predictor
+qθ can effectively only use ϵnn = o(n) samples, so (5) is
+unlikely to hold with α = 1. This is in line with the lower
+bounds on the bias-variance trade-off derived in Derumigny
+& Schmidt-Hieber (2020).
+6. Insights on Specific PFNs
+We now consider some concrete examples of PFNs qθ, to
+shed further light on the factors facilitating learning in the
+inference phase. Before turning to transformer networks,
+we briefly discuss two simpler models to illustrate some key
+mechanisms. The following result will be helpful.
+Lemma 6.1. Let g be a function bounded by K < ∞ and
+qθ(y | x, Dn) =
+Pn
+i=1 g(y, x, Yi, Xi)Pn
+i=1 1{Xi ∈ An(x)} ,
+for some sequence An(x) ⊂ X . If
+nηP{Xi ∈ An(x)}
+n→∞
+→ c,
+for some η ∈ (0, 1/2) and c > 0, then qθ satisfies the
+conditions of Theorem 5.2 with α = 1 − η and L = 4K/c.
+5
+
+Statistical Foundations of Prior-Data Fitted Networks
+6.1. Window Smoother
+For θ ∈ (0, ∞), define
+qθ(y | x, Dn) =
+Pn
+i=1 1(Yi = y)1(∥Xi − x∥ < θ)Pn
+i=1 1(∥Xi − x∥ < θ) .
+This corresponds to a window smoother with bandwidth θ.
+Then θ∗ is the KL-optimal bandwidth for datasets from the
+prior. The fitted PFN is therefore just a window smoother
+with its hyperparameter tuned to such data sets. According
+to Lemma 6.1, qθ satisfies (5) with α = 1. The bias
+E[qθ(y | x, Dn)] − p0(y | x)
+= P0(Y = y | ∥X − x∥ < θ) − p0(y | x)
+is constant, but optimized for data sizes from Π × ΠN .
+Despite constant bias, the PFN learns from more data at
+inference, but only through reducing its variance.
+Now consider some sequence (an)n∈N and
+qθ(y | x, Dn) =
+Pn
+i=1 1(Yi = y)1(∥Xi − x∥ < a nθ)Pn
+i=1 1(∥Xi − x∥ < a nθ) .
+If an increases with n, the width of the smoothing window
+does too. This choice of qθ isn’t sensible, of course, as the
+bias
+P0(Y = y | ∥X − x∥ < a nθ) − p0(y | x)
+typically increases with n. If we instead choose an → 0
+and p0 is sufficiently smooth, we can get rid of the bias.
+The scaling an = n−1/(4+d) is known to be optimal in
+an MSE sense (e.g., Wand & Jones, 1994), with squared
+bias and variance decreasing at rate n−4/(4+d). Indeed,
+we have anP0(∥X − x∥ < a nθ) → p0(x), so this is the
+convergence rate implied by Lemma 6.1 and Theorem 5.2.
+The hyperparameter θ∗ reduces to a prefactor, tuned to be
+(asymptotically) optimal for data sets generated from Π of
+arbitrary size.
+6.2. Classification Trees
+To keep the notation simple, suppose for the moment that
+X ⊆ R. Define
+qθ(y | x, D)
+=
+SX
+j=0
+1(θj ,θj+1](x)
+Pn
+i=1 1(Yi = y)1(θj ,θj+1](Xi)Pn
+i=1 1(θj ,θj+1](Xi) ,
+as a classification tree with parameters θ ∈ RS and θ0 =
+−∞, θS+1 = +∞ by convention. The (hyper-)parameters
+are the split locations of the tree. The split locations are
+trained offline, to work best on sets from the prior Π × ΠN .
+Lemma 6.1 yields that Theorem 5.2 holds with α = 1. The
+bias is
+SX
+j=1
+1(θj ,θj+1](x)P0(Y = y | X ∈ (θj, θj+1]) − p0(y | x),
+which is independent of n. To reduce the bias as in the
+previous example, we would need to grow the number S of
+split locations with n. But the model is considered fixed in
+the inference phase and we cannot change the number of
+parameters.
+Instead, we could set up an ensemble of classification trees
+with Bayesian model averaging. Let qθ1 , . . . , qθK be classi-
+fication trees as above, and
+qθ(y | x, Dn) = 1
+K
+KX
+k=1
+qθk(y | x, Dn)w(Dn; θk),
+where
+w(Dn; θk) = exp{−BIC(Dn; θk)}PK
+j=1 exp{−BIC(Dn; θj)}
+,
+and
+BIC(Dn; θk) = −2
+nX
+i=1
+log qθk(Yi | Xi, Dn) + S log n.
+As n grows, the model qθ drifts towards a weighted average
+of the best-performing ensemble members. We can thus
+expect the bias to reduce with n, approaching the bias of the
+best ensemble members. The role of the hyperparameters
+θ is the same as for a single tree. But now, the KL-optimal
+parameter θ∗ likely induces more complex and diverse en-
+semble members.
+6.3. Transformer Networks
+We now consider a transformer network with one layer. Let
+Dn = {Vi}n
+i=1 with Vi = ( Yi, Xi) ∈ { 0, 1} × Rd and
+v = (0, x). Similar1 to Thickstun (2021), define
+a(h)
+j = SoftMax
+
+v⊤W (h)
+q V1, . . . ,v⊤W (h)
+q Vn
+
+j,
+u′ =
+HX
+h=1
+nX
+j=1
+a(h)
+j W (h)
+v Vj,
+u = LayerNorm(v + u′; γ),
+z′ = Wr,2 ReLu(Wr,1u; γ),
+z = LayerNorm(u + z′; γ),
+qθ(· | x, Dn) = SoftMax(Woz),
+1Some scaling and redundancies in the parametrization have
+been deliberately removed. They help for training the network, but
+not its theoretical analysis.
+6
+
+Statistical Foundations of Prior-Data Fitted Networks
+where W (h)
+q , W(h)
+v ∈ R(d+1)×(d+1), Wr,1, W ⊤
+r,2 ∈
+Rm×(d+1), and Wo ∈ R|Y|×(d+1). The parameter θ col-
+lects all these matrices. The SoftMax, LayerNorm, and
+ReLu operations are defined as
+SoftMax(v) = exp(v)
+Pd
+j=1 exp(vj)
+,
+LayerNorm(v; γ) = γ1
+v − avg(v)
+∥v − avg(v)∥ + |γ2| + γ3,
+avg(v) = 1
+d
+dX
+j=1
+vj1,
+ReLu(v) = max(0, v),
+with exp and max acting componentwise on vectors. Here
+and in everything that follows, the norm ∥ · ∥ is understood
+as ∥ · ∥2 for both vectors and matrices.
+The first two equations describe an attention mechanism
+with H heads (Vaswani et al., 2017). By definition, a(h)
+1 +
+· · · + a(h)
+n = 1 . The idea is that within every head, the
+attention weights a(h)
+j emphasize specific samples Vj ∈
+Dn. Emphasis is put on those Vj that are ‘similar’ to v
+in a sense measured by v⊤W (h)
+q Vj. Each attention head
+allows for a different definition of similarity. With the help
+of Theorem 5.2 and Theorem A.1, we can show that the
+variance of this predictor vanishes.
+Theorem 6.2. For X = {x: ∥x∥ ≤ K} and
+∥W (h)
+q ∥, ∥W (h)
+v ∥, ∥Wr,1∥, ∥Wr,2∥, ∥Wo∥ < ∞, it holds
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ ≲ n−1/2,
+with high probability.
+The variance vanishes irrespective of the parameter θ. This
+is because the attention mechanism necessarily gives di-
+minishing weight to individual samples (see the proof in
+Appendix A.8).
+The bias depends heavily on the choice of θ.
+Theorem 6.3. Under the assumptions of Theorem 6.2,
+E[qθ(· | x, Dn)]
+n→∞
+→ qθ(· | x),
+where qθ(· | x) is defined as qθ(· | x, Dn), but with u′
+replaced by
+u′ =
+HX
+h=1
+W (h)
+v EV ∼gh[V ],
+where gh(s) = exp(v⊤W (h)
+q s)
+EV ∼p0[exp(v⊤W (h)
+q V )]
+p0(s).
+The measure gh is an exponentially tilted version ofp0 (Sieg-
+mund, 1976). The tilt can be understood as an infinitesimal
+form of the attention mechanism. Relative to p0, the tilted
+measure lifts the likelihood of values s that are similar to
+v (with similarity measured by v⊤W (h)
+q s) and discounts
+the likelihood of others. Each attention head h assesses a
+certain aspect of the unknown distribution p0 (characterized
+by W (h)
+q ). If the matrices (W (h)
+q )H
+h=1 are specified well,
+the aspect views distinguish distinct feature values. This
+localizes the predictor to some degree, but not in the sense
+of Theorem 5.4. Although we upweight the influence of
+samples “similar to” v, there always remains an influence
+of samples away from v. We cannot flip the labels of such
+samples without changing the predictor (asymptotically), so
+we should not expect the bias to vanish.
+Nevertheless, the limiting bias qθ(y | x) − p0(y | x) may
+be small if the remaining network processes the sum of
+aspect summaries W (h)
+v EV ∼gh[V ] into a good approxima-
+tion of p0. The relevance of individual aspect summaries
+depends on the true measure p0, and less relevant aspects
+may also contribute less to the sum. On small samples, this
+effect is milder. At the extreme end, n = 1, all attention
+weights a(h)
+j equal 1, so all aspects contribute equally. This
+suggests that the bias of the transformer network may de-
+crease — provided the hyperparameters downstream make
+meaningful use of the aspect views. For example, Olsson
+et al. (2022) identified powerful patterns of several attention
+heads working together. This effect is similar to that of the
+model averaging layer in Section 6.2. Key to this is the pres-
+ence of multiple attention heads ( H > 1). However, this
+applies only to sample sizes the parameter θ has been tuned
+to. For larger sample sizes, there is no reason to expect a
+tuned network’s bias to decrease.
+6.4. Localized PFNs
+According to Theorem 5.4, we need to localize the network
+to make its bias decrease. A simple post-hoc approach
+applicable to any pre-trained network is the following. To
+predict the label at a new feature x:
+1. Construct a reduced training set Dn(x) by excluding
+all but the kn nearest neighbors of x from Dn.
+2. Predict the label that maximizes qθ(· | x, Dn(x)).
+Intuitively, restricting to a neighborhood is like stretch-
+ing/flattening the target p(y | · ) at the cost of a reduction
+in sample size. Flatter functions are easier to approximate.
+This is the mechanism behind the window smoother from
+Section 6.1. If the model qθ approximates constant functions
+well, localization should improve the bias.
+6.5. Numerical Validation
+Since the key mechanism acting on Dn remains intact if we
+add more layers to the network, the findings likely transfer to
+7
+
+Statistical Foundations of Prior-Data Fitted Networks
+average squared bias average variance
+0 1000 2000 3000 4000 0 1000 2000 3000 4000
+0.00
+0.01
+0.02
+0.000
+0.002
+0.004
+0.006
+n
+method TabPFN Localized TabPFN
+Figure 1. Average squared bias and variance of the pre-trained TabPFN of Hollmann et al. (2022) on simulated data sets.
+larger networks. The main predictions from our theoretical
+considerations are: (i) the variance vanishes at rate 1/n,
+(ii) the bias does not vanish, but decreases until n ≈ 1000.
+To confirm this empirically, we simulate 500 data setsDn
+from the model p0(1 | X) = 1/2 + sin(1⊤X)/2 with Y ∈
+{0, 1}, X ∼ N (0, I5), and run the pre-trained TabPFN of
+Hollmann et al. (2022, pip version 0.1.8). 2 We compute
+the average squared bias and variance over 100 samples
+Xtest ∼ N (0, I5). The results in Figure 1 confirm that
+the variance indeed decreases at rate 1/n and that the bias
+decreases until n ≈ 1000, but does not vanish.
+The analysis shows that, for larger sample sizes at infer-
+ence, TabPFN learns mainly through decreasing its vari-
+ance. This variance reduction is a consequence of the
+transformer architecture and takes place irrespective of
+the tuned parameters bθ. Figure 1 also shows the results
+of a localized version of TabPFN (as in Section 6.4 with
+kn = min{500, ⌈n4/(d+4)⌉}). Here, the bias continues to
+decrease beyond n = 1000 at the cost of a slightly larger
+variance.
+7. Discussion
+As explained in Section 5.1, the prior Π characterizes tasks
+we want the predictor to do well on. Hollmann et al. (2022)
+propose a new kind of prior based on structural causal mod-
+els (Pearl, 2009) that is interesting on its own. Their in-
+tuitive idea is that the pair (Y, X) is generated by some
+2An R script to reproduce the results can be
+found at https://gist.github.com/tnagler/
+62f6ce1f996333c799c81f1aef147e72.
+noisy, causal mechanism (not necessarily in the direction
+X → Y ). Because the mechanisms can be arbitrarily com-
+plex, the prior is essentially nonparametric. The rate at
+which corresponding posteriors contract is a complex issue
+(Ghosal & van der Vaart, 2017, Chapters 8–9) and poses an
+interesting open question.
+The key factors driving PFNs capability to learn are their
+sensitivity to individual samples, their ability to choose sub-
+models, and localization. These insights may help to inform
+architecture design. In Section 6.1 and Section 6.4, we
+found a way to make the bias vanish at the cost of increased
+sensitivity to the training instances. This was achieved by
+introducing a scaling of the tuning parameters adapted to the
+training set size n. Whether this is possible and what a good
+scaling is depends on the model architecture. The localiza-
+tion approach in Section 6.4 is simple and can be applied
+post-hoc to any pre-trained network qθ. More serious archi-
+tecture design should account for the entire training pipeline
+and computational efficiency. Additional improvements can
+be expected if localization is incorporated into pre-training.
+Thinking about ways to adapt the transformer architecture
+appropriately could be a promising path. Another possible
+improvement is to augment the architecture with a Bayesian
+averaging mechanism similar to Section 6.2.
+Hollmann et al. (2022) acknowledge constraints on the fea-
+ture dimension and sample size as a major limitation of
+current PFN implementations. Owing to the standard trans-
+former architecture, the maximal feature size is fixed, and
+the algorithm scales quadratically in the number of samples.
+To mitigate this, several works proposed scalable modifica-
+tions of the transformer architecture (Beltagy et al., 2020;
+8
+
+Statistical Foundations of Prior-Data Fitted Networks
+Zaheer et al., 2020; Kitaev et al., 2020). Hollmann et al.
+(2022) rightfully point out that PFNs are quick enough to
+be used as ensemble members. The size constraints could
+therefore be overcome by boosting and bagging techniques
+akin to random forests or boosted trees.
+The full potential of PFNs is yet to be explored.
+Acknowledgements
+The author is grateful for several helpful comments by
+Samuel M¨uller, Noah Hollmann, Thibault Vatter, and two
+anonymous referees.
+References
+Aky¨urek, E., Schuurmans, D., Andreas, J., Ma, T., and
+Zhou, D. What learning algorithm is in-context learn-
+ing? investigations with linear models. In The Eleventh
+International Conference on Learning Representations,
+2023. URL https://openreview.net/forum?
+id=0g0X4H8yN4I.
+Beltagy, I., Peters, M. E., and Cohan, A. Long-
+former: The long-document transformer. arXiv preprint
+arXiv:2004.05150, 2020.
+Boucheron, S., Lugosi, G., and Massart, P. Concentration
+inequalities: A nonasymptotic theory of independence .
+Oxford university press, 2013.
+Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D.,
+Dhariwal, P., Neelakantan, A., Shyam, P., Sastry, G.,
+Askell, A., Agarwal, S., Herbert-V oss, A., Krueger, G.,
+Henighan, T., Child, R., Ramesh, A., Ziegler, D., Wu, J.,
+Winter, C., Hesse, C., Chen, M., Sigler, E., Litwin, M.,
+Gray, S., Chess, B., Clark, J., Berner, C., McCandlish, S.,
+Radford, A., Sutskever, I., and Amodei, D. Language
+models are few-shot learners. In Larochelle, H.,
+Ranzato, M., Hadsell, R., Balcan, M., and Lin, H. (eds.),
+Advances in Neural Information Processing Systems ,
+volume 33, pp. 1877–1901. Curran Associates, Inc.,
+2020. URL https://proceedings.neurips.
+cc/paper_files/paper/2020/file/
+1457c0d6bfcb4967418bfb8ac142f64a-Paper.
+pdf.
+Dai, D., Sun, Y ., Dong, L., Hao, Y ., Sui, Z., and Wei, F. Why
+can gpt learn in-context? language models secretly per-
+form gradient descent as meta optimizers. arXiv preprint
+arXiv:2212.10559, 2022.
+De Blasi, P. and Walker, S. G. Bayesian asymptotics with
+misspecified models. Statistica Sinica , pp. 169–187,
+2013.
+Derumigny, A. and Schmidt-Hieber, J. On lower
+bounds for the bias-variance trade-off. arXiv preprint
+arXiv:2006.00278, 2020.
+Dong, Q., Li, L., Dai, D., Zheng, C., Wu, Z., Chang, B.,
+Sun, X., Xu, J., Li, L., and Sui, Z. A survey on in-context
+learning, 2023.
+Gao, B. and Pavel, L. On the properties of the softmax func-
+tion with application in game theory and reinforcement
+learning. arXiv preprint arXiv:1704.00805, 2017.
+Garg, S., Tsipras, D., Liang, P. S., and Valiant, G. What
+can transformers learn in-context? a case study of sim-
+ple function classes. Advances in Neural Information
+Processing Systems, 35:30583–30598, 2022.
+Ghosal, S. and van der Vaart, A. Fundamentals of non-
+parametric Bayesian inference, volume 44. Cambridge
+University Press, 2017.
+Hollmann, N., M¨uller, S., Eggensperger, K., and Hutter, F.
+TabPFN: A transformer that solves small tabular classi-
+fication problems in a second. In NeurIPS 2022 First
+Table Representation Workshop, 2022. URL https:
+//openreview.net/forum?id=eu9fVjVasr4.
+Kirsch, L., Harrison, J., Sohl-Dickstein, J., and Metz, L.
+General-purpose in-context learning by meta-learning
+transformers, 2022.
+Kitaev, N., Kaiser, L., and Levskaya, A. Reformer: The
+efficient transformer. arXiv preprint arXiv:2001.04451,
+2020.
+McDiarmid, C. On the method of bounded differences ,
+pp. 148–188. London Mathematical Society Lecture
+Note Series. Cambridge University Press, 1989. doi:
+10.1017/CBO9781107359949.008.
+M¨uller, S., Hollmann, N., Arango, S. P., Grabocka, J., and
+Hutter, F. Transformers can do bayesian inference. In
+International Conference on Learning Representations,
+2022. URL https://openreview.net/forum?
+id=KSugKcbNf9.
+Nguyen, T. and Grover, A. Transformer neural pro-
+cesses: Uncertainty-aware meta learning via sequence
+modeling. In Chaudhuri, K., Jegelka, S., Song, L.,
+Szepesvari, C., Niu, G., and Sabato, S. (eds.), Pro-
+ceedings of the 39th International Conference on Ma-
+chine Learning, volume 162 of Proceedings of Machine
+Learning Research, pp. 16569–16594. PMLR, 17–23 Jul
+2022. URL https://proceedings.mlr.press/
+v162/nguyen22b.html.
+Olsson, C., Elhage, N., Nanda, N., Joseph, N., DasSarma,
+N., Henighan, T., Mann, B., Askell, A., Bai, Y ., Chen,
+9
+
+Statistical Foundations of Prior-Data Fitted Networks
+A., Conerly, T., Drain, D., Ganguli, D., Hatfield-Dodds,
+Z., Hernandez, D., Johnston, S., Jones, A., Kernion, J.,
+Lovitt, L., Ndousse, K., Amodei, D., Brown, T., Clark, J.,
+Kaplan, J., McCandlish, S., and Olah, C. In-context learn-
+ing and induction heads. Transformer Circuits Thread,
+2022. https://transformer-circuits.pub/2022/in-context-
+learning-and-induction-heads/index.html.
+Pearl, J. Causality. Cambridge university press, 2009.
+Siegmund, D. Importance Sampling in the Monte
+Carlo Study of Sequential Tests. The Annals of
+Statistics, 4(4):673 – 684, 1976. doi: 10.1214/aos/
+1176343541. URL https://doi.org/10.1214/
+aos/1176343541.
+Thickstun, J. The transformer model in equa-
+tions. University of Washington, Tech. Rep , 2021.
+URL https://johnthickstun.com/docs/
+transformers.pdf.
+Vaart, A. W. and Wellner, J. A. Weak convergence. In
+Weak convergence and empirical processes, pp. 16–28.
+Springer, 1996.
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones,
+L., Gomez, A. N., Kaiser, L., and Polosukhin, I. At-
+tention is all you need. Advances in neural information
+processing systems, 30, 2017.
+von Oswald, J., Niklasson, E., Randazzo, E., Sacramento,
+J., Mordvintsev, A., Zhmoginov, A., and Vladymyrov, M.
+Transformers learn in-context by gradient descent. arXiv
+preprint arXiv:2212.07677, 2022.
+Wand, M. P. and Jones, M. C. Kernel smoothing. CRC
+press, 1994.
+Wei, J., Bosma, M., Zhao, V ., Guu, K., Yu, A. W., Lester,
+B., Du, N., Dai, A. M., and Le, Q. V . Finetuned language
+models are zero-shot learners. In International Confer-
+ence on Learning Representations, 2022. URL https:
+//openreview.net/forum?id=gEZrGCozdqR.
+Zaheer, M., Guruganesh, G., Dubey, K. A., Ainslie, J., Al-
+berti, C., Ontanon, S., Pham, P., Ravula, A., Wang, Q.,
+Yang, L., et al. Big bird: Transformers for longer se-
+quences. Advances in Neural Information Processing
+Systems, 33:17283–17297, 2020.
+10
+
+Statistical Foundations of Prior-Data Fitted Networks
+A. Proofs
+A.1. Proof of Theorem 2.2
+By definition of the KL-divergence,
+0 ≤ KL
+
+q(· | x, D) || π(· | x, D)
+
+for all (x, D),
+or, equivalently,
+EY ∼π(·|x,D)[log π(Y | x, D)] ≥ EY ∼π(·|x,D)[log q(Y | x, D)] for all (x, D).
+Since this holds for any (x, D) it must also hold if we take expectations over random draws of (x, D). Taking expectation
+with respect to (x, D) ∼ Π on both sides, the law of iterated expectations yields
+EΠ[log π(Y | X, D)] ≥ EΠ[log q(Y | X, D)].
+A.2. Proof of Theorem 3.1
+Write KL(f | f ′) for the KL-divergence of f relative to f ′, and H(f, f ′) for their Hellinger distance. We need the following
+assumptions:
+(A1) There is a unique p∗ ∈ P with p∗ = arg minp KL(p∗ | p0) and KL(p∗ | p0) < ∞.
+(A2) For every α ∈ (0, 1/2), there are sets B1, . . . , BJ(α) with
+P ⊆
+J(α)[
+j=1
+Bj, sup
+p,p′∈Bj
+H(p, p′) ≤ 4(α2/2)1/α,
+J(ϵ)X
+j=1
+Π(Bj)α < ∞.
+Now let Πn(A) =
+R
+A dΠ(p | D n) be the posterior measure. From our assumptions and Corollary 1 of De Blasi & Walker
+(2013) it follows that for all ϵ > 0,
+Πn
+
+p ∈ P : H(p, p∗) > ϵ
+	
+→ 0, (8)
+with probability 1 over sequences Dn. For some δ > 0 and an arbitrary set A ⊆ Y × X with µA = P ∗(A) > 0, define
+Sδ,A =
+
+p ∈ P : inf
+(y,x)∈A
+p(y | x) − p∗(y | x)
+ ≥ δ
+
+.
+For any p ∈ Sδ,A, it holds
+µAδ =
+Z
+A
+δp∗(x)dx ≤
+Z
+A
+|p∗(y | x) − p(y | x)|p∗(x)dx
+=
+Z
+A
+p∗(y, x) − p(y | x)p∗(x)
+dx
+=
+Z
+A
+p∗(y, x) − p(y, x) + p(y | x)[p(x) − p∗(x)]
+dx
+≤
+Z p∗(y, x) − p(y, x)|dx +
+Z p(x) − p∗(x)
+dx
+≤ 4 TV(p∗, p)
+≤ 8H(p∗, p),
+where TV(f, f ′) is the total variation distance. Together with (8), this implies
+Πn(Sδ,A) ≤ Πn
+
+p: H(p, p∗) ≥ µAδ/8
+	
+→ 0.
+11
+
+Statistical Foundations of Prior-Data Fitted Networks
+We then get
+inf
+(y,x)∈A
+|π(y | x, Dn) − p0(y | x)| ≤ inf
+(y,x)∈A
+
+Z
+p(y | x)dΠn(p) − p0(y | x)
+
+≤ inf
+(y,x)∈A
+Z p(y | x) − p0(y | x)
+dΠn(p)
+≤ inf
+(y,x)∈A
+Z
+Sδ,A
+p(y | x) − p0(y | x)
+dΠn(p) + δ
+≤ 2Πn(Sδ,A) + δ → δ almost surely.
+Since δ and A were arbitrary, we have shown that
+π(y | x, Dn) → p ∗ (y | x),
+with probability 1 for P ∗-almost every (y, x). Since KL(p∗ | p0) < ∞ by (A1), convergence must also take place for
+P0-almost every (y, x).
+A.3. Proof of Lemma 5.1
+Let Rn be the set of permutations ρ: (Y × X )n → (Y × X )n. Define the symmetrized function ef as
+ef(Dn) = 1
+|Rn|
+X
+ρ∈Rn
+(f ◦ ρ)(Dn).
+If the elements in Dn are iid, it holds EP [f(Dn)] = EP [(f ◦ ρ)(Dn)] and VarP [f(Dn)] = VarP [(f ◦ ρ)(Dn)] for any
+ρ ∈ Rn. Therefore, EP [f(Dn)] = EP [ef(Dn)] and
+VarP [ef(Dn)] = VarP [f(Dn)]
+|Rn|2
+X
+ρ,ρ′∈Rn
+CorrP [(f ◦ ρ)(Dn), (f ◦ ρ′)(Dn)] ≤ VarP [f(Dn)],
+with equality for all P if and only if f is symmetric.
+A.4. Proof of Theorem 5.2
+McDiarmid’s inequality (McDiarmid, 1989) yields
+P
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ > ϵ
+
+≤ 2 exp
+
+− 2ϵ2
+L2n1−2α
+
+.
+Choosing ϵ2 = log(δ)L2n1−2α/2, we get
+P
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ > log(δ)1/2KLn1/2−α/
+√
+2
+
+≤ 2δ.
+A.5. Proof of Lemma 5.3
+Using the first inequality from the previous proof, we get
+∞X
+n=1
+P
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ > ϵ
+
+≤ 2
+∞X
+n=1
+exp
+
+− 2ϵ2
+L2n1−2α
+
+< ∞.
+The Borel-Cantelli lemma then implies that, almost surely,
+lim
+n→∞
+qθ(y | x, Dn) − E[qθ(y | x, Dn)]
+ ≤ ϵ
+Since ϵ was arbitrary the claim follows.
+12
+
+Statistical Foundations of Prior-Data Fitted Networks
+A.6. Proof of Theorem 5.4
+Condition (6) implies
+Ep[qθ(y | x, Dn)] − Eep[qθ(y | x, Dn)] → 0,
+for all p,ep ∈ P with p(y | s) =ep(y | s) for ∥s − x∥ < ϵ. Lemma 5.3 then implies
+lim
+n→∞
+qθ(y | x, Dn) − qθ(y | x,eDn)
+ = 0 almost surely.
+Since ϵ was arbitrary, convergence must also hold for some sequence ϵn → 0.
+A.7. Proof of Lemma 6.1
+Let Dn = ( Yi, Xi)n
+i=1 and D′
+n = ( Y ′
+i , X ′
+i)n
+i=1 such that (Yi, Xi) = ( Y ′
+i , X ′
+i) for all i > 1. Hoeffdings’s inequality
+(Boucheron et al., 2013, Theorem 2.8) gives
+P
+
+1
+n
+nX
+i=1
+1{Xi ∈ An(x)} − P{Xi ∈ An(x)}
+ > cn −η/3
+
+≤ 2 exp
+
+−c2n1−2η/9
+
+.
+Since η < 1/2,
+∞X
+n=1
+exp
+
+−c2n1−2η/9
+
+< ∞,
+and the Borell-Cantelli lemma implies that for large n,
+
+1
+n
+nX
+i=1
+1{Xi ∈ An(x)} − P{Xi ∈ An(x)}
+ ≤ cn−η/3 almost surely.
+The remaining inequalities are understood almost surely, for large enough n. Because nηP{Xi ∈ An(x)} → c, we get
+nη
+
+1
+n
+nX
+i=1
+1{Xi ∈ An(x)} − cn−η
+
+≤ nη
+
+1
+n
+nX
+i=1
+1{Xi ∈ An(x)} − P{Xi ∈ An(x)}
+ +
+nηP{Xi ∈ An(x)} − c
+
+≤ c/2,
+which implies
+1
+n
+nX
+i=1
+1{Xi ∈ An(x)} ≥ cn−η/2.
+Using this bound,
+n1−η|qθ(y | x, Dn) − qθ(y | x, D′
+n)| ≤ 2|g(y, x, Y1, X1) − g(y, x, Y ′
+1 , X ′
+1)|/c ≤ 4K/c,
+which proves the claim.
+A.8. Proof of Theorem 6.2
+The theorem is a consequence of Theorem 5.2 and the following result. (The norm bounds on ∥x∥ and the weight matrices
+are arbitrary and can be relaxed.)
+Theorem A.1. Let X = {x: ∥x∥ ≤ 1} and ∥W (h)
+q ∥, ∥W (h)
+v ∥, ∥Wr,1∥, ∥Wr,2∥, ∥Wo∥ ≤ 1. Then the network qθ satisfies
+(5) with α = 1 and L = O(H|γ1|/|γ2|).
+13
+
+Statistical Foundations of Prior-Data Fitted Networks
+Proof. Let eDn = (Dn \ Vn) ∪eVn and defineea(h)
+j ,eu′,eu,ez′,ez accordingly. Because SoftMax is 1-Lipschitz (Gao & Pavel,
+2017, Proposition 4),
+|qθ(y | x, Dn) − qθ(y | x,eDn)| ≤ ∥ Wo(z −ez)∥ ≤ ∥ z −ez∥.
+Using Lemma A.2 below, we further get
+z −ez
+ ≤
+LayerNorm(u + z′) − LayerNorm(eu′ +ez)
+ ≤ 4 |γ1|
+|γ2|
+u −eu
+ +
+z′ −ez′
+
+.
+Because also ReLu is 1-Lipschitz,
+z′ −ez′ =
+Wr,2 ReLu(Wr,1u) − Wr,2 ReLu(Wr,1eu)
+ ≤ ∥u −eu∥.
+Using Lemma A.2 again,
+∥u −eu∥ = ∥ LayerNorm(v + u′) − LayerNorm(v +eu′)∥ ≤ 4 |γ1|
+|γ2| ∥u′ −eu′∥.
+The last displays together yield
+|qθ(y | x, Dn) − qθ(y | x,eDn)| ≤ 32 |γ1|
+|γ2|
+u −eu
+. (9)
+DefiningeVi = Vi for i < n , we obtain
+1
+H ∥u′ −eu′∥ = 1
+H
+
+HX
+h=1
+ nX
+j=1
+a(h)
+j W (h)
+v Vj −
+nX
+j=1
+ea(h)
+j W (h)
+v eVj
+
+≤ max
+1≤h≤H
+
+nX
+j=1
+a(h)
+j W (h)
+v Vj −
+nX
+j=1
+ea(h)
+j W (h)
+v eVj
+
+= max
+1≤h≤H
+
+nX
+j=1
+a(h)
+j W (h)
+v (Vj − eVj) +
+nX
+j=1
+(a(h)
+j −eaj)W (h)
+v eVj
+
+≤ max
+1≤h≤H
+nX
+j=1
+a(h)
+j ∥W (h)
+v ∥∥Vj − eVj∥ +
+nX
+j=1
+|ea(h)
+j − aj|∥W (h)
+v ∥∥eVj∥
+≤ 4 max
+1≤h≤H
+a(h)
+n + 2
+nX
+j=1
+|ea(h)
+j − aj|.
+Let si = v⊤W (h)
+q Vi and note that |si| ≤ ∥ v∥∥W (h)
+q ∥ maxj ∥Vj∥ ≤ 4.
+|a(h)
+n | = exp(sn)Pn
+j=1 exp(sj) ≤ e4
+Pn
+j=1 e−4 = e8
+n .
+Further,
+|ea(h)
+j − a(h)
+j | =
+
+exp(sj)Pn
+j=1 exp(sj) − exp(esj)Pn
+j=1 exp(esj)
+
+=
+
+exp(sj)Pn
+j=1 exp(sj) − exp(esj)Pn
+j=1 exp(sj) + exp(esj)Pn
+j=1 exp(sj) − exp(esj)Pn
+j=1 exp(esj)
+
+≤
+
+exp(sj) − exp(esj)Pn
+j=1 exp(sj)
+ +
+
+exp(esj)Pn
+j=1 exp(sj) − exp(esj)Pn
+j=1 exp(esj)
+
+=
+
+exp(sj) − exp(esj)Pn
+j=1 exp(sj)
+ + exp(esj)Pn
+j=1 exp(sj)
+
+Pn
+j=1 exp(sj) −Pn
+j=1 exp(esj)Pn
+j=1 exp(esj)
+
+=
+
+exp(sj) − exp(esj)Pn
+j=1 exp(sj)
+ + exp(esj)Pn
+j=1 exp(sj)
+
+exp(sn) − exp(esn)Pn
+j=1 exp(esj)
+.
+14
+
+Statistical Foundations of Prior-Data Fitted Networks
+The first term on the right is zero if j ̸= n. For j = n, it can be bounded by 2e8/n as before. Using the same argument for
+the second term above, we get
+|ea(h)
+j − a(h)
+j | ≤ 2e8
+n 1(j = n) + 2e16
+n2 .
+Accordingly,
+1
+H ∥u′ −eu′∥ ≤ 4 max
+1≤h≤H
+a(h)
+n + 2
+nX
+j=1
+|ea(h)
+j − aj| ≤ 4e8
+n + 2e8
+n + n2e16
+n2 ≤ 8e16
+n . (10)
+Combining (9) and (10) proves the claim.
+Lemma A.2. For any two vectors a, b ∈ Rd it holds
+LayerNorm(a; γ) − LayerNorm(b; γ)
+ ≤ 4 |γ1|
+|γ2| ∥a − b∥.
+Proof. Let us first assume avg(a) = avg(b) = 0 and, without loss of generality, ∥a∥ ≥ ∥ b∥. It holds,
+LayerNorm(a; γ) − LayerNorm(b; γ)
+
+= |γ1|
+
+a
+∥a∥ + |γ2| − b
+∥b∥ + |γ2|
+
+= |γ1|
+
+a
+∥a∥ + |γ2| − b
+∥a∥ + |γ2| + b
+∥a∥ + |γ2| − b
+∥b∥ + |γ2|
+
+≤ |γ1| ∥a − b∥
+∥a∥ + |γ2| + |γ1|∥b∥
+
+1
+∥a∥ + |γ2| − 1
+∥b∥ + |γ2|
+
+= |γ1| ∥a − b∥
+∥a∥ + |γ2| + |γ1| ∥b∥
+∥b∥ + |γ2|
+∥b∥ − ∥a∥
+
+∥a∥ + |γ2|
+≤ |γ1| ∥a − b∥
+∥a∥ + |γ2| + |γ1|
+∥b∥ − ∥a∥
+
+∥a∥ + |γ2|
+≤ 2 |γ1|∥a − b∥
+∥a∥ + |γ2| [reverse triangle inequality]
+≤ 2 |γ1|
+|γ2| ∥a − b∥.
+If avg(a) ̸= 0 or avg(b) ̸= 0, we get
+∥ LayerNorm(a; γ) − LayerNorm(b; γ)∥ ≤ 2 |γ1|
+|γ2| ∥a − b − avg(a − b)∥ ≤ 4 |γ1|
+|γ2| ∥a − b∥,
+because
+∥ avg(a − b)∥2 =
+
+1
+d
+dX
+i=1
+(ai − bi)1
+
+2
+≤
+1
+d
+dX
+i=1
+|ai − bi|∥1∥
+2
+= d
+1
+d
+dX
+i=1
+|ai − bi|
+2
+≤ ∥a − b∥2,
+where we used the triangle inequality in the second step and Jensen’s inequality in the last.
+A.9. Proof of Theorem 6.3
+We have
+u′ =
+HX
+h=1
+nX
+j=1
+a(h)
+j W (h)
+v Vj =
+HX
+h=1
+1
+n
+Pn
+j=1 exp(v⊤W (h)
+q Vj)W (h)
+v Vj
+1
+n
+Pn
+j=1 exp(v⊤W (h)
+q Vj)
+.
+15
+
+Statistical Foundations of Prior-Data Fitted Networks
+The law of large numbers implies u′ → u′ almost surely, where
+u′ =
+HX
+h=1
+EV ∼p0[exp(v⊤W (h)
+q V )W (h)
+v V ]
+EV ∼p0[exp(v⊤W (h)
+q V )]
+.
+Now, observe that
+EV ∼p0[exp(v⊤W (h)
+q V )W (h)
+v V ]
+EV ∼p0[exp(v⊤W (h)
+q V )]
+=
+Z
+W (h)
+v s exp(v⊤W (h)
+q s)
+EV ∼p0[exp(v⊤W (h)
+q V )]
+p0(s)
+| {z }
+gh(s)
+ds = W (h)
+v EV ∼gh[V ].
+Since all following operations on u′ are continuous (see the proof of Theorem A.1), it also holds
+lim
+n→∞
+qθ(· | x, Dn) − qθ(· | x)
+ = 0 almost surely.
+Because the sequence |qθ(· | x, Dn) − qθ(· | x)| is uniformly bounded by 2, convergence is also in L1. This implies
+limn→∞ E[qθ(· | x, Dn)] = qθ(· | x).
+B. Approximation Results for the PFN Parameter
+Suppose that the parameters θ live in a subset of Rp with p fixed and finite. This assumption would be questionable in the
+usual machine learning setting, but our situation is different. A PFN is pre-trained offline, using m Monte-Carlo samples
+from data sets D(j). Given enough computing power, we can take m as large as we want.
+Given sufficient regularity, the following theorems are direct applications of existing results. To keep additional concepts
+and notation to a minimum, we omit detailed conditions and proofs and refer to the original works for specifics. We start
+with the behavior ofbθ.
+Theorem B.1. It holds:
+(i) bθ → θ∗ in probability,
+(ii) √m(bθ − θ∗) → N (0, Σθ∗) in distribution, where Σθ∗ = I −1
+θ∗ Vθ∗ I −1
+θ∗ and
+Iθ∗ = EΠN EΠ[∇2
+θ log qθ∗(Y | X, DN)]
+and Vθ∗ = EΠN EΠ[∇θ log qθ∗(Y | X, DN) × ∇⊤
+θ log qθ∗(Y | X, DN)].
+Proof. See Corollary 3.2.3 and Example 3.2.12 in Vaart & Wellner (1996).
+The first part shows that bθ is a valid approximation of θ∗, the second quantifies its accuracy. Theorem B.1 has direct
+implications for the approximated model q bθ.
+Theorem B.2. It holds:
+(i) sup
+(y,x,D)
+|q bθ(y | x, D) − qθ∗(y | x, D)| → 0 in probability,
+(ii) √m(q bθ − qθ∗) converges weakly to a mean-zero Gaussian process with
+Cov
+
+(y | x, D), (y′ | x′, D′)
+
+= ∇θqθ∗(y | x, D)⊤Σθ∗ ∇θqθ∗(y′ | x′, D′).
+Proof. Part (i) follows from Theorem B.1 and the continuous mapping theorem (Vaart & Wellner, 1996, Theorem 1.11.1 ),
+part (ii) from the delta method (Vaart & Wellner, 1996, Theorem 3.9.4).
+16
+
+Statistical Foundations of Prior-Data Fitted Networks
+From the second part, we see that the variance of q bθ(y | x, D) is approximately
+1
+m ∇θqθ∗(y | x, D)⊤Σθ∗ ∇θqθ∗(y | x, D).
+Intuitively, the variance depends on the accuracy ofbθ (through Σθ∗), and the sensitivity of qθ∗ with respect to θ∗ (through
+∇θqθ∗). Model complexity normally works against us in both parts. Hence, more complex models need to be trained with
+more Monte-Carlo samples to limit the variance.
+17

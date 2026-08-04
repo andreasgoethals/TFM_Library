@@ -102,6 +102,7 @@ Error (MCE), and Brier Score. Fairness is evaluated via Statistical
 Parity Difference (SPD), Equalized Odds Difference (EOD), and
 Equal Opportunity Difference (EOpD).
 8613
+
 WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates Aditya Tanna, Pratinav Seth, Mohamed Bouadi and Vinay Kumar Sankarapu
 Table 1: Overall leaderboard across three benchmark suites : TALENT, OpenML-CC18, and TabZilla. Ranks denote the mean
 rank per benchmark suite (lower is better). Metrics: ACC = Accuracy, F1 = Weighted F1. The "All" column reports the aggregated
@@ -200,6 +201,7 @@ is the only model that remains consistently well-calibrated after full
 fine-tuning. PEFT improves stability relative to SFT, but still does
 not match the calibration quality of zero-shot inference. Notably,
 8614
+
 Exploring Fine-Tuning for Tabular Foundation Models WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates
 Table 2: Comprehensive performance analysis across dataset characteristics: size (Small <1K, Medium 1K–10K, Large >10K
 samples), class balance (Balanced ≥0.6, Imbalanced <0.6), and feature dimensionality (Narrow <10, Medium 10–100, Wide
@@ -297,6 +299,7 @@ Limitations : Our evaluation focuses on binary and multi-class
 classification; PEFT is not supported for some models . Sensitive
 attributes for fairness are manually defined and vary across datasets.
 8615
+
 WWW ’26, April 13–17, 2026, Dubai, United Arab Emirates Aditya Tanna, Pratinav Seth, Mohamed Bouadi and Vinay Kumar Sankarapu
 Table 3: Probability calibration metrics across models and
 tuning strategies on TALENT, OpenML-CC18, and TabZilla

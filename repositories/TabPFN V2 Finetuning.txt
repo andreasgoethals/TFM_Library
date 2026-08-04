@@ -3,8 +3,11 @@ Directory structure:
     ├── benchmarking_tabpfn.py
     ├── finetune_classifier.py
     ├── finetune_regressor.py
+    ├── input_gradients.py
     ├── kv_cache_fast_prediction.py
     ├── plot_regression_distribution.py
+    ├── prompt_tuning_classifier.py
+    ├── prompt_tuning_regressor.py
     ├── sagemaker.py
     ├── save_and_load_model.py
     ├── tabpfn_for_binary_classification.py
@@ -152,10 +155,12 @@ import warnings
 import numpy as np
 import sklearn.datasets
 import torch
+import torch.distributed as dist
 from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from tabpfn import TabPFNClassifier
+from tabpfn.finetuning import main_process_first
 from tabpfn.finetuning.finetuned_classifier import (
     FinetunedTabPFNClassifier,
 )
@@ -180,16 +185,18 @@ logging.basicConfig(
 # =============================================================================
 
 # Training hyperparameters
-NUM_EPOCHS = 30
-LEARNING_RATE = 2e-5
+NUM_EPOCHS = 100
+LEARNING_RATE = 1e-5
+N_FINETUNE_CTX_PLUS_QUERY_SAMPLES = 50_000
+EARLY_STOPPING_PATIENCE = 15
 
 # Ensemble configuration
 # number of estimators to use during finetuning
-NUM_ESTIMATORS_FINETUNE = 2
+NUM_ESTIMATORS_FINETUNE = 4
 # number of estimators to use during trian time validation
-NUM_ESTIMATORS_VALIDATION = 2
+NUM_ESTIMATORS_VALIDATION = 4
 # number of estimators to use during final inference
-NUM_ESTIMATORS_FINAL_INFERENCE = 2
+NUM_ESTIMATORS_FINAL_INFERENCE = 4
 
 # Reproducibility
 RANDOM_STATE = 0
@@ -207,7 +214,15 @@ def main() -> None:
 
     # We use the "Higgs" dataset (see https://www.openml.org/search?type=data&sort=runs&id=44129&status=active)
     # but only take a random subset of 100k samples for this example.
-    data = sklearn.datasets.fetch_openml(data_id=44129, as_frame=True, parser="auto")
+    # Under torchrun, the main process downloads the dataset first and the
+    # other ranks then read it from the warm sklearn cache â€” otherwise every
+    # rank would download it, and not all sklearn fetchers write their cache
+    # atomically.
+    with main_process_first():
+        data = sklearn.datasets.fetch_openml(
+            data_id=44129, as_frame=True, parser="auto"
+        )
+
     _, X_all, _, y_all = train_test_split(
         data.data,
         data.target,
@@ -231,7 +246,6 @@ def main() -> None:
             device=[f"cuda:{i}" for i in range(torch.cuda.device_count())],
             n_estimators=NUM_ESTIMATORS_FINAL_INFERENCE,
             ignore_pretraining_limits=True,
-            inference_config={"SUBSAMPLE_SAMPLES": 50_000},
             random_state=RANDOM_STATE,
         )
         base_clf.fit(X_train, y_train)
@@ -259,6 +273,10 @@ def main() -> None:
         device="cuda",
         epochs=NUM_EPOCHS,
         learning_rate=LEARNING_RATE,
+        lr_warmup_only=True,
+        eval_metric="log_loss",
+        early_stopping_patience=EARLY_STOPPING_PATIENCE,
+        n_finetune_ctx_plus_query_samples=N_FINETUNE_CTX_PLUS_QUERY_SAMPLES,
         n_estimators_finetune=NUM_ESTIMATORS_FINETUNE,
         n_estimators_validation=NUM_ESTIMATORS_VALIDATION,
         n_estimators_final_inference=NUM_ESTIMATORS_FINAL_INFERENCE,
@@ -278,6 +296,9 @@ def main() -> None:
 
         print(f"ðŸ“Š Finetuned TabPFN Test ROC: {roc_auc:.4f}")
         print(f"ðŸ“Š Finetuned TabPFN Test Log Loss: {loss:.4f}")
+
+    if dist.is_initialized():
+        dist.destroy_process_group()
 
 
 if __name__ == "__main__":
@@ -310,10 +331,12 @@ import warnings
 
 import sklearn.datasets
 import torch
+import torch.distributed as dist
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 from tabpfn import TabPFNRegressor
+from tabpfn.finetuning import main_process_first
 from tabpfn.finetuning.finetuned_regressor import FinetunedTabPFNRegressor
 
 warnings.filterwarnings(
@@ -336,12 +359,14 @@ logging.basicConfig(
 # =============================================================================
 
 # Training hyperparameters
-NUM_EPOCHS = 30
+NUM_EPOCHS = 100
 LEARNING_RATE = 1e-5
 
-# We can fine-tune using almost the entire housing dataset
-# in the context of the train batches.
-N_FINETUNE_CTX_PLUS_QUERY_SAMPLES = 20_000
+# Small meta-dataset chunks give several optimizer steps per epoch with varied
+# contexts. On a dataset this size (~18.6k rows), fine-tuning overfits within a
+# few epochs; diverse small contexts delay that, and early stopping (on the
+# validation MSE) picks the checkpoint just before it sets in.
+N_FINETUNE_CTX_PLUS_QUERY_SAMPLES = 5_000
 
 # Ensemble configuration
 # number of estimators to use during finetuning
@@ -351,6 +376,9 @@ NUM_ESTIMATORS_VALIDATION = 8
 # number of estimators to use during final inference
 NUM_ESTIMATORS_FINAL_INFERENCE = 8
 
+# early stopping patience
+EARLY_STOPPING_PATIENCE = 15
+
 # Reproducibility
 RANDOM_STATE = 0
 
@@ -358,7 +386,13 @@ RANDOM_STATE = 0
 def main() -> None:
     is_main_process = int(os.environ.get("LOCAL_RANK", "0")) == 0
 
-    data = sklearn.datasets.fetch_california_housing(as_frame=True)
+    # Under torchrun, the main process downloads the dataset first and the
+    # other ranks then read it from the warm sklearn cache â€” otherwise every
+    # rank would download it, and not all sklearn fetchers write their cache
+    # atomically.
+    with main_process_first():
+        data = sklearn.datasets.fetch_california_housing(as_frame=True)
+
     X_all = data.data
     y_all = data.target
 
@@ -377,7 +411,6 @@ def main() -> None:
             device=[f"cuda:{i}" for i in range(torch.cuda.device_count())],
             n_estimators=NUM_ESTIMATORS_FINAL_INFERENCE,
             ignore_pretraining_limits=True,
-            inference_config={"SUBSAMPLE_SAMPLES": 50_000},
         )
         base_reg.fit(X_train, y_train)
 
@@ -404,11 +437,13 @@ def main() -> None:
         device="cuda",
         epochs=NUM_EPOCHS,
         learning_rate=LEARNING_RATE,
+        lr_warmup_only=True,
         random_state=RANDOM_STATE,
         n_finetune_ctx_plus_query_samples=N_FINETUNE_CTX_PLUS_QUERY_SAMPLES,
         n_estimators_finetune=NUM_ESTIMATORS_FINETUNE,
         n_estimators_validation=NUM_ESTIMATORS_VALIDATION,
         n_estimators_final_inference=NUM_ESTIMATORS_FINAL_INFERENCE,
+        early_stopping_patience=EARLY_STOPPING_PATIENCE,
     )
 
     # 4. Call .fit() to start the fine-tuning process on the training data
@@ -425,12 +460,96 @@ def main() -> None:
         print(f"ðŸ“Š Finetuned TabPFN Test MSE: {mse:.4f}")
         print(f"ðŸ“Š Finetuned TabPFN Test RÂ²: {r2:.4f}")
 
+    if dist.is_initialized():
+        dist.destroy_process_group()
+
 
 if __name__ == "__main__":
     if not torch.cuda.is_available():
         raise RuntimeError(
             "CUDA is not available. Please run the script on a CUDA-enabled GPU."
         )
+    main()
+
+
+
+================================================
+FILE: examples/input_gradients.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Extract gradients of TabPFN predictions with respect to the input data.
+
+With ``differentiable_input=True``, TabPFN keeps the autograd graph intact all
+the way from the input tensors to the predicted probabilities. Backpropagating
+a prediction through the frozen model therefore yields ``d prediction / d X``
+for every test sample and feature â€” a simple saliency map showing which
+feature values drive each prediction.
+
+Run:
+    python examples/input_gradients.py
+"""
+
+import numpy as np
+import torch
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+from tabpfn import TabPFNClassifier
+from tabpfn.utils import infer_devices
+
+
+def main() -> None:
+    """Compute d P(benign) / d X on the breast-cancer dataset."""
+    device = infer_devices("auto")[0]
+    print(f"Device: {device}")
+
+    data = load_breast_cancer()
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data.data, data.target, test_size=0.3, random_state=0, stratify=data.target
+    )
+
+    # Standardize features so gradient magnitudes are comparable across features.
+    scaler = StandardScaler().fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    clf = TabPFNClassifier(
+        n_estimators=1,
+        random_state=0,
+        device=device,
+        inference_precision=torch.float32,
+        differentiable_input=True,
+    )
+    # fit_with_differentiable_input does not infer n_classes_ from y (y is a
+    # differentiable tensor, not discrete labels), so set it explicitly.
+    clf.n_classes_ = len(np.unique(y_train))
+
+    X_train_t = torch.tensor(X_train, dtype=torch.float32, device=device)
+    y_train_t = torch.tensor(y_train, dtype=torch.float32, device=device)
+    X_test_t = torch.tensor(
+        X_test, dtype=torch.float32, device=device, requires_grad=True
+    )
+
+    clf.fit_with_differentiable_input(X_train_t, y_train_t)
+
+    # use_inference_mode=True gives (n_samples, n_classes) probabilities; gradients
+    # still flow because differentiable_input=True.
+    probs = clf.forward(X_test_t, use_inference_mode=True)
+    accuracy = (probs.argmax(dim=1).cpu().numpy() == y_test).mean()
+    print(f"Test accuracy: {accuracy:.4f}")
+
+    # Gradient of the summed benign-class probability w.r.t. every input value.
+    # Summing over samples is just a trick to get all per-sample gradients in one
+    # backward pass; sample i's row of `grads` only depends on prediction i.
+    (grads,) = torch.autograd.grad(probs[:, 1].sum(), X_test_t)
+    print(f"Gradient matrix shape: {tuple(grads.shape)}")
+    print(grads)
+
+
+if __name__ == "__main__":
     main()
 
 
@@ -559,6 +678,391 @@ def main(
     print(f"Saved {output_path}")
     if show:
         plt.show()
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/prompt_tuning_classifier.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Example of prompt-tuning a TabPFN classifier.
+
+Prompt tuning keeps the TabPFN weights frozen and instead optimizes the
+in-context examples themselves: a small set of (X, y) "prompt" samples is
+treated as differentiable parameters and updated by gradient descent so that
+predictions on held-out queries improve.
+
+This relies on ``differentiable_input=True``, which lets gradients flow from a
+downstream loss back through ``fit_with_differentiable_input`` into the prompt
+tensors. The example runs on CPU but is considerably faster on a CUDA GPU.
+"""
+
+import numpy as np
+import torch
+from sklearn.datasets import make_classification
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from torch.optim import Adam
+from torch.utils.data import DataLoader, TensorDataset
+from tqdm import tqdm
+
+from tabpfn import TabPFNClassifier
+
+
+def eval_test(
+    clf: TabPFNClassifier,
+    prompt_x: torch.Tensor,
+    prompt_y: torch.Tensor,
+    my_dl_test: DataLoader,
+    lossfn: torch.nn.Module,
+    device: str,
+) -> tuple[float, float]:
+    """Evaluate the current prompt on the held-out test set."""
+    with torch.no_grad():
+        loss_sum = 0.0
+        acc_sum = 0.0
+        acc_items = 0
+        clf.fit_with_differentiable_input(prompt_x, prompt_y.flatten())
+        for data_batch in my_dl_test:
+            X_tests, y_tests = data_batch
+            predictions = clf.forward(X_tests, use_inference_mode=True)
+            loss_sum += lossfn(torch.log(predictions), y_tests.to(device)).item()
+            acc_sum += (
+                accuracy_score(
+                    y_tests.flatten().cpu(),
+                    predictions.argmax(dim=1).cpu(),
+                )
+                * y_tests.numel()
+            )
+            acc_items += y_tests.numel()
+
+        res_accuracy = acc_sum / acc_items
+        return loss_sum, res_accuracy
+
+
+def main() -> None:
+    n_prompt_samples = 200  # samples used for prompt tuning
+    n_total_samples = 2000  # total samples
+    n_classes = 3
+    n_features = 20
+    do_epochs = 5
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"Device: {device}")
+    print(f"Prompt samples: {n_prompt_samples}")
+    print(f"Total samples: {n_total_samples}")
+    print(f"Classes: {n_classes}")
+
+    torch.manual_seed(42)
+
+    # Create synthetic dataset
+    X, y = make_classification(
+        n_samples=n_total_samples,
+        n_features=n_features,
+        n_informative=10,
+        n_redundant=5,
+        n_classes=n_classes,
+        n_clusters_per_class=2,
+        random_state=42,
+    )
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+
+    clf = TabPFNClassifier(
+        ignore_pretraining_limits=True,
+        device=device,
+        n_estimators=1,
+        random_state=2,
+        inference_precision=torch.float32,
+        differentiable_input=True,
+    )
+    # fit_with_differentiable_input does not infer n_classes_ from y (y is a
+    # differentiable tensor, not discrete labels), so set it explicitly.
+    clf.n_classes_ = len(np.unique(y))
+
+    # The prompt: the in-context examples we will optimize.
+    prompt_x_tensor = torch.tensor(X_train[:n_prompt_samples], dtype=torch.float).to(
+        device
+    )
+    prompt_y_tensor = torch.tensor(y_train[:n_prompt_samples], dtype=torch.float).to(
+        device
+    )
+
+    # The query examples used to drive the prompt-tuning loss.
+    train_x_tensor = torch.tensor(X_train[n_prompt_samples:], dtype=torch.float).to(
+        device
+    )
+    train_y_tensor = torch.tensor(y_train[n_prompt_samples:], dtype=torch.long).to(
+        device
+    )
+
+    test_x_tensor = torch.tensor(X_test, dtype=torch.float).to(device)
+    test_y_tensor = torch.tensor(y_test, dtype=torch.long).to(device)
+
+    dataset_train = TensorDataset(train_x_tensor, train_y_tensor)
+    dataloader_train = DataLoader(dataset_train, batch_size=128, shuffle=True)
+    dataset_test = TensorDataset(test_x_tensor, test_y_tensor)
+    dataloader_test = DataLoader(dataset_test, batch_size=512, shuffle=False)
+
+    lossfn = torch.nn.NLLLoss()
+
+    # Compute initial accuracy
+    loss_test, res_acc = eval_test(
+        clf,
+        prompt_x_tensor,
+        prompt_y_tensor,
+        dataloader_test,
+        lossfn,
+        device,
+    )
+    print(f"Initial accuracy: {res_acc:.4f}")
+
+    # Mark the prompt tensors as the parameters to optimize.
+    prompt_x_tensor.requires_grad_(requires_grad=True)
+    prompt_y_tensor.requires_grad_(requires_grad=True)
+
+    optim_impl = Adam([prompt_x_tensor, prompt_y_tensor], lr=1e-2)
+
+    for epoch in range(do_epochs):
+        total_loss = 0.0
+        for data_batch in tqdm(
+            dataloader_train, desc=f"Epoch {epoch + 1}", leave=False
+        ):
+            input_x_batch, input_y_batch = data_batch
+            optim_impl.zero_grad()
+            clf.fit_with_differentiable_input(
+                prompt_x_tensor, prompt_y_tensor.flatten()
+            )
+            # use_inference_mode=True for correct output format; gradients still
+            # flow because differentiable_input=True.
+            predictions = clf.forward(input_x_batch, use_inference_mode=True)
+            loss = lossfn(torch.log(predictions), input_y_batch.to(device))
+            loss.backward()
+            optim_impl.step()
+            total_loss += loss.item()
+
+        loss_test, res_acc = eval_test(
+            clf,
+            prompt_x_tensor,
+            prompt_y_tensor,
+            dataloader_test,
+            lossfn,
+            device,
+        )
+        print(
+            f"Epoch {epoch + 1}/{do_epochs}: "
+            f"Test Acc={res_acc:.4f}, Test Loss={loss_test:.4f}"
+        )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/prompt_tuning_regressor.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Example of prompt-tuning a TabPFN regressor.
+
+Prompt tuning keeps the TabPFN weights frozen and instead optimizes the
+in-context examples themselves: a small set of (X, y) "prompt" samples is
+treated as differentiable parameters and updated by gradient descent so that
+predictions on held-out queries improve.
+
+This relies on ``differentiable_input=True``, which lets gradients flow from a
+downstream loss back through ``fit_with_differentiable_input`` into the prompt
+tensors. Unlike the classifier, the regressor's ``forward`` returns bar
+distribution logits, so we decode a differentiable point prediction as the
+expected value over the bin centers before computing an MSE loss. The example
+runs on CPU but is considerably faster on a CUDA GPU.
+"""
+
+import torch
+from sklearn.datasets import make_regression
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from torch.optim import Adam
+from torch.utils.data import DataLoader, TensorDataset
+from tqdm import tqdm
+
+from tabpfn import TabPFNRegressor
+
+
+def predict_mean(reg: TabPFNRegressor, X: torch.Tensor) -> torch.Tensor:
+    """Decode a differentiable point prediction from the regressor.
+
+    ``forward`` returns logits over the bar distribution rather than a single
+    value, so we take the expected value over the bin centers (softmax-weighted)
+    and undo the z-normalisation applied during fit to return raw-space
+    predictions. Gradients flow through this whole computation.
+    """
+    averaged_logits, _outputs, borders = reg.forward(X, use_inference_mode=True)
+    # averaged_logits is [N_borders, N_samples] after the transpose inside
+    # forward(); bring it back to [N_samples, N_borders].
+    per_sample_logits = averaged_logits.transpose(0, 1)
+    border_t = torch.as_tensor(
+        borders[0],
+        device=per_sample_logits.device,
+        dtype=per_sample_logits.dtype,
+    )
+    n_logits = per_sample_logits.shape[-1]
+    if border_t.numel() == n_logits + 1:
+        bin_centers = (border_t[:-1] + border_t[1:]) / 2.0
+    else:
+        bin_centers = border_t
+    probs = torch.softmax(per_sample_logits.float(), dim=-1)
+    pred_z = (probs * bin_centers).sum(dim=-1)
+    return pred_z * float(reg.y_train_std_) + float(reg.y_train_mean_)
+
+
+def eval_test(
+    reg: TabPFNRegressor,
+    prompt_x: torch.Tensor,
+    prompt_y: torch.Tensor,
+    my_dl_test: DataLoader,
+    lossfn: torch.nn.Module,
+    device: str,
+) -> tuple[float, float]:
+    """Evaluate the current prompt on the held-out test set."""
+    with torch.no_grad():
+        loss_sum = 0.0
+        n_items = 0
+        all_true = []
+        all_pred = []
+        reg.fit_with_differentiable_input(prompt_x, prompt_y.flatten())
+        for data_batch in my_dl_test:
+            X_tests, y_tests = data_batch
+            predictions = predict_mean(reg, X_tests)
+            loss_sum += lossfn(predictions, y_tests.to(device)).item() * y_tests.numel()
+            n_items += y_tests.numel()
+            all_true.append(y_tests.cpu())
+            all_pred.append(predictions.cpu())
+
+        res_mse = loss_sum / n_items
+        res_r2 = r2_score(
+            torch.cat(all_true).numpy(),
+            torch.cat(all_pred).numpy(),
+        )
+        return res_mse, res_r2
+
+
+def main() -> None:
+    n_prompt_samples = 200  # samples used for prompt tuning
+    n_total_samples = 2000  # total samples
+    n_features = 20
+    do_epochs = 5
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"Device: {device}")
+    print(f"Prompt samples: {n_prompt_samples}")
+    print(f"Total samples: {n_total_samples}")
+
+    torch.manual_seed(42)
+
+    # Create synthetic dataset
+    X, y = make_regression(
+        n_samples=n_total_samples,
+        n_features=n_features,
+        n_informative=10,
+        noise=0.1,
+        random_state=42,
+    )
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42
+    )
+
+    reg = TabPFNRegressor(
+        ignore_pretraining_limits=True,
+        device=device,
+        n_estimators=1,
+        random_state=2,
+        inference_precision=torch.float32,
+        differentiable_input=True,
+    )
+
+    # The prompt: the in-context examples we will optimize.
+    prompt_x_tensor = torch.tensor(X_train[:n_prompt_samples], dtype=torch.float).to(
+        device
+    )
+    prompt_y_tensor = torch.tensor(y_train[:n_prompt_samples], dtype=torch.float).to(
+        device
+    )
+
+    # The query examples used to drive the prompt-tuning loss.
+    train_x_tensor = torch.tensor(X_train[n_prompt_samples:], dtype=torch.float).to(
+        device
+    )
+    train_y_tensor = torch.tensor(y_train[n_prompt_samples:], dtype=torch.float).to(
+        device
+    )
+
+    test_x_tensor = torch.tensor(X_test, dtype=torch.float).to(device)
+    test_y_tensor = torch.tensor(y_test, dtype=torch.float).to(device)
+
+    dataset_train = TensorDataset(train_x_tensor, train_y_tensor)
+    dataloader_train = DataLoader(dataset_train, batch_size=128, shuffle=True)
+    dataset_test = TensorDataset(test_x_tensor, test_y_tensor)
+    dataloader_test = DataLoader(dataset_test, batch_size=512, shuffle=False)
+
+    lossfn = torch.nn.MSELoss()
+
+    # Compute initial metrics
+    mse_test, r2_test = eval_test(
+        reg,
+        prompt_x_tensor,
+        prompt_y_tensor,
+        dataloader_test,
+        lossfn,
+        device,
+    )
+    print(f"Initial Test MSE={mse_test:.4f}, RÂ²={r2_test:.4f}")
+
+    # Mark the prompt tensors as the parameters to optimize.
+    prompt_x_tensor.requires_grad_(requires_grad=True)
+    prompt_y_tensor.requires_grad_(requires_grad=True)
+
+    optim_impl = Adam([prompt_x_tensor, prompt_y_tensor], lr=1e-2)
+
+    for epoch in range(do_epochs):
+        total_loss = 0.0
+        for data_batch in tqdm(
+            dataloader_train, desc=f"Epoch {epoch + 1}", leave=False
+        ):
+            input_x_batch, input_y_batch = data_batch
+            optim_impl.zero_grad()
+            reg.fit_with_differentiable_input(
+                prompt_x_tensor, prompt_y_tensor.flatten()
+            )
+            # use_inference_mode=True for correct output format; gradients still
+            # flow because differentiable_input=True.
+            predictions = predict_mean(reg, input_x_batch)
+            loss = lossfn(predictions, input_y_batch.to(device))
+            loss.backward()
+            optim_impl.step()
+            total_loss += loss.item()
+
+        mse_test, r2_test = eval_test(
+            reg,
+            prompt_x_tensor,
+            prompt_y_tensor,
+            dataloader_test,
+            lossfn,
+            device,
+        )
+        print(
+            f"Epoch {epoch + 1}/{do_epochs}: Test MSE={mse_test:.4f}, RÂ²={r2_test:.4f}"
+        )
 
 
 if __name__ == "__main__":

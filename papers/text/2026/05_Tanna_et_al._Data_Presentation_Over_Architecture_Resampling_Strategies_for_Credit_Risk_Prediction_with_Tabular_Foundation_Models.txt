@@ -1,0 +1,418 @@
+Aditya Tanna , Mitul Solanki, Mohamed Bouadi, Nassim Bouarour,
+Pratinav Seth, Vinay Kumar Sankarapu
+Lexsi Labs
+aditya.tanna@lexsi.ai
+Abstract
+Credit default prediction is a tabular learning problem with severe class imbalance, heterogeneous features, and
+tight latency budgets. Tabular Foundation Models (TFMs) approach this problem through in-context learning,
+which makes their predictions sensitive to how the context window is built. We benchmark four classical
+models and five TFMs on the Home Credit and Lending Club datasets, varying the context-construction
+strategy (seven options) and the context size (1K to 50K). On both datasets, the choice of context strategy
+explains more variance in AUC-ROC than the choice of TFM family: balanced and hybrid sampling add 3 to 4
+AUC points over uniform sampling, and the gap exceeds the spread between TFMs. With a balanced context of
+5K to 10K examples, the strongest TFMs reach the AUC of classical baselines trained on the full data, while
+also recovering meaningful default-class recall that default-threshold GBDTs do not. We frame this as
+evidence that context construction, rather than architecture choice, is the primary deployment lever for TFMs
+in imbalanced credit-risk settings.
+Keywords:Credit risk prediction, Tabular foundation models, Class imbalance, Context construction,
+Financial data systems, Resampling strategies
+1 Introduction
+Credit default prediction underpins lending decisions across the financial industry. Despite decades of research, produc-
+tion credit systems face persistent challenges: severe class imbalance, informative missingness, and predictive signals
+that emerge from complex feature interactions rather than from individual variables. Gradient-boosted decision trees
+(GBDTs) such as XGBoost, LightGBM, and CatBoost dominate tabular benchmarks and production deployments [1],
+benefiting from inductive biases well-suited to heterogeneous tabular data. Yet even well-tuned GBDTs can collapse
+to majority-class prediction under severe imbalance when deployed without threshold adjustment, yielding near-zero
+minority recall despite high aggregate accuracy.
+An alternative paradigm,Tabular Foundation Models(TFMs), reframes prediction as in-context learning (ICL). Rather
+than training per-dataset, TFMs (e.g., TabPFN [2], TabICL [3], OrionMSP [4], and OrionBix [5]) condition on acontext
+windowof labeled examples and make predictions via a single forward pass analogous to few-shot learning in language
+models. Crucially, the composition of the context is a design choice independent from model architecture, making
+TFMs sensitive todata presentation. This raises a relevant question for financial systems:Does data composition
+matter as much as model architecture for performance?If so, the focus should shift from model selection tointelligent
+data curation, which is fundamentally a data-management problem.
+arXiv:2605.18635v1  [cs.LG]  18 May 2026
+
+Data Presentation Over Architecture
+Data Presentation Over Architecture
+Resampling Strategies for Credit Risk Prediction with Tabular Foundation Models
+PROBLEM
+Credit Default Prediction
+under Severe Class Imbalance
+DATASETS
+Home Credit (HC)
+307K applications, 120+ features
+8% default rate
+Relational schema (7 tables)
+Lending Club (LC)
+533K loans, 70+ features
+12–22% default rate
+Flat single-table, temporal split
+PREPROCESSING
+3-Stage Pipeline
+1. Semantic Imputation
+(sentinel values for informative
+missingness)
+2. Domain Feature Engineering
+(50+ derived features: affordability,
+stability, delinquency)
+3. Multi-Stage Feature Selection
+(correlation → MI → VIF → SHAP
+pruning)
+ MODELS EVALUATED
+Classical ML Baselines (4)
+• Random Forest
+• XGBoost
+• LightGBM
+• CatBoost
+Tabular Foundation Models (5)
+• TabPFNv2.5
+• TabICL
+• OrionMSPv1.0 & v1.5
+• OrionBix
+CONTEXT CONSTRUCTION STRATEGIES (7)
+BASELINE
+Uniform (random, preserves
+ratio)
+Stratified (fixed proportional)
+CLASS-BALANCE
+Balanced (equal class rep.)
+Oversample+ (inverse-freq
+weighted)
+SMOTE (synthetic minority gen.)
+ACTIVE / INFORMED
+Diversity-KM (KMeans clustering)
+Hybrid (Balanced + Diversity-KM)
+Context Sizes Evaluated: 1K, 2K, 5K, 10K, 20K, 50K examples
+Figure 1Overview of the study. Two credit-risk datasets (Home Credit, Lending Club) are passed through a three-stage
+preprocessing pipeline (semantic imputation, domain feature engineering, multi-stage feature selection). Four classical baselines and
+five Tabular Foundation Models are evaluated under seven context-construction strategies grouped into three families (Baseline,
+Class-balance, Active/Informed), at six context sizes from 1K to 50K.
+Prior work establishes that tree-based models outperform deep neural networks on typical tabular data [1], with class
+imbalance addressed in classical ML through resampling and cost-sensitive learning [6, 7]. Recent benchmarks evaluate
+TFMs across curated tabular suites [8] but ignore the interaction betweencontext compositionand severe class imbalance
+in financial settings. Our work here is to treat context construction as a performance lever for financial TFMs, linking
+deployment to data management. We propose seven context-construction strategies and evaluate them on a controlled
+benchmark across two large credit risk datasets (Home Credit and Lending Club), using five TFMs based on the
+TabTune [9] framework, and comparing the TFMs to four classical baselines.
+Contributions.This paper makes the following contributions:
+• Data composition dominates architecture.Balanced and hybrid resampling yield 3–4% AUC gains,
+exceeding the typical gap between TFMs regardless of dataset or model family.
+• TFMs are data-efficient.TFMs match classical models trained on the full dataset using only 5K–10K
+balanced samples, with no gradient optimization and a single forward pass at inference.
+• Resampling resolves the zero-recall trap.TFMs with balanced context achieve MCC ≈ 0.2 and
+default-class F1 of 0.24–0.31, producing meaningful default detection. Classical baselines at default thresholds
+predict the majority class almost exclusively (recall≈0%).
+• A reframing of credit-risk modeling as a data-systems problem.We argue that context construction
+is a design axis for ICL pipelines on a par with model selection: representative, class-aware, budget-efficient
+subsets of financial data become first-class system artifacts.
+2 Related Work
+Tabular foundation models and in-context learning.TabPFN [2] introduced the idea of a transformer pre-trained
+on synthetic tabular tasks that performs Bayesian inference via a single forward pass on a small context. Subsequent work
+has scaled this paradigm to larger and more heterogeneous tabular settings (TabICL [3], OrionMSP [4], OrionBix [5]).
+Surveys [10, 11] catalogue this line of work and the broader space of deep tabular models. The TabTune library [9]
+provides a unified interface for inference and fine-tuning across TFM variants, which we use as the experimental
+backbone of this study.
+Tabular benchmarks and TFM evaluation.Grinsztajn et al. [ 1] report that tree-based models retain an edge on
+medium-sized tabular data, and Gardner et al. [8] systematically benchmark TFMs on curated suites. These works focus
+2
+
+Data Presentation Over Architecture
+on aggregate accuracy across balanced or mildly imbalanced datasets; they do not examine how the context window is
+constructed under severe class imbalance, which is the regime that matters for credit-risk deployment.
+Class imbalance and credit risk.Imbalanced classification has a long history in tabular ML, with SMOTE [ 6],
+ADASYN [12], and cost-sensitive learning [7] as standard tools, and imbalanced-learn [13] as a common implemen-
+tation. In credit scoring specifically, Baesens et al. [14] and Thomas et al. [15] document the dominance of statistical
+and tree-based models, and the operational importance of minority-class detection. Our work treats these resampling
+techniques ascontext-construction strategiesrather than training-time data augmentations, which is a reframing made
+possible by the ICL setting.
+In-context example selection.A parallel literature in NLP studies how the choice of in-context examples affects
+LLM performance [16, 17], typically via similarity-based retrieval. Our findings echo this line of work on the basic
+point that which examples appear in the context matters, but the tabular regime adds a class-balance axis that is largely
+absent from NLP-ICL.
+3 Problem Statement and Study Design
+We consider supervised binary credit-risk prediction where the positive class (default) is substantially underrepresented.
+In tabular in-context learning, a TFM does not consume the full training set at inference time, but a bounded context
+of labeled examples. Once that budget is fixed, performance depends on two choices: the model architecture and the
+strategy used to construct the context. We therefore ask:Given an imbalanced credit dataset and a fixed context budget,
+how much does predictive performance depend on context-construction strategy relative to model architecture, and are
+these effects consistent across TFM families?
+This question has a direct data-systems interpretation. If architecture is the dominant factor, effort should focus on
+model search and tuning. If context construction dominates, data selection becomes a first-class system design problem:
+how to build representative, class-aware, budget-efficient subsets of financial data for inference. Our hypothesis is that,
+under severe imbalance, minority underrepresentation within a bounded context is a key bottleneck, making class-aware
+context construction a high-leverage deployment decision. If this holds consistently across TFM families, it reframes
+data curation as a generalizable engineering recommendation rather than a model-specific tuning artifact.
+To test this, we conduct a controlled study on two large-scale credit benchmarks, Home Credit and Lending Club,
+comparing four classical baselines and five TFMs across seven context-construction strategies and context sizes from 1K
+to 50K. In addition to ROC-AUC, we report recall and Matthews Correlation Coefficient (MCC) to assess minority-class
+detection. Figure 1 summarizes the full pipeline.
+4 Experimental Setup
+4.1 Datasets
+We evaluate on two widely-used credit risk benchmarks:
+Home Credit Default Risk[ 18] (HC) comprises ∼307K loan applications with 120+ features derived from a
+relational schema of seven tables (bureau records, previous applications, payment histories). The default rate is ∼8%,
+with heavy missingness (>50% in many fields). Predictive power emerges primarily from feature interactions between
+income, credit exposure, and repayment behavior rather than from individual variables.
+Lending Club[ 19] (LC) contains ∼533K resolved consumer loans with 70+ borrower- and loan-level features. The
+default rate is ∼12–22% depending on filtering. We use temporal splitting (train ≤ June 2019; test: H2 2019) to prevent
+leakage.
+Both datasets undergo a three-stage preprocessing pipeline. (1)Semantic imputation:sentinel values ( −1) encode
+informative missingness rather than replacing it with statistical estimates. Absent bureau scores signal thin-file
+customers, missing car age signals no vehicle ownership, and refused-loan dates distinguish “never approved” from
+“not yet applied.” (2)Feature engineering:50+ derived features capture affordability ratios (credit-to-income, annuity-
+to-income, repayment rate), employment stability proxies, delinquency severity aggregates across active bureau loans,
+and behavioral flags from installment payment history. (3)Multi-stage feature selection:correlation filtering → mutual
+information ranking → VIF analysis → SHAP-based importance pruning. The pipeline is structured but deliberately
+notcompetition-optimized, preserving comparability across model families.
+3
+
+Data Presentation Over Architecture
+Table 1Classical baseline results. Best AUC per dataset inbold. Recall is default-class recall. Models evaluated at default
+threshold without class-weighting.
+Model AUC Acc Recall MCC
+Home Cr.
+Random Forest0.7390.920 0.5% 0.055
+XGBoost 0.719 0.919 0.0% 0.000
+LightGBM 0.713 0.919 0.0% 0.000
+CatBoost 0.638 0.919 0.0% 0.000
+Lend. Cl.
+XGBoost0.7180.869 7.2% 0.117
+Random Forest 0.703 0.871 3.2% 0.069
+CatBoost 0.655 0.870 3.2% 0.060
+LightGBM 0.650 0.875 0.0% 0.000
+4.2 Models
+Classical baselines.Random Forest [ 20], XGBoost [21], LightGBM [22], and CatBoost [23], trained on the full
+processed dataset with default hyperparameters andnoclass-weighting adjustments or threshold tuning. This controlled
+evaluation matches TFM conditions: both paradigms are assessed at their out-of-the-box operating point, ensuring that
+observed differences reflect data composition rather than post-hoc calibration.
+Tabular Foundation Models.Five TFMs evaluated through TabTune [9], a unified experimentation framework for
+tabular foundation models: TabPFN [2], TabICL [3], OrionMSP v1.0 and v1.5 [ 4], and OrionBix [5]. Each conditions
+predictions on a context window of labeled examples at sizes{1024,2048,5000,10000,20000,50000}.
+4.3 Context-Construction Strategies
+Since TFMs operate on a finite context window, the composition of this window is a design choice. We evaluate seven
+strategies grouped into three families:
+Baseline.Uniform(random sampling, preserves the original class ratio),Stratified(fixed proportional sampling,
+reduces run-to-run variance without rebalancing).
+Class-balance.Balanced(equal class representation, mc ≈m/K samples per class c),Oversample+(inverse-
+frequency weighted sampling with boost multiplier and minimum minority count),SMOTE[ 6] (synthetic minority
+generation via nearest-neighbour interpolation).
+Active/Informed.Diversity-KM(MiniBatch KMeans clustering; one representative per cluster, maximizing feature-
+space coverage),Hybrid(fraction ρ from Balanced, remainder from Diversity-KM; combines minority signal amplifica-
+tion with representational breadth).
+4.4 Evaluation
+ROC-AUC is the primary metric, following credit risk convention. We additionally report Matthews Correlation
+Coefficient (MCC) and default-class recall to assess minority detection, metrics that expose the “zero-recall trap” which
+accuracy alone obscures.
+5 Results
+5.1 Default-Threshold Failure on Imbalanced Data
+Table 1 reports classical baseline performance under default operating points. All four models reach 87–92% accuracy
+on both datasets, but on HC three of them assign zero positive predictions: every applicant is classified as non-default.
+This is a textbook instance of the accuracy paradox under severe class imbalance [ 24, 7, 25]: a classifier optimized
+for 0/1 loss at a 0.5 threshold collapses to the majority class when the minority rate falls below roughly 10%. We
+usezero-recall regimeas shorthand for this operating-point failure throughout the paper, with the caveat that it is a
+manifestation of a known phenomenon rather than a new one. What is worth flagging is that even gradient-boosted
+trees with categorical handling exhibit it on HC without re-weighting or threshold tuning, and that, as we show in §5.4,
+balanced context construction resolves it for TFMs in the same wayscale_pos_weightresolves it for GBDTs.
+4
+
+Data Presentation Over Architecture
+Figure 2AUC-ROC at minimum (1K) vs. maximum (50K) context size (left) and absolute scaling gain (right) per resampling
+strategy.(a)HC:Balanced and Hybrid start high and scale further (+0.034, +0.045); Diversity-KM degrades with scale (−0.016),
+confirming class-unawareness introduces noise.(b)LC:Uniform shows the largest gain (+0.069) but from a lower base; Balanced
+and Hybrid maintain the highest AUC at both extremes.
+5.2 Strategy Matters More Than Model
+Figure 3 and Table 2 present mean AUC-ROC for each context-construction strategy, averaged across all five TFMs and
+six context sizes (30 experiments per strategy per dataset). The central finding:the choice of resampling strategy
+produces larger AUC differences than the choice of TFM architecture.Balanced achieves the highest mean
+AUC on HC (0.734), and Hybrid leads on LC (0.686). In both cases, the gap between the best and worst strategy
+(∼0.03–0.05) exceeds the inter-TFM gap within any single strategy.
+Pairwise win-rate analysis reinforces this: Balanced wins ≥70% of head-to-head matchups against most competitors
+on HC and ranks first in ∼50% of individual experiments; Hybrid achieves comparable dominance on LC. SMOTE
+and Diversity-KM show high variance and model-dependent effects, making them unreliable as general-purpose
+strategies. The consistent pattern across both datasets is that class-awareness in context construction is more valuable
+than feature-space coverage alone.
+5.3 Data Efficiency: The 5K–10K Crossover
+TFM performance broadly improves with context size: the two strongest models (TabPFN, TabICL) show consistent
+gains up to 50K, while OrionMSP and OrionBix plateau above 10K. Critically, TabPFN and TabICLsurpass the
+best classical baseline(Random Forest, 0.739) between 5K and 10K context samples, representing a25–50 ×
+data reduction: matching models trained on 246K samples using ∼5–10K in-context examples, with no gradient
+training, no hyperparameter search, and a single forward pass.
+On LC, the crossover against XGBoost (0.718) is not reached within 50K context for most TFMs (best at 50K: TabPFN,
+0.703). We attribute this to the dataset’s flat single-table structure and higher base default rate (∼15%), which favor
+gradient-based models that can exploit dense, interaction-free feature signals across the full 533K training set.
+5
+
+Data Presentation Over Architecture
+Table 2Mean AUC-ROC by context-strategy, averaged across all TFMs and context sizes. Best per dataset inbold. Uniform acts
+as a baseline. See Figure 3 for visual comparison.
+StrategyHC LC
+Uniform 0.703 0.673
+Stratified 0.696 0.677
+Balanced 0.7340.683
+Oversample+ 0.721 0.669
+SMOTE 0.690 0.673
+Diversity-KM 0.681 0.656
+Hybrid0.7320.686
+Uniform
+Strat.
+Balanced Over.+ SMOTE Div.-KM Hybrid
+0.65
+0.7
+0.75
+Mean AUC-ROC
+HC
+LC
+Figure 3Mean AUC-ROC by context-strategy, averaged across all TFMs and context sizes. Balanced leads on HC; Hybrid leads
+on LC. The best–worst strategy gap (∼0.03–0.05) exceeds the typical inter-TFM gap within any single strategy.
+5.4 Resolving the Zero-Recall Trap
+Table 3 shows the operational impact of balanced context construction. Classical baselines achieve MCC near zero, they
+provide essentially no information about default risk beyond predicting the majority class. At 50K balanced context, all
+five TFMs achieve MCC between 0.19 and 0.26, with default-class F1 scores of 0.24–0.31 and balanced accuracy of
+0.65–0.71.
+This improvement is not architectural: TFMs under Uniform sampling also suffer from the zero-recall trap, achieving
+MCC ≈ 0 on HC. The gain comesentirelyfrom presenting the model with a class-balanced context window. TFM
+architectures have sufficient capacity to discriminate defaulters when given adequate minority exposure; the model is
+not the bottleneck, the data presentation is.
+Why balanced context helps.This is consistent with a straightforward view of TFM in-context learning: the
+context window acts as an implicit prior over the prediction distribution. A context that is 92% non-default (as on Home
+Credit under Uniform sampling) pulls the model toward predicting non-default, the same operating-point failure that
+traps default-threshold GBDTs. Balancing the context corrects that prior without retraining the model or tuning the
+threshold, which is why a 5K–10K balanced window recovers minority recall on every TFM family we tested.
+5.5 Cross-Dataset Consistency
+The strategy-dominates-architecture finding holds across both datasets despite their structural differences (relational vs.
+flat, 8% vs. 12–22% default rate, 246K vs. 533K samples, random vs. temporal split). On LC, the Balanced–Hybrid gap
+narrows and Hybrid edges ahead, possibly because the higher base default rate reduces imbalance severity, shifting the
+primary bottleneck from minority exposure toward representational breadth. Diversity-KM consistently underperforms
+on both datasets, confirming that feature-space coverage without class awareness introduces noise rather than signal at
+these imbalance levels.
+6
+
+Data Presentation Over Architecture
+Table 3MCC and default-class F1 at 50K balanced context across both datasets. Classical baselines evaluated on full training data;
+TFMs evaluated under balanced context construction. Best per column per dataset inbold.
+Model AUC MCC Def. F1 Bal. Acc
+HC— Classical baselines
+Random Forest0.7390.055 0.0100.502
+XGBoost 0.719 0.000 0.000 0.500
+CatBoost 0.638 0.000 0.000 0.500
+LightGBM 0.713 0.000 0.000 0.500
+HC— TFMs at 50K balanced context
+TabPFN0.786 0.2580.3020.711
+TabICL 0.771 0.245 0.299 0.691
+OrionMSP 0.738 0.213 0.278 0.662
+OrionBix 0.733 0.192 0.242 0.672
+OrionMSPv1.5 0.700 0.1970.3100.647
+LC— Classical baselines
+XGBoost0.718 0.117 0.121 0.527
+Random Forest 0.703 0.069 0.058 0.511
+CatBoost 0.655 0.060 0.058 0.511
+LightGBM 0.650 0.000 0.000 0.500
+LC— TFMs at 50K balanced context
+TabICL0.7130.202 0.313 0.651
+TabPFN 0.7050.203 0.317 0.650
+OrionMSP 0.690 0.180 0.301 0.633
+OrionMSPv1.5 0.690 0.190 0.306 0.642
+OrionBix 0.647 0.128 0.268 0.597
+6 Discussion
+6.1 Design Decisions
+Why default-threshold baselines.We deliberately evaluate classical baselines at their default operating point,
+without class-weighting or threshold tuning. The same choice is applied to TFMs, which receive no calibration
+either. This is the cleanest like-for-like comparison: any performance difference reflects what the model receives at
+training/inference time, not a downstream calibration step. Adding scale_pos_weight would predictably restore
+default recall for GBDTs, but it would conflate composition effects with post-hoc calibration.
+Why these seven strategies.The seven strategies are chosen to span the three obvious families a practitioner
+would consider: do nothing special (Uniform, Stratified), rebalance the classes (Balanced, Oversample+, SMOTE), or
+pick examples that cover the feature space (Diversity-KM, Hybrid). We are not claiming these are the best strategies;
+we are claiming that the gap between them is large enough to dominate the gap between TFM architectures, which is
+the load-bearing claim of the paper.
+Why two datasets.HC and LC are deliberately different: relational vs. flat,∼8% vs. 12–22% default rate,∼246K
+vs. 533K training samples, random vs. temporal split. Consistent qualitative findings across both reduce the risk that the
+result is an artifact of one schema or one preprocessing pipeline.
+6.2 Implications for Financial Data Systems
+Our results reframe credit risk modeling as adata curation problem: rather than investing in model architecture search,
+financial data pipelines should prioritize constructing representative, class-balanced training subsets. Data selection,
+quality, and composition become first-class system requirements, positioning context construction as a new design axis
+for in-context learning pipelines.
+Operational considerations.TFMs with balanced context require no retraining when data distributions shift, and
+the 5K–10K crossover implies reduced storage and compute for model refresh cycles. However, TFM inference latency
+(seconds vs. milliseconds per sample) limits real-time applicability; GBDTs remain pragmatic when full labeled data
+and latency budgets are available.
+7
+
+Data Presentation Over Architecture
+6.3 Limitations
+Our preprocessing is structured but not competition-optimized; top HC solutions reach ∼0.80 AUC via ensembling
+across all seven source tables, which we deliberately exclude to isolate data composition effects. Classical baselines use
+default thresholds without class-weighting to match TFM conditions; applying scale_pos_weight would improve
+recall but conflate composition effects with post-hoc calibration. The seven context-construction strategies are heuristic;
+learned context selection (e.g., similarity- or uncertainty-based retrieval) is an obvious extension we do not study here.
+Finally, our evaluation is limited to two consumer-credit datasets; corporate credit, SME lending, and country-level
+macroeconomic stress scenarios may show different sensitivity patterns.
+Future directions.Fine-tuning TFMs on domain-specific labeled data [ 26] and replacing heuristic resampling with
+learned context selection are natural next steps, with the strategies identified here serving as strong baselines for both.
+7 Conclusion
+We benchmarked classical ML and five Tabular Foundation Models on two large-scale credit risk datasets across seven
+context-construction strategies and six context sizes. The central finding is narrower than “data over architecture”:
+among TFMs, the strategy used to fill the context window explains more variance in AUC than the choice of TFM family,
+and this holds across both datasets despite their different schemas, default rates, and split protocols. For financial data
+systems, this motivates treating training data curation as a first-class engineering concern alongside model selection,
+and positions context construction as a new design axis for ICL pipelines.
+References
+[1] Léo Grinsztajn, Edouard Oyallon, and Gaël Varoquaux. Why do tree-based models still outperform deep learning
+on typical tabular data?Advances in Neural Information Processing Systems, 35:507–520, 2022.
+[2] Noah Hollmann, Samuel Müller, Katharina Eggensperger, and Frank Hutter. TabPFN: A transformer that solves
+small tabular classification problems in a second. InInternational Conference on Learning Representations, 2023.
+[3] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. TabICL: A tabular foundation model for
+in-context learning on large data. InInternational Conference on Machine Learning, 2025. arXiv:2502.05564.
+[4] Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu. Orion-MSP: Multi-scale sparse
+attention for tabular in-context learning.arXiv preprint arXiv:2511.02818, 2025.
+[5] Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu. Orion-Bix: Bi-axial attention for
+tabular in-context learning.arXiv preprint arXiv:2512.00181, 2025.
+[6] Nitesh V Chawla, Kevin W Bowyer, Lawrence O Hall, and W Philip Kegelmeyer. SMOTE: Synthetic minority
+over-sampling technique.Journal of Artificial Intelligence Research, 16:321–357, 2002.
+[7] Haibo He and Edwardo A Garcia. Learning from imbalanced data.IEEE Transactions on Knowledge and Data
+Engineering, 21(9):1263–1284, 2009.
+[8] Josh Gardner, Zoran Popovic, and Ludwig Schmidt. Benchmarking distribution shift in tabular data with tableshift,
+2024.
+[9] Aditya Tanna, Pratinav Seth, Mohamed Bouadi, Utsav Avaiya, and Vinay Kumar Sankarapu. TabTune: A unified
+library for inference and fine-tuning tabular foundation models.arXiv preprint arXiv:2511.02802, 2025.
+[10] Boris van Breugel and Mihaela van der Schaar. Why tabular foundation models should be a research priority,
+2024.
+[11] Vadim Borisov, Tobias Leemann, Kathrin Seßler, Johannes Haug, Martin Pawelczyk, and Gjergji Kasneci. Deep
+neural networks and tabular data: A survey.IEEE Transactions on Neural Networks and Learning Systems, 2022.
+[12] Haibo He, Yang Bai, Edwardo A Garcia, and Shutao Li. ADASYN: Adaptive synthetic sampling approach for
+imbalanced learning.IEEE International Joint Conference on Neural Networks, pages 1322–1328, 2008.
+[13] Guillaume Lemaître, Fernando Nogueira, and Christos K Aridas. Imbalanced-learn: A Python toolbox to tackle
+the curse of imbalanced datasets in machine learning.Journal of Machine Learning Research, 18(17):1–5, 2017.
+[14] Bart Baesens, Tony Van Gestel, Stijn Viaene, Maria Stepanova, Johan Suykens, and Jan Vanthienen. Benchmarking
+state-of-the-art classification algorithms for credit scoring.Journal of the Operational Research Society, 54(6):627–
+635, 2003.
+[15] Lyn C Thomas, David B Edelman, and Jonathan N Crook.Credit Scoring and Its Applications. SIAM, 2 edition,
+2017.
+8
+
+Data Presentation Over Architecture
+[16] Jiachang Liu, Dinghan Shen, Yizhe Zhang, Bill Dolan, Lawrence Carin, and Weizhu Chen. What makes good
+in-context examples for GPT-3?arXiv preprint arXiv:2101.06804, 2021.
+[17] Ohad Rubin, Jonathan Herzig, and Jonathan Berant. Learning to retrieve prompts for in-context learning.NAACL,
+2022.
+[18] Home Credit Group. Home credit default risk. Kaggle Competition, 2018. https://www.kaggle.com/c/
+home-credit-default-risk.
+[19] Lending Club. Lending club loan data. Kaggle Dataset, 2020. https://www.kaggle.com/datasets/
+wordsforthewise/lending-club.
+[20] Leo Breiman. Random forests.Machine Learning, 45(1):5–32, 2001.
+[21] Tianqi Chen and Carlos Guestrin. XGBoost: A scalable tree boosting system. InProceedings of the 22nd ACM
+SIGKDD International Conference on Knowledge Discovery and Data Mining, pages 785–794, 2016.
+[22] Guolin Ke, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei Ye, and Tie-Yan Liu.
+LightGBM: A highly efficient gradient boosting decision tree. InAdvances in Neural Information Processing
+Systems, volume 30, 2017.
+[23] Liudmila Prokhorenkova, Gleb Gusev, Aleksandr V orobev, Anna Veronika Dorogush, and Andrey Gulin. CatBoost:
+Unbiased boosting with categorical features.Advances in Neural Information Processing Systems, 31, 2018.
+[24] Foster Provost and Tom Fawcett. Robust classification for imprecise environments.Machine Learning, 42:203–231,
+2001.
+[25] Nathalie Japkowicz and Shaju Stephen. The class imbalance problem: A systematic study.Intelligent Data
+Analysis, 6:429–449, 2002.
+[26] Aditya Tanna, Pratinav Seth, Mohamed Bouadi, and Vinay Kumar Sankarapu. Exploring fine-tuning for tabular
+foundation models.arXiv preprint arXiv:2601.09654, 2026.
+9
