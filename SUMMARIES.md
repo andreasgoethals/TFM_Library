@@ -70,6 +70,8 @@ inside your project's copy of this folder and write them there.
 | 2026-04 | Bouadi et al. | **Orion-BiX** — Bi-Axial Attention for Tabular In-Context Learning | Bi-axial encoder (standard / grouped / hierarchical / relational attention fused by multi-CLS) plus a label-aware ICL head with hierarchical routing for large label spaces. | [pdf](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf) |
 | 2026-05 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The current frontier of the TabPFN line.** New three-stage architecture (column-wise → row-wise → ICL), scales to 1M rows on a single H100, many-class attention decoder, "Thinking" test-time-compute mode. Synthetic-prior only, +200 Elo over TabPFN-2.6 on TabArena-medium. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
 | 2026-05 | Tanna et al. | **Data Presentation Over Architecture** — Resampling Strategies for Credit Risk Prediction with TFMs | On Home Credit and Lending Club, **how the context window is built explains more AUC variance than which TFM you pick**: balanced/hybrid sampling adds 3–4 AUC points over uniform, exceeding the spread between TFM families. | [pdf](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf) |
+| 2026-05 | Hosseinzadeh et al. | **TabDPT-Turbo** — Efficient In-Context Learning for Tabular Prediction | The retrieval branch recants: drops TabDPT's retrieval for **long-context pretraining**, stays row-based, scales the real corpus to 1,445 OpenML tables — matching TabDPT v1.1 quality orders of magnitude faster. Shipped as TabDPT v1.2. | [pdf](papers/2026/05_Hosseinzadeh_et_al._TabDPT_Turbo_Efficient_In_Context_Learning_for_Tabular_Prediction.pdf) |
+| 2026-05 | Bouadi et al. | **O'Prior** — Shaping the Prior: How Synthetic Task Distributions Determine TFM Quality | **The first controlled study of prior design as the sole variable**: architecture, optimizer and compute held fixed, only the synthetic task distribution varied. Structural mechanism diversity is the strongest driver of transfer; realism and shift-stress add complementary gains. | [pdf](papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf) |
 | 2026-06 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets, IID + temporal + grouped splits): TFM ICL wins tiny/small IID data but **loses to tuned RealMLP/GBDTs under temporal & grouped splits**, with the gap growing with sample size and high-cardinality categoricals. Fine-tuning explicitly untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-06 | Kong and Das (Google) | **TabFM** — Introducing TabFM: A zero-shot foundation model for tabular data | *Blog post, not a paper.* Google's TabPFN+TabICL **hybrid** (alternating row/column attention → row compression → ICL over row embeddings), trained on hundreds of millions of synthetic SCM datasets; TabArena Elo vs tuned GBDTs; shipping into **BigQuery `AI.PREDICT`**. | [pdf](papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf) |
 
@@ -396,6 +398,8 @@ destroying the prior" premise does not hold — full fine-tuning matches
 PEFT variants while converging faster. Classification only.
 
 ---
+
+<a id="localpfn"></a>
 
 ## 2024-12 — Thomas et al. — LoCalPFN
 
@@ -1221,6 +1225,8 @@ in real-world enterprise systems.
 
 ---
 
+<a id="tabdpt"></a>
+
 ## 2026-01 — Ma et al. — TabDPT
 
 **arXiv:** [2410.18164](https://arxiv.org/abs/2410.18164) ·
@@ -1553,6 +1559,144 @@ Author-affiliation caveat as with the rest of the Orion line: the TFMs
 being compared include the authors' own.
 
 ---
+
+<a id="oprior"></a>
+
+## 2026-05 — Bouadi et al. — O'Prior (Shaping the Prior)
+
+**arXiv:** [2605.18971](https://arxiv.org/abs/2605.18971) (v1, 18 May 2026) ·
+Lexsi Labs · Code: [o-prior/O-prior](https://github.com/o-prior/O-prior) ·
+**PDF:** [open](papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf)
+
+**Where it fits.** The paper the field needed: the **first study to isolate
+prior design as the scientific variable**. Its framing is a direct
+criticism of how the line has progressed — "prior work conflates
+architectural improvements with prior improvements, TabPFN v2, for
+instance, enriched both simultaneously, making attribution impossible."
+Where [Mitra](#2025-10--zhang-et-al--mitra-mixed-synthetic-priors)
+proposed criteria for *selecting* priors, O'Prior builds a prior and then
+measures which of its parts actually pay.
+
+**What it contains.** O'Prior is a "compositional realism prior" with four
+coupled components:
+
+1. a **hierarchical SCM meta-generator** spanning diverse functional
+   families (MLP and tree-based structural equations — "Hybrid SCM");
+2. a **modular realism engine** — marginal morphing, feature augmentation,
+   **MCAR / MAR / MNAR missingness**, and target reshaping;
+3. an explicit **stress module** injecting confounding and support–query
+   mismatch (i.e. shortcut and shift pressure); and
+4. a **curriculum-governed, leakage-safe generation protocol**.
+
+**The methodology is the most valuable part, and it is cheap.** The
+controlled principle is stated plainly: hold architecture, optimizer,
+training budget and evaluation pipeline fixed; vary only the synthetic task
+distribution, so any downstream difference is attributable to the prior
+alone. Concretely they use **nanoTabPFN** as the base — chosen
+deliberately, because "at reduced scale, pretraining requires only tens of
+thousands of synthetic datasets rather than millions, making controlled
+prior ablations computationally feasible without sacrificing the
+qualitative conclusions" — under the **TFM-Playground** training protocol,
+with an identical budget per condition: **40,000 synthetic datasets per
+prior**, tables of 512–1,024 rows and 3–50 features, batch size 4 tables
+per step, 1,000 steps per epoch, 10 epochs, and no hyperparameter tuning
+between conditions. Nine O'Prior variants are compared in four sequential
+groups against three baseline generators run under the same budget and
+model: the **TabPFN v1**, **TabICL-v1** and **TabICL-v2** priors.
+
+**Results.** The baseline progression alone shows prior choice dominates:
+the TabPFN v1 prior reaches ROC-AUC **0.576** on TabArena and **0.519** on
+OpenML-CC18 (macro F1 below 0.37 on both); TabICL-v1's tree-based
+structural equations improve on that "consistently but small"; TabICL-v2
+improves further. O'Prior variants improve further still, with gains
+"concentrated in regimes characterized by distributional irregularities".
+The headline ablation finding is that **structural mechanism diversity is
+the strongest driver of transfer**, while observational realism and
+shift-aware stress contribute *complementary* — explicitly not
+interchangeable — gains. Two supporting analyses go beyond benchmark
+scores: a structural-alignment analysis showing stronger dependency realism
+against real tabular data, and probing experiments showing that
+O'Prior-pretrained models learn deeper, more discriminative internal
+representations on structurally hard tasks.
+
+**Strengths and limitations.** The controlled protocol is the contribution
+and it is reusable by anyone; releasing the code makes prior-design
+research tractable for groups without frontier compute. Three real limits.
+First, **everything is at nano scale** — the absolute numbers are low
+(a 0.576 ROC-AUC baseline is a budget-starved regime), and the authors
+argue only that the *qualitative* orderings survive; whether the component
+ranking holds at TabICL or TabPFN-2.5 scale is untested. Second, the
+evaluation is **classification only** (ROC-AUC, accuracy, macro F1 on
+TabArena and OpenML-CC18) — so the target-reshaping component of the
+realism engine is never exercised on a regression target, and bounded or
+multi-modal targets are outside the study entirely. Third, this is the
+sixth Lexsi Labs paper in this collection, the baselines are other labs'
+generators, and the winner is the authors' own; the same self-evaluation
+caveat that applies to the Orion line applies here, and independent
+replication matters more than usual.
+
+
+## 2026-05 — Hosseinzadeh et al. — TabDPT-Turbo
+
+**Venue:** 2nd ICML Workshop on Foundation Models for Structured Data
+(FMSD), Seoul, 2026 ·
+[OpenReview `Y00pwFyrHR`](https://openreview.net/forum?id=Y00pwFyrHR) ·
+Layer 6 AI, Toronto (Valentin Thomas now at Cohere; work done at Layer 6) ·
+**PDF:** [open](papers/2026/05_Hosseinzadeh_et_al._TabDPT_Turbo_Efficient_In_Context_Learning_for_Tabular_Prediction.pdf)
+
+**Where it fits.** The retrieval branch **recanting**, which makes this
+more interesting than a routine efficiency paper. The same lab introduced
+retrieval-based context construction ([LoCalPFN](#localpfn), 2024) and
+shipped FAISS retrieval in [TabDPT](#tabdpt) v1; here it argues retrieval
+sacrifices too much efficiency and removes it, replacing it with
+**long-context pretraining**. It is also a deliberate refusal of the
+architectural convergence: where TabPFN-3, TabICLv2 and Google's TabFM all
+moved to column-embed → row-compress → ICL, TabDPT-Turbo stays
+**row-based**, arguing that efficiency and low-resource deployment are
+easier to attain that way as context length grows.
+
+**What it contains.** Four changes on top of TabDPT, which it extends
+because TabDPT is the highest-performing *row-based* architecture on
+TabArena and fully open-source:
+
+* **Retrieval-free long context.** Rather than retrieving a local
+  neighbourhood per query, the model is pretrained on long contexts so it
+  can consume the context directly. The efficiency argument is stark: the
+  paper reports retrieval-style inference as **100×–1000× slower** than
+  full-context inference.
+* **A corpus an order of magnitude larger.** Same TabDPT SSL objective
+  (column-masking pseudo-targets), but the OpenML corpus is scaled to
+  **1,445 filtered and deduplicated datasets**, with an added
+  duplicate-detection step beyond TabDPT's own deduplication code.
+* **Architecture and loss changes:** attention temperature scaling,
+  per-layer target routing through the transformer value projections,
+  **learned "thinking rows"** (the register-token idea TabPFN-2.5 also
+  uses), **regression-as-classification trained with CRPS** (Continuous
+  Ranked Probability Score) rather than a bar-distribution or pinball
+  head, plus an auxiliary loss.
+* **Results.** Comparable *default* performance to TabDPT v1.1 on
+  TabArena-Lite, OpenML-CC18 and CTR23, at orders of magnitude lower
+  inference cost — reported as the fastest model overall among leading
+  foundation models, with per-benchmark speedups in the 2.9×–12.9× range
+  against the compared systems on 1×H100 + 96 vCPUs.
+
+Released as **TabDPT v1.2** in `layer6ai-labs/TabDPT-inference` — the same
+repository this library already snapshots as `TabDPT.txt`, so the Turbo
+code arrives there on the next refresh.
+
+**Strengths and limitations.** The headline is an *efficiency* result, not
+a quality one: "comparable performance, much faster" is the honest reading,
+and the paper says so. At nine workshop pages there are no calibration
+metrics, and evaluation uses **TabArena-Lite** — a reduced protocol —
+rather than full TabArena, so it is not directly comparable to the
+leaderboard numbers other entries here quote. One factual wrinkle worth
+recording: it states TabDPT was "originally trained on 112 datasets",
+whereas TabDPT's own paper says **123** (32M rows, 2B cells; 93
+classification + 29 regression). Prefer the 123 figure, from the primary
+source. Finally, the CRPS regression head is introduced without an
+ablation isolating it from the corpus scaling, so the four changes cannot
+be individually attributed.
+
 
 <a id="tabpfn-3"></a>
 
