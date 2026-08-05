@@ -4,94 +4,66 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
-## 2026-08-08
-
-- **`README.md` now opens with the update commands.** The copy-paste path
-  for bumping the pin in a downstream project is the first thing in the
-  file, one command per fenced block, with a collapsed section for the
-  less-frequent operations (add submodule, `--init` after clone,
-  `submodule status`). The "Using this library in another project" section
-  no longer repeats them, so the two cannot drift apart.
-- **Removed every `&&` from documented commands.** Windows PowerShell 5.1
-  has no `&&`, so the previously documented
-  `git add tfm-library && git commit ...` and
-  `python -m venv .venv && .venv\Scripts\activate` were parser errors on
-  the platform this repository is actually maintained from. Both are now
-  one command per line, with a PowerShell `;`/`if ($?)` one-liner offered
-  as an alternative.
-- **Fixed a wrong submodule URL.** The setup snippet said
-  `github.com/andreasgoethals/tfm-library`; the real remote — and what both
-  consuming projects use in `.gitmodules` — is
-  `github.com/andreasgoethals/TFM_Library.git`. Anyone following the README
-  verbatim to add the submodule would have failed.
-- Used an explicit `<a id="update">` anchor for the new section rather than
-  relying on the auto-generated slug, since the heading contains an emoji
-  and slug generation for that differs between renderers.
-
-## 2026-08-07
-
-- Added **Bouadi 2026-05 — O'Prior, "Shaping the Prior"** (arXiv 2605.18971,
-  Lexsi Labs, code public), 42 → 43 papers, full five-step treatment. The
-  first study to isolate synthetic prior design as the sole variable:
-  architecture, optimizer, compute budget and evaluation pipeline fixed,
-  only the task distribution varied — nanoTabPFN, 40,000 synthetic datasets
-  per prior, nine variants against the TabPFN-v1/TabICL-v1/TabICL-v2
-  generators. Finding: **mechanism diversity is the strongest driver of
-  transfer**, with observational realism (incl. MCAR/MAR/MNAR missingness
-  and target reshaping) and shift-stress complementary but not
-  interchangeable.
-- **Two standing claims corrected as a result.** Weakness §2 said "no paper
-  runs the controlled comparison (same compute, same base)" — half of it now
-  exists, so the text now scopes the remaining gap to the real-CPT arm.
-  "Open frontiers → Resolving the prior question empirically" said the
-  experiment had not been run at all; it now credits O'Prior and enumerates
-  the three arms still open, including the untouched question of whether
-  prior design can be **domain-targeted** rather than generically realistic.
-- Two limits worth carrying forward: O'Prior is **nano-scale**, so its
-  component ranking is unverified at frontier scale, and it is
-  **classification-only**, so target reshaping is never exercised on a
-  regression target and bounded/bimodal targets are outside its scope.
-
-## 2026-08-06
-
-- Added **Hosseinzadeh 2026-05 — TabDPT-Turbo** (ICML FMSD workshop,
-  OpenReview `Y00pwFyrHR`), 41 → 42 papers, full five-step treatment.
-  Notable because it is the **retrieval branch recanting**: the lab that
-  introduced retrieved contexts (LoCalPFN) and shipped FAISS retrieval in
-  TabDPT removes it in favour of long-context pretraining, reporting
-  retrieval-style inference as 100×–1000× slower. It also stays
-  **row-based**, declining the column-compress convergence that TabPFN-3,
-  TabICLv2 and TabFM all adopted — so that consensus is narrower than it
-  looked. Integrated into the scaling section (as a partial answer to
-  Nagler's localisation argument: exposure can substitute for engineered
-  retrieval), weakness §5 on inference cost, and design axes (b) and (c).
-- Recorded a source conflict: TabDPT-Turbo states TabDPT was trained on
-  112 datasets; **TabDPT's own paper says 123** (32M rows, 2B cells, 93
-  classification + 29 regression). The library keeps 123 and flags the
-  discrepancy in the Turbo entry.
-- Turbo ships as **TabDPT v1.2** in `layer6ai-labs/TabDPT-inference`, which
-  is already snapshot here as `TabDPT.txt` — the code arrives on the next
-  `refresh_repositories.py` run, no new dump needed.
-- `README.md`: added **CreditICL** to the consuming-projects list (a new
-  downstream project on pretraining-prior design, built on TabICL), and
-  gave the table an *Angle* column so the two credit projects are
-  distinguishable.
-
 ## 2026-08-05
 
+Papers 41 → 43. Months added throughout and everything ordered by them;
+`README.md` reorganised around the downstream-update commands.
+
 - **Papers now carry their release month everywhere, and sort by it.**
-  `SUMMARIES.md` entry headings and overview rows are `YYYY-MM` (column
-  renamed Year → Date) and all 41 entries are ordered by year *and* month;
-  `SYNTHESIS.md`'s timeline table and appendix cards likewise. The thematic
-  sections keep their argument order, which is not chronological by design.
-  Months are derived from the `papers/<year>/<MM>_` filenames, so the
+  `SUMMARIES.md` headings and overview rows are `YYYY-MM` (column renamed
+  Year → Date); `SYNTHESIS.md`'s timeline and appendix cards likewise. The
+  thematic sections keep their argument order, which is not chronological by
+  design. Months derive from the `papers/<year>/<MM>_` filenames, so the
   documents and the filesystem cannot disagree.
-- Normalised `SUMMARIES.md` entry separators (41 entries had only 31), and
-  converted the one auto-generated heading anchor to an explicit
-  `<a id="nagler-theory">` so it survives heading changes.
-- Condensed this changelog (2,170 → ~690 words) and merged the five
-  same-day 2026-08-04 sections into one; the `(a)`–`(e)` suffixes ran
-  opposite to the newest-first order and read as broken sorting.
+- Added **Hosseinzadeh 2026-05 — TabDPT-Turbo** (ICML FMSD workshop). The
+  retrieval branch recanting: the lab that introduced retrieved contexts
+  (LoCalPFN) and shipped FAISS retrieval in TabDPT removes it for
+  long-context pretraining, reporting retrieval as 100×–1000× slower. It
+  also stays **row-based**, declining the column-compress convergence —
+  so that consensus is narrower than it looked. Ships as TabDPT v1.2 in
+  `layer6ai-labs/TabDPT-inference`, already snapshot here, so no new dump.
+  Recorded a source conflict: it says TabDPT used 112 datasets; TabDPT's own
+  paper says **123** — the library keeps 123.
+- Added **Bouadi 2026-05 — O'Prior, "Shaping the Prior"** (arXiv 2605.18971,
+  code public). The first study to isolate prior design as the sole
+  variable: architecture, optimizer, budget and evaluation fixed, only the
+  synthetic task distribution varied — nanoTabPFN, 40,000 datasets per
+  prior, nine variants against the TabPFN-v1/TabICL-v1/TabICL-v2
+  generators. **Mechanism diversity is the strongest driver of transfer**;
+  realism (incl. MCAR/MAR/MNAR missingness and target reshaping) and
+  shift-stress are complementary but not interchangeable. Limits worth
+  carrying: nano-scale only, and **classification-only**, so target
+  reshaping is never tested on a regression target.
+- **Two standing claims corrected because of O'Prior.** Weakness §2 said no
+  paper runs the controlled comparison — half of it now exists, so the text
+  scopes the gap to the real-CPT arm. "Open frontiers → Resolving the prior
+  question" now credits O'Prior and lists the three arms still open,
+  including whether prior design can be **domain-targeted** rather than
+  generically realistic.
+- **`README.md` reorganised around the two things a consumer needs.** The
+  general introduction stays first; immediately after it, one "Using this
+  library in a project" section gives the exact command chains for (1)
+  adding the submodule to a new project and (2) updating an existing one to
+  the latest version, one command per block, with the rarer operations
+  (`--init` after clone, `submodule status`) collapsed. The duplicate
+  section further down was removed so the two cannot drift.
+- **Removed every `&&` from documented commands.** Windows PowerShell 5.1
+  has no `&&`, so `git add tfm-library && git commit …` and
+  `python -m venv .venv && .venv\Scripts\activate` were parser errors on
+  the platform this repo is maintained from.
+- **Fixed a wrong submodule URL** — the setup snippet said
+  `andreasgoethals/tfm-library`; the real remote, and what both consuming
+  projects use, is `andreasgoethals/TFM_Library.git`. Following the README
+  verbatim would have failed.
+- Added **CreditICL** to the consuming-projects list (pretraining-prior
+  design on TabICL) and gave the table an *Angle* column so the two credit
+  projects are distinguishable.
+- Housekeeping: normalised `SUMMARIES.md` entry separators (41 entries had
+  only 31); replaced auto-generated heading anchors with explicit
+  `<a id=…>` ones where a heading change would silently break them;
+  condensed this changelog and merged the five same-day 2026-08-04 sections
+  into one, since the `(a)`–`(e)` suffixes ran opposite to the newest-first
+  order.
 
 ## 2026-08-04
 
@@ -144,6 +116,7 @@ foldered by year and prefixed with their release month —
   dump is now the only surviving copy — never `--force-shrink` it.
   (2) `TabForestPFN.txt` reports SKIP; refresh it with the sparse-clone
   recipe in the script docstring.
+
 ## 2026-07-17
 
 Full consistency audit: docs cross-checked against the paper texts and code
