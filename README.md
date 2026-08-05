@@ -176,6 +176,12 @@ template.
 
 ## Consuming projects
 
-| Project | Mountpoint | Since |
-|---|---|---|
-| [CreditPFN](https://github.com/andreasgoethals/CreditPFN) | `tfm-library/` | 2026-07 |
+| Project | Mountpoint | Since | Angle |
+|---|---|---|---|
+| [CreditPFN](https://github.com/andreasgoethals/CreditPFN) | `tfm-library/` | 2026-07 | Real-data **continued pretraining** of TabPFN on a credit corpus (PD + LGD) |
+| [CreditICL](https://github.com/andreasgoethals/CreditICL) | `tfm-library/` | 2026-08 | **Pretraining-prior design**: can domain knowledge be encoded in the synthetic prior? Built on TabICL, whose prior generator is open |
+
+The two credit projects attack the same problem from opposite ends of design
+axis (a) in [`SYNTHESIS.md`](SYNTHESIS.md): CreditPFN adapts a finished model
+with real data, CreditICL changes what the model is pretrained on in the
+first place.
