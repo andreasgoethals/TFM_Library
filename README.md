@@ -1,5 +1,64 @@
 # TFM Library
 
+<a id="update"></a>
+
+## ⚡ Update this library inside a downstream project
+
+Run these **in the consuming project** (CreditPFN, CreditICL, …), never
+inside the `tfm-library/` folder. One command per line — **Windows
+PowerShell has no `&&`**, so chaining them with `&&` is a parser error:
+
+```bash
+git submodule update --remote tfm-library
+```
+
+```bash
+git add tfm-library
+```
+
+```bash
+git commit -m "Bump tfm-library pin"
+```
+
+<details>
+<summary>One-liner, and the other things you might need</summary>
+
+PowerShell one-liner (uses `;` and `if ($?)`, not `&&`):
+
+```bash
+git submodule update --remote tfm-library; if ($?) { git add tfm-library; git commit -m "Bump tfm-library pin" }
+```
+
+First time in a new project — add the submodule:
+
+```bash
+git submodule add https://github.com/andreasgoethals/TFM_Library.git tfm-library
+```
+
+After a fresh clone of a consuming project — populate it:
+
+```bash
+git submodule update --init
+```
+
+Check which commit a project is pinned to (a leading `+` means the working
+tree moved but the pin is not committed yet — that is the normal state
+between the `update` and the `commit` above):
+
+```bash
+git submodule status
+```
+
+</details>
+
+**Before you bump:** read [`CHANGELOG.md`](CHANGELOG.md) to see what
+changed. **After you bump:** the new pin is only recorded once you commit
+it, so don't skip the `git add` + `git commit`. Because the pin is a
+commit, an old result stays reproducible against the literature exactly as
+it was when that result was produced.
+
+---
+
 A curated knowledge base on **tabular foundation models (TFMs)** — the
 TabPFN family and everything around it. It keeps two things in one place,
 for every research project that needs them:
@@ -50,8 +109,17 @@ live in that project's own `PROJECT_SPECIFIC.md`.
 
 ## Scripts
 
+Windows PowerShell (one command per line — no `&&`):
+
 ```bash
-python -m venv .venv && .venv\Scripts\activate     # Windows
+python -m venv .venv
+```
+
+```bash
+.venv\Scripts\Activate.ps1
+```
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -122,28 +190,21 @@ python scripts/check_paper_versions.py
 
 The library is embedded as a **git submodule** — a pinned commit, so a
 project always sees an exact, reproducible snapshot of the literature.
+Pinning is the point: a result stays reproducible against the literature
+exactly as it was when the result was produced.
 
-```bash
-# once, in the consuming project's root
-git submodule add https://github.com/andreasgoethals/tfm-library tfm-library
+**All the commands live in [one place, at the top of this file](#update)**
+— adding the submodule, populating it after a clone, bumping the pin, and
+checking which commit a project is on. They are deliberately not repeated
+here, so they cannot drift apart.
 
-# after a fresh clone of the consuming project
-git submodule update --init
-```
+Two things that are easy to get wrong:
 
-### Updating it
-
-Updating is a two-step action, always performed **in the consuming
-project**, never inside the library folder:
-
-```bash
-git submodule update --remote tfm-library      # fetch the library's latest commit
-git add tfm-library && git commit -m "Bump tfm-library pin"
-```
-
-Read [`CHANGELOG.md`](CHANGELOG.md) first to see what changed. Because
-the pin is a commit, an old result stays reproducible against the
-literature as it was when the result was produced.
+- `git submodule update --remote tfm-library` only moves the *working
+  tree*. The pin is not recorded until you `git add tfm-library` and
+  commit — until then `git submodule status` shows a leading `+`.
+- Always run these **in the consuming project**, never inside
+  `tfm-library/` itself.
 
 ### The read-only rule
 

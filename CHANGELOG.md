@@ -4,6 +4,30 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-08
+
+- **`README.md` now opens with the update commands.** The copy-paste path
+  for bumping the pin in a downstream project is the first thing in the
+  file, one command per fenced block, with a collapsed section for the
+  less-frequent operations (add submodule, `--init` after clone,
+  `submodule status`). The "Using this library in another project" section
+  no longer repeats them, so the two cannot drift apart.
+- **Removed every `&&` from documented commands.** Windows PowerShell 5.1
+  has no `&&`, so the previously documented
+  `git add tfm-library && git commit ...` and
+  `python -m venv .venv && .venv\Scripts\activate` were parser errors on
+  the platform this repository is actually maintained from. Both are now
+  one command per line, with a PowerShell `;`/`if ($?)` one-liner offered
+  as an alternative.
+- **Fixed a wrong submodule URL.** The setup snippet said
+  `github.com/andreasgoethals/tfm-library`; the real remote — and what both
+  consuming projects use in `.gitmodules` — is
+  `github.com/andreasgoethals/TFM_Library.git`. Anyone following the README
+  verbatim to add the submodule would have failed.
+- Used an explicit `<a id="update">` anchor for the new section rather than
+  relying on the auto-generated slug, since the heading contains an emoji
+  and slug generation for that differs between renderers.
+
 ## 2026-08-07
 
 - Added **Bouadi 2026-05 — O'Prior, "Shaping the Prior"** (arXiv 2605.18971,
