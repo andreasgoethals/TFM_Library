@@ -12,7 +12,10 @@ Directory structure:
     │   ├── 1138.fixed.md
     │   ├── 1140.fixed.md
     │   ├── 1142.added.md
-    │   └── 1157.added.md
+    │   ├── 1157.added.md
+    │   ├── 1159.added.md
+    │   ├── 1167.fixed.md
+    │   └── 811.added.md
     ├── examples/
     │   ├── benchmarking_tabpfn.py
     │   ├── finetune_classifier.py
@@ -278,7 +281,9 @@ Directory structure:
             ├── nightly-notebook-check.yml
             ├── release-create-pr.yml
             ├── release-publish.yml
-            └── release-tag-on-merge.yml
+            ├── release-tag-on-merge.yml
+            ├── slack-ci-alert.yml
+            └── trigger-slack-ci-alert.yml
 
 ================================================
 FILE: README.md
@@ -1210,6 +1215,8 @@ ignore_packages = [
     "certifi",
     # Appears to be MIT, but the tool doesn't know. https://github.com/arogozhnikov/einops/blob/361b11e87da94ead4bd09de636c5dbed73e0e3e0/LICENSE
     "einops",
+    # Is BSD-3-Clause, but declared via PEP 639 `License-Expression`, which the tool doesn't read. https://github.com/fsspec/filesystem_spec/blob/98acce943655c959148cb317fe99573380d537b1/LICENSE
+    "fsspec",
     # Is Apache Licensed since 1.2 but the tool doesn't know. https://github.com/calvinmccarter/kditransform/blob/5ee7cfad665bb1078211c0becad8fbd31e78429d/LICENSE
     "kditransform",
     "nvidia*",
@@ -1496,6 +1503,26 @@ Add `ManyClassDecoder.attention_weights`, the canonical per-training-row attenti
 FILE: changelog/1157.added.md
 ================================================
 Add fp8 kv cache dtype.
+
+
+================================================
+FILE: changelog/1159.added.md
+================================================
+`fit()` now warns when a column of `X` looks like free text.
+
+
+
+================================================
+FILE: changelog/1167.fixed.md
+================================================
+fixed the randomness in the truncated SVD to make runs more reproducible.
+
+
+================================================
+FILE: changelog/811.added.md
+================================================
+Fine-tuning now supports `validation_frequency` to run validation and early-stopping checks every N epochs.
+
 
 
 ================================================
@@ -25880,7 +25907,7 @@ def get_preprocessed_dataset_chunks(  # noqa: PLR0913
 ================================================
 FILE: src/tabpfn/finetuning/finetuned_base.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8f in position 47253: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8f in position 48631: character maps to <undefined>
 
 
 ================================================
@@ -25975,8 +26002,12 @@ class FinetunedTabPFNClassifier(FinetunedTabPFNBase, ClassifierMixin):
             initialization. Defaults to 0.
         early_stopping: Whether to use early stopping based on validation
             performance. Defaults to True.
-        early_stopping_patience: Number of epochs to wait for improvement before
-            early stopping. Defaults to 8.
+        early_stopping_patience: Number of validation checks to wait for
+            improvement before early stopping. Defaults to 8.
+        validation_frequency: Number of epochs between validation checks. A value
+            of 1 (default) validates after every epoch. The initial evaluation
+            of the unfine-tuned model still runs whenever validation data is
+            available. Must be a positive integer.
         min_delta: Minimum change in metric to be considered as an improvement.
             Defaults to 1e-4.
         grad_clip_value: Maximum norm for gradient clipping. If None, gradient
@@ -26036,6 +26067,7 @@ class FinetunedTabPFNClassifier(FinetunedTabPFNBase, ClassifierMixin):
         random_state: int = 0,
         early_stopping: bool = True,
         early_stopping_patience: int = 8,
+        validation_frequency: int = 1,
         min_delta: float = 1e-4,
         grad_clip_value: float | None = 1.0,
         use_lr_scheduler: bool = True,
@@ -26064,6 +26096,7 @@ class FinetunedTabPFNClassifier(FinetunedTabPFNBase, ClassifierMixin):
             random_state=random_state,
             early_stopping=early_stopping,
             early_stopping_patience=early_stopping_patience,
+            validation_frequency=validation_frequency,
             min_delta=min_delta,
             grad_clip_value=grad_clip_value,
             use_lr_scheduler=use_lr_scheduler,
@@ -26600,8 +26633,12 @@ class FinetunedTabPFNRegressor(FinetunedTabPFNBase, RegressorMixin):
             initialization. Defaults to 0.
         early_stopping: Whether to use early stopping based on validation
             performance. Defaults to True.
-        early_stopping_patience: Number of epochs to wait for improvement before
-            early stopping. Defaults to 8.
+        early_stopping_patience: Number of validation checks to wait for
+            improvement before early stopping. Defaults to 8.
+        validation_frequency: Number of epochs between validation checks. A value
+            of 1 (default) validates after every epoch. The initial evaluation
+            of the unfine-tuned model still runs whenever validation data is
+            available. Must be a positive integer.
         min_delta: Minimum change in metric to be considered as an improvement.
             Defaults to 1e-4.
         grad_clip_value: Maximum norm for gradient clipping. If None, gradient
@@ -26677,6 +26714,7 @@ class FinetunedTabPFNRegressor(FinetunedTabPFNBase, RegressorMixin):
         random_state: int = 0,
         early_stopping: bool = True,
         early_stopping_patience: int = 8,
+        validation_frequency: int = 1,
         min_delta: float = 1e-4,
         grad_clip_value: float | None = 1.0,
         use_lr_scheduler: bool = True,
@@ -26712,6 +26750,7 @@ class FinetunedTabPFNRegressor(FinetunedTabPFNBase, RegressorMixin):
             random_state=random_state,
             early_stopping=early_stopping,
             early_stopping_patience=early_stopping_patience,
+            validation_frequency=validation_frequency,
             min_delta=min_delta,
             grad_clip_value=grad_clip_value,
             use_lr_scheduler=use_lr_scheduler,
@@ -31221,6 +31260,7 @@ FILE: src/tabpfn/preprocessing/modality_detection.py
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -31228,6 +31268,7 @@ import pandas as pd
 
 from tabpfn.errors import TabPFNUserError
 from tabpfn.preprocessing.datamodel import (
+    INPUT_FEATURE_PREFIX,
     Feature,
     FeatureModality,
     FeatureSchema,
@@ -31238,6 +31279,10 @@ if TYPE_CHECKING:
     import numpy as np
 
 _EARLY_EXIT_PREFIX_ROWS = 1024
+
+#: Cap on how many column names the likely-text warning lists, so a wide frame of
+#: text columns does not produce an unreadable multi-kilobyte message.
+_MAX_TEXT_COLUMNS_IN_WARNING = 10
 
 
 def detect_feature_modalities(
@@ -31292,7 +31337,70 @@ def detect_feature_modalities(
             big_enough_n_to_infer_cat=big_enough_n_to_infer_cat,
         )
         features.append(Feature(name=feature_name, modality=feat_modality))
-    return FeatureSchema(features=features)
+    feature_schema = FeatureSchema(features=features)
+    _warn_if_text_features(
+        feature_schema,
+        declared_categorical_indices=provided_categorical_indices,
+    )
+    return feature_schema
+
+
+def _warn_if_text_features(
+    feature_schema: FeatureSchema,
+    *,
+    declared_categorical_indices: Sequence[int] | None = None,
+) -> None:
+    """Warn when input columns look like free text rather than categoricals.
+
+    High-cardinality string columns are labelled `FeatureModality.TEXT` by
+    `detect_feature_modalities`, but this package has no text handling: they are swept
+    into the same `OrdinalEncoder` as real categoricals, which selects columns by dtype
+    (see `get_ordinal_encoder`). That turns near-unique text into near-unique integer
+    codes, i.e. noise rather than signal, without any error to hint at it.
+
+    Called by `detect_feature_modalities` while the schema still carries the TEXT
+    labels, i.e. before the first preprocessing step that rebuilds it, since
+    `FeatureSchema.from_only_categorical_indices` collapses TEXT into NUMERICAL.
+
+    Args:
+        feature_schema: The schema produced by `detect_feature_modalities`.
+        declared_categorical_indices: Positional indices the caller passed as
+            `categorical_features_indices`. These are never reported: declaring a
+            column categorical states that the user already knows it holds
+            non-numeric values and intends them as categories, so warning about it
+            would be noise.
+    """
+    declared = set(declared_categorical_indices or ())
+    text_names = [
+        feature.name.removeprefix(INPUT_FEATURE_PREFIX)
+        for index, feature in enumerate(feature_schema.features)
+        if feature.modality is FeatureModality.TEXT and index not in declared
+    ]
+    if not text_names:
+        return
+
+    shown = text_names[:_MAX_TEXT_COLUMNS_IN_WARNING]
+    column_names_to_print = ", ".join(repr(name) for name in shown)
+    if len(text_names) > len(shown):
+        column_names_to_print += f" (and {len(text_names) - len(shown)} more)"
+
+    warnings.warn(
+        f"These columns look like free text and are being ordinal-encoded as "
+        f"high-cardinality categoricals, which usually adds noise rather than "
+        f"signal: {column_names_to_print}.\n"
+        "If such a column holds numbers stored as strings, convert it to a numeric "
+        "dtype. If it holds genuine text, this package has no text handling -- "
+        "consider the tabpfn-client API, which embeds text natively: "
+        "https://github.com/PriorLabs/tabpfn-client \n"
+        "To silence this for a column that is genuinely a high-cardinality category, "
+        "pass its index in `categorical_features_indices`.",
+        UserWarning,
+        # Points at a direct `estimator.fit(X, y)` call site. Six frames out: this
+        # function, `detect_feature_modalities`, `_initialize_dataset_preprocessing`,
+        # `fit`, and the contextlib wrapper added by the `@config_context(...)`
+        # decorator on `fit`. Pinned by the `warning.filename` asserts in the tests.
+        stacklevel=6,
+    )
 
 
 def _detect_feature_modality(
@@ -35763,7 +35871,7 @@ def create_gpu_preprocessing_pipeline(
         feature_schema: Feature schema from the CPU preprocessing output.
             Used to read ``scheduled_gpu_transform`` column annotations.
         n_train_samples: Number of training samples (after subsampling).
-        random_state: Random state for the shuffle step.
+        random_state: Random state for the SVD and shuffle steps.
     """
     steps: list[tuple[TorchPreprocessingStep, set[FeatureModality] | None]] = []
     pconfig = config.preprocess_config
@@ -35819,6 +35927,7 @@ def create_gpu_preprocessing_pipeline(
                 (
                     TorchAddSVDFeaturesStep(
                         global_transformer_name=pconfig.global_transformer_name,
+                        random_state=random_state,
                     ),
                     None,
                 )
@@ -36825,6 +36934,7 @@ class TorchAddSVDFeaturesStep(TorchPreprocessingStep):
     def __init__(
         self,
         global_transformer_name: Literal["svd", "svd_quarter_components"] = "svd",
+        random_state: int | np.random.Generator | None = None,
     ) -> None:
         """Initialize the SVD features step.
 
@@ -36832,9 +36942,12 @@ class TorchAddSVDFeaturesStep(TorchPreprocessingStep):
             global_transformer_name: Name of the SVD variant. The number of
                 components is computed inside ``_fit`` via
                 :func:`get_svd_n_components`, matching the CPU pipeline.
+            random_state: Seeds the SVD's random projection, as in the CPU
+                :class:`AddSVDFeaturesStep`.
         """
         super().__init__()
         self.global_transformer_name = global_transformer_name
+        self.random_state = random_state
         self._scaler = TorchSafeStandardScaler()
         self._svd: TorchTruncatedSVD | None = None
 
@@ -36866,7 +36979,11 @@ class TorchAddSVDFeaturesStep(TorchPreprocessingStep):
             n_features=num_features,
         )
 
-        self._svd = TorchTruncatedSVD(n_components=effective_n_components)
+        static_seed, _ = infer_random_state(self.random_state)
+        self._svd = TorchTruncatedSVD(
+            n_components=effective_n_components,
+            random_state=static_seed,
+        )
 
         # Fit scaler on training data (flatten batch dimension for fitting)
         # Shape: [num_train_rows, batch_size, num_cols] -> flattened
@@ -37905,7 +38022,14 @@ FILE: src/tabpfn/preprocessing/torch/torch_svd.py
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import torch
+
+from tabpfn.utils import infer_random_state
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 def _svd_flip_stable(
@@ -37951,13 +38075,21 @@ class TorchTruncatedSVD:
     If centering is needed, apply it before calling fit.
     """
 
-    def __init__(self, n_components: int) -> None:
+    def __init__(
+        self,
+        n_components: int,
+        random_state: int | np.random.Generator | None = None,
+    ) -> None:
         """Initialize the truncated SVD.
 
         Args:
             n_components: Number of components to keep.
+            random_state: Seeds the random projection drawn by the randomized
+                path. As in sklearn's ``TruncatedSVD``, ``None`` means a fresh
+                projection on every fit; the exact path ignores it.
         """
         self.n_components = n_components
+        self.random_state = random_state
 
     def fit(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """Compute the truncated SVD on the training data.
@@ -38012,8 +38144,25 @@ class TorchTruncatedSVD:
         )
 
         if use_lowrank:
-            # torch.svd_lowrank returns (U, S, V) with A â‰ˆ U diag(S) V^T
-            u, s, v = torch.svd_lowrank(x_filled, q=q, niter=2)
+            # torch.svd_lowrank returns (U, S, V) with A â‰ˆ U diag(S) V^T. It draws its
+            # projection from the default generator of x_filled.device and takes no
+            # generator argument, so the only way to control it is to seed that
+            # generator. Do so inside a fork, which restores the caller's state on
+            # exit: seeding is a side effect on process-global state that callers own.
+            # Fork only the tensor's own device -- torch.manual_seed would also reseed
+            # CUDA/MPS/XPU, which a CPU-only fork_rng does not restore, and forking
+            # every device would initialise a context on each.
+            static_seed, _ = infer_random_state(self.random_state)
+            device = x_filled.device
+            fork_devices = [] if device.type == "cpu" else [device]
+            with torch.random.fork_rng(devices=fork_devices, device_type=device.type):
+                if device.type == "cpu":
+                    torch.default_generator.manual_seed(static_seed)
+                else:
+                    # Seeding is per *current* device, so make it the right one.
+                    with getattr(torch, device.type).device(device):
+                        getattr(torch, device.type).manual_seed(static_seed)
+                u, s, v = torch.svd_lowrank(x_filled, q=q, niter=2)
             # Truncate oversampling dimensions
             u = u[:, :n_components]
             s = s[:n_components]
@@ -42407,6 +42556,188 @@ def test__finetuned_tabpfn_classifier__no_improvement_restores_base_model(
         "Fine-tuning that never beat the default model returned modified weights "
         "instead of restoring the base model (GH#1064)."
     )
+
+
+@pytest.mark.parametrize("validation_frequency", [0, -1])
+def test__finetuned_tabpfn_classifier__validation_frequency_must_be_positive(
+    synthetic_data: tuple[np.ndarray, np.ndarray],
+    tmp_path: Path,
+    validation_frequency: int,
+) -> None:
+    """Reject a non-positive validation cadence before training starts."""
+    X, y = synthetic_data
+    clf = FinetunedTabPFNClassifier(
+        device="cpu",
+        validation_frequency=validation_frequency,
+    )
+
+    with pytest.raises(ValueError, match="validation_frequency must be positive"):
+        clf.fit(np.asarray(X), np.asarray(y), output_dir=tmp_path)
+
+
+def test__finetuned_tabpfn_classifier__validation_frequency_schedules_evaluation(
+    synthetic_data: tuple[np.ndarray, np.ndarray],
+    tmp_path: Path,
+) -> None:
+    """Validate on scheduled epochs while retaining interval checkpoints."""
+    X, y = synthetic_data
+    n_classes = len(np.unique(y))
+    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train = np.asarray(X_train)
+    y_train = np.asarray(y_train)
+
+    validation_calls = 0
+
+    def evaluate(*_args: Any, **_kwargs: Any) -> EvalResult:
+        nonlocal validation_calls
+        validation_calls += 1
+        return EvalResult(primary=0.5, secondary={"roc_auc": 0.5, "log_loss": 1.0})
+
+    clf = FinetunedTabPFNClassifier(
+        device="cpu",
+        epochs=4,
+        learning_rate=1e-4,
+        validation_split_ratio=0.2,
+        validation_frequency=2,
+        n_finetune_ctx_plus_query_samples=50,
+        finetune_ctx_query_split_ratio=0.1,
+        n_inference_subsample_samples=100,
+        random_state=42,
+        early_stopping=False,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_final_inference=1,
+        save_checkpoint_interval=1,
+        use_lr_scheduler=False,
+    )
+
+    with (
+        mock.patch.object(
+            TabPFNV3,
+            "forward",
+            autospec=True,
+            side_effect=create_mock_architecture_forward(n_classes=n_classes),
+        ),
+        mock.patch.object(
+            FinetunedTabPFNClassifier,
+            "_evaluate_model",
+            autospec=True,
+            side_effect=evaluate,
+        ),
+    ):
+        clf.fit(X_train, y_train, output_dir=tmp_path)
+
+    # One baseline evaluation plus scheduled evaluations after epochs 2 and 4.
+    assert validation_calls == 3
+    assert not list(tmp_path.glob("*_best.pth"))
+
+    skipped_checkpoint = torch.load(
+        tmp_path / "checkpoint_70_1.pth", map_location="cpu", weights_only=False
+    )
+    scheduled_checkpoint = torch.load(
+        tmp_path / "checkpoint_70_2.pth", map_location="cpu", weights_only=False
+    )
+    assert np.isfinite(skipped_checkpoint["train_loss"])
+    assert "roc_auc" not in skipped_checkpoint
+    assert scheduled_checkpoint["roc_auc"] == 0.5
+
+
+def test__finetuned_tabpfn_classifier__validation_frequency_without_remaining_eval(
+    synthetic_data: tuple[np.ndarray, np.ndarray],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Disable early stopping when no scheduled validation can occur."""
+    X, y = synthetic_data
+    n_classes = len(np.unique(y))
+    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train = np.asarray(X_train)
+    y_train = np.asarray(y_train)
+
+    clf = FinetunedTabPFNClassifier(
+        device="cpu",
+        epochs=2,
+        learning_rate=1e-4,
+        validation_split_ratio=0.2,
+        validation_frequency=3,
+        n_finetune_ctx_plus_query_samples=50,
+        finetune_ctx_query_split_ratio=0.1,
+        n_inference_subsample_samples=100,
+        random_state=42,
+        early_stopping=True,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_final_inference=1,
+        use_lr_scheduler=False,
+    )
+
+    caplog.set_level(logging.INFO, logger="tabpfn.finetuning.finetuned_base")
+    with (
+        mock.patch.object(
+            TabPFNV3,
+            "forward",
+            autospec=True,
+            side_effect=create_mock_architecture_forward(n_classes=n_classes),
+        ),
+        mock.patch.object(
+            FinetunedTabPFNClassifier,
+            "_evaluate_model",
+            autospec=True,
+            return_value=EvalResult(primary=0.5),
+        ) as evaluate_model,
+    ):
+        clf.fit(X_train, y_train)
+
+    # The baseline still runs, but no epoch is a multiple of the frequency.
+    assert evaluate_model.call_count == 1
+    assert "early stopping is disabled" in caplog.text
+
+
+def test__finetuned_tabpfn_classifier__validation_frequency_counts_patience_checks(
+    synthetic_data: tuple[np.ndarray, np.ndarray],
+) -> None:
+    """Early-stopping patience advances only on scheduled validation checks."""
+    X, y = synthetic_data
+    n_classes = len(np.unique(y))
+    X_train, _, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=42)
+    X_train = np.asarray(X_train)
+    y_train = np.asarray(y_train)
+
+    clf = FinetunedTabPFNClassifier(
+        device="cpu",
+        epochs=4,
+        learning_rate=1e-4,
+        validation_split_ratio=0.2,
+        validation_frequency=2,
+        n_finetune_ctx_plus_query_samples=50,
+        finetune_ctx_query_split_ratio=0.1,
+        n_inference_subsample_samples=100,
+        random_state=42,
+        early_stopping=True,
+        early_stopping_patience=1,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_final_inference=1,
+        use_lr_scheduler=False,
+    )
+
+    with (
+        mock.patch.object(
+            TabPFNV3,
+            "forward",
+            autospec=True,
+            side_effect=create_mock_architecture_forward(n_classes=n_classes),
+        ),
+        mock.patch.object(
+            FinetunedTabPFNClassifier,
+            "_evaluate_model",
+            autospec=True,
+            return_value=EvalResult(primary=0.5),
+        ) as evaluate_model,
+    ):
+        clf.fit(X_train, y_train)
+
+    # The check after epoch 2 consumes patience and stops the run. Epoch 1 does not.
+    assert evaluate_model.call_count == 2
 
 
 @pytest.mark.parametrize(
@@ -57103,16 +57434,25 @@ FILE: tests/test_preprocessing/test_modality_detection.py
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from tabpfn.preprocessing.datamodel import FeatureModality
+from tabpfn import TabPFNClassifier, TabPFNRegressor
+from tabpfn.preprocessing.datamodel import (
+    INPUT_FEATURE_PREFIX,
+    Feature,
+    FeatureModality,
+    FeatureSchema,
+)
 from tabpfn.preprocessing.modality_detection import (
     _EARLY_EXIT_PREFIX_ROWS,
+    _MAX_TEXT_COLUMNS_IN_WARNING,
     _detect_feature_modality,
+    _warn_if_text_features,
     detect_feature_modalities,
 )
 from tabpfn.preprocessing.type_detection import infer_categorical_features
@@ -57526,6 +57866,224 @@ def test__early_exit_not_fooled_by_uninformative_prefix():
         np.concatenate([np.zeros(_EARLY_EXIT_PREFIX_ROWS), np.arange(1.0, 4000.0)])
     )
     assert _for_test_detect_with_defaults(s) == FeatureModality.NUMERICAL
+
+
+def _text_schema(*names: str) -> FeatureSchema:
+    """Schema of TEXT features with the `input_` prefix real input names carry."""
+    return FeatureSchema(
+        features=[
+            Feature(name=f"{INPUT_FEATURE_PREFIX}{name}", modality=FeatureModality.TEXT)
+            for name in names
+        ]
+    )
+
+
+class TestWarnIfTextFeatures:
+    """Schema-level unit tests for `warn_if_text_features`."""
+
+    def test__no_text_features__does_not_warn(self) -> None:
+        schema = FeatureSchema(
+            features=[
+                Feature(name="input_a", modality=FeatureModality.NUMERICAL),
+                Feature(name="input_b", modality=FeatureModality.CATEGORICAL),
+            ]
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _warn_if_text_features(schema)
+
+    def test__text_features__warn_with_column_names_and_remedies(self) -> None:
+        with pytest.warns(UserWarning, match="look like free text") as record:
+            _warn_if_text_features(_text_schema("review"))
+
+        message = str(record[0].message)
+        # Column names are shown as the user wrote them, without the input_ prefix.
+        assert "'review'" in message
+        assert INPUT_FEATURE_PREFIX not in message
+        # The message must state all remedies.
+        assert "numeric dtype" in message
+        assert "https://github.com/PriorLabs/tabpfn-client" in message
+        assert "categorical_features_indices" in message
+
+    def test__declared_categorical_indices__are_not_reported(self) -> None:
+        schema = _text_schema("sku", "review")
+
+        with pytest.warns(UserWarning, match="look like free text") as record:
+            _warn_if_text_features(schema, declared_categorical_indices=[0])
+        message = str(record[0].message)
+        assert "'review'" in message
+        assert "'sku'" not in message
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _warn_if_text_features(schema, declared_categorical_indices=[0, 1])
+
+    def test__many_text_columns__message_is_truncated(self) -> None:
+        n_extra = 5
+        n_columns = _MAX_TEXT_COLUMNS_IN_WARNING + n_extra
+        schema = _text_schema(*(f"t{i}" for i in range(n_columns)))
+
+        with pytest.warns(UserWarning, match="look like free text") as record:
+            _warn_if_text_features(schema)
+
+        message = str(record[0].message)
+        assert f"(and {n_extra} more)" in message
+        assert f"'t{_MAX_TEXT_COLUMNS_IN_WARNING - 1}'" in message
+        assert f"'t{_MAX_TEXT_COLUMNS_IN_WARNING}'" not in message
+
+
+class TestDetectFeatureModalitiesWarnsOnText:
+    """`detect_feature_modalities` emits the text warning over real columns.
+
+    The warning is now produced inside `detect_feature_modalities`, so these
+    exercise the whole path: which columns actually get labelled TEXT and thus
+    reach the warning, which the schema-level tests above cannot (they build
+    schemas by hand).
+    """
+
+    n_rows = 200
+
+    def _numeric_column(self) -> np.ndarray:
+        return np.random.default_rng(0).normal(size=self.n_rows)
+
+    def _detect(
+        self, X: pd.DataFrame, declared: list[int] | None = None
+    ) -> FeatureSchema:
+        """Run modality detection over a frame, as `fit()` does."""
+        return detect_feature_modalities(
+            X=X.to_numpy(dtype=object),
+            feature_names=list(X.columns),
+            provided_categorical_indices=declared,
+            min_samples_for_inference=100,
+            max_unique_for_category=30,
+            min_unique_for_numerical=4,
+        )
+
+    def test__free_text_column__warns(self) -> None:
+        X = pd.DataFrame(
+            {
+                "num": self._numeric_column(),
+                "review": [f"review {i}, a fairly long sentence" for i in range(200)],
+            }
+        )
+
+        with pytest.warns(UserWarning, match="look like free text") as record:
+            self._detect(X)
+
+        assert "'review'" in str(record[0].message)
+
+    def test__ordinary_columns__do_not_warn(self) -> None:
+        """Neither low-cardinality strings nor fully numeric strings are TEXT.
+
+        The former are ordinary categoricals and the latter are
+        detected NUMERICAL.
+        """
+        values = np.random.default_rng(1).normal(size=200)
+        X = pd.DataFrame(
+            {
+                "num": self._numeric_column(),
+                "color": ["red", "green", "blue"] * 66 + ["red", "red"],
+                "as_str": [str(round(float(v), 4)) for v in values],
+            }
+        )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            self._detect(X)
+
+    def test__numeric_column_with_one_stray_token__warns(self) -> None:
+        """A single non-numeric token flips a whole numeric column to TEXT.
+
+        `_is_numeric_pandas_series` requires *every* value to be coercible, so one
+        stray "N/A" makes the column ordinal-encoded as a near-unique categorical.
+        Warning here is the point of the feature: the fix is a numeric dtype.
+        """
+        values = np.random.default_rng(2).normal(size=200)
+        mostly_numeric = [str(round(float(v), 4)) for v in values]
+        mostly_numeric[7] = "N/A"
+        X = pd.DataFrame(
+            {"num": self._numeric_column(), "mostly_numeric": mostly_numeric}
+        )
+
+        with pytest.warns(UserWarning, match="look like free text") as record:
+            self._detect(X)
+
+        assert "'mostly_numeric'" in str(record[0].message)
+
+    def test__declared_categorical_columns__do_not_warn(self) -> None:
+        """Declaring a column categorical states intent, so it must stay quiet.
+
+        Covers both a plain string column and an explicit pandas `category`
+        dtype, each above the cardinality threshold.
+        """
+        X = pd.DataFrame(
+            {
+                "num": self._numeric_column(),
+                "sku": [f"sku_{i % 60}" for i in range(200)],
+                "sku_cat": pd.Series(
+                    [f"sku_{i % 60}" for i in range(200)], dtype="category"
+                ),
+            }
+        )
+        declared = [1, 2]
+
+        # Without the declaration the columns really are detected as TEXT and warn.
+        with pytest.warns(UserWarning, match="look like free text"):
+            self._detect(X)
+
+        # Declaring them silences the warning; the columns are still labelled TEXT.
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            schema = self._detect(X, declared)
+        assert schema.indices_for(FeatureModality.TEXT) == declared
+
+
+@pytest.mark.parametrize("estimator_cls", [TabPFNClassifier, TabPFNRegressor])
+def test__fit_with_text_column__warns_at_call_site(estimator_cls: type) -> None:
+    """`fit` runs `detect_feature_modalities`, so a free-text column warns.
+
+    Both estimators share the detection path, so one parametrized test pins the
+    estimator-level behaviour: `fit` emits the warning naming the column and
+    blaming this file's `fit` call (the stacklevel), declaring the column in
+    `categorical_features_indices` silences it, and `predict` stays quiet.
+    """
+    n = 120
+    rng = np.random.default_rng(seed=42)
+    X = pd.DataFrame(
+        {
+            "num": rng.normal(size=n),
+            "review": [f"review {i}, a fairly long sentence" for i in range(n)],
+        }
+    )
+    y = (
+        rng.integers(0, 2, size=n)
+        if estimator_cls is TabPFNClassifier
+        else rng.normal(size=n)
+    )
+
+    model = estimator_cls(n_estimators=1, device="cpu")
+    with pytest.warns(UserWarning, match="look like free text") as record:
+        model.fit(X, y)
+    assert "'review'" in str(record[0].message)
+    # Pins the stacklevel: the warning must blame this file's `fit` call, not a
+    # frame inside tabpfn or the contextlib wrapper around `fit`.
+    assert record[0].filename == __file__
+
+    # Only `fit` runs modality detection, so `predict` must not warn again.
+    # catch_warnings collects any warning instead of failing on unrelated ones.
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        model.predict(X)
+    assert not [w for w in caught if "look like free text" in str(w.message)]
+
+    model = estimator_cls(
+        n_estimators=1, device="cpu", categorical_features_indices=[1]
+    )
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        model.fit(X, y)
+    assert not [w for w in caught if "look like free text" in str(w.message)]
 
 
 
@@ -82805,6 +83363,34 @@ def test__add_svd_features__single_feature_is_noop_like_cpu():
     assert cpu_step.num_added_features(40, schema) == 0
 
 
+def test__torch_truncated_svd__random_state_controls_the_projection():
+    """``random_state`` must fix the randomized projection, and different seeds vary it.
+
+    ``torch.svd_lowrank`` draws its projection from the global torch RNG, so an
+    unseeded call returns different components each time. This shape takes that branch
+    (>1M cells, and min(n, f) >= 2 * (n_components + 10)); smaller inputs use the exact
+    path, which is deterministic anyway.
+    """
+    x = torch.randn(5_000, 250, generator=torch.Generator().manual_seed(0))
+
+    same = [TorchTruncatedSVD(n_components=8, random_state=0).fit(x) for _ in range(2)]
+    other = TorchTruncatedSVD(n_components=8, random_state=1).fit(x)
+
+    assert torch.equal(same[0]["components"], same[1]["components"])
+    assert not torch.equal(same[0]["components"], other["components"])
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a CUDA device")
+def test__torch_truncated_svd__fit_leaves_cuda_rng_untouched():
+    """Seeding must not leak: CUDA RNG state must survive the call unchanged."""
+    x = torch.randn(5_000, 250, generator=torch.Generator().manual_seed(0)).cuda()
+    before = torch.cuda.get_rng_state()
+
+    TorchTruncatedSVD(n_components=8, random_state=0).fit(x)
+
+    assert torch.equal(before, torch.cuda.get_rng_state())
+
+
 
 ================================================
 FILE: .gemini/config.yaml
@@ -84088,5 +84674,78 @@ jobs:
 
           git tag "$TAG"
           git push origin "$TAG"
+
+
+
+================================================
+FILE: .github/workflows/slack-ci-alert.yml
+================================================
+# Reusable Slack alert that reports CI failures on main.
+#
+# See trigger-slack.ci-alert.yml for how to call it.
+name: Slack CI alert (reusable)
+
+on:
+  workflow_call:
+    secrets:
+      CI_STATUS_SLACK_WEBHOOK_URL:
+        description: Slack incoming webhook URL to post the alert to.
+        required: true
+
+permissions: {}
+
+jobs:
+  notify:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-slim
+    steps:
+      - name: Build Slack payload
+        env:
+          REPO_NAME: ${{ github.event.workflow_run.repository.name }}
+          REPO_URL: ${{ github.event.workflow_run.repository.html_url }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          AUTHOR: ${{ github.event.workflow_run.head_commit.author.name }}
+          TITLE: ${{ github.event.workflow_run.display_title }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          jq -n \
+            --arg repo_name "$REPO_NAME" \
+            --arg repo "$REPO_URL" \
+            --arg sha "$SHA" \
+            --arg author "$AUTHOR" \
+            --arg title "$TITLE" \
+            --arg run_url "$RUN_URL" \
+            '{text: (":red_circle: \($repo_name) CI failed on `main`\nCommit: <\($repo)/commit/\($sha)|\($sha)> by \($author)\n_\($title)_\n<\($run_url)|View run>")}' \
+            > "$RUNNER_TEMP/slack-payload.json"
+      - name: Post to Slack
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.CI_STATUS_SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/slack-payload.json
+
+
+
+================================================
+FILE: .github/workflows/trigger-slack-ci-alert.yml
+================================================
+# Send a Slack alert when the CI fails on main.
+name: Slack CI alert
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  notify:
+    uses: ./.github/workflows/slack-ci-alert.yml
+    secrets:
+      CI_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.CI_STATUS_SLACK_WEBHOOK_URL }}
 
 

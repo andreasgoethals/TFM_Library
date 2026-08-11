@@ -4,6 +4,26 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-06
+
+- Added **Luo 2026-07 — Memory Efficient Tabular Foundation Models**
+  (arXiv 2607.27546, FMSD @ ICML 2026), 43 → 44 papers, full five-step
+  treatment. Post-hoc **INT4 quantization** cuts TFM memory **7.6×**
+  (≈87% lower deployment requirement) with negligible accuracy loss,
+  leaving the quantized model above the strongest tuned baseline. Studied
+  on TabPFN v2.5/v2.6 and TabICL.
+- Notable for two reasons, both recorded in the synthesis. It is the
+  **first paper in this collection written from inside a deploying
+  institution** (Commonwealth Bank of Australia), and it supplies an
+  **open** answer to the inference-cost problem where the frontier's own
+  answer — the v2.5/v3 distillation engines — is proprietary. Integrated
+  into weakness §5 and design axis (d) as complementary to, not competing
+  with, TabDPT-Turbo: quantization shrinks weights, row-compression and
+  retrieval-free designs shrink in-context activations.
+- Replaced the last two auto-generated heading anchors in `SUMMARIES.md`
+  with explicit `<a id=…>` ones (`#mitra`, `#tabdpt-turbo`). All 13
+  internal links are now anchor-backed and survive heading edits.
+
 ## 2026-08-05
 
 Papers 41 → 43. Months added throughout and everything ordered by them;

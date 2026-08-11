@@ -74,6 +74,7 @@ inside your project's copy of this folder and write them there.
 | 2026-05 | Bouadi et al. | **O'Prior** — Shaping the Prior: How Synthetic Task Distributions Determine TFM Quality | **The first controlled study of prior design as the sole variable**: architecture, optimizer and compute held fixed, only the synthetic task distribution varied. Structural mechanism diversity is the strongest driver of transfer; realism and shift-stress add complementary gains. | [pdf](papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf) |
 | 2026-06 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets, IID + temporal + grouped splits): TFM ICL wins tiny/small IID data but **loses to tuned RealMLP/GBDTs under temporal & grouped splits**, with the gap growing with sample size and high-cardinality categoricals. Fine-tuning explicitly untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-06 | Kong and Das (Google) | **TabFM** — Introducing TabFM: A zero-shot foundation model for tabular data | *Blog post, not a paper.* Google's TabPFN+TabICL **hybrid** (alternating row/column attention → row compression → ICL over row embeddings), trained on hundreds of millions of synthetic SCM datasets; TabArena Elo vs tuned GBDTs; shipping into **BigQuery `AI.PREDICT`**. | [pdf](papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf) |
+| 2026-07 | Luo et al. | **Memory Efficient Tabular Foundation Models** | Post-hoc **INT4 quantization** cuts TFM memory by up to **7.6×** (~87% lower deployment requirement) with negligible accuracy loss — an open alternative to the proprietary distillation engines. First paper here written from inside a bank. | [pdf](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf) |
 
 ---
 
@@ -781,6 +782,8 @@ LR 1e-5, ``n_estimators_finetune`` 8,
 *single-dataset* finetuning, not corpus continued pretraining.
 
 ---
+
+<a id="mitra"></a>
 
 ## 2025-10 — Zhang et al. — Mitra: Mixed Synthetic Priors
 
@@ -1573,7 +1576,7 @@ prior design as the scientific variable**. Its framing is a direct
 criticism of how the line has progressed — "prior work conflates
 architectural improvements with prior improvements, TabPFN v2, for
 instance, enriched both simultaneously, making attribution impossible."
-Where [Mitra](#2025-10--zhang-et-al--mitra-mixed-synthetic-priors)
+Where [Mitra](#mitra)
 proposed criteria for *selecting* priors, O'Prior builds a prior and then
 measures which of its parts actually pay.
 
@@ -1635,6 +1638,8 @@ generators, and the winner is the authors' own; the same self-evaluation
 caveat that applies to the Orion line applies here, and independent
 replication matters more than usual.
 
+
+<a id="tabdpt-turbo"></a>
 
 ## 2026-05 — Hosseinzadeh et al. — TabDPT-Turbo
 
@@ -1925,3 +1930,52 @@ every fold-matched dataset, but was only "hair-thin" ahead of TabPFN.
 Raw per-dataset metrics are in the repo under `results/*.parquet` if a
 proper comparison is ever needed. Any claim from this source should be
 attributed to Google's blog, not to the literature.
+
+---
+
+## 2026-07 — Luo et al. — Memory Efficient Tabular Foundation Models
+
+**arXiv:** [2607.27546](https://arxiv.org/abs/2607.27546) (30 July 2026) ·
+2nd Foundation Models for Structured Data (FMSD) Workshop @ ICML 2026 ·
+Commonwealth Bank of Australia + Australian Institute for Machine
+Learning, University of Adelaide ·
+**PDF:** [open](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf)
+
+**Where it fits.** The deployment-cost counterpart to
+[TabDPT-Turbo](#tabdpt-turbo), and the first
+paper in this collection written from *inside a deploying institution* — a
+bank. Where Turbo attacks inference cost by redesigning the model, this
+attacks it after the fact, by compressing a model you already have. It
+also answers a gap this library has been flagging: distillation is the
+frontier's emerging response to inference cost, but the v2.5/v3
+distillation engines are proprietary. Quantization is not.
+
+**What it contains.** The framing is explicitly practitioner-side:
+adoption depends "not only on predictive performance, but also on whether
+these models can be deployed and communicated efficiently", with
+enterprises contending with memory movement, hardware constraints and
+bandwidth. The paper therefore measures the **memory requirements** of
+TFMs and applies standard model-compression techniques to them, centring
+on **INT4 quantization**. Models studied are the TabPFN line (v2.5, v2.6)
+and TabICL.
+
+The headline result is that quantizing to INT4 yields a **7.6× lower
+memory footprint** relative to full-precision baselines — "reducing
+deployment requirements by nearly 87%" — with negligible decline in
+accuracy, and with the quantized models remaining above the strongest
+tuned conventional baseline. In other words, the accuracy advantage that
+motivates using a TFM at all survives compression.
+
+**Strengths and limitations.** The contribution is practical rather than
+methodological: it applies known compression methods, and its value is in
+having measured them on this model class and reported the trade-off
+curve. That is precisely what a practitioner needs and what the research
+literature had not supplied. Being a workshop paper it is short (12
+pages), the evaluation is narrower than a full benchmark, and it does not
+address the *context-length* memory cost that dominates at large table
+sizes — quantization shrinks the weights, not the in-context activations,
+so it is complementary to, not a substitute for, the architectural work in
+TabDPT-Turbo and the row-compression line. No calibration analysis is
+reported, which matters because quantization can plausibly perturb
+predicted probabilities more than it perturbs accuracy.
+

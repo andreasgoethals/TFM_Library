@@ -20,7 +20,9 @@ Directory structure:
     │       ├── client.py
     │       ├── config.py
     │       ├── constants.py
+    │       ├── errors.py
     │       ├── estimator.py
+    │       ├── models.py
     │       ├── options.py
     │       ├── prompt_agent.py
     │       ├── server_config.yaml
@@ -52,6 +54,7 @@ Directory structure:
     │       ├── test_browser_auth.py
     │       ├── test_client.py
     │       ├── test_estimator.py
+    │       ├── test_fit_mode_and_model_id.py
     │       ├── test_options.py
     │       ├── test_prompt_agent.py
     │       ├── test_sagemaker_invocation_timeout.py
@@ -59,7 +62,6 @@ Directory structure:
     │       ├── test_tabpfn_classifier.py
     │       ├── test_tabpfn_regressor.py
     │       ├── test_text_features.py
-    │       ├── test_thinking_validation.py
     │       └── test_validate_test_set.py
     ├── .github/
     │   ├── CODEOWNERS
@@ -78,7 +80,7 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 17972: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 17968: character maps to <undefined>
 
 
 ================================================
@@ -511,14 +513,14 @@ wheels = [
 
 [[package]]
 name = "basedpyright"
-version = "1.32.1"
+version = "1.39.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "nodejs-wheel-binaries" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/a5/691d02a30bda15acb6a5727bb696dd7f3fcae1ad5b9f2708020c2645af8c/basedpyright-1.32.1.tar.gz", hash = "sha256:ce979891a3c4649e7c31d665acb06fd451f33fedfd500bc7796ee0950034aa54", size = 22757919, upload-time = "2025-10-23T12:53:28.169Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/4b/c1f4e211e50389304d6af32b9280e026a7133e3ad59bbdf8f7a3250f8bee/basedpyright-1.39.9.tar.gz", hash = "sha256:32cbea5fc8273e89df3db20daea56cb7286e419ccdfdc479c64759d2dc071901", size = 24412216, upload-time = "2026-06-27T02:19:49.834Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/d5/17d24fd7ba9d899b82859ee04f4599a1e8a02a85c0753bc15eb3ca7ffff7/basedpyright-1.32.1-py3-none-any.whl", hash = "sha256:06b5cc56693e3690653955e19fbe5d2e38f2a343563b40ef95fd1b10fa556fb6", size = 11841548, upload-time = "2025-10-23T12:53:25.541Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/d4/e1fa108710d0498a18c77b1e13897f31eab47c69aa8cfe2d2a4df746541e/basedpyright-1.39.9-py3-none-any.whl", hash = "sha256:6b0837b9eba972c71895167ab9b127e6afdbc17abc92312e3f8d15ca82a5611c", size = 13374276, upload-time = "2026-06-27T02:19:54.431Z" },
 ]
 
 [[package]]
@@ -1552,14 +1554,14 @@ wheels = [
 
 [[package]]
 name = "respx"
-version = "0.22.0"
+version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f4/7c/96bd0bc759cf009675ad1ee1f96535edcb11e9666b985717eb8c87192a95/respx-0.22.0.tar.gz", hash = "sha256:3c8924caa2a50bd71aefc07aa812f2466ff489f1848c96e954a5362d17095d91", size = 28439, upload-time = "2024-12-19T22:33:59.374Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/98/4e55c9c486404ec12373708d015ebce157966965a5ebe7f28ff2c784d41b/respx-0.23.1.tar.gz", hash = "sha256:242dcc6ce6b5b9bf621f5870c82a63997e8e82bc7c947f9ffe272b8f3dd5a780", size = 29243, upload-time = "2026-04-08T14:37:16.008Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/67/afbb0978d5399bc9ea200f1d4489a23c9a1dad4eee6376242b8182389c79/respx-0.22.0-py2.py3-none-any.whl", hash = "sha256:631128d4c9aba15e56903fb5f66fb1eff412ce28dd387ca3a81339e52dbd3ad0", size = 25127, upload-time = "2024-12-19T22:33:57.837Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/4a/221da6ca167db45693d8d26c7dc79ccfc978a440251bf6721c9aaf251ac0/respx-0.23.1-py2.py3-none-any.whl", hash = "sha256:b18004b029935384bccfa6d7d9d74b4ec9af73a081cc28600fffc0447f4b8c1a", size = 25557, upload-time = "2026-04-08T14:37:14.613Z" },
 ]
 
 [[package]]
@@ -1578,27 +1580,27 @@ wheels = [
 
 [[package]]
 name = "ruff"
-version = "0.15.16"
+version = "0.15.21"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a6/bd/5f7ec371001337d8fa61701c186ff8b613ecac1651848c5950f4c4d5f2e9/ruff-0.15.16.tar.gz", hash = "sha256:d05e78d38c78caf020b03789e25106c93017db5a0cb6e2819885018c61343b78", size = 4714267, upload-time = "2026-06-04T16:33:09.974Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/36/6f65aa9989acdec45d417192d8f4e7921931d8a6cf87ac74bce3eed98a8e/ruff-0.15.21.tar.gz", hash = "sha256:d0cfc841c572283c36548f82664a54ce6565567f1b0d5b4cf2caac693d8b7500", size = 4769401, upload-time = "2026-07-09T20:01:34.005Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/42/53ef1c3953f157956db9bf7861e3bc50b9b887ce93300aa48cdba8336fe6/ruff-0.15.16-py3-none-linux_armv6l.whl", hash = "sha256:6ac3c0b3969cc6cf6b158c4e2f8f682acb58e7d700d8a44b65ecdc72d66ab0b2", size = 10709025, upload-time = "2026-06-04T16:32:51.935Z" },
-    { url = "https://files.pythonhosted.org/packages/93/9a/a79159346f19134a956607754e57d8d128f7a4c00f4ad2f7514d224c172c/ruff-0.15.16-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:197c207ed75ffba54a0dec23db4aa939a27a3053073e085e0042433cbdc58e4a", size = 11063550, upload-time = "2026-06-04T16:32:42.24Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/72/3ce2ac000a5299ec238e01f51397b3b653c93b077d9b1bfe8715bb895f20/ruff-0.15.16-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3a39fec45ab316cc23e7558f23fea4a70403ddb5648ea9a4a3854a16973d0071", size = 10421345, upload-time = "2026-06-04T16:32:37.251Z" },
-    { url = "https://files.pythonhosted.org/packages/b0/c2/cc7fad3ec9169373f5b6a18f1917b91080feec40c3f9658334a1d28e2f03/ruff-0.15.16-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ba93191d79003116b95128c9d306e045200fdbd0bccb782b110f3cd1d4abc5cf", size = 10757217, upload-time = "2026-06-04T16:32:54.722Z" },
-    { url = "https://files.pythonhosted.org/packages/69/d2/3474009eaa0a65b31fa7152a2fad5e2f050c640ceb1e6b02ee6922e94c82/ruff-0.15.16-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:c6ee4b90520630120ef032aa5cc10db483852dff950e78b1d717e2993a61ac8d", size = 10507035, upload-time = "2026-06-04T16:33:05.343Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/81/b7ae6ccbd11f0c8dc3d5d67fc4be9b57ff57ca86ba56152021378e1277f2/ruff-0.15.16-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4e4215bc938bc3c8215c1472c1aa437e310fee20cd427335fec9d7e609563628", size = 11255291, upload-time = "2026-06-04T16:32:49.49Z" },
-    { url = "https://files.pythonhosted.org/packages/d9/e1/46e526f1a7cc90857ce6ddf25fbb77eb6568651ac38d71b033af07076dd5/ruff-0.15.16-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:7c8d26be963b090f10e29abc8b3e74a2a321f6fa34e02424e30b5af89350ecbb", size = 12124922, upload-time = "2026-06-04T16:33:07.821Z" },
-    { url = "https://files.pythonhosted.org/packages/1a/da/5c791b088b596b24d0deb967fa28ae02ad751a140c0b9ea81c5ab915d6c0/ruff-0.15.16-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f198cf4123602a2280ed46c307bcbafe41758d6fee5b456b6b6058ca1514b3b4", size = 11332186, upload-time = "2026-06-04T16:33:02.971Z" },
-    { url = "https://files.pythonhosted.org/packages/72/11/5da87abe20047c8962361473923ebb2f62b595250126aadfad8c20649c1e/ruff-0.15.16-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb27515fa6240fb586ae82b901a59e67d24acff86f2190b433dc542fe0435aeb", size = 11373541, upload-time = "2026-06-04T16:32:47.007Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/2a/8554754c23a854ae3fd6b507e36ad61ddb121e298c6d5d617dec94ed0f14/ruff-0.15.16-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:a267c46ba1593fc26b8eecbea050b39d40c0b6bb7781ee11c90a02cd10032951", size = 11353014, upload-time = "2026-06-04T16:32:34.795Z" },
-    { url = "https://files.pythonhosted.org/packages/62/25/62ea41529ec89f742ea3fed9cb1059c72877ec7cf9b9e99ac9cf3294d1d9/ruff-0.15.16-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:528c68f39a91498a8d50e91ff5985df3d105782bab49cc378e73ac26bff083e8", size = 10737467, upload-time = "2026-06-04T16:32:26.348Z" },
-    { url = "https://files.pythonhosted.org/packages/90/17/334d3ad9de4d40f9dd58fdd09e35ce64553bb501e2f19a839e2fb6be14fc/ruff-0.15.16-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:7ed55c58950df60589a9a7a5d2f8fa5f54ebd287163be805adfe6ee95a9de123", size = 10521910, upload-time = "2026-06-04T16:32:32.54Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/bd/3ac7c6ae77a885c1004b3dda2446ea401768d24f851c14b4ad4b24f6639c/ruff-0.15.16-py3-none-musllinux_1_2_i686.whl", hash = "sha256:d482feaf51512b50f9790ceb417a56a61dd1e9d9bf967662b9ed27c01b34f53a", size = 10979190, upload-time = "2026-06-04T16:32:57.492Z" },
-    { url = "https://files.pythonhosted.org/packages/33/d7/609546e6a413c3f216fbf2a50c928f97c80939154f6a0503114094a86191/ruff-0.15.16-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:1e15bc8c94513dae2a40cc9ef07c94fdd4ecc9e29dabebeebe170f952322c9e3", size = 11477014, upload-time = "2026-06-04T16:32:44.687Z" },
-    { url = "https://files.pythonhosted.org/packages/74/0d/f2cd247ad32633a5c36e97141a2c21b11c6279f7957bc2ff360b1e08fddd/ruff-0.15.16-py3-none-win32.whl", hash = "sha256:580378f7bd4aa25f72e74aa54948a9622f142b1e509521dd10902e886681cc1e", size = 10735541, upload-time = "2026-06-04T16:32:30.145Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/9e/02e845ef151b1dee585e55c4739f8e1734ae1d9f1221dff65761c162208b/ruff-0.15.16-py3-none-win_amd64.whl", hash = "sha256:408256017284eddf98fff77b29aa4fb30f586042d535b2d9befc6512f400aaec", size = 11843403, upload-time = "2026-06-04T16:32:39.76Z" },
-    { url = "https://files.pythonhosted.org/packages/15/19/016553f86f207450aebebc2b2b5088d086b901cc8186c02ac4284db3bd88/ruff-0.15.16-py3-none-win_arm64.whl", hash = "sha256:8cd61783afb39638a7133ef0d2dfb1e91277593962f81b5a8423eb0b888a6121", size = 11134555, upload-time = "2026-06-04T16:33:00.136Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/c6/ede15cac6839f3dbce52565c8f5164a8210e669c7bc4decb03e5bdf47d0d/ruff-0.15.21-py3-none-linux_armv6l.whl", hash = "sha256:63ea0e965e5d73c90e95b2434beeafc70820536717f561b32ab6e777cb9bdf5d", size = 10854342, upload-time = "2026-07-09T20:00:53.998Z" },
+    { url = "https://files.pythonhosted.org/packages/28/9d/d825b07ee7ea9e2d61df92a860033c94e06e7300d50a1c2653aac27d24fe/ruff-0.15.21-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:0f212c5d7d54c01bbfe6dcab02b724a39300f3e34ed7acbe995ccb320a2c58bd", size = 11139539, upload-time = "2026-07-09T20:00:57.809Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/de/3b107712e642f063c7a9e0887c427b22cb44097de5aab36c05f2e280670c/ruff-0.15.21-py3-none-macosx_11_0_arm64.whl", hash = "sha256:e6312e41bc96791299614995ea3a977c5857c3b5662b1ecef6755b02b87cb646", size = 10595437, upload-time = "2026-07-09T20:01:00.006Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/6f/b4523cc90ba239ede441447a19d0c968846a3012e5a0b0c5b62831a3d5e3/ruff-0.15.21-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:01d65b4831c6b2a4ba8ee6faa84049d44d982b7a706e622c4094c509e51673be", size = 10990053, upload-time = "2026-07-09T20:01:02.187Z" },
+    { url = "https://files.pythonhosted.org/packages/92/cc/c6a9872a5375f0628875481cf2f66b13d7d865bf3ca2e57f91c7e762d976/ruff-0.15.21-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:2c5a913a589120ce67933d5d05fd6ddbcc2481c6a054980ee767f7414c72b4fd", size = 10666096, upload-time = "2026-07-09T20:01:04.299Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/97/c621f7a17e097f1790fa3af6374138823b330b2d03fc38337945daca212c/ruff-0.15.21-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5ef04b681d02ad4dc9620f00f83ac5c22f652d0e9a9cfe431d219b16ad5ccc41", size = 11537011, upload-time = "2026-07-09T20:01:06.771Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/51/d928727e476e25ccc57c6f449ffd80241a651a973ad949d39cfb2a771d28/ruff-0.15.21-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:16d090c0740916594157e75b80d666eab8e78083b39b3b0e1d698f4670a17b86", size = 12347101, upload-time = "2026-07-09T20:01:08.859Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/88/8cd62026802b16018ad06931d87997cf795ba2a6239ab659606c87d96bf0/ruff-0.15.21-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:3a10e74757dd65004d779b73e2f3c5210156d9980b41224d50d2ebcf1db51e67", size = 11572001, upload-time = "2026-07-09T20:01:11.092Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/97/f63084cf55444fc110e8cb985ebfcc592af47f597d44453d778cb81bc156/ruff-0.15.21-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bab0905d2f29e0d9fbc3c373ed23db0095edaa3f71f1f4f519ec15134d9e85c8", size = 11549239, upload-time = "2026-07-09T20:01:13.27Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/77/f107da4a2874b7715914b03f09ba9c54424de3ff8a1cc5d015d3ee2ce0ac/ruff-0.15.21-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:00eca240af5789fec6fe7df74c088cc1f9644ed83027113468efba7c92b94075", size = 11535340, upload-time = "2026-07-09T20:01:15.206Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/e9/601deb322d3303a7bf212b0100ead6f2ee3f6a044d89c30f2f92bf83c731/ruff-0.15.21-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:262ab31557a75141325e32d3357f3597645a7f084e732b6b054dde428ecd9341", size = 10964048, upload-time = "2026-07-09T20:01:17.723Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/2e/0f2176d1e99c15192caea19c8c3a0a955246b4cb4de795042eeb616345cd/ruff-0.15.21-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:659c4e7a4212f83306045ec7c5e5a356d16d9a6ef4ae0c7a4d872914fc655d9d", size = 10667055, upload-time = "2026-07-09T20:01:19.73Z" },
+    { url = "https://files.pythonhosted.org/packages/48/60/abd74a02e0c4214f12a68becfd30af7165cfdcb0e661ecdc60bbb949c09a/ruff-0.15.21-py3-none-musllinux_1_2_i686.whl", hash = "sha256:9e866eab611a5f959d36df2d10e446973a3610bc42b0c15b31dc27977d59c233", size = 11242043, upload-time = "2026-07-09T20:01:21.947Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/c6/583075d8ccabb4b229345edcaf1545eb3d8d6be90f686a479d7e94088bbf/ruff-0.15.21-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:e89bc93c0d3803ba870b55c29671bad9dc6d94bb1eb181b056b52eb05b52854f", size = 11648064, upload-time = "2026-07-09T20:01:24.023Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/3c/37d0ecb729a7cc2d393ea7dce316fc585680f35d93b8d62139d7d0a3700c/ruff-0.15.21-py3-none-win32.whl", hash = "sha256:01f8d5be84823c172b389e123174f781f9daf86d6c58719d603f941932195cdd", size = 10896555, upload-time = "2026-07-09T20:01:26.941Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/b8/e43466b2a6067ce91e669068f6e28d6c719a920f014b070d5c8731725de3/ruff-0.15.21-py3-none-win_amd64.whl", hash = "sha256:d4b8d9a2f0f12b816b50447f6eccb9f4bb01a6b82c86b50fb3b5354b458dc6d3", size = 12038772, upload-time = "2026-07-09T20:01:29.497Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/75/e90ab9aeece218a9fc5a5bc3ec97d0ee6bb3c4ff95869463c1de58e29a1c/ruff-0.15.21-py3-none-win_arm64.whl", hash = "sha256:6e83115d4b9377c1cbc13abf0e051f069fab0ef815ea0504a8a008cee24dd0a8", size = 11375265, upload-time = "2026-07-09T20:01:31.772Z" },
 ]
 
 [[package]]
@@ -1872,7 +1874,7 @@ wheels = [
 
 [[package]]
 name = "tabpfn-client"
-version = "0.3.1"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "backoff" },
@@ -1925,18 +1927,18 @@ requires-dist = [
     { name = "sseclient-py", specifier = ">=1.8.0,<=1.9.0" },
     { name = "tabpfn-common-utils", specifier = ">=0.2.10,<=0.2.19" },
     { name = "tqdm", specifier = ">=4.63.0,<=4.67.3" },
-    { name = "typing-extensions", specifier = ">=4.12.2,<=4.15.0" },
-    { name = "xxhash", specifier = ">=1.1.0,<=3.6.0" },
+    { name = "typing-extensions", specifier = ">=4.12.2,<=4.16.0" },
+    { name = "xxhash", specifier = ">=1.1.0,<=3.8.1" },
 ]
 provides-extras = ["sagemaker"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "basedpyright", specifier = "~=1.32.1" },
+    { name = "basedpyright", specifier = "~=1.39.9" },
     { name = "licensecheck", specifier = "==2025.1.0" },
     { name = "pytest", specifier = "==9.0.3" },
-    { name = "respx", specifier = "==0.22.0" },
-    { name = "ruff", specifier = "==0.15.16" },
+    { name = "respx", specifier = "==0.23.1" },
+    { name = "ruff", specifier = "==0.15.21" },
 ]
 
 [[package]]
@@ -2449,10 +2451,10 @@ FILE: src/tabpfn_client/api_models.py
 # default smart mode would land known values in the wider branch.
 # Discriminator `const` fields are intentionally left non-forward-compatible.
 #
-# Nullified-defaults note: every field with a literal default is projected
-# as `<type> | None = None`. The server's concrete defaults are intentionally
-# dropped so an omitted (None) value lets the server apply its own. `const`
-# discriminator and `default_factory` fields keep their original shape.
+# Nullified-defaults note: every non-required field is projected as
+# `<type> | None = None`. The server's defaults (literal or default_factory)
+# are intentionally dropped so an omitted (None) value lets the server apply
+# its own. `const` discriminator fields keep their fixed value.
 
 from __future__ import annotations
 
@@ -2477,6 +2479,20 @@ class UnknownEnum(str):
         return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
 
 
+DatasetFileType = Literal["csv", "parquet"]
+
+
+TabPFNSystem = Literal["preprocessing", "text", "thinking"]
+
+
+ThinkingEffort = Literal["medium", "high"]
+
+
+class AsyncSettings(BaseModel):
+    use_above_trainset_size_bytes: int
+    poll_timeout_secs: float
+
+
 class ClassifierOutputType(str, Enum):
     PROBAS = "probas"
     PREDS = "preds"
@@ -2486,6 +2502,11 @@ class ClassifierPredictParams(BaseModel):
     output_type: (
         Annotated[ClassifierOutputType | UnknownEnum, Field(union_mode="left_to_right")] | None
     ) = None
+
+
+class FitMode(str, Enum):
+    FIT_PREPROCESSORS = "fit_preprocessors"
+    FIT_WITH_CACHE = "fit_with_cache"
 
 
 class ClassifierTabPFNConfig(BaseModel):
@@ -2501,26 +2522,37 @@ class ClassifierTabPFNConfig(BaseModel):
         Annotated[Literal["autocast", "auto"] | str, Field(union_mode="left_to_right")] | None
     ) = None
     ignore_pretraining_limits: bool | None = None
+    fit_mode: Annotated[FitMode | UnknownEnum, Field(union_mode="left_to_right")] | None = None
     model_path: str | None = None
     balance_probabilities: bool | None = None
 
 
+class PredictionTask(str, Enum):
+    CLASSIFICATION = "classification"
+    REGRESSION = "regression"
+
+
 class ClassifierConfig(BaseModel):
-    task: Literal["classification"] = "classification"
-    tabpfn_config: ClassifierTabPFNConfig = Field(default_factory=ClassifierTabPFNConfig)
-    predict_params: ClassifierPredictParams = Field(default_factory=ClassifierPredictParams)
+    task: Literal[PredictionTask.CLASSIFICATION] = PredictionTask.CLASSIFICATION
+    tabpfn_config: ClassifierTabPFNConfig | None = None
+    predict_params: ClassifierPredictParams | None = None
+
+
+class ClassifierFitTaskConfig(BaseModel):
+    task: Literal[PredictionTask.CLASSIFICATION] = PredictionTask.CLASSIFICATION
+    tabpfn_config: ClassifierTabPFNConfig | None = None
 
 
 class ClassifierMetadata(BaseModel):
     test_set_num_rows: int
     test_set_num_cols: int
-    task: Literal["classification"] = "classification"
+    task: Literal[PredictionTask.CLASSIFICATION] = PredictionTask.CLASSIFICATION
     package_version: str
     tabpfn_config: ClassifierTabPFNConfig
 
 
 class FileInfo(BaseModel):
-    format: Annotated[Literal["csv", "parquet"] | str, Field(union_mode="left_to_right")]
+    format: Annotated[DatasetFileType | str, Field(union_mode="left_to_right")]
     hash: str | None = Field(
         default=None, description="The crc32c hash of the file, used to deduplicate the file."
     )
@@ -2553,10 +2585,8 @@ class ModelLimit(BaseModel):
     max_classes: int
     max_cols: int
     test_set_max_rows_w_full_regression_output: int
+    predict_row_pairs_budget: int
     test_set_max_cells: int
-    # Optional until all deployed servers send it; estimator.py falls back to
-    # its local default when absent.
-    predict_row_pairs_budget: int | None = None
 
 
 class ModelVersion(str, Enum):
@@ -2564,11 +2594,6 @@ class ModelVersion(str, Enum):
     V2_5 = "v2.5"
     V2_6 = "v2.6"
     V3 = "v3"
-
-
-class PredictionTask(str, Enum):
-    CLASSIFICATION = "classification"
-    REGRESSION = "regression"
 
 
 class RegressorOutputType(str, Enum):
@@ -2600,24 +2625,41 @@ class RegressorTabPFNConfig(BaseModel):
         Annotated[Literal["autocast", "auto"] | str, Field(union_mode="left_to_right")] | None
     ) = None
     ignore_pretraining_limits: bool | None = None
+    fit_mode: Annotated[FitMode | UnknownEnum, Field(union_mode="left_to_right")] | None = None
     model_path: str | None = None
 
 
 class RegressorConfig(BaseModel):
-    task: Literal["regression"] = "regression"
-    tabpfn_config: RegressorTabPFNConfig = Field(default_factory=RegressorTabPFNConfig)
-    predict_params: RegressorPredictParams = Field(default_factory=RegressorPredictParams)
+    task: Literal[PredictionTask.REGRESSION] = PredictionTask.REGRESSION
+    tabpfn_config: RegressorTabPFNConfig | None = None
+    predict_params: RegressorPredictParams | None = None
+
+
+class RegressorFitTaskConfig(BaseModel):
+    task: Literal[PredictionTask.REGRESSION] = PredictionTask.REGRESSION
+    tabpfn_config: RegressorTabPFNConfig | None = None
 
 
 class RegressorMetadata(BaseModel):
     test_set_num_rows: int
     test_set_num_cols: int
-    task: Literal["regression"] = "regression"
+    task: Literal[PredictionTask.REGRESSION] = PredictionTask.REGRESSION
     package_version: str
     tabpfn_config: RegressorTabPFNConfig
 
 
+class ThinkingConfig(BaseModel):
+    effort: Annotated[ThinkingEffort | str, Field(union_mode="left_to_right")] | None = None
+    timeout_secs: float | None = None
+    metric: str | None = None
+
+
 Prediction = Union[list[Any], list[list[Any]], dict[str, Union[list[Any], list[list[Any]]]]]
+
+
+FitTaskConfig = Annotated[
+    Union[ClassifierFitTaskConfig, RegressorFitTaskConfig], Field(discriminator="task")
+]
 
 
 Metadata = Annotated[Union[ClassifierMetadata, RegressorMetadata], Field(discriminator="task")]
@@ -2630,7 +2672,6 @@ class DuplicateTestSetErrorResponse(BaseModel):
     message: str
     error_code: str = "DUPLICATE_TEST_SET_UPLOAD"
     trace_id: UUID | None = None
-    detail: str | None = None
     test_set_upload_id: UUID
 
 
@@ -2638,35 +2679,14 @@ class DuplicateTrainSetErrorResponse(BaseModel):
     message: str
     error_code: str = "DUPLICATE_TRAIN_SET_UPLOAD"
     trace_id: UUID | None = None
-    detail: str | None = None
     train_set_upload_id: UUID
 
 
 class FitRequest(BaseModel):
+    task_config: FitTaskConfig
+    tabpfn_systems: list[Annotated[TabPFNSystem | str, Field(union_mode="left_to_right")]] | None = None
+    thinking_config: ThinkingConfig | None = None
     train_set_upload_id: UUID
-    task: Annotated[PredictionTask | UnknownEnum, Field(union_mode="left_to_right")]
-    tabpfn_systems: (
-        list[
-            Annotated[
-                Literal["preprocessing", "text", "thinking"] | str, Field(union_mode="left_to_right")
-            ]
-        ]
-        | None
-    ) = None
-    tabpfn_config: dict[str, Any] | None = None
-    thinking_effort: (
-        Annotated[Literal["medium", "high"] | str, Field(union_mode="left_to_right")] | None
-    ) = None
-    thinking_timeout_s: float | None = None
-    thinking_effort_metric: str | None = None
-    force_refit: bool | None = Field(
-        default=None,
-        description="Deprecated, ignored: every fit creates a fresh fitted train set and runs unconditionally. Reuse fits by keeping the fitted_train_set_id (estimator save_model/load_model).",
-    )
-    async_mode: bool | None = Field(
-        default=None,
-        description="Submit the fit and return immediately with status=pending; poll GET /tabpfn/fit/{fitted_train_set_id} for the outcome. Defaults to the blocking behaviour.",
-    )
 
 
 class FitResponse(BaseModel):
@@ -2674,36 +2694,38 @@ class FitResponse(BaseModel):
     status: Annotated[FitStatus | UnknownEnum, Field(union_mode="left_to_right")]
 
 
-class FitStatusResponse(BaseModel):
+class GetFitStatusRequest(BaseModel):
+    fitted_train_set_id: UUID
+
+
+class GetFitStatusResponse(BaseModel):
     fitted_train_set_id: UUID
     status: Annotated[FitStatus | UnknownEnum, Field(union_mode="left_to_right")]
+    retry_in_secs: float | None = None
     error: str | None = None
+    error_code: str | None = None
 
 
-class GetModelLimitsResponse(BaseModel):
+class GetSettingsResponse(BaseModel):
     default_model_version: Annotated[ModelVersion | UnknownEnum, Field(union_mode="left_to_right")]
     max_model_limit: ModelLimit
     model_limits: dict[
         Annotated[ModelVersion | UnknownEnum, Field(union_mode="left_to_right")], ModelLimit
     ]
     dataset_max_size_bytes: int
+    async_settings: AsyncSettings
 
 
 class NotFoundErrorResponse(BaseModel):
     message: str
     error_code: str = "NOT_FOUND"
     trace_id: UUID | None = None
-    detail: str | None = None
 
 
 class PredictRequest(BaseModel):
     test_set_upload_id: UUID
     fitted_train_set_id: UUID
     task_config: TaskConfig
-    force_refit: bool | None = Field(
-        default=None,
-        description="Whether to force the fitting of the test set even if a fittedtest set and transform states already exist.",
-    )
 
 
 class PredictResponse(BaseModel):
@@ -2739,6 +2761,17 @@ class PrepareTrainSetUploadResponse(BaseModel):
     train_set_upload_id: UUID
     x_train_info: FileUploadInfo
     y_train_info: FileUploadInfo
+
+
+class SubmitFitJobRequest(BaseModel):
+    task_config: FitTaskConfig
+    tabpfn_systems: list[Annotated[TabPFNSystem | str, Field(union_mode="left_to_right")]] | None = None
+    thinking_config: ThinkingConfig | None = None
+    train_set_upload_id: UUID
+
+
+class SubmitFitJobResponse(BaseModel):
+    fitted_train_set_id: UUID
 
 
 
@@ -2840,7 +2873,6 @@ from __future__ import annotations
 from uuid import UUID
 import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError, version
 import io
 import json
@@ -2853,7 +2885,17 @@ import time
 import traceback
 import warnings
 from pydantic import BaseModel, ValidationError
-from typing import Any, Callable, cast, Literal, Mapping, Union
+from typing import Any, cast, Mapping, NoReturn
+from typing_extensions import (
+    Never,  # in `typing` only from Python 3.11
+    TypeVar,  # supports default= on Python 3.10
+)
+from tabpfn_client.models import (
+    ClientOptions,
+    PredictionResult,
+    ApiMode,
+)
+from tabpfn_client.errors import RetryableServerError, CappedRetryableServerError
 
 import google_crc32c
 
@@ -2863,31 +2905,36 @@ import backoff
 import httpx
 from omegaconf import DictConfig, OmegaConf
 from tabpfn_client.browser_auth import BrowserAuthHandler
-from tabpfn_client.constants import ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES
 from tabpfn_common_utils import utils as common_utils
 from tabpfn_common_utils.utils import Singleton
 from tabpfn_client.api_models import (
-    GetModelLimitsResponse,
+    GetSettingsResponse,
+    TabPFNSystem,
     PrepareTrainSetUploadRequest,
     PrepareTrainSetUploadResponse,
     DuplicateTrainSetErrorResponse,
     PrepareTestSetUploadRequest,
     PrepareTestSetUploadResponse,
     DuplicateTestSetErrorResponse,
-    NotFoundErrorResponse,
     FileUploadInfo,
     FileInfo,
     FitRequest,
     FitResponse,
+    SubmitFitJobRequest,
     FitStatus,
-    FitStatusResponse,
+    GetFitStatusRequest,
+    GetFitStatusResponse,
     PredictRequest,
     PredictResponse,
     ClassifierConfig,
     RegressorConfig,
-    PredictionTask,
+    SubmitFitJobResponse,
+    ThinkingConfig,
+    AsyncSettings,
+    FitTaskConfig,
 )
 from tabpfn_client.options import get_opts
+
 
 logger = logging.getLogger(__name__)
 
@@ -2922,23 +2969,6 @@ def _contains_none(value: Any) -> bool:
     if isinstance(value, list):
         return any(_contains_none(item) for item in value)
     return False
-
-
-class GCPOverloaded(Exception):
-    """
-    Exception raised when the Google Cloud Platform service is overloaded or
-    unavailable.
-    """
-
-    pass
-
-
-class RetryableServerError(Exception):
-    """
-    Base exception for retryable server-side HTTP errors (typically 5xx).
-    """
-
-    pass
 
 
 class SensitiveDataFilter(logging.Filter):
@@ -2989,41 +3019,12 @@ def _serialize_to_parquet(df: pd.DataFrame) -> tuple[bytes, str]:
     return parquet_bytes, crc32c_b64
 
 
-class NeedsRefittingError(Exception):
-    """
-    Exception raised when the server is not able to predict given the current state.
-    """
+SuccessT = TypeVar("SuccessT", bound=BaseModel)
+ErrorT = TypeVar("ErrorT", bound=BaseModel, default=Never)
 
-    pass
-
-
-ThinkingEffort = Literal["medium", "high"]
-
-
-@dataclass
-class ClientOptions:
-    """
-    Options for the client.
-    Can be used to override default client behavior for a single request.
-
-    Parameters
-    ----------
-    timeout : float, optional
-        Timeout for the request in seconds.
-    headers : dict[str, str], optional
-        Headers for the request overriding the default headers.
-    """
-
-    # Note: timeout=None does not fallback to the client default, rather it disables
-    # the timeout altogether.
-    timeout: float = get_opts().TABPFN_CLIENT_TIMEOUT
-    headers: dict[str, str] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class PredictionResult:
-    y_pred: np.ndarray | list[np.ndarray] | dict[str, np.ndarray]
-    metadata: dict[str, Any] = field(default_factory=dict)
+# Floor for the server's `retry_in_secs` polling hint â€” defensive: a zero or
+# negative value must neither busy-poll the endpoint nor crash `time.sleep`.
+_MIN_RETRY_INTERVAL_SECS = 0.3
 
 
 class ServiceClient(Singleton):
@@ -3059,34 +3060,64 @@ class ServiceClient(Singleton):
         follow_redirects=True,
     )
     _access_token: str | None = None
-    _model_limits: GetModelLimitsResponse | None = None
-    _model_limits_ts: float = 0.0
+    _api_settings: GetSettingsResponse | None = None
+    _api_settings_ts: float = 0.0
 
     @classmethod
     def get_access_token(cls):
         return cls._access_token
 
     @classmethod
-    def get_model_limits(cls) -> GetModelLimitsResponse | None:
+    def get_settings(cls) -> GetSettingsResponse | None:
         """Fetch and cache dataset limits. The cache expires after 1 hour.
 
         Not thread-safe, but concurrent calls are benign: duplicates fetch the
         same data and the reference assignment is atomic under the GIL."""
         ttl = 3600.0  # 1 hour
         if (
-            cls._model_limits is not None
-            and (time.monotonic() - cls._model_limits_ts) < ttl
+            cls._api_settings is not None
+            and (time.monotonic() - cls._api_settings_ts) < ttl
         ):
-            return cls._model_limits
+            return cls._api_settings
         try:
-            response = cls.httpx_client.get("/tabpfn/get_model_limits")
+            response = cls.httpx_client.get("/tabpfn/get_settings")
             response.raise_for_status()
-            cls._model_limits = GetModelLimitsResponse.model_validate(response.json())
-            cls._model_limits_ts = time.monotonic()
-            return cls._model_limits
+            cls._api_settings = GetSettingsResponse.model_validate(response.json())
+            cls._api_settings_ts = time.monotonic()
+            return cls._api_settings
         except Exception:
-            logger.debug("Failed to fetch model limits", exc_info=True)
-            return cls._model_limits  # return stale value if available
+            logger.debug("Failed to fetch API settings", exc_info=True)
+            return cls._api_settings  # return stale value if available
+
+    @classmethod
+    def _resolve_async_settings(cls) -> AsyncSettings:
+        """Resolve the async-fit settings: environment > server default > client default.
+
+        An option explicitly set via the environment wins; otherwise the
+        server-sent value applies; the client default is the fallback when the
+        server is unreachable.
+        """
+        opts = get_opts()
+        api_settings = cls.get_settings()
+        server = api_settings.async_settings if api_settings is not None else None
+
+        def resolve(opt_name: str, server_value: Any) -> Any:
+            if opt_name in opts.model_fields_set:
+                return getattr(opts, opt_name)
+            if server_value is not None:
+                return server_value
+            return getattr(opts, opt_name)
+
+        return AsyncSettings(
+            use_above_trainset_size_bytes=resolve(
+                "TABPFN_CLIENT_ASYNC_USE_ABOVE_TRAINSET_SIZE",
+                server.use_above_trainset_size_bytes if server else None,
+            ),
+            poll_timeout_secs=resolve(
+                "TABPFN_CLIENT_ASYNC_POLL_TIMEOUT",
+                server.poll_timeout_secs if server else None,
+            ),
+        )
 
     @classmethod
     def authorize(cls, access_token: str):
@@ -3106,12 +3137,12 @@ class ServiceClient(Singleton):
         cls,
         X: pd.DataFrame | np.ndarray,
         y: pd.Series | np.ndarray,
-        task_config: ClassifierConfig | RegressorConfig,
-        paper_version: bool = False,
-        thinking_mode: bool = False,
-        thinking_effort: ThinkingEffort | None = None,
-        thinking_timeout_s: float | None = None,
-        thinking_metric: str | None = None,
+        # start: fit request
+        task_config: FitTaskConfig,
+        tabpfn_systems: list[TabPFNSystem],
+        thinking_config: ThinkingConfig | None = None,
+        # end: fit request
+        api_mode: ApiMode = ApiMode.AUTO,
         client_options: ClientOptions | None = None,
         description: str | None = None,
     ) -> UUID:
@@ -3124,61 +3155,59 @@ class ServiceClient(Singleton):
             The training input samples.
         y : array-like of shape (n_samples,) or (n_samples, n_outputs)
             The target values.
-        task: PredictionTask
-            Task type: "classification" or "regression"
-        tabpfn_config : dict, optional
-            Configuration for the fit method. Supported keys currently include
-            `paper_version`.
-        description: str, optional
-            Description of the dataset and task for the server.
+        task_config: FitTaskConfig
+            The configuration for the fit task.
+        tabpfn_systems: Sequence[TabPFNSystem], optional
+            The systems to use for the fit method. Defaults to ["preprocessing", "text"].
+        thinking_config: ThinkingConfig, optional
+            The configuration for the thinking mode.
+        api_mode: ApiMode, default=ApiMode.AUTO, optional
+            The API mode to use for the fit method. SYNC, ASYNC, or AUTO.
         client_options : ClientOptions, optional
             Client specific options (e.g. timeout, headers).
+        description: str, optional
+            Description of the dataset and task for the server.
 
         Returns
         -------
         fitted_train_set_id: UUID
             The unique ID of the fitted train set in the server.
         """
-        tabpfn_systems = ["preprocessing", "text"]
-        thinking_enabled = thinking_mode is True or thinking_effort is not None
-
-        # The client-side `thinking_*` knobs forward 1:1 to the server's
-        # top-level FitRequest fields. When the user enabled thinking via
-        # `thinking_mode=True` without picking a level, default to "medium".
-        # The user-facing kwarg is `thinking_metric`; on the wire it is sent
-        # as `thinking_effort_metric` (matching the server's FitRequest schema).
-        if thinking_enabled:
-            thinking_effort = thinking_effort or "medium"
-            # Thinking runs on top of the base systems rather than
-            # replacing them â€” keep preprocessing + text alongside it.
-            tabpfn_systems = ["preprocessing", "text", "thinking"]
-
-        if paper_version:
-            tabpfn_systems = []
-
+        # Validate here rather than in the estimators: sklearn requires
+        # hyperparameters to be stored as-given (set_params/GridSearchCV
+        # bypass __init__ entirely).
+        api_mode = ApiMode(api_mode)
         client_options = client_options or ClientOptions()
+        tabpfn_systems_: list[TabPFNSystem | str] = list(tabpfn_systems)
 
         df_X = X if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
         df_y = cast(pd.DataFrame, y if isinstance(y, pd.DataFrame) else pd.DataFrame(y))
 
-        async_mode = True
+        total_mem_usage = 0
+        api_settings = cls.get_settings()
 
-        limits = cls.get_model_limits()
-        if limits is not None:
-            total_mem_usage = 0
-            for name, df in [("x_train", df_X), ("y_train", df_y)]:
-                mem_usage = df.memory_usage(deep=True).sum()
-                total_mem_usage += mem_usage
-                if mem_usage > limits.dataset_max_size_bytes:
-                    raise ValueError(
-                        f"In-memory size of {name} ({mem_usage} bytes) exceeds "
-                        f"the server limit of {limits.dataset_max_size_bytes} bytes."
-                    )
+        for name, df in [("x_train", df_X), ("y_train", df_y)]:
+            mem_usage = df.memory_usage(deep=True).sum()
+            total_mem_usage += mem_usage
             if (
-                total_mem_usage <= ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES
-                and not get_opts().TABPFN_CLIENT_FORCE_ASYNC
+                api_settings is not None
+                and mem_usage > api_settings.dataset_max_size_bytes
             ):
-                async_mode = False
+                raise ValueError(
+                    f"In-memory size of {name} ({mem_usage} bytes) exceeds "
+                    f"the server limit of {api_settings.dataset_max_size_bytes} bytes."
+                )
+
+        match api_mode:
+            case ApiMode.SYNC:
+                use_async = False
+            case ApiMode.ASYNC:
+                use_async = True
+            case ApiMode.AUTO:
+                trainset_size_threshold = (
+                    cls._resolve_async_settings().use_above_trainset_size_bytes
+                )
+                use_async = total_mem_usage > trainset_size_threshold
 
         x_bytes, x_crc32c_hash = _serialize_to_parquet(df_X)
         y_bytes, y_crc32c_hash = _serialize_to_parquet(df_y)
@@ -3200,25 +3229,21 @@ class ServiceClient(Singleton):
             description=description,
             force_reupload=get_opts().TABPFN_CLIENT_FORCE_REUPLOAD,
         )
+        # NOTE: no retries here other than client built-in ones
         res = cls.httpx_client.post(
             url="/tabpfn/prepare_train_set_upload",
             json=prepare_req.model_dump(mode="json", exclude_none=True),
             headers=client_options.headers,
         )
-        prepare_resp = cast(
-            Union[PrepareTrainSetUploadResponse, DuplicateTrainSetErrorResponse],
-            cls._validate_response(
-                res,
-                "prepare_train_set_upload",
-                response_models={
-                    200: PrepareTrainSetUploadResponse,
-                    409: DuplicateTrainSetErrorResponse,
-                },
-            ),
+        prepare_resp = cls._validate_response(
+            res,
+            "prepare_train_set_upload",
+            success_model=PrepareTrainSetUploadResponse,
+            error_models={409: DuplicateTrainSetErrorResponse},
         )
 
         if isinstance(prepare_resp, DuplicateTrainSetErrorResponse):
-            logger.warning(prepare_resp.message)
+            logger.warning("Train set already exists, skipping upload.")
         else:
             with ThreadPoolExecutor(max_workers=2) as pool:
                 futures = [
@@ -3243,45 +3268,42 @@ class ServiceClient(Singleton):
                         f.cancel()
                     raise
 
-        res = cls._fit(
-            req=FitRequest(
-                train_set_upload_id=prepare_resp.train_set_upload_id,
-                task=PredictionTask(task_config.task),
-                tabpfn_systems=tabpfn_systems,
-                # NOTE: Since the current shape of the fit request makes it difficult to
-                # discriminate `tabpfn_config` it is set to a generic dict.
-                # TODO: Refactor FitRequest, use tabpfn-system specific config objects
-                # and discriminate based on task (see TaskConfig).
-                tabpfn_config=task_config.tabpfn_config.model_dump(
-                    mode="json", exclude_none=True
+        if use_async:
+            fit_resp = cls._submit_fit_job(
+                req=SubmitFitJobRequest(
+                    train_set_upload_id=prepare_resp.train_set_upload_id,
+                    task_config=task_config,
+                    tabpfn_systems=tabpfn_systems_,
+                    thinking_config=thinking_config,
                 ),
-                thinking_effort=thinking_effort,
-                thinking_timeout_s=thinking_timeout_s,
-                thinking_effort_metric=thinking_metric,
-                async_mode=async_mode,
-            ),
-            timeout=client_options.timeout,
-            headers=client_options.headers,
-        )
-        fit_resp = cast(
-            FitResponse,
-            cls._validate_response(
-                res,
-                "fit",
-                response_models={200: FitResponse},
-            ),
-        )
-
-        # In async mode the server returns immediately with status=PENDING and
-        # the outcome must be retrieved by polling GET /tabpfn/fit/{id}. The sync
-        # path can also return PENDING if the server-side blocking poll times out
-        # before the fit finishes, so branch on the returned status rather than on
-        # `async_mode` to cover both cases.
-        if fit_resp.status == FitStatus.PENDING:
+                timeout=client_options.timeout,
+                headers=client_options.headers,
+            )
             cls._wait_for_fit(
                 fit_resp.fitted_train_set_id,
                 headers=client_options.headers,
             )
+        else:
+            fit_resp = cls._fit(
+                req=FitRequest(
+                    train_set_upload_id=prepare_resp.train_set_upload_id,
+                    task_config=task_config,
+                    tabpfn_systems=tabpfn_systems_,
+                    thinking_config=thinking_config,
+                ),
+                timeout=client_options.timeout,
+                headers=client_options.headers,
+            )
+            # NOTE: The server currently only returns COMPLETED or PENDING
+            # (failed requests raise), but `status` is forward-compatible
+            # (`FitStatus | UnknownEnum`), so treat anything that is not
+            # COMPLETED as still in progress instead of silently skipping
+            # the wait when a newer server adds a status.
+            if fit_resp.status != FitStatus.COMPLETED:
+                cls._wait_for_fit(
+                    fit_resp.fitted_train_set_id,
+                    headers=client_options.headers,
+                )
 
         return fit_resp.fitted_train_set_id
 
@@ -3289,66 +3311,161 @@ class ServiceClient(Singleton):
     def _wait_for_fit(
         cls,
         fitted_train_set_id: UUID,
-        timeout: float = get_opts().TABPFN_CLIENT_POLL_TIMEOUT,
         headers: dict[str, str] | None = None,
     ) -> None:
-        """Poll ``GET /tabpfn/fit/{id}`` until the fit reaches a terminal state.
+        """Poll ``POST /tabpfn/get_fit_status`` until the fit reaches a terminal state.
+
+        The first poll happens immediately; between polls we sleep for the
+        server's per-response ``retry_in_secs`` hint (5s until the first hint
+        arrives), clamped to the ``_MIN_RETRY_INTERVAL_SECS`` floor so a
+        zero/negative hint can neither busy-poll the endpoint nor crash
+        ``time.sleep``.
 
         Returns once the fit is COMPLETED. Raises if the fit FAILED, or
-        ``TimeoutError`` if it does not reach a terminal state within ``timeout``
-        seconds. A failed fit is reported by the server as HTTP 200 with
+        ``TimeoutError`` when no terminal state is reached within the resolved
+        poll timeout. The timeout is a hard bound: the loop gives up as soon
+        as the next poll could no longer start before the deadline, instead
+        of sleeping up to the deadline and polling once more past it.
+        A failed fit is reported by the server as HTTP 200 with
         ``status=failed`` (only an unknown/foreign id is a 404), so the status
         field â€” not the HTTP code â€” is what we inspect here.
+
+        Transient poll failures (network errors, retryable HTTP statuses) are
+        logged and retried until the deadline; when the deadline expires while
+        polls are failing, the ``TimeoutError`` chains the most recent poll
+        error so the cause is not lost.
         """
-        deadline = time.monotonic() + timeout
+        single_poll_timeout = 15.0
+        async_settings = cls._resolve_async_settings()
+        total_timeout = async_settings.poll_timeout_secs
+        deadline = time.monotonic() + total_timeout
+        retry_in_secs = 5.0  # fallback until the server sends retry_in_secs
+        # Most recent transient poll error; reset on every successful poll so
+        # the TimeoutError only chains it if polls were failing at the end.
+        last_error: Exception | None = None
+        max_consecutive_capped_errors = 3
+        consecutive_capped_errors = 0
+
         while True:
-            # status == PENDING: keep polling until the deadline.
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise TimeoutError(
-                    f"Fit {fitted_train_set_id} did not reach a terminal state "
-                    f"within {timeout} seconds."
-                )
-
-            time.sleep(min(get_opts().TABPFN_CLIENT_POLL_INTERVAL, remaining))
-
             try:
-                res = cls._get_fit_status(fitted_train_set_id, headers=headers)
+                status_resp = cls._get_fit_status(
+                    req=GetFitStatusRequest(fitted_train_set_id=fitted_train_set_id),
+                    timeout=single_poll_timeout,
+                    headers=headers,
+                )
             except (
-                httpx.ConnectError,
+                httpx.NetworkError,
                 httpx.TimeoutException,
-                httpx.ReadTimeout,
-                httpx.WriteTimeout,
                 httpx.RemoteProtocolError,
                 RetryableServerError,
-            ):
-                continue
-
-            status_resp = cast(
-                FitStatusResponse,
-                cls._validate_response(
-                    res,
-                    "get_fit_status",
-                    response_models={200: FitStatusResponse},
-                ),
-            )
-            if status_resp.status == FitStatus.COMPLETED:
-                return
-            if status_resp.status == FitStatus.FAILED:
-                raise RuntimeError(
-                    f"Fit {fitted_train_set_id} failed: "
-                    f"{status_resp.error or 'no error message provided'}"
+            ) as exc:
+                last_error = exc
+                consecutive_capped_errors = 0
+                logger.warning(
+                    f"Transient error while polling status of fit "
+                    f"{fitted_train_set_id}, retrying until the poll deadline: {exc}"
                 )
+            except CappedRetryableServerError as exc:
+                consecutive_capped_errors += 1
+                if consecutive_capped_errors > max_consecutive_capped_errors:
+                    raise exc
+                last_error = exc
+                logger.warning(
+                    f"Unexpected error while polling status of fit "
+                    f"{fitted_train_set_id}, retrying up to {max_consecutive_capped_errors} consecutive errors: {exc}"
+                )
+            else:
+                last_error = None
+                consecutive_capped_errors = 0
+                if status_resp.status == FitStatus.COMPLETED:
+                    return
+                if status_resp.status == FitStatus.FAILED:
+                    raise RuntimeError(
+                        f"Fit {fitted_train_set_id} failed: "
+                        f"{status_resp.error or 'no error message provided'}"
+                    )
+                if status_resp.retry_in_secs is not None:
+                    retry_in_secs = max(
+                        status_resp.retry_in_secs, _MIN_RETRY_INTERVAL_SECS
+                    )
 
+            # Still PENDING (or a transient error): sleep, then poll again â€”
+            # unless the next poll could only start at/after the deadline. The
+            # poll timeout is a hard bound, so give up now rather than sleep
+            # up to the deadline and issue one more poll past it.
+            remaining = deadline - time.monotonic()
+            if remaining <= retry_in_secs:
+                message = (
+                    f"Fit {fitted_train_set_id} did not reach a terminal state "
+                    f"within the poll timeout of {total_timeout} seconds."
+                )
+                if last_error is not None:
+                    message += f" The last status poll failed: {last_error}"
+                raise TimeoutError(message) from last_error
+            time.sleep(retry_in_secs)
+
+    # NOTE: no backoff decorator here on purpose â€” the `_wait_for_fit` polling
+    # loop already retries transient errors until its deadline, and a nested
+    # retry layer would skew the poll interval accounting.
     @classmethod
     def _get_fit_status(
         cls,
-        fitted_train_set_id: UUID,
+        req: GetFitStatusRequest,
+        timeout: float,
         headers: dict[str, str] | None = None,
-    ) -> httpx.Response:
-        return cls.httpx_client.get(
-            url=f"/tabpfn/fit/{fitted_train_set_id}",
+    ) -> GetFitStatusResponse:
+        res = cls.httpx_client.post(
+            url="/tabpfn/get_fit_status",
+            json=req.model_dump(mode="json", exclude_none=True),
+            timeout=timeout,
             headers=headers,
+        )
+        # We don't retry 429s and 500s (see _raise_http_error() when validating
+        # the response). In this case because the error is decoupled from the
+        # underlying job status, we allow a few retries up to a max of 3 consecutive
+        # capped retryable errors.
+        if res.status_code in (429, 500):
+            raise CappedRetryableServerError(
+                f"Fail to call get_fit_status: [HTTP {res.status_code}] {res.text}."
+            )
+        return cls._validate_response(
+            res,
+            "get_fit_status",
+            success_model=GetFitStatusResponse,
+        )
+
+    @classmethod
+    # Every fit call creates a new fit job, no dedup logic exists on the server.
+    # We want to be careful with retries here, we then just retry on
+    # errors that we can be confident prevented a job to be enqueued.
+    @backoff.on_exception(
+        backoff.constant,
+        (
+            httpx.ConnectError,
+            httpx.ConnectTimeout,
+        ),
+        max_tries=2,
+        interval=0,
+        logger=logger,
+        on_backoff=_on_backoff,
+        on_giveup=_on_giveup,
+    )
+    def _submit_fit_job(
+        cls,
+        req: SubmitFitJobRequest,
+        timeout: float,
+        headers: dict[str, str] | None = None,
+    ) -> SubmitFitJobResponse:
+        res = cls.httpx_client.post(
+            url="/tabpfn/submit_fit_job",
+            json=req.model_dump(mode="json", exclude_none=True),
+            timeout=timeout,
+            headers=headers,
+        )
+        return cls._validate_response(
+            res,
+            "submit_fit_job",
+            success_model=SubmitFitJobResponse,
         )
 
     @classmethod
@@ -3373,12 +3490,17 @@ class ServiceClient(Singleton):
         req: FitRequest,
         timeout: float,
         headers: dict[str, str] | None = None,
-    ) -> httpx.Response:
-        return cls.httpx_client.post(
+    ) -> FitResponse:
+        res = cls.httpx_client.post(
             url="/tabpfn/fit",
             json=req.model_dump(mode="json", exclude_none=True),
-            headers=headers,
             timeout=timeout,
+            headers=headers,
+        )
+        return cls._validate_response(
+            res,
+            "fit",
+            success_model=FitResponse,
         )
 
     @classmethod
@@ -3416,13 +3538,13 @@ class ServiceClient(Singleton):
 
         df_x_test = x_test if isinstance(x_test, pd.DataFrame) else pd.DataFrame(x_test)
 
-        limits = cls.get_model_limits()
-        if limits is not None:
+        api_settings = cls.get_settings()
+        if api_settings is not None:
             mem_usage = df_x_test.memory_usage(deep=True).sum()
-            if mem_usage > limits.dataset_max_size_bytes:
+            if mem_usage > api_settings.dataset_max_size_bytes:
                 raise ValueError(
                     f"In-memory size of x_test ({mem_usage} bytes) exceeds "
-                    f"the server limit of {limits.dataset_max_size_bytes} bytes."
+                    f"the server limit of {api_settings.dataset_max_size_bytes} bytes."
                 )
 
         x_test_bytes, x_test_crc32c_hash = _serialize_to_parquet(df_x_test)
@@ -3441,27 +3563,21 @@ class ServiceClient(Singleton):
             ),
             force_reupload=get_opts().TABPFN_CLIENT_FORCE_REUPLOAD,
         )
+        # NOTE: no retries here other than client built-in ones
         res = cls.httpx_client.post(
             url="/tabpfn/prepare_test_set_upload",
             json=prepare_req.model_dump(mode="json", exclude_none=True),
             headers=client_options.headers,
         )
-        prepare_resp = cast(
-            Union[PrepareTestSetUploadResponse, DuplicateTestSetErrorResponse],
-            cls._validate_response(
-                res,
-                "prepare_test_set_upload",
-                response_models={
-                    200: PrepareTestSetUploadResponse,
-                    404: NotFoundErrorResponse,
-                    409: DuplicateTestSetErrorResponse,
-                },
-                handlers={404: cls._raise_not_found_error},
-            ),
+        prepare_resp = cls._validate_response(
+            res,
+            "prepare_test_set_upload",
+            success_model=PrepareTestSetUploadResponse,
+            error_models={409: DuplicateTestSetErrorResponse},
         )
 
         if isinstance(prepare_resp, DuplicateTestSetErrorResponse):
-            logger.warning(prepare_resp.message)
+            logger.warning("Test set already exists, skipping upload.")
         else:
             cls._upload_to_gcs(
                 "x_test",
@@ -3469,7 +3585,7 @@ class ServiceClient(Singleton):
                 prepare_resp.x_test_info,
             )
 
-        res = cls._predict(
+        predict_resp = cls._predict(
             req=PredictRequest(
                 test_set_upload_id=prepare_resp.test_set_upload_id,
                 fitted_train_set_id=fitted_train_set_id,
@@ -3477,15 +3593,6 @@ class ServiceClient(Singleton):
             ),
             timeout=client_options.timeout,
             headers=client_options.headers,
-        )
-        predict_resp = cast(
-            PredictResponse,
-            cls._validate_response(
-                res,
-                "predict",
-                response_models={200: PredictResponse, 404: NotFoundErrorResponse},
-                handlers={404: cls._raise_not_found_error},
-            ),
         )
 
         prediction = predict_resp.prediction
@@ -3530,12 +3637,17 @@ class ServiceClient(Singleton):
         req: PredictRequest,
         timeout: float,
         headers: dict[str, str] | None = None,
-    ) -> httpx.Response:
-        return cls.httpx_client.post(
+    ) -> PredictResponse:
+        res = cls.httpx_client.post(
             url="/tabpfn/predict",
             json=req.model_dump(mode="json", exclude_none=True),
-            headers=headers,
             timeout=timeout,
+            headers=headers,
+        )
+        return cls._validate_response(
+            res,
+            "predict",
+            success_model=PredictResponse,
         )
 
     @classmethod
@@ -3618,12 +3730,6 @@ class ServiceClient(Singleton):
         )
 
     @staticmethod
-    def _raise_not_found_error(error_response: NotFoundErrorResponse) -> None:
-        if error_response.error_code == "NOT_FOUND":
-            raise NeedsRefittingError(error_response.message)
-        raise RuntimeError(error_response.message)
-
-    @staticmethod
     def _warn_if_deprecated(response: httpx.Response) -> None:
         if response.headers.get("deprecation", "").lower() != "true":
             return
@@ -3643,155 +3749,102 @@ class ServiceClient(Singleton):
         warnings.warn(msg, DeprecationWarning, stacklevel=4)
 
     @staticmethod
+    def _read_json_body(response: httpx.Response) -> tuple[dict[str, Any], str]:
+        """Read the body ({} unless it is a JSON object) and a display message
+        drawn from it, falling back to the HTTP reason phrase or raw text."""
+        body: dict[str, Any] = {}
+        try:
+            # Streaming responses must be read explicitly to prevent
+            # httpx.ResponseNotRead errors.
+            if not response.is_closed:
+                response.read()
+            parsed = response.json()
+            if isinstance(parsed, dict):
+                body = parsed
+        except json.JSONDecodeError:
+            pass
+        message = (
+            body.get("message")
+            or body.get("detail")  # defensive, starlette standard error format
+            or response.reason_phrase
+            or response.text
+        )
+        return body, message
+
+    @staticmethod
+    def _check_version(response: httpx.Response) -> None:
+        """Warn if the endpoint is deprecated and raise if the server requires
+        a newer client version (HTTP 426).
+        """
+        ServiceClient._warn_if_deprecated(response)
+        if response.status_code == 426:
+            _, message = ServiceClient._read_json_body(response)
+            raise RuntimeError(message)
+
+    @staticmethod
+    def _raise_http_error(
+        response: httpx.Response, method_name: str, body: dict[str, Any], message: str
+    ) -> NoReturn:
+        error_message = (
+            f"Fail to call {method_name}: [HTTP {response.status_code}] {message}."
+        )
+        if trace_id := body.get("trace_id"):
+            error_message += f" Report trace ID: {trace_id}."
+
+        if response.status_code in {408, 502, 503, 504}:
+            raise RetryableServerError(error_message)
+
+        raise RuntimeError(error_message)
+
+    @staticmethod
+    def _raise_on_error(response: httpx.Response, method_name: str) -> None:
+        """Raise for 4xx/5xx responses; no-op otherwise.
+
+        For callers that expect no payload. The body is only read on errors,
+        so streaming success responses stay unread. Callers that expect a
+        payload use ``_validate_response`` instead.
+        """
+        ServiceClient._check_version(response)
+        if not (400 <= response.status_code < 600):
+            return
+        body, message = ServiceClient._read_json_body(response)
+        ServiceClient._raise_http_error(response, method_name, body, message)
+
+    @staticmethod
     def _validate_response(
         response: httpx.Response,
         method_name: str,
-        only_version_check: bool = False,
-        response_models: dict[int, type[BaseModel]] | None = None,
-        handlers: dict[int, Callable[[Any], Any]] | None = None,
-    ) -> BaseModel | None:
-        ServiceClient._warn_if_deprecated(response)
+        success_model: type[SuccessT],
+        error_models: dict[int, type[ErrorT]] | None = None,
+    ) -> SuccessT | ErrorT:
+        error_models = error_models or {}
 
-        if response.status_code == 200 and response_models is None:
-            return
+        ServiceClient._check_version(response)
 
-        # Read response.
-        load = {}
-        try:
-            # This if clause is necessary for streaming responses (e.g. download) to
-            # prevent httpx.ResponseNotRead error.
-            if not response.is_closed:
-                response.read()
-            load = response.json()
-        except json.JSONDecodeError as e:
-            logging.info(f"Failed to parse JSON from response in {method_name}: {e}")
+        status_code = response.status_code
+        is_success = not (400 <= status_code < 600)
 
-        # Streamed-error envelope: long-running endpoints (e.g. /tabpfn/fit with
-        # thinking mode) return a chunked 200 response, and on mid-stream failure
-        # the server emits `{"_streamed_error": True, "message": "..."}` as the
-        # body. Without this short-circuit, the success-schema validation below
-        # turns that into a misleading pydantic `Field required` error and the
-        # real message is buried inside `input_value`.
-        if isinstance(load, dict) and load.get("_streamed_error"):
-            message = (
-                load.get("message") or load.get("detail", "") or response.reason_phrase
-            )
-            logger.info(
-                f"Fail to call {method_name}, streamed error on status "
-                f"{response.status_code}: {message}"
-            )
+        body, message = ServiceClient._read_json_body(response)
+
+        # Streaming errors, should come before the success check.
+        if body.get("_streamed_error"):
             raise RuntimeError(
                 f"Fail to call {method_name} with error: streamed, {message}"
             )
 
-        # Check if the server requires a newer client version.
-        if response.status_code == 426:
-            logger.info(
-                f"Fail to call {method_name}, response status: {response.status_code}"
-            )
-            raise RuntimeError(load.get("message") or load.get("detail", ""))
+        # Success with expected schema.
+        if is_success:
+            return success_model.model_validate(body)
 
-        # Inform about user errors, unless the caller only wants a version
-        # check or a response_model is registered for this status code.
-        if (
-            400 <= response.status_code < 500
-            and not only_version_check
-            and not (response_models and response.status_code in response_models)
-        ):
-            logger.info(
-                f"Fail to call {method_name}, response status: {response.status_code}"
-            )
-            message = (
-                load.get("message") or load.get("detail", "") or response.reason_phrase
-            )
-            status_code = response.status_code
-            raise RuntimeError(
-                f"Fail to call {method_name} with error: {status_code}, {message}"
-            )
-
-        if response_models is not None and response.status_code == 200:
-            if 200 not in response_models:
-                raise RuntimeError(
-                    f"Fail to call {method_name} with no response model configured for status 200"
-                )
-
-        if response_models is not None and response.status_code in response_models:
-            if load is None and response.status_code == 200:
-                raise RuntimeError(
-                    f"Fail to call {method_name} with invalid JSON response"
-                )
-
-            if load is not None:
-                try:
-                    parsed_response = response_models[
-                        response.status_code
-                    ].model_validate(load)
-                except ValidationError as e:
-                    if response.status_code == 200:
-                        raise RuntimeError(
-                            f"Fail to call {method_name} with invalid response schema: {e}"
-                        ) from e
-                    response.raise_for_status()
-                else:
-                    if handlers is not None and response.status_code in handlers:
-                        handlers[response.status_code](parsed_response)
-                    return parsed_response
-
-        if response.status_code == 200:
-            return
-
-        # If we not only want to check the version compatibility, also raise other errors.
-        if not only_version_check:
-            # Treat selected errors as retryable.
-            if response.status_code in {408, 502, 503, 504}:
-                error_msg = (
-                    f"Fail to call {method_name} with error: {response.status_code}, reason: "
-                    f"{response.reason_phrase} and text: {response.text}"
-                )
-                raise RetryableServerError(error_msg)
-            if load is not None:
-                message = (
-                    load.get("message")
-                    or load.get("detail", "")
-                    or response.reason_phrase
-                )
-                trace_id = load.get("trace_id")
-                status_code = response.status_code
-                raise RuntimeError(
-                    f"Fail to call {method_name} with error: {status_code}, {message} {trace_id=}"
-                )
-            logger.error(
-                f"Fail to call {method_name}, response status: {response.status_code}"
-            )
+        # Errors with expected schema.
+        if error_model := error_models.get(status_code):
             try:
-                if (
-                    len(
-                        reponse_split_up := response.text.split(
-                            "The following exception has occurred:"
-                        )
-                    )
-                    > 1
-                ):
-                    relevant_reponse_text = reponse_split_up[1].split(
-                        "debug_error_string"
-                    )[0]
-                    if "ValueError" in relevant_reponse_text:
-                        # Extract the ValueError message
-                        value_error_msg = relevant_reponse_text.split(
-                            "ValueError. Arguments: ("
-                        )[1].split(",)")[0]
-                        # Remove extra quotes and spaces
-                        value_error_msg = value_error_msg.strip("'")
-                        # Raise the ValueError with the extracted message
-                        raise ValueError(value_error_msg)
-                    raise RuntimeError(relevant_reponse_text)
-            except Exception as e:
-                if isinstance(e, (ValueError, RuntimeError)):
-                    raise e
-            raise RuntimeError(
-                f"Fail to call {method_name} with error: {response.status_code}, reason: "
-                f"{response.reason_phrase} and text: {response.text}"
-            )
+                return error_model.model_validate(body)
+            except ValidationError:
+                pass
+
+        # Errors without expected schema.
+        ServiceClient._raise_http_error(response, method_name, body, message)
 
     @classmethod
     def try_connection(cls) -> bool:
@@ -3801,7 +3854,7 @@ class ServiceClient(Singleton):
         found_valid_connection = False
         try:
             response = cls.httpx_client.get(cls.server_endpoints.root.path)
-            cls._validate_response(response, "try_connection", only_version_check=True)
+            cls._check_version(response)
             if response.status_code == 200:
                 found_valid_connection = True
 
@@ -3823,9 +3876,7 @@ class ServiceClient(Singleton):
             headers={"Authorization": f"Bearer {access_token}"},
         )
 
-        cls._validate_response(
-            response, "is_auth_token_outdated", only_version_check=True
-        )
+        cls._check_version(response)
         if response.status_code == 200:
             is_authenticated = True
         elif response.status_code == 403:
@@ -3853,13 +3904,13 @@ class ServiceClient(Singleton):
             cls.server_endpoints.validate_email.path, params={"email": email}
         )
 
-        cls._validate_response(response, "validate_email", only_version_check=True)
+        cls._check_version(response)
         if response.status_code == 200:
             is_valid = True
             message = ""
         else:
             is_valid = False
-            message = response.json()["detail"]
+            message = response.json().get("message", "")
 
         return is_valid, message
 
@@ -3902,13 +3953,13 @@ class ServiceClient(Singleton):
             },
         )
 
-        cls._validate_response(response, "register", only_version_check=True)
+        cls._check_version(response)
         if response.status_code == 200:
             is_created = True
-            message = response.json()["message"]
+            message = response.json().get("message", "")
         else:
             is_created = False
-            message = response.json()["detail"]
+            message = response.json().get("message", "")
 
         access_token = response.json()["token"] if is_created else None
         return is_created, message, access_token
@@ -3935,13 +3986,13 @@ class ServiceClient(Singleton):
             cls.server_endpoints.verify_email.path,
             params={"token": token, "access_token": access_token},
         )
-        cls._validate_response(response, "verify_email", only_version_check=True)
+        cls._check_version(response)
         if response.status_code == 200:
             is_verified = True
-            message = response.json()["message"]
+            message = response.json().get("message", "")
         else:
             is_verified = False
-            message = response.json()["detail"]
+            message = response.json().get("message", "")
 
         return is_verified, message
 
@@ -3976,7 +4027,7 @@ class ServiceClient(Singleton):
             data=common_utils.to_oauth_request_form(email, password),
         )
 
-        cls._validate_response(response, "login", only_version_check=True)
+        cls._check_version(response)
         if response.status_code == 200:
             access_token = response.json()["access_token"]
             session_id = response.cookies.get("session_id")
@@ -3986,7 +4037,7 @@ class ServiceClient(Singleton):
             message = "Email not verified"
         else:
             try:
-                message = response.json()["detail"]
+                message = response.json()["message"]
             except (json.JSONDecodeError, KeyError):
                 message = (
                     response.text
@@ -4010,7 +4061,7 @@ class ServiceClient(Singleton):
         response = cls.httpx_client.get(
             cls.server_endpoints.password_policy.path,
         )
-        cls._validate_response(response, "get_password_policy", only_version_check=True)
+        cls._check_version(response)
 
         return response.json()["requirements"]
 
@@ -4025,10 +4076,10 @@ class ServiceClient(Singleton):
         )
         if response.status_code == 200:
             sent = True
-            message = response.json()["message"]
+            message = response.json().get("message", "")
         else:
             sent = False
-            message = response.json()["detail"]
+            message = response.json().get("message", "")
         return sent, message
 
     @classmethod
@@ -4042,10 +4093,10 @@ class ServiceClient(Singleton):
         )
         if response.status_code == 200:
             sent = True
-            message = response.json()["message"]
+            message = response.json().get("message", "")
         else:
             sent = False
-            message = response.json()["detail"]
+            message = response.json().get("message", "")
         return sent, message
 
     @classmethod
@@ -4057,9 +4108,7 @@ class ServiceClient(Singleton):
             cls.server_endpoints.retrieve_greeting_messages.path
         )
 
-        cls._validate_response(
-            response, "retrieve_greeting_messages", only_version_check=True
-        )
+        cls._check_version(response)
         if response.status_code != 200:
             return []
 
@@ -4079,7 +4128,7 @@ class ServiceClient(Singleton):
         response = cls.httpx_client.get(
             cls.server_endpoints.get_data_summary.path,
         )
-        cls._validate_response(response, "get_data_summary")
+        cls._raise_on_error(response, "get_data_summary")
 
         return response.json()
 
@@ -4106,7 +4155,7 @@ class ServiceClient(Singleton):
                 "Prior-Client-Version": get_client_version(),
             },
         ) as response:
-            cls._validate_response(response, "download_all_data")
+            cls._raise_on_error(response, "download_all_data")
 
             filename = response.headers["Content-Disposition"].split("filename=")[1]
             save_path = Path(save_dir) / filename
@@ -4138,7 +4187,7 @@ class ServiceClient(Singleton):
             params={"dataset_uid": dataset_uid},
         )
 
-        cls._validate_response(response, "delete_dataset")
+        cls._raise_on_error(response, "delete_dataset")
 
         return response.json()["deleted_dataset_uids"]
 
@@ -4156,7 +4205,7 @@ class ServiceClient(Singleton):
             cls.server_endpoints.delete_all_datasets.path,
         )
 
-        cls._validate_response(response, "delete_all_datasets")
+        cls._raise_on_error(response, "delete_all_datasets")
 
         return response.json()["deleted_dataset_uids"]
 
@@ -4166,7 +4215,7 @@ class ServiceClient(Singleton):
             cls.server_endpoints.delete_user_account.path,
         )
 
-        cls._validate_response(response, "delete_user_account")
+        cls._raise_on_error(response, "delete_user_account")
 
     @classmethod
     def try_browser_login(cls) -> tuple[bool, str]:
@@ -4193,7 +4242,7 @@ class ServiceClient(Singleton):
             cls.server_endpoints.get_api_usage.path,
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        cls._validate_response(response, "get_api_usage")
+        cls._raise_on_error(response, "get_api_usage")
 
         response = response.json()
 
@@ -4304,7 +4353,7 @@ def init(use_server=True):
             UserAuthenticationClient.retrieve_greeting_messages()
         )
 
-        _ = ServiceClient.get_model_limits()
+        _ = ServiceClient.get_settings()
 
         Config.use_server = True
         Config.is_initialized = True
@@ -4390,7 +4439,26 @@ URL_PRIOR_LABS_TERMS_AND_CONDITIONS = (
 )
 URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE = "https://github.com/PriorLabs/tabpfn-extensions/blob/main/src/tabpfn_extensions/many_class/many_class_classifier.py"  # noqa: E501
 
-ASYNC_MODE_ENABLED_ABOVE_SIZE_BYTES = 50 * 1024 * 1024
+
+
+================================================
+FILE: src/tabpfn_client/errors.py
+================================================
+class RetryableServerError(Exception):
+    """
+    Base exception for retryable server-side HTTP errors (typically 5xx).
+    """
+
+    pass
+
+
+class CappedRetryableServerError(Exception):
+    """
+    An error that is retryable, but with a capped number of retries given
+    consecutive errors of the same type.
+    """
+
+    pass
 
 
 
@@ -4421,8 +4489,6 @@ from tabpfn_client.client import (
     ServiceClient,
     ClientOptions,
     PredictionResult,
-    NeedsRefittingError,
-    ThinkingEffort,
 )
 from tabpfn_client.config import Config, init
 from tabpfn_client.constants import URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE
@@ -4436,7 +4502,14 @@ from tabpfn_client.api_models import (
     ClassifierPredictParams,
     ClassifierConfig,
     RegressorConfig,
+    ThinkingConfig,
+    FitTaskConfig,
+    ClassifierFitTaskConfig,
+    RegressorFitTaskConfig,
+    ThinkingEffort,
+    TabPFNSystem,
 )
+from tabpfn_client.models import ApiMode, TabPFNConfig, FitModeLiteral
 from tabpfn_client.options import get_opts
 
 try:
@@ -4463,16 +4536,12 @@ DEFAULT_V3_MODEL_PATH = "v3_default"
 # (matches the OSS tabpfn package); "default" is a backward-compatible alias.
 _AUTO_MODEL_PATH_ALIASES: frozenset[str | None] = frozenset({None, "auto", "default"})
 
-THINKING_TIMEOUT_MAX_S = 40 * 60
-
 # Prediction compute scales with n_train_rows * n_test_rows, so the API caps
 # their product. The effective per-call test row limit therefore shrinks as
 # the fitted training set grows (e.g. 1M training rows -> 250k test rows).
-# The server sends its budget via get_model_limits (`predict_row_pairs_budget`);
+# The server sends its budget via get_settings (`predict_row_pairs_budget`);
 # this is only the fallback for servers that predate that field.
 FALLBACK_PREDICT_ROW_PAIRS_BUDGET = 250_000 * 1_000_000
-
-_VALID_THINKING_EFFORT_LEVELS = frozenset({"medium", "high"})
 
 
 class TabPFNModelSelection:
@@ -4540,6 +4609,7 @@ class TabPFNModelSelection:
         elif version == ModelVersion.V3:
             options["model_path"] = DEFAULT_V3_MODEL_PATH
         else:
+            # In case we get UnknownEnum
             raise ValueError(f"Unknown version: {version}")
 
         options.update(overrides)
@@ -4572,6 +4642,12 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         "znskzxi4",
     ]
 
+    # The server-side fitted-train-set id predictions run against. Written by
+    # `fit()` (the id the server returns) or assigned directly to reuse a
+    # previous fit; absent on unfitted instances, which is what makes
+    # `__sklearn_is_fitted__` work.
+    model_id_: UUID  # annotation only, no class attribute
+
     def __init__(
         self,
         # start: tabpfn_config
@@ -4585,12 +4661,14 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         random_state: int | None = 0,
         inference_config: dict[str, Any] | None = None,
         categorical_features_indices: list[int] | None = None,
+        fit_mode: FitModeLiteral | None = None,
         # end: tabpfn_config
         paper_version: bool = False,
         thinking_mode: bool = False,
         thinking_effort: ThinkingEffort | None = None,
         thinking_timeout_s: float | None = None,
         thinking_metric: str | None = None,
+        api_mode: ApiMode = ApiMode.AUTO,
         client_options: ClientOptions | None = None,
     ):
         """Construct a TabPFN classifier.
@@ -4647,6 +4725,15 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         categorical_features_indices: list[int] or None, default=None
             The indices of the columns that should be treated as categorical.
             If None, the model infers which columns are categorical.
+        fit_mode: {"fit_preprocessors", "fit_with_cache"} or None, default=None
+            Controls what the server persists at fit time. None defers to the
+            server default, which is "fit_preprocessors".
+            "fit_preprocessors" fits only the preprocessing state, so every
+            predict re-runs the forward pass from the uploaded train set.
+            "fit_with_cache" additionally builds and persists a server-side KV
+            cache keyed by the resulting fitted-train-set id; later predicts
+            against that id (stored on the estimator as `model_id_`) are
+            served from the cache instead of re-fitting.
         paper_version: bool, default=False
             If True, will use the model described in the paper, instead of the newest
             version available on the API, which e.g handles text features better.
@@ -4683,6 +4770,11 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
                 "roc_auc_ovr_micro", "roc_auc_ovr_weighted".
 
             Aliases "acc", "nll", "pac_score" are also accepted.
+        api_mode: ApiMode, default=ApiMode.AUTO
+            Controls how the client calls the server.
+            SYNC: the client waits for the server to complete the request before returning.
+            ASYNC: the client returns immediately and the server completes the request in the background.
+            AUTO: the client automatically determines the best mode to use based on the request.
         client_options : ClientOptions, default=None
             Client specific options (e.g. timeout, headers).
         """
@@ -4696,20 +4788,26 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         self.inference_precision = inference_precision
         self.random_state = random_state
         self.inference_config = inference_config
+        self.fit_mode = fit_mode
         self.paper_version = paper_version
         self.thinking_mode = thinking_mode
-        self.thinking_effort: ThinkingEffort | None = thinking_effort
+        self.thinking_effort = thinking_effort
         self.thinking_timeout_s = thinking_timeout_s
         self.thinking_metric = thinking_metric
+        self.api_mode = api_mode
         self.client_options = client_options or ClientOptions()
 
         self._last_trace_id = None
-        self._last_fitted_train_set_id = None
         self._last_train_X = None
-        self._last_train_y = None
         self._last_meta = {}
-        self._last_train_set_description = None
         self._fit_count = 0
+
+    # NOTE: Some "*_" variables could be assigned before a fit succeeded (eg. it
+    # used to be the case for `classes_`). We defensively override sklearn using
+    # "*_" variables to determine fitted state and check whether `model_id_` is set
+    # as single-source-of-truth instead.
+    def __sklearn_is_fitted__(self) -> bool:
+        return getattr(self, "model_id_", None) is not None
 
     def fit(
         self,
@@ -4719,51 +4817,53 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
     ):
         # assert init() is called
         init()
-
         tabpfn_config = self._get_tabpfn_config()
 
-        task_config = ClassifierConfig(tabpfn_config=tabpfn_config)
-
         validate_train_set(X, y)
-        validate_thinking_mode(
-            self.thinking_mode,
-            self.thinking_effort,
-            self.thinking_timeout_s,
-            self.thinking_metric,
-            self.model_path,
-        )
         X_clean = _clean_text_features(X)
-        self._validate_targets_and_classes(y)
+        classes = self._validate_targets_and_classes(y)
+
+        # NOTE: Always resolve, do not re-assign to self.thinking_mode, user could change effort.
+        thinking_mode = _resolve_thinking_mode(self.thinking_mode, self.thinking_effort)
+        task_config = _build_fit_task_config(tabpfn_config)
+        tabpfn_systems = _build_tabpfn_systems(self.paper_version, thinking_mode)
+        thinking_config = _build_thinking_config(
+            enabled=thinking_mode,
+            effort=self.thinking_effort,
+            timeout_secs=self.thinking_timeout_s,
+            metric=self.thinking_metric,
+        )
 
         if Config.use_server:
+            # NOTE(@trace_id)
             # Create a new sentry trace at every fit, provided that:
             # - The user has not explicitly set a sentry-trace header.
-            # - In any case if we're going to refit.
             # - In any case if we have already called .fit() on this instance.
             if self._fit_count > 0 or "sentry-trace" not in self.client_options.headers:
                 self.client_options.headers["sentry-trace"] = uuid4().hex
 
             self._last_trace_id = self.client_options.headers["sentry-trace"]
-            self._last_train_set_description = description
 
             def fit_task() -> UUID:
                 return InferenceClient.fit(
                     X_clean,
                     y,
                     task_config=task_config,
-                    paper_version=self.paper_version,
-                    thinking_mode=self.thinking_mode,
-                    thinking_effort=self.thinking_effort,
-                    thinking_timeout_s=self.thinking_timeout_s,
-                    thinking_metric=self.thinking_metric,
+                    tabpfn_systems=tabpfn_systems,
+                    thinking_config=thinking_config,
+                    api_mode=self.api_mode,
                     client_options=self.client_options,
                     description=description,
                 )
 
-            self._last_fitted_train_set_id = cast(UUID, run_task(fit_task, "Fitting"))
+            self.model_id_ = cast(UUID, run_task(fit_task, "Fitting"))
+            # NOTE: Previously classes were assigned in-place before a fit succeeded,
+            # consider this failure mode:
+            #  1. first fit() -> succeeds, model_id_ and classes_ are assigned
+            #  2. second fit() -> fails, only classes_ assigned, new classes_ but old model_id_
+            # Now we make sure to assign classes_ only after a successful fit.
+            self.classes_ = classes
             self._last_train_X = X_clean
-            self._last_train_y = y
-            self.fitted_ = True
             self._fit_count += 1
         else:
             raise NotImplementedError(
@@ -4802,6 +4902,11 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         # we capture the original user-provided values.
         predict_params = self._get_predict_params(locals())
 
+        # An estimator whose `model_id_` was assigned directly (reusing a
+        # previous fit) can reach `predict` without ever calling `fit()`, so
+        # `init()` (which authorizes the HTTP client) must run here too. It
+        # short-circuits after the first successful call.
+        init()
         check_is_fitted(self)
 
         tabpfn_config = self._get_tabpfn_config()
@@ -4827,35 +4932,12 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
             self.client_options.headers["sentry-trace"] = self._last_trace_id
 
         def predict_task() -> PredictionResult:
-            last_exc = None
-            refit_attempts = 0
-            while True:
-                if refit_attempts > 1:
-                    raise RuntimeError(
-                        "Failed to predict after refitting"
-                    ) from last_exc
-                try:
-                    return InferenceClient.predict(
-                        X_clean,
-                        fitted_train_set_id=cast(UUID, self._last_fitted_train_set_id),
-                        task_config=task_config,
-                        client_options=self.client_options,
-                    )
-                except NeedsRefittingError as exc:
-                    last_exc = exc
-                    refit_attempts += 1
-                    self._last_fitted_train_set_id = InferenceClient.fit(
-                        self._last_train_X,
-                        self._last_train_y,
-                        task_config=task_config,
-                        paper_version=self.paper_version,
-                        thinking_mode=self.thinking_mode,
-                        thinking_effort=self.thinking_effort,
-                        thinking_timeout_s=self.thinking_timeout_s,
-                        thinking_metric=self.thinking_metric,
-                        client_options=self.client_options,
-                        description=self._last_train_set_description,
-                    )
+            return InferenceClient.predict(
+                X_clean,
+                fitted_train_set_id=self.model_id_,
+                task_config=task_config,
+                client_options=self.client_options,
+            )
 
         result = run_task(predict_task, "Predicting")
         # Unpack and store metadata
@@ -4880,31 +4962,36 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator, TabPFNModelSelection):
         }
         return ClassifierPredictParams.model_validate(params)
 
-    def _validate_targets_and_classes(self, y) -> None:
+    def _validate_targets_and_classes(self, y) -> np.ndarray:
+        """Validate the targets and return their classes without committing
+        them to ``classes_`` â€” `fit()` assigns fitted state only once the
+        server fit succeeded, so a failed re-fit can't leave the old
+        ``model_id_`` paired with the new targets' classes."""
         y_ = column_or_1d(y, warn=True)
         if sum(pd.isnull(y_)) > 0:
             raise ValueError("Input y contains NaN.")
         check_classification_targets(y)
         # Get classes and encode before type conversion to guarantee correct class labels.
         # TODO: should pass this from the server
-        self.classes_ = np.unique(y_)
+        classes = np.unique(y_)
 
         # TODO: these things should ideally be shared with the local package
-        limits = ServiceClient.get_model_limits()
-        if limits is None:
-            return
+        api_settings = ServiceClient.get_settings()
+        if api_settings is None:
+            return classes
 
         # We use the most permissive limit across all models as at fit time we
         # don't yet know yet which model will be used.
-        limit = limits.max_model_limit
+        limit = api_settings.max_model_limit
 
-        if len(self.classes_) > limit.max_classes:
+        if len(classes) > limit.max_classes:
             raise ValueError(
-                f"Number of classes {len(self.classes_)} exceeds the maximal number of "
+                f"Number of classes {len(classes)} exceeds the maximal number of "
                 f"{limit.max_classes} classes supported by TabPFN. Consider using "
                 "the many_class extension to reduce the number of classes. For code see "
                 f"{URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE}"
             )
+        return classes
 
 
 class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
@@ -4929,6 +5016,12 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         "wyl4o83o",
     ]
 
+    # The server-side fitted-train-set id predictions run against. Written by
+    # `fit()` (the id the server returns) or assigned directly to reuse a
+    # previous fit; absent on unfitted instances, which is what makes
+    # `__sklearn_is_fitted__` work.
+    model_id_: UUID
+
     def __init__(
         self,
         # start: tabpfn_config
@@ -4941,12 +5034,14 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         random_state: int | None = 0,
         inference_config: dict[str, Any] | None = None,
         categorical_features_indices: list[int] | None = None,
+        fit_mode: FitModeLiteral | None = None,
         # end: tabpfn_config
         paper_version: bool = False,
         thinking_mode: bool = False,
         thinking_effort: ThinkingEffort | None = None,
         thinking_timeout_s: float | None = None,
         thinking_metric: str | None = None,
+        api_mode: ApiMode = ApiMode.AUTO,
         client_options: ClientOptions | None = None,
     ):
         """Construct a TabPFN regressor.
@@ -4995,6 +5090,15 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         categorical_features_indices: list[int] or None, default=None
             The indices of the columns that should be treated as categorical.
             If None, the model infers which columns are categorical.
+        fit_mode: {"fit_preprocessors", "fit_with_cache"} or None, default=None
+            Controls what the server persists at fit time. None defers to the
+            server default, which is "fit_preprocessors".
+            "fit_preprocessors" fits only the preprocessing state, so every
+            predict re-runs the forward pass from the uploaded train set.
+            "fit_with_cache" additionally builds and persists a server-side KV
+            cache keyed by the resulting fitted-train-set id; later predicts
+            against that id (stored on the estimator as `model_id_`) are
+            served from the cache instead of re-fitting.
         paper_version: bool, default=False
             If True, will use the model described in the paper, instead of the newest
             version available on the API, which e.g handles text features better.
@@ -5023,6 +5127,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
 
             Aliases "mse", "rmse", "mae", "mape", "smape" are also
             accepted.
+        api_mode: ApiMode, default=ApiMode.AUTO
+            Controls how the client calls the server.
+            SYNC: the client waits for the server to complete the request before returning.
+            ASYNC: the client returns immediately and the server completes the request in the background.
+            AUTO: the client automatically determines the best mode to use based on the request.
         client_options : ClientOptions, default=None
             Client specific options (e.g. timeout, headers).
         """
@@ -5035,20 +5144,22 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         self.inference_precision = inference_precision
         self.random_state = random_state
         self.inference_config = inference_config
+        self.fit_mode = fit_mode
         self.paper_version = paper_version
         self.thinking_mode = thinking_mode
-        self.thinking_effort: ThinkingEffort | None = thinking_effort
+        self.thinking_effort = thinking_effort
         self.thinking_timeout_s = thinking_timeout_s
         self.thinking_metric = thinking_metric
+        self.api_mode = api_mode
         self.client_options = client_options or ClientOptions()
 
         self._last_trace_id = None
-        self._last_fitted_train_set_id = None
         self._last_train_X = None
-        self._last_train_y = None
         self._last_meta = {}
-        self._last_train_set_description = None
         self._fit_count = 0
+
+    def __sklearn_is_fitted__(self) -> bool:
+        return getattr(self, "model_id_", None) is not None
 
     def fit(
         self,
@@ -5058,52 +5169,42 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
     ):
         # assert init() is called
         init()
-
         tabpfn_config = self._get_tabpfn_config()
 
-        task_config = RegressorConfig(tabpfn_config=tabpfn_config)
-
         validate_train_set(X, y)
-        validate_thinking_mode(
-            self.thinking_mode,
-            self.thinking_effort,
-            self.thinking_timeout_s,
-            self.thinking_metric,
-            self.model_path,
-        )
         self._validate_targets(y)
         X_clean = _clean_text_features(X)
 
+        thinking_mode = _resolve_thinking_mode(self.thinking_mode, self.thinking_effort)
+        task_config = _build_fit_task_config(tabpfn_config)
+        tabpfn_systems = _build_tabpfn_systems(self.paper_version, thinking_mode)
+        thinking_config = _build_thinking_config(
+            enabled=thinking_mode,
+            effort=self.thinking_effort,
+            timeout_secs=self.thinking_timeout_s,
+            metric=self.thinking_metric,
+        )
+
         if Config.use_server:
-            # Create a new sentry trace at every fit, provided that:
-            # - The user has not explicitly set a sentry-trace header.
-            # - In any case if we're going to refit.
-            # - In any case if we have already called .fit() on this instance.
             if self._fit_count > 0 or "sentry-trace" not in self.client_options.headers:
                 self.client_options.headers["sentry-trace"] = uuid4().hex
 
             self._last_trace_id = self.client_options.headers["sentry-trace"]
-
-            self._last_train_set_description = description
 
             def fit_task() -> UUID:
                 return InferenceClient.fit(
                     X_clean,
                     y,
                     task_config=task_config,
-                    paper_version=self.paper_version,
-                    thinking_mode=self.thinking_mode,
-                    thinking_effort=self.thinking_effort,
-                    thinking_timeout_s=self.thinking_timeout_s,
-                    thinking_metric=self.thinking_metric,
+                    tabpfn_systems=tabpfn_systems,
+                    thinking_config=thinking_config,
+                    api_mode=self.api_mode,
                     client_options=self.client_options,
                     description=description,
                 )
 
-            self._last_fitted_train_set_id = cast(UUID, run_task(fit_task, "Fitting"))
+            self.model_id_ = cast(UUID, run_task(fit_task, "Fitting"))
             self._last_train_X = X_clean
-            self._last_train_y = y
-            self.fitted_ = True
             self._fit_count += 1
         else:
             raise NotImplementedError(
@@ -5118,7 +5219,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         output_type: Literal[
             "mean", "median", "mode", "quantiles", "full", "main"
         ] = "mean",
-        quantiles: list[float] | None = None,
+        quantiles: list[float] | None = None,  # NOTE: captured in _get_predict_params()
     ) -> np.ndarray | list[np.ndarray] | dict[str, np.ndarray]:
         """Predict regression target for X.
 
@@ -5147,6 +5248,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         # we capture the original user-provided values.
         predict_params = self._get_predict_params(locals())
 
+        # An estimator whose `model_id_` was assigned directly (reusing a
+        # previous fit) can reach `predict` without ever calling `fit()`, so
+        # `init()` (which authorizes the HTTP client) must run here too. It
+        # short-circuits after the first successful call.
+        init()
         check_is_fitted(self)
 
         tabpfn_config = self._get_tabpfn_config()
@@ -5165,6 +5271,12 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         )
         X_clean = _clean_text_features(X)
 
+        # NOTE(@trace_id)
+        # If this instance reuses a previous fit via a directly-assigned
+        # `model_id_` we assume this is a fit-once-predict-many scenario, so we
+        # won't try to link all operations under the same trace. In this case we
+        # will let the server create a new trace for every prediction or use the
+        # user-supplied one.
         if (
             "sentry-trace" not in self.client_options.headers
             and self._last_trace_id is not None
@@ -5172,35 +5284,12 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
             self.client_options.headers["sentry-trace"] = self._last_trace_id
 
         def predict_task() -> PredictionResult:
-            last_exc = None
-            refit_attempts = 0
-            while True:
-                if refit_attempts > 1:
-                    raise RuntimeError(
-                        "Failed to predict after refitting"
-                    ) from last_exc
-                try:
-                    return InferenceClient.predict(
-                        X_clean,
-                        fitted_train_set_id=cast(UUID, self._last_fitted_train_set_id),
-                        task_config=task_config,
-                        client_options=self.client_options,
-                    )
-                except NeedsRefittingError as exc:
-                    last_exc = exc
-                    refit_attempts += 1
-                    self._last_fitted_train_set_id = InferenceClient.fit(
-                        self._last_train_X,
-                        self._last_train_y,
-                        task_config=task_config,
-                        paper_version=self.paper_version,
-                        thinking_mode=self.thinking_mode,
-                        thinking_effort=self.thinking_effort,
-                        thinking_timeout_s=self.thinking_timeout_s,
-                        thinking_metric=self.thinking_metric,
-                        client_options=self.client_options,
-                        description=self._last_train_set_description,
-                    )
+            return InferenceClient.predict(
+                X_clean,
+                fitted_train_set_id=self.model_id_,
+                task_config=task_config,
+                client_options=self.client_options,
+            )
 
         result = run_task(predict_task, "Predicting")
         # Unpack and store metadata
@@ -5251,59 +5340,6 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
             raise ValueError("Input y contains NaN.")
 
 
-def _is_thinking_supported_model_path(model_path: str | None) -> bool:
-    """Thinking is server-side supported only for v3 models (or the auto sentinel,
-    which lets the server pick â€” currently a v3 model)."""
-    if model_path in _AUTO_MODEL_PATH_ALIASES:
-        return True
-    # `None` is an auto alias handled above, so the remainder is a concrete path.
-    assert model_path is not None
-    return V_3_IDENTIFIER in model_path
-
-
-def validate_thinking_mode(
-    thinking_mode: bool,
-    thinking_effort: ThinkingEffort | None,
-    thinking_timeout_s: float | None,
-    thinking_metric: str | None,
-    model_path: str | None,
-) -> None:
-    if (
-        thinking_effort is not None
-        and thinking_effort not in _VALID_THINKING_EFFORT_LEVELS
-    ):
-        raise ValueError(
-            f"thinking_effort must be one of "
-            f"{sorted(_VALID_THINKING_EFFORT_LEVELS)}, got {thinking_effort!r}."
-        )
-    # Setting `thinking_effort` is itself a way to enable thinking, so the
-    # effective state is "either flag set". Knobs that only make sense when
-    # thinking is on are rejected only when neither is set.
-    thinking_enabled = thinking_mode or thinking_effort is not None
-    if not thinking_enabled and (
-        thinking_timeout_s is not None or thinking_metric is not None
-    ):
-        raise ValueError(
-            "thinking_timeout_s and thinking_metric are only "
-            "consulted when thinking is enabled; pass `thinking_mode=True` "
-            "or `thinking_effort=...` to use them."
-        )
-    if thinking_timeout_s is not None and thinking_timeout_s > THINKING_TIMEOUT_MAX_S:
-        raise ValueError(
-            f"thinking_timeout_s ({thinking_timeout_s}) exceeds the "
-            f"maximum allowed of {THINKING_TIMEOUT_MAX_S} seconds "
-            f"({THINKING_TIMEOUT_MAX_S // 60} minutes)."
-        )
-    # Server silently no-ops thinking on non-v3 models, so users can pay for a
-    # request expecting a thinking fit and get a plain one back. Reject upfront.
-    if thinking_enabled and not _is_thinking_supported_model_path(model_path):
-        raise ValueError(
-            f"Thinking mode is only supported on v3 models, got "
-            f"model_path={model_path!r}. Either leave model_path at its "
-            f"default ('auto') or set it to a v3 model (e.g. 'v3_default')."
-        )
-
-
 def validate_train_set(
     X: pd.DataFrame | np.ndarray, y: pd.Series | np.ndarray | None = None
 ):
@@ -5314,13 +5350,13 @@ def validate_train_set(
         if X.shape[0] != y.shape[0]:
             raise ValueError("X and y must have the same number of samples")
 
-    limits = ServiceClient.get_model_limits()
-    if limits is None:
+    api_settings = ServiceClient.get_settings()
+    if api_settings is None:
         return
 
     # We don't yet know which model will be used, so we use the most permissive limit
     # across all models.
-    limit = limits.max_model_limit
+    limit = api_settings.max_model_limit
 
     if X.shape[0] > limit.train_set_max_rows:
         raise ValueError(
@@ -5345,19 +5381,19 @@ def validate_test_set(
 ):
     """Check the integrity of the test data."""
 
-    limits = ServiceClient.get_model_limits()
-    if limits is None:
+    api_settings = ServiceClient.get_settings()
+    if api_settings is None:
         return
 
     if not model_path:
-        limit = limits.model_limits[limits.default_model_version]
+        limit = api_settings.model_limits[api_settings.default_model_version]
     else:
         model_version = model_version_from_path(model_path)
-        limit = model_limit_from_version(model_version, limits.model_limits)
+        limit = model_limit_from_version(model_version, api_settings.model_limits)
 
     max_rows = limit.test_set_max_rows
     if train_rows:
-        budget = limit.predict_row_pairs_budget or FALLBACK_PREDICT_ROW_PAIRS_BUDGET
+        budget = limit.predict_row_pairs_budget
         max_rows = min(max_rows, budget // train_rows)
 
     if X.shape[0] > max_rows:
@@ -5461,6 +5497,111 @@ def run_task(task: Callable, message: str, with_spinner: bool = True) -> Any:
     return result
 
 
+def _build_fit_task_config(tabpfn_config: TabPFNConfig) -> FitTaskConfig:
+    match tabpfn_config:
+        case ClassifierTabPFNConfig():
+            return ClassifierFitTaskConfig(
+                tabpfn_config=tabpfn_config,
+            )
+        case RegressorTabPFNConfig():
+            return RegressorFitTaskConfig(
+                tabpfn_config=tabpfn_config,
+            )
+
+
+def _build_tabpfn_systems(
+    paper_version: bool, thinking_mode: bool
+) -> list[TabPFNSystem]:
+    if paper_version and thinking_mode:
+        raise ValueError(
+            "Paper version and thinking mode cannot be enabled at the same time"
+        )
+    if paper_version:
+        return []
+    if thinking_mode:
+        return ["preprocessing", "text", "thinking"]
+    return ["preprocessing", "text"]
+
+
+def _resolve_thinking_mode(enabled: bool, effort: str | None = None) -> bool:
+    # To honour previous contract, setting effort alone is enough to enable thinking.
+    if enabled:
+        return True
+    if effort:
+        return True
+    return False
+
+
+def _build_thinking_config(
+    *,
+    enabled: bool,
+    effort: str | None = None,
+    timeout_secs: float | None = None,
+    metric: str | None = None,
+) -> ThinkingConfig | None:
+    if not enabled:
+        return None
+    return ThinkingConfig(
+        effort=effort,
+        timeout_secs=timeout_secs,
+        metric=metric,
+    )
+
+
+
+================================================
+FILE: src/tabpfn_client/models.py
+================================================
+from enum import Enum
+from dataclasses import dataclass, field
+import numpy as np
+from typing import Any, Literal
+from tabpfn_client.options import get_opts
+
+from tabpfn_client.api_models import (
+    ClassifierTabPFNConfig,
+    RegressorTabPFNConfig,
+)
+
+
+TabPFNConfig = ClassifierTabPFNConfig | RegressorTabPFNConfig
+
+# Literal over enum to keep same static checks as the tabpfn package.
+FitModeLiteral = Literal["fit_preprocessors", "fit_with_cache"]
+
+
+class ApiMode(str, Enum):
+    AUTO = "auto"
+    SYNC = "sync"
+    ASYNC = "async"
+
+
+@dataclass(frozen=True)
+class PredictionResult:
+    y_pred: np.ndarray | list[np.ndarray] | dict[str, np.ndarray]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ClientOptions:
+    """
+    Options for the client.
+    Can be used to override default client behavior for a single request.
+
+    Parameters
+    ----------
+    timeout : float, optional
+        Timeout for the request in seconds.
+    headers : dict[str, str], optional
+        Headers for the request overriding the default headers.
+    """
+
+    # Note: timeout=None does not fallback to the client default, rather it disables
+    # the timeout altogether.
+    timeout: float = get_opts().TABPFN_CLIENT_TIMEOUT
+    headers: dict[str, str] = field(default_factory=dict)
+
+
 
 ================================================
 FILE: src/tabpfn_client/options.py
@@ -5476,13 +5617,15 @@ class Options(BaseSettings):
     TABPFN_CLIENT_API_URL: str | None = None
     TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD: int = 8
     TABPFN_CLIENT_TIMEOUT: float = 900.0
-    TABPFN_CLIENT_UPLOAD_TIMEOUT: float = 7200.0
-    TABPFN_CLIENT_POLL_INTERVAL: float = 5.0
-    TABPFN_CLIENT_POLL_TIMEOUT: float = 7200.0  # 2 hours
+    TABPFN_CLIENT_UPLOAD_TIMEOUT: float = 7200.0  # 2 hours
     TABPFN_CLIENT_CI_MODE: bool = False
-    TABPFN_CLIENT_FORCE_ASYNC: bool = False
     TABPFN_CLIENT_FORCE_REUPLOAD: bool = False
     TABPFN_CLIENT_DEDUP_DATASETS: bool = True
+
+    # Overriden by server defaults
+    # Environment > server default > client default
+    TABPFN_CLIENT_ASYNC_USE_ABOVE_TRAINSET_SIZE: int = 50 * 1024 * 1024
+    TABPFN_CLIENT_ASYNC_POLL_TIMEOUT: float = 7200.0
 
 
 _opts: Options = Options()
@@ -6327,16 +6470,18 @@ from tabpfn_client.client import (
     ServiceClient,
     ClientOptions,
     PredictionResult,
-    ThinkingEffort,
 )
 import tabpfn_client.constants as constants
 from tabpfn_common_utils.utils import Singleton
 from tabpfn_client.api_models import (
+    FitTaskConfig,
     ClassifierConfig,
     RegressorConfig,
+    ThinkingConfig,
+    TabPFNSystem,
 )
 from tabpfn_client.options import get_opts
-
+from tabpfn_client.models import ApiMode
 
 logger = logging.getLogger(__name__)
 
@@ -6589,24 +6734,20 @@ class InferenceClient(ServiceClientWrapper, Singleton):
         cls,
         X,
         y,
-        task_config: ClassifierConfig | RegressorConfig,
-        paper_version: bool = False,
-        thinking_mode: bool = False,
-        thinking_effort: ThinkingEffort | None = None,
-        thinking_timeout_s: float | None = None,
-        thinking_metric: str | None = None,
-        client_options: ClientOptions | None = None,
-        description: str | None = None,
+        task_config: FitTaskConfig,
+        tabpfn_systems: list[TabPFNSystem],
+        thinking_config: ThinkingConfig | None,
+        api_mode: ApiMode,
+        client_options: ClientOptions | None,
+        description: str | None,
     ) -> UUID:
         return ServiceClient.fit(
             X,
             y,
             task_config=task_config,
-            paper_version=paper_version,
-            thinking_mode=thinking_mode,
-            thinking_effort=thinking_effort,
-            thinking_timeout_s=thinking_timeout_s,
-            thinking_metric=thinking_metric,
+            tabpfn_systems=tabpfn_systems,
+            thinking_config=thinking_config,
+            api_mode=api_mode,
             client_options=client_options,
             description=description,
         )
@@ -6638,8 +6779,8 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Iterator
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -6711,7 +6852,7 @@ def info(message: str) -> None:
 
 
 @contextmanager
-def status(message: str) -> Iterator[None]:
+def status(message: str) -> Generator[None]:
     with console.status(f"[bold]{message}[/bold]"):
         yield
 
@@ -8429,8 +8570,9 @@ import numpy as np
 from tabpfn_client import init, reset
 from tabpfn_client import TabPFNClassifier
 from tests.mock_tabpfn_server import with_mock_server
+from tabpfn_client.client import ServiceClient
 from tabpfn_client.service_wrapper import UserAuthenticationClient
-from tabpfn_client.options import get_opts
+from tabpfn_client.api_models import AsyncSettings
 
 
 class TestTabPFNClassifier(unittest.TestCase):
@@ -8509,8 +8651,8 @@ class TestTabPFNClassifier(unittest.TestCase):
     @with_mock_server()
     def test_use_remote_tabpfn_classifier_async_mode(self, mock_server):
         # End-to-end async-mode flow: POST /tabpfn/fit returns status=pending and
-        # the client polls GET /tabpfn/fit/{id} until the fit is completed before
-        # predict can run.
+        # the client polls POST /tabpfn/get_fit_status until the fit is completed
+        # before predict can run.
         token_file = UserAuthenticationClient.CACHED_TOKEN_FILE
         token_file.parent.mkdir(parents=True, exist_ok=True)
         token_file.write_text("dummy token")
@@ -8538,11 +8680,16 @@ class TestTabPFNClassifier(unittest.TestCase):
             json={"fitted_train_set_id": fitted_train_set_id, "status": "pending"},
         )
         # ... and the client polls until the fit reaches a terminal state.
-        status_route = mock_server.router.get(f"/tabpfn/fit/{fitted_train_set_id}")
+        # retry_in_secs=0 keeps the poll loop from sleeping between attempts.
+        status_route = mock_server.router.post("/tabpfn/get_fit_status")
         status_route.side_effect = [
             httpx.Response(
                 200,
-                json={"fitted_train_set_id": fitted_train_set_id, "status": "pending"},
+                json={
+                    "fitted_train_set_id": fitted_train_set_id,
+                    "status": "pending",
+                    "retry_in_secs": 0,
+                },
             ),
             httpx.Response(
                 200,
@@ -8553,7 +8700,14 @@ class TestTabPFNClassifier(unittest.TestCase):
             ),
         ]
 
-        with patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0):
+        with patch.object(
+            ServiceClient,
+            "_resolve_async_settings",
+            return_value=AsyncSettings(
+                use_above_trainset_size_bytes=50 * 1024 * 1024,
+                poll_timeout_secs=7200.0,
+            ),
+        ):
             tabpfn.fit(self.X_train, self.y_train)
 
         self.assertEqual(status_route.call_count, 2)
@@ -8889,30 +9043,39 @@ FILE: tests/unit/test_client.py
 ================================================
 import time
 import unittest
+from contextlib import contextmanager
 from typing import Any, cast
 from uuid import UUID
 from unittest.mock import Mock, patch
 
+import httpx
 import numpy as np
+from pydantic import ValidationError
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 
 from tabpfn_client.client import (
-    GetModelLimitsResponse,
-    NeedsRefittingError,
+    _MIN_RETRY_INTERVAL_SECS,
+    GetSettingsResponse,
+    RetryableServerError,
     ServiceClient,
 )
-from tabpfn_client.options import get_opts
 from tabpfn_client.api_models import (
     ClassifierConfig,
+    DuplicateTrainSetErrorResponse,
+    FitResponse,
+    FitStatus,
+    GetFitStatusResponse,
     RegressorConfig,
     RegressorOutputType,
     RegressorPredictParams,
+    AsyncSettings,
+    ClassifierFitTaskConfig,
 )
 from tests.mock_tabpfn_server import with_mock_server
 
 
-def _model_limits_payload(
+def _api_settings_payload(
     max_cells=100_000_000,
     max_cols=2_000,
     max_size_bytes=100_000_000,
@@ -8930,13 +9093,25 @@ def _model_limits_payload(
         "test_set_max_rows_w_full_regression_output": max_rows,
         "max_cols": max_cols,
         "max_classes": max_classes,
+        "predict_row_pairs_budget": 250_000 * 1_000_000,
     }
     return {
         "default_model_version": "v2.5",
         "max_model_limit": model_limit,
         "model_limits": {"v2.5": model_limit},
         "dataset_max_size_bytes": max_size_bytes,
+        "async_settings": {
+            "use_above_trainset_size_bytes": 50 * 1024 * 1024,
+            "poll_timeout_secs": 7200.0,
+        },
     }
+
+
+def _fast_poll_settings() -> AsyncSettings:
+    return AsyncSettings(
+        use_above_trainset_size_bytes=50 * 1024 * 1024,
+        poll_timeout_secs=7200.0,
+    )
 
 
 class TestServiceClient(unittest.TestCase):
@@ -8948,15 +9123,15 @@ class TestServiceClient(unittest.TestCase):
         )
 
         ServiceClient.reset_authorization()
-        ServiceClient._model_limits = GetModelLimitsResponse(
-            **_model_limits_payload(),
+        ServiceClient._api_settings = GetSettingsResponse(
+            **_api_settings_payload(),
         )
-        ServiceClient._model_limits_ts = time.monotonic()
+        ServiceClient._api_settings_ts = time.monotonic()
 
     def tearDown(self):
         ServiceClient.reset_authorization()
-        ServiceClient._model_limits = None
-        ServiceClient._model_limits_ts = 0.0
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
 
     @staticmethod
     def _upload_info(url: str) -> dict:
@@ -9006,7 +9181,7 @@ class TestServiceClient(unittest.TestCase):
         self, mock_server
     ):
         mock_server.router.get(mock_server.endpoints.root.path).respond(
-            426, json={"detail": "Client version too old. ..."}
+            426, json={"message": "Client version too old. ..."}
         )
         with self.assertRaises(RuntimeError) as cm:
             ServiceClient.try_connection()
@@ -9022,7 +9197,7 @@ class TestServiceClient(unittest.TestCase):
     @with_mock_server()
     def test_validate_email_invalid(self, mock_server):
         mock_server.router.post(mock_server.endpoints.validate_email.path).respond(
-            401, json={"detail": "dummy_message"}
+            401, json={"message": "dummy_message"}
         )
         self.assertEqual(
             ServiceClient.validate_email("dummy_email"),
@@ -9053,7 +9228,7 @@ class TestServiceClient(unittest.TestCase):
     @with_mock_server()
     def test_register_user_with_invalid_email(self, mock_server):
         mock_server.router.post(mock_server.endpoints.register.path).respond(
-            401, json={"detail": "dummy_message", "token": None}
+            401, json={"message": "dummy_message", "token": None}
         )
         self.assertEqual(
             ServiceClient.register(
@@ -9142,7 +9317,8 @@ class TestServiceClient(unittest.TestCase):
             fitted_train_set_id = ServiceClient.fit(
                 self.X_train,
                 self.y_train,
-                task_config=ClassifierConfig(),
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
             )
             pred = ServiceClient.predict(
                 fitted_train_set_id=fitted_train_set_id,
@@ -9158,25 +9334,32 @@ class TestServiceClient(unittest.TestCase):
         self.assertEqual(pred.metadata["task"], "classification")
         self.assertEqual(mock_upload.call_count, 3)
 
-    def test_validate_response_no_error(self):
+    def test_raise_on_error_no_op_on_success(self):
         response = Mock()
         response.status_code = 200
-        r = ServiceClient._validate_response(response, "test")
-        self.assertIsNone(r)
+        self.assertIsNone(ServiceClient._raise_on_error(response, "test"))
+        # The body must stay untouched on success so streaming responses
+        # (e.g. download) remain unread.
+        response.read.assert_not_called()
+        response.json.assert_not_called()
 
     def test_validate_response(self):
         response = Mock()
 
         response.status_code = 426
-        response.json.return_value = {"detail": "Client version too old."}
+        response.json.return_value = {"message": "Client version too old."}
         with self.assertRaises(RuntimeError) as cm:
-            ServiceClient._validate_response(response, "test")
+            ServiceClient._validate_response(
+                response, "test", success_model=FitResponse
+            )
         self.assertEqual(str(cm.exception), "Client version too old.")
 
         response.status_code = 400
-        response.json.return_value = {"detail": "Some other error"}
+        response.json.return_value = {"message": "Some other error"}
         with self.assertRaises(RuntimeError) as cm:
-            ServiceClient._validate_response(response, "test")
+            ServiceClient._validate_response(
+                response, "test", success_model=FitResponse
+            )
         self.assertTrue(str(cm.exception).startswith("Fail to call test"))
 
     def test_validate_response_streamed_error_envelope(self):
@@ -9184,8 +9367,6 @@ class TestServiceClient(unittest.TestCase):
         # {"_streamed_error": True, "message": "..."} when the fit fails
         # mid-stream. The handler must surface the message, not let the
         # success-schema validation turn it into a misleading pydantic error.
-        from tabpfn_client.api_models import FitResponse
-
         response = Mock()
         response.status_code = 200
         response.is_closed = True
@@ -9194,39 +9375,118 @@ class TestServiceClient(unittest.TestCase):
             "message": "thinking fits require at least 500 rows of training data; got 225.",
         }
         with self.assertRaises(RuntimeError) as cm:
-            ServiceClient._validate_response(
-                response, "fit", response_models={200: FitResponse}
-            )
+            ServiceClient._validate_response(response, "fit", success_model=FitResponse)
         self.assertIn("streamed", str(cm.exception))
         self.assertIn("500 rows", str(cm.exception))
 
-    def test_validate_response_streamed_error_falls_back_to_detail(self):
-        from tabpfn_client.api_models import FitResponse
-
-        response = Mock()
-        response.status_code = 200
-        response.is_closed = True
-        response.json.return_value = {
-            "_streamed_error": True,
-            "detail": "fallback detail field",
-        }
+    def test_validate_response_streamed_error_without_message_uses_reason_phrase(self):
         with self.assertRaises(RuntimeError) as cm:
             ServiceClient._validate_response(
-                response, "fit", response_models={200: FitResponse}
+                self._http_response(200, json={"_streamed_error": True}),
+                "fit",
+                success_model=FitResponse,
             )
-        self.assertIn("fallback detail field", str(cm.exception))
+        self.assertEqual(str(cm.exception), "Fail to call fit with error: streamed, OK")
 
-    def test_validate_response_only_version_check(self):
+    def test_check_version(self):
         response = Mock()
         response.status_code = 426
-        response.json.return_value = {"detail": "Client version too old."}
+        response.json.return_value = {"message": "Client version too old."}
         with self.assertRaises(RuntimeError) as cm:
-            ServiceClient._validate_response(response, "test", only_version_check=True)
+            ServiceClient._check_version(response)
         self.assertEqual(str(cm.exception), "Client version too old.")
 
+        # Any status other than 426 is the caller's business.
         response.status_code = 400
-        response.json.return_value = {"detail": "Some other error"}
-        r = ServiceClient._validate_response(response, "test", only_version_check=True)
+        response.json.return_value = {"message": "Some other error"}
+        self.assertIsNone(ServiceClient._check_version(response))
+
+    # -- Tests pinning the _validate_response contract. --
+
+    @staticmethod
+    def _http_response(status_code: int, **kwargs) -> httpx.Response:
+        return httpx.Response(
+            status_code,
+            request=httpx.Request("POST", "http://testserver/test"),
+            **kwargs,
+        )
+
+    def test_raise_on_error_retryable_statuses_raise_retryable_error(self):
+        for status in (408, 502, 503, 504):
+            with self.assertRaises(RetryableServerError) as cm:
+                ServiceClient._raise_on_error(self._http_response(status), "test")
+            self.assertIn(f"[HTTP {status}]", str(cm.exception))
+
+    def test_raise_on_error_includes_trace_id(self):
+        with self.assertRaises(RuntimeError) as cm:
+            ServiceClient._raise_on_error(
+                self._http_response(
+                    500, json={"message": "boom", "trace_id": "abc-123"}
+                ),
+                "test",
+            )
+        self.assertEqual(
+            str(cm.exception),
+            "Fail to call test: [HTTP 500] boom. Report trace ID: abc-123.",
+        )
+
+    def test_raise_on_error_5xx_with_non_json_body(self):
+        with self.assertRaises(RuntimeError) as cm:
+            ServiceClient._raise_on_error(
+                self._http_response(500, text="<html>oops</html>"), "test"
+            )
+        self.assertEqual(
+            str(cm.exception), "Fail to call test: [HTTP 500] Internal Server Error."
+        )
+
+    def test_raise_on_error_message_falls_back_to_reason_phrase(self):
+        with self.assertRaises(RuntimeError) as cm:
+            ServiceClient._raise_on_error(self._http_response(403), "test")
+        self.assertEqual(str(cm.exception), "Fail to call test: [HTTP 403] Forbidden.")
+
+    def test_validate_response_registered_error_model_is_returned(self):
+        # Statuses with a registered error model (e.g. the 409 dedup path)
+        # are returned to the caller instead of raising.
+        body = {
+            "message": "duplicate train set",
+            "train_set_upload_id": "00000000-0000-0000-0000-000000000001",
+        }
+        parsed = ServiceClient._validate_response(
+            self._http_response(409, json=body),
+            "test",
+            success_model=FitResponse,
+            error_models={409: DuplicateTrainSetErrorResponse},
+        )
+        self.assertIsInstance(parsed, DuplicateTrainSetErrorResponse)
+        assert isinstance(parsed, DuplicateTrainSetErrorResponse)
+        self.assertEqual(parsed.message, "duplicate train set")
+
+    def test_validate_response_error_model_invalid_body_falls_back_to_generic_error(
+        self,
+    ):
+        with self.assertRaises(RuntimeError) as cm:
+            ServiceClient._validate_response(
+                self._http_response(409, json={"unexpected": "shape"}),
+                "test",
+                success_model=FitResponse,
+                error_models={409: DuplicateTrainSetErrorResponse},
+            )
+        self.assertIn("[HTTP 409]", str(cm.exception))
+
+    def test_validate_response_success_with_invalid_schema_raises(self):
+        # A success body that does not match the success model surfaces the
+        # pydantic error as-is.
+        with self.assertRaises(ValidationError):
+            ServiceClient._validate_response(
+                self._http_response(200, json={"unexpected": "shape"}),
+                "test",
+                success_model=FitResponse,
+            )
+
+    def test_check_version_ignores_server_errors(self):
+        r = ServiceClient._check_version(
+            self._http_response(500, json={"message": "boom"})
+        )
         self.assertIsNone(r)
 
     @with_mock_server()
@@ -9253,17 +9513,36 @@ class TestServiceClient(unittest.TestCase):
             fitted_train_set_id_1 = ServiceClient.fit(
                 self.X_train,
                 self.y_train,
-                task_config=ClassifierConfig(),
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
             )
             fitted_train_set_id_2 = ServiceClient.fit(
                 self.X_train,
                 self.y_train,
-                task_config=ClassifierConfig(),
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
             )
 
         self.assertEqual(fitted_train_set_id_1, fitted_train_set_id_2)
         self.assertEqual(prepare_route.call_count, 2)
         self.assertEqual(fit_route.call_count, 2)
+
+    def test_fit_rejects_invalid_api_mode_before_any_request(self):
+        # `api_mode` is coerced through the ApiMode enum up front, so a typo
+        # fails fast with a clear ValueError instead of leaving `use_async`
+        # unbound after the train set was already uploaded. Deliberately no
+        # mock server: the error must fire before any request is attempted.
+        for bad_mode in ("SYNC", "asdasd"):
+            with self.assertRaises(ValueError, msg=bad_mode):
+                ServiceClient.fit(
+                    self.X_train,
+                    self.y_train,
+                    tabpfn_systems=["preprocessing", "text"],
+                    task_config=ClassifierFitTaskConfig(),
+                    # cast: deliberately smuggle a bad value past the ApiMode
+                    # annotation to exercise the runtime check.
+                    api_mode=cast(Any, bad_mode),
+                )
 
     @with_mock_server()
     def test_fit_async_mode_polls_until_completed(self, mock_server):
@@ -9282,12 +9561,18 @@ class TestServiceClient(unittest.TestCase):
             200,
             json={"fitted_train_set_id": fitted_train_set_id, "status": "pending"},
         )
-        status_route = mock_server.router.get(f"/tabpfn/fit/{fitted_train_set_id}")
+        status_route = mock_server.router.post("/tabpfn/get_fit_status")
         # First poll still pending, second poll completed â€” exercises the loop.
         status_route.side_effect = [
             httpx.Response(
                 200,
-                json={"fitted_train_set_id": fitted_train_set_id, "status": "pending"},
+                json={
+                    "fitted_train_set_id": fitted_train_set_id,
+                    "status": "pending",
+                    # A 0 hint is clamped to the loop's floor; sleep is
+                    # mocked below to keep the test fast.
+                    "retry_in_secs": 0,
+                },
             ),
             httpx.Response(
                 200,
@@ -9302,16 +9587,25 @@ class TestServiceClient(unittest.TestCase):
 
         with (
             patch.object(ServiceClient, "_upload_to_gcs"),
-            patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0),
+            patch.object(
+                ServiceClient,
+                "_resolve_async_settings",
+                return_value=_fast_poll_settings(),
+            ),
+            patch("tabpfn_client.client.time.sleep") as mock_sleep,
         ):
             result = ServiceClient.fit(
                 self.X_train,
                 self.y_train,
-                task_config=ClassifierConfig(),
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
             )
 
         self.assertEqual(result, UUID(fitted_train_set_id))
         self.assertEqual(status_route.call_count, 2)
+        # The server's 0 hint was clamped to the floor instead of
+        # busy-polling with no sleep at all.
+        mock_sleep.assert_called_once_with(_MIN_RETRY_INTERVAL_SECS)
 
     @with_mock_server()
     def test_fit_async_mode_raises_on_failed(self, mock_server):
@@ -9328,7 +9622,7 @@ class TestServiceClient(unittest.TestCase):
             200,
             json={"fitted_train_set_id": fitted_train_set_id, "status": "pending"},
         )
-        mock_server.router.get(f"/tabpfn/fit/{fitted_train_set_id}").respond(
+        mock_server.router.post("/tabpfn/get_fit_status").respond(
             200,
             json={
                 "fitted_train_set_id": fitted_train_set_id,
@@ -9341,13 +9635,18 @@ class TestServiceClient(unittest.TestCase):
 
         with (
             patch.object(ServiceClient, "_upload_to_gcs"),
-            patch.object(get_opts(), "TABPFN_CLIENT_POLL_INTERVAL", 0),
+            patch.object(
+                ServiceClient,
+                "_resolve_async_settings",
+                return_value=_fast_poll_settings(),
+            ),
         ):
             with self.assertRaises(RuntimeError) as cm:
                 ServiceClient.fit(
                     self.X_train,
                     self.y_train,
-                    task_config=ClassifierConfig(),
+                    tabpfn_systems=["preprocessing", "text"],
+                    task_config=ClassifierFitTaskConfig(),
                 )
 
         self.assertIn("boom", str(cm.exception))
@@ -9389,33 +9688,13 @@ class TestServiceClient(unittest.TestCase):
         self.assertEqual(prepare_route.call_count, 2)
         self.assertEqual(predict_route.call_count, 2)
 
-    @with_mock_server()
-    def test_predict_with_missing_fitted_train_set_raises_needs_refitting(
-        self, mock_server
-    ):
-        mock_server.router.post("/tabpfn/prepare_test_set_upload").respond(
-            404,
-            json={
-                "message": "fitted train set missing",
-                "error_code": "NOT_FOUND",
-                "trace_id": "00000000-0000-0000-0000-0000000000aa",
-            },
-        )
-
-        with self.assertRaises(NeedsRefittingError):
-            ServiceClient.predict(
-                fitted_train_set_id=UUID("00000000-0000-0000-0000-000000000002"),
-                x_test=self.X_test,
-                task_config=ClassifierConfig(),
-            )
-
-    def test_get_model_limits_uses_cache(self):
-        ServiceClient._model_limits = None
-        ServiceClient._model_limits_ts = 0.0
+    def test_get_settings_uses_cache(self):
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
 
         response = Mock()
         response.raise_for_status = Mock()
-        response.json.return_value = _model_limits_payload(
+        response.json.return_value = _api_settings_payload(
             max_cells=123,
             max_cols=12,
             max_size_bytes=456,
@@ -9425,30 +9704,30 @@ class TestServiceClient(unittest.TestCase):
         with patch.object(
             ServiceClient.httpx_client, "get", return_value=response
         ) as m:
-            first = ServiceClient.get_model_limits()
-            second = ServiceClient.get_model_limits()
+            first = ServiceClient.get_settings()
+            second = ServiceClient.get_settings()
 
         assert first is not None
         self.assertEqual(first.dataset_max_size_bytes, 456)
         self.assertIs(first, second)
         self.assertEqual(m.call_count, 1)
 
-    def test_get_model_limits_returns_stale_value_on_failure(self):
-        stale = GetModelLimitsResponse(
-            **_model_limits_payload(
+    def test_get_settings_returns_stale_value_on_failure(self):
+        stale = GetSettingsResponse(
+            **_api_settings_payload(
                 max_cells=100,
                 max_cols=20,
                 max_size_bytes=300,
                 max_classes=4,
             ),
         )
-        ServiceClient._model_limits = stale
-        ServiceClient._model_limits_ts = time.monotonic() - 1_900
+        ServiceClient._api_settings = stale
+        ServiceClient._api_settings_ts = time.monotonic() - 1_900
 
         with patch.object(
             ServiceClient.httpx_client, "get", side_effect=RuntimeError("boom")
         ):
-            result = ServiceClient.get_model_limits()
+            result = ServiceClient.get_settings()
 
         self.assertIs(result, stale)
 
@@ -9456,8 +9735,8 @@ class TestServiceClient(unittest.TestCase):
 class TestServiceClientPredictionNormalization(unittest.TestCase):
     def tearDown(self):
         ServiceClient.reset_authorization()
-        ServiceClient._model_limits = None
-        ServiceClient._model_limits_ts = 0.0
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
 
     @staticmethod
     def _upload_info(url: str) -> dict:
@@ -9504,7 +9783,7 @@ class TestServiceClientPredictionNormalization(unittest.TestCase):
             ),
         )
 
-        with patch.object(ServiceClient, "get_model_limits", return_value=None):
+        with patch.object(ServiceClient, "get_settings", return_value=None):
             with patch.object(ServiceClient, "_upload_to_gcs"):
                 pred = ServiceClient.predict(
                     fitted_train_set_id=UUID("00000000-0000-0000-0000-000000000002"),
@@ -9529,6 +9808,175 @@ class TestServiceClientPredictionNormalization(unittest.TestCase):
             np.array([[1.0, np.nan], [np.nan, 4.0]]),
             equal_nan=True,
         )
+
+
+class _FakeTime:
+    """Deterministic stand-in for the `time` module inside the polling loop:
+    the clock only advances when the loop sleeps."""
+
+    def __init__(self):
+        self.now = 0.0
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, secs: float) -> None:
+        self.sleeps.append(secs)
+        self.now += secs
+
+
+def _fit_status(
+    status: FitStatus,
+    retry_in_secs: float | None = None,
+    error: str | None = None,
+) -> GetFitStatusResponse:
+    return GetFitStatusResponse(
+        fitted_train_set_id=TestWaitForFit.FIT_ID,
+        status=status,
+        retry_in_secs=retry_in_secs,
+        error=error,
+    )
+
+
+class TestWaitForFit(unittest.TestCase):
+    """Pin the `_wait_for_fit` polling contract with a fake clock: the first
+    poll is immediate, sleeps run between polls following the server's
+    `retry_in_secs` hint (5s fallback until the first hint), and the deadline
+    is a hard bound â€” the loop gives up as soon as the next poll could no
+    longer start before the deadline."""
+
+    FIT_ID = UUID("00000000-0000-0000-0000-000000000002")
+    FALLBACK_INTERVAL = 5.0
+    MIN_INTERVAL = _MIN_RETRY_INTERVAL_SECS
+
+    @contextmanager
+    def _patched(self, status_outcomes, poll_timeout: float = 100.0):
+        """Patch the loop's clock, deadline settings, and status calls.
+
+        `status_outcomes` is a Mock side_effect: a list of responses and/or
+        exceptions, a single exception (raised on every call), or a callable.
+        """
+        fake_time = _FakeTime()
+        settings = AsyncSettings(
+            use_above_trainset_size_bytes=50 * 1024 * 1024,
+            poll_timeout_secs=poll_timeout,
+        )
+        with (
+            patch("tabpfn_client.client.time", fake_time),
+            patch.object(
+                ServiceClient, "_resolve_async_settings", return_value=settings
+            ),
+            patch.object(
+                ServiceClient, "_get_fit_status", side_effect=status_outcomes
+            ) as mock_status,
+        ):
+            yield fake_time, mock_status
+
+    def test_completed_immediately_polls_once_without_sleeping(self):
+        with self._patched([_fit_status(FitStatus.COMPLETED)]) as (fake_time, mock):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(mock.call_count, 1)
+        self.assertEqual(fake_time.sleeps, [])
+
+    def test_pending_sleeps_fallback_interval_between_polls(self):
+        with self._patched(
+            [_fit_status(FitStatus.PENDING), _fit_status(FitStatus.COMPLETED)]
+        ) as (fake_time, mock):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(mock.call_count, 2)
+        self.assertEqual(fake_time.sleeps, [self.FALLBACK_INTERVAL])
+
+    def test_server_retry_hint_sets_interval(self):
+        with self._patched(
+            [
+                _fit_status(FitStatus.PENDING, retry_in_secs=1.5),
+                _fit_status(FitStatus.PENDING, retry_in_secs=2.5),
+                _fit_status(FitStatus.COMPLETED),
+            ]
+        ) as (fake_time, _):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(fake_time.sleeps, [1.5, 2.5])
+
+    def test_zero_or_negative_retry_hint_clamped_to_floor(self):
+        # A zero or negative hint (server bug / clock skew) must neither
+        # busy-poll the endpoint nor crash time.sleep with a ValueError;
+        # both are clamped to the loop's floor.
+        with self._patched(
+            [
+                _fit_status(FitStatus.PENDING, retry_in_secs=0.0),
+                _fit_status(FitStatus.PENDING, retry_in_secs=-30.0),
+                _fit_status(FitStatus.COMPLETED),
+            ]
+        ) as (fake_time, _):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(fake_time.sleeps, [self.MIN_INTERVAL, self.MIN_INTERVAL])
+
+    def test_server_retry_hint_persists_when_later_responses_omit_it(self):
+        with self._patched(
+            [
+                _fit_status(FitStatus.PENDING, retry_in_secs=2.0),
+                _fit_status(FitStatus.PENDING),  # no hint: keep the last one
+                _fit_status(FitStatus.COMPLETED),
+            ]
+        ) as (fake_time, _):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(fake_time.sleeps, [2.0, 2.0])
+
+    def test_deadline_is_a_hard_bound_and_raises_timeout(self):
+        # timeout 12, interval 5: polls at t=0/5/10. After the t=10 poll only
+        # 2s remain â€” not enough for another full interval â€” so the loop gives
+        # up without sleeping to the deadline and polling once more past it.
+        with self._patched(
+            lambda **kwargs: _fit_status(FitStatus.PENDING), poll_timeout=12.0
+        ) as (fake_time, mock):
+            with self.assertRaises(TimeoutError) as cm:
+                ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertIn("did not reach a terminal state", str(cm.exception))
+        # The fit was genuinely still pending: no poll error to chain.
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertEqual(fake_time.sleeps, [5.0, 5.0])
+        self.assertEqual(mock.call_count, 3)
+
+    def test_failed_fit_raises_runtime_error_without_sleeping(self):
+        with self._patched([_fit_status(FitStatus.FAILED, error="boom")]) as (
+            fake_time,
+            _,
+        ):
+            with self.assertRaises(RuntimeError) as cm:
+                ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertIn("boom", str(cm.exception))
+        self.assertEqual(fake_time.sleeps, [])
+
+    def test_transient_errors_retry_until_deadline(self):
+        # Each swallowed error is logged, and the TimeoutError chains the last
+        # one so the real cause of a failing poll loop is not discarded.
+        # timeout 10, interval 5: polls at t=0/5 fail; after the t=5 poll the
+        # 5s remaining can't fit another full interval, so the loop gives up.
+        with self._patched(httpx.ConnectError("down"), poll_timeout=10.0) as (
+            fake_time,
+            mock,
+        ):
+            with (
+                self.assertLogs("tabpfn_client.client", level="WARNING") as logs,
+                self.assertRaises(TimeoutError) as cm,
+            ):
+                ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(fake_time.sleeps, [5.0])
+        self.assertEqual(mock.call_count, 2)
+        self.assertIsInstance(cm.exception.__cause__, httpx.ConnectError)
+        self.assertIn("The last status poll failed: down", str(cm.exception))
+        self.assertEqual(len(logs.output), 2)
+        self.assertIn(str(self.FIT_ID), logs.output[0])
+        self.assertIn("down", logs.output[0])
+
+    def test_transient_error_then_recovery(self):
+        with self._patched(
+            [httpx.ConnectError("blip"), _fit_status(FitStatus.COMPLETED)]
+        ) as (fake_time, mock):
+            ServiceClient._wait_for_fit(self.FIT_ID)
+        self.assertEqual(mock.call_count, 2)
+        self.assertEqual(fake_time.sleeps, [self.FALLBACK_INTERVAL])
 
 
 
@@ -9568,6 +10016,7 @@ from tabpfn_client.api_models import (
     RegressorPredictParams,
     UnknownEnum,
 )
+from tabpfn_client.models import TabPFNConfig
 
 
 def _normalize_type(tp: object) -> object:
@@ -9609,7 +10058,7 @@ _ALLOWED_NON_NULL_DEFAULT_TABPFN_CONFIG_PARAMS = [
 )
 def test_client_config_includes_server_config(
     estimator: Type[TabPFNClassifier | TabPFNRegressor],
-    config_model: Type[ClassifierTabPFNConfig | RegressorTabPFNConfig],
+    config_model: Type[TabPFNConfig],
 ):
     init_sig = inspect.signature(estimator.__init__).parameters
     init_params = set(init_sig) - {"self"}
@@ -9762,7 +10211,7 @@ def test_sklearn_compatible(
             patch.object(
                 estimator_module.InferenceClient, "predict", side_effect=fake.predict
             ),
-            patch.object(ServiceClient, "get_model_limits", return_value=None),
+            patch.object(ServiceClient, "get_settings", return_value=None),
         ):
             check_estimator(
                 estimator(),
@@ -9770,6 +10219,155 @@ def test_sklearn_compatible(
             )
     finally:
         Config.use_server = use_server_before
+
+
+
+================================================
+FILE: tests/unit/test_fit_mode_and_model_id.py
+================================================
+"""Unit tests for the KV-cache client surface:
+
+- `fit_mode` reaching the server-side `tabpfn_config` on the wire,
+- `model_id_` (the fitted-train-set id, written by `fit()` or assigned
+  directly to reuse a previous fit) as the single fitted-state slot that
+  makes an estimator predictable.
+
+These stay hermetic by patching `InferenceClient` / `ServiceClient` rather
+than talking to a mock server â€” the concern here is client-side wiring, not
+the HTTP layer.
+"""
+
+import unittest
+from unittest.mock import patch
+from uuid import UUID
+
+import numpy as np
+
+from tabpfn_client.client import PredictionResult, ServiceClient
+from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
+from tabpfn_client.service_wrapper import InferenceClient
+from typing import get_args
+from tabpfn_client.models import FitModeLiteral
+from tabpfn_client.api_models import FitMode
+
+_MODEL_ID = "00000000-0000-0000-0000-000000000abc"
+
+
+def _regressor_prediction() -> PredictionResult:
+    return PredictionResult(y_pred={"mean": np.zeros(4)}, metadata={})
+
+
+def test_fit_mode_literal_guard():
+    # Guard against drift from the generated enum: every literal value must be a
+    # valid FitMode, or the package fails loudly at import time.
+    assert set(get_args(FitModeLiteral)) <= {m.value for m in FitMode}, (
+        "FitModeLiteral contains values that are not FitMode members: "
+        f"{set(get_args(FitModeLiteral)) - {m.value for m in FitMode}}"
+    )
+
+
+class TestFitMode(unittest.TestCase):
+    def test_default_omits_fit_mode_on_wire(self):
+        # Default is None, so nothing is sent and the server applies its own
+        # default (fit_preprocessors) â€” matching the SDK's "None means unset"
+        # convention for server-backed config fields.
+        for Est in (TabPFNClassifier, TabPFNRegressor):
+            cfg = Est()._get_tabpfn_config()
+            dumped = cfg.model_dump(mode="json", exclude_none=True)
+            self.assertNotIn("fit_mode", dumped, Est.__name__)
+
+    def test_fit_with_cache_reaches_wire_config(self):
+        for Est in (TabPFNClassifier, TabPFNRegressor):
+            cfg = Est(fit_mode="fit_with_cache")._get_tabpfn_config()
+            dumped = cfg.model_dump(mode="json", exclude_none=True)
+            self.assertEqual(dumped.get("fit_mode"), "fit_with_cache", Est.__name__)
+
+    def test_fit_mode_forwarded_on_predict_task_config(self):
+        reg = TabPFNRegressor(fit_mode="fit_with_cache")
+        reg.model_id_ = UUID(_MODEL_ID)
+        with patch("tabpfn_client.estimator.init"):
+            with patch.object(ServiceClient, "get_settings", return_value=None):
+                with patch.object(
+                    InferenceClient, "predict", return_value=_regressor_prediction()
+                ) as mock_predict:
+                    reg.predict(np.random.randn(4, 3))
+        task_config = mock_predict.call_args[1]["task_config"]
+        dumped = task_config.tabpfn_config.model_dump(mode="json", exclude_none=True)
+        self.assertEqual(dumped.get("fit_mode"), "fit_with_cache")
+
+
+class TestModelIdFittedState(unittest.TestCase):
+    def test_model_id_marks_estimator_fitted(self):
+        for Est in (TabPFNClassifier, TabPFNRegressor):
+            est = Est()
+            self.assertFalse(est.__sklearn_is_fitted__(), Est.__name__)
+            est.model_id_ = UUID(_MODEL_ID)
+            self.assertTrue(est.__sklearn_is_fitted__(), Est.__name__)
+
+    def test_predict_uses_model_id_without_fitting(self):
+        reg = TabPFNRegressor()
+        reg.model_id_ = UUID(_MODEL_ID)
+        with patch("tabpfn_client.estimator.init"):
+            with patch.object(ServiceClient, "get_settings", return_value=None):
+                with patch.object(InferenceClient, "fit") as mock_fit:
+                    with patch.object(
+                        InferenceClient, "predict", return_value=_regressor_prediction()
+                    ) as mock_predict:
+                        reg.predict(np.random.randn(4, 3))
+        mock_fit.assert_not_called()
+        self.assertEqual(
+            mock_predict.call_args[1]["fitted_train_set_id"], UUID(_MODEL_ID)
+        )
+
+
+class TestSklearnCompatibility(unittest.TestCase):
+    def test_clone_drops_fitted_state(self):
+        # `model_id_` is fitted state, not a constructor param, so `clone`
+        # must NOT carry it over: clones start unfitted and CV folds refit
+        # cleanly instead of inheriting a pointer to remote fitted state.
+        from sklearn.base import clone
+
+        from typing import Any, cast as _cast
+
+        for Est in (TabPFNClassifier, TabPFNRegressor):
+            original = Est(n_estimators=4)
+            original.model_id_ = UUID(_MODEL_ID)
+            # `clone`'s overloaded return over a `type[C] | type[R]` union
+            # confuses pyright; runtime type is Est, but we cast to Any to
+            # avoid re-typing at every call site below.
+            cloned = _cast(Any, clone(original))
+            self.assertFalse(cloned.__sklearn_is_fitted__(), Est.__name__)
+            self.assertNotIn("model_id", cloned.get_params(), Est.__name__)
+            self.assertEqual(cloned.get_params()["n_estimators"], 4, Est.__name__)
+
+    def test_unfitted_estimator_raises_not_fitted(self):
+        from sklearn.exceptions import NotFittedError
+        from sklearn.utils.validation import check_is_fitted
+
+        for Est in (TabPFNClassifier, TabPFNRegressor):
+            est = Est()
+            self.assertFalse(est.__sklearn_is_fitted__(), Est.__name__)
+            with self.assertRaises(NotFittedError):
+                check_is_fitted(est)
+
+    def test_predict_triggers_init_from_cold_state(self):
+        # A fresh process that only assigns a saved `model_id_` and predicts
+        # never touches `fit()`, so `_predict` itself must call `init()` to
+        # authorize the HTTP client â€” otherwise the main cross-process reuse
+        # path 401s.
+        reg = TabPFNRegressor()
+        reg.model_id_ = UUID(_MODEL_ID)
+        with patch("tabpfn_client.estimator.init") as mock_init:
+            with patch.object(ServiceClient, "get_settings", return_value=None):
+                with patch.object(
+                    InferenceClient, "predict", return_value=_regressor_prediction()
+                ):
+                    reg.predict(np.random.randn(4, 3))
+        mock_init.assert_called()
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 
 
@@ -10032,7 +10630,7 @@ class TestUserAuthClient(unittest.TestCase):
     def test_set_token_by_invalid_login(self, mock_server):
         # mock invalid login response
         mock_server.router.post(mock_server.endpoints.login.path).respond(
-            401, json={"detail": "Incorrect email or password"}
+            401, json={"message": "Incorrect email or password"}
         )
         self.assertEqual(
             (None, "Incorrect email or password", 401),
@@ -10072,7 +10670,7 @@ class TestUserAuthClient(unittest.TestCase):
     def test_set_token_by_invalid_registration(self, mock_server):
         # mock invalid registration response
         mock_server.router.post(mock_server.endpoints.register.path).respond(
-            401, json={"detail": "Password mismatch"}
+            401, json={"message": "Password mismatch"}
         )
         self.assertEqual(
             (False, "Password mismatch", None),
@@ -10313,14 +10911,14 @@ from tests.mock_tabpfn_server import with_mock_server
 from tabpfn_client.constants import CACHE_DIR
 from tabpfn_client import config
 from tabpfn_client.client import (
-    GetModelLimitsResponse,
+    GetSettingsResponse,
     PredictionResult,
     ServiceClient,
 )
 from tabpfn_client.api_models import ClassifierTabPFNConfig
 
 
-def _model_limits_payload(
+def _api_settings_payload(
     max_cells=100_000_000,
     max_cols=2_000,
     max_size_bytes=100_000_000,
@@ -10338,12 +10936,17 @@ def _model_limits_payload(
         "test_set_max_rows_w_full_regression_output": max_rows,
         "max_cols": max_cols,
         "max_classes": max_classes,
+        "predict_row_pairs_budget": 250_000 * 1_000_000,
     }
     return {
         "default_model_version": "v2.5",
         "max_model_limit": model_limit,
         "model_limits": {"v2.5": model_limit},
         "dataset_max_size_bytes": max_size_bytes,
+        "async_settings": {
+            "use_above_trainset_size_bytes": 50 * 1024 * 1024,
+            "poll_timeout_secs": 7200.0,
+        },
     }
 
 
@@ -10354,7 +10957,7 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         # set up dummy data
         reset()
         ServiceClient.reset_authorization()
-        ServiceClient._model_limits = None
+        ServiceClient._api_settings = None
         X, y = load_breast_cancer(return_X_y=True)
         self.X_train, self.X_test, self.y_train, self.y_test = cast(
             "tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]",
@@ -10362,7 +10965,7 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         )
 
     def tearDown(self):
-        ServiceClient._model_limits = None
+        ServiceClient._api_settings = None
         # remove cache dir
         shutil.rmtree(CACHE_DIR, ignore_errors=True)
 
@@ -10410,9 +11013,9 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         mock_predict_response = [1, 0, 1]
@@ -10455,9 +11058,9 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         # create dummy token file
@@ -10500,9 +11103,9 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
         init(use_server=True)
 
@@ -10589,9 +11192,9 @@ class TestTabPFNClassifierInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         mock_server.router.post(mock_server.endpoints.predict.path).respond(
@@ -10701,14 +11304,14 @@ class TestTabPFNClassifierInference(unittest.TestCase):
     def setUp(self):
         # skip init
         config.Config.is_initialized = True
-        ServiceClient._model_limits = GetModelLimitsResponse(
-            **_model_limits_payload(max_cells=100_000)
+        ServiceClient._api_settings = GetSettingsResponse(
+            **_api_settings_payload(max_cells=100_000)
         )
-        ServiceClient._model_limits_ts = time.monotonic()
+        ServiceClient._api_settings_ts = time.monotonic()
 
     def tearDown(self):
-        ServiceClient._model_limits = None
-        ServiceClient._model_limits_ts = 0.0
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
         # undo setUp
         config.reset()
 
@@ -10744,7 +11347,7 @@ class TestTabPFNClassifierInference(unittest.TestCase):
         tabpfn = TabPFNClassifier()
 
         # skip fitting
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         # test oversized cells
         with self.assertRaises(ValueError):
@@ -10755,7 +11358,7 @@ class TestTabPFNClassifierInference(unittest.TestCase):
         tabpfn = TabPFNClassifier()
 
         # skip fitting
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         tabpfn.classes_ = np.array([0, 1])
 
         # mock prediction
@@ -10790,10 +11393,7 @@ class TestTabPFNClassifierInference(unittest.TestCase):
         )
 
         # Skip fitting
-        classifier.fitted_ = True
-        classifier._last_fitted_train_set_id = UUID(
-            "00000000-0000-0000-0000-000000000000"
-        )
+        classifier.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         test_X = np.random.randn(10, 5)
 
@@ -10832,7 +11432,9 @@ class TestTabPFNClassifierInference(unittest.TestCase):
     def test_predict_params_output_type(self):
         """Test that predict_params contains correct output_type."""
         classifier = TabPFNClassifier()
-        classifier.fitted_ = True  # Skip fitting
+        classifier.model_id_ = UUID(
+            "00000000-0000-0000-0000-000000000000"
+        )  # Skip fitting
         test_X = np.random.randn(10, 5)
 
         # Test predict() sets output_type to "preds"
@@ -10903,7 +11505,7 @@ class TestTabPFNClassifierInference(unittest.TestCase):
         """Test predictions with long text (>2500 chars) and text containing commas."""
         # Skip initialization
         tabpfn = TabPFNClassifier()
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         tabpfn.classes_ = np.array([0, 1])  # Binary classification
 
         # Create test data with a mix of numeric and text features
@@ -11042,7 +11644,7 @@ class TestTabPFNClassifierInference(unittest.TestCase):
 
         # Skip initialization
         tabpfn = TabPFNClassifier()
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         tabpfn.classes_ = np.array([0, 1])
 
         # Create test data
@@ -11378,14 +11980,14 @@ from tabpfn_client.constants import CACHE_DIR
 from tabpfn_client import config
 import json
 from tabpfn_client.client import (
-    GetModelLimitsResponse,
+    GetSettingsResponse,
     PredictionResult,
     ServiceClient,
 )
 from tabpfn_client.api_models import RegressorTabPFNConfig
 
 
-def _model_limits_payload(
+def _api_settings_payload(
     max_cells=100_000_000,
     max_cols=2_000,
     max_size_bytes=100_000_000,
@@ -11403,12 +12005,17 @@ def _model_limits_payload(
         "test_set_max_rows_w_full_regression_output": max_rows,
         "max_cols": max_cols,
         "max_classes": max_classes,
+        "predict_row_pairs_budget": 250_000 * 1_000_000,
     }
     return {
         "default_model_version": "v2.5",
         "max_model_limit": model_limit,
         "model_limits": {"v2.5": model_limit},
         "dataset_max_size_bytes": max_size_bytes,
+        "async_settings": {
+            "use_above_trainset_size_bytes": 50 * 1024 * 1024,
+            "poll_timeout_secs": 7200.0,
+        },
     }
 
 
@@ -11419,7 +12026,7 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         # set up dummy data
         reset()
         ServiceClient.reset_authorization()
-        ServiceClient._model_limits = None
+        ServiceClient._api_settings = None
         X, y = load_diabetes(return_X_y=True)
         self.X_train, self.X_test, self.y_train, self.y_test = cast(
             "tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]",
@@ -11427,7 +12034,7 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         )
 
     def tearDown(self):
-        ServiceClient._model_limits = None
+        ServiceClient._api_settings = None
         # remove cache dir
         shutil.rmtree(CACHE_DIR, ignore_errors=True)
 
@@ -11474,9 +12081,9 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         metric = "mean"
@@ -11520,9 +12127,9 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         # create dummy token file
@@ -11565,9 +12172,9 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
         init(use_server=True)
 
@@ -11648,9 +12255,9 @@ class TestTabPFNRegressorInit(unittest.TestCase):
         mock_server.router.get(
             mock_server.endpoints.retrieve_greeting_messages.path
         ).respond(200, json={"messages": []})
-        mock_server.router.get("/tabpfn/get_model_limits").respond(
+        mock_server.router.get("/tabpfn/get_settings").respond(
             200,
-            json=_model_limits_payload(),
+            json=_api_settings_payload(),
         )
 
         # Ensure no cached token so we go through the full login flow
@@ -11761,14 +12368,14 @@ class TestTabPFNRegressorInference(unittest.TestCase):
     def setUp(self):
         # skip init
         config.Config.is_initialized = True
-        ServiceClient._model_limits = GetModelLimitsResponse(
-            **_model_limits_payload(max_cells=100_000)
+        ServiceClient._api_settings = GetSettingsResponse(
+            **_api_settings_payload(max_cells=100_000)
         )
-        ServiceClient._model_limits_ts = time.monotonic()
+        ServiceClient._api_settings_ts = time.monotonic()
 
     def tearDown(self):
-        ServiceClient._model_limits = None
-        ServiceClient._model_limits_ts = 0.0
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
         # undo setUp
         config.reset()
 
@@ -11804,7 +12411,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         tabpfn = TabPFNRegressor()
 
         # skip fitting
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         # test oversized cells
         with self.assertRaises(ValueError):
@@ -11815,7 +12422,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         tabpfn = TabPFNRegressor()
 
         # skip fitting
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         # mock prediction
         with patch.object(InferenceClient, "predict") as mock_predict:
@@ -11848,10 +12455,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         )
 
         # Skip fitting
-        regressor.fitted_ = True
-        regressor._last_fitted_train_set_id = UUID(
-            "00000000-0000-0000-0000-000000000000"
-        )
+        regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         test_X = np.random.randn(10, 5)
 
@@ -11890,7 +12494,9 @@ class TestTabPFNRegressorInference(unittest.TestCase):
     def test_predict_params_output_type(self):
         """Test that predict_params contains correct output_type and quantiles."""
         regressor = TabPFNRegressor()
-        regressor.fitted_ = True  # Skip fitting
+        regressor.model_id_ = UUID(
+            "00000000-0000-0000-0000-000000000000"
+        )  # Skip fitting
         test_X = np.random.randn(10, 5)
 
         # Test default predict() sets output_type to "mean"
@@ -11920,7 +12526,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         """Server returns a stacked (n_quantiles, n_samples) array; predict()
         normalizes it to a list of per-quantile arrays, matching local tabpfn."""
         regressor = TabPFNRegressor()
-        regressor.fitted_ = True
+        regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         test_X = np.random.randn(20, 5)
         quantiles = [0.1, 0.5, 0.9]
 
@@ -11942,7 +12548,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         """A single quantile may arrive squeezed to 1D; it must still become a
         list of one (n_samples,) array, matching local tabpfn."""
         regressor = TabPFNRegressor()
-        regressor.fitted_ = True
+        regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         test_X = np.random.randn(20, 5)
 
         with patch.object(InferenceClient, "predict") as mock_predict:
@@ -11958,12 +12564,8 @@ class TestTabPFNRegressorInference(unittest.TestCase):
 
     def test_predict_full_adds_criterion_with_optional_dependencies(self):
         regressor = TabPFNRegressor()
-        regressor.fitted_ = True
-        regressor._last_fitted_train_set_id = UUID(
-            "00000000-0000-0000-0000-000000000000"
-        )
+        regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         regressor._last_train_X = np.random.randn(5, 2)
-        regressor._last_train_y = np.random.randn(5)
 
         test_X = np.random.randn(3, 2)
         dummy_output = {"borders": [0.0, 1.0], "mean": np.random.randn(3)}
@@ -12007,12 +12609,8 @@ class TestTabPFNRegressorInference(unittest.TestCase):
 
     def test_predict_full_missing_optional_dependencies_logs_warning(self):
         regressor = TabPFNRegressor()
-        regressor.fitted_ = True
-        regressor._last_fitted_train_set_id = UUID(
-            "00000000-0000-0000-0000-000000000000"
-        )
+        regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
         regressor._last_train_X = np.random.randn(5, 2)
-        regressor._last_train_y = np.random.randn(5)
 
         test_X = np.random.randn(3, 2)
         dummy_output = {"borders": [0.0, 1.0], "mean": np.random.randn(3)}
@@ -12044,7 +12642,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
         """Test predictions with long text (>2500 chars) and text containing commas."""
         # Skip initialization
         tabpfn = TabPFNRegressor()
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         # Create test data with a mix of numeric and text features
         n_samples = 5
@@ -12131,7 +12729,7 @@ class TestTabPFNRegressorInference(unittest.TestCase):
 
         # Skip initialization
         tabpfn = TabPFNRegressor()
-        tabpfn.fitted_ = True
+        tabpfn.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
 
         # Create test data
         n_samples = 5
@@ -12590,106 +13188,6 @@ class TestCleanTextFeatures(unittest.TestCase):
 
 
 ================================================
-FILE: tests/unit/test_thinking_validation.py
-================================================
-"""Validator contract for the thinking_* knobs on TabPFNClassifier/Regressor.
-
-Pins the rule that thinking is enabled when either `thinking_mode=True` OR
-`thinking_effort` is set, so callers can pass either or both without surprise.
-"""
-
-from typing import Any
-
-import pytest
-
-from tabpfn_client.estimator import (
-    THINKING_TIMEOUT_MAX_S,
-    validate_thinking_mode,
-)
-
-
-def _v(**overrides):
-    args: dict[str, Any] = dict(
-        thinking_mode=False,
-        thinking_effort=None,
-        thinking_timeout_s=None,
-        thinking_metric=None,
-        model_path="auto",
-    )
-    args.update(overrides)
-    return validate_thinking_mode(**args)
-
-
-class TestThinkingValidator:
-    def test_neither_flag_is_off(self):
-        # No flags: thinking off, no errors.
-        _v()
-
-    def test_thinking_mode_alone_is_on(self):
-        # Just `thinking_mode=True` is enough; downstream defaults effort to "medium".
-        _v(thinking_mode=True)
-
-    def test_thinking_effort_alone_implies_on(self):
-        # The whole point of this contract: setting thinking_effort enables
-        # thinking even without thinking_mode=True.
-        _v(thinking_effort="medium")
-        _v(thinking_effort="high")
-
-    def test_extra_knobs_with_thinking_effort_set_are_allowed(self):
-        # If thinking is on (via either flag), the budget/metric knobs apply.
-        _v(thinking_effort="high", thinking_timeout_s=60.0, thinking_metric="rmse")
-        _v(thinking_mode=True, thinking_timeout_s=60.0, thinking_metric="rmse")
-
-    def test_extra_knobs_without_thinking_are_rejected(self):
-        # Knobs that only matter when thinking is on must error if neither flag is set.
-        with pytest.raises(ValueError, match="thinking is enabled"):
-            _v(thinking_timeout_s=60.0)
-        with pytest.raises(ValueError, match="thinking is enabled"):
-            _v(thinking_metric="rmse")
-
-    def test_invalid_effort_level_rejected(self):
-        with pytest.raises(ValueError, match="thinking_effort must be one of"):
-            _v(thinking_effort="extreme")
-
-    def test_timeout_above_cap_rejected(self):
-        with pytest.raises(ValueError, match="exceeds the"):
-            _v(thinking_effort="high", thinking_timeout_s=THINKING_TIMEOUT_MAX_S + 1)
-
-    def test_timeout_at_cap_allowed(self):
-        _v(thinking_effort="high", thinking_timeout_s=THINKING_TIMEOUT_MAX_S)
-
-    def test_thinking_with_v3_model_path_allowed(self):
-        _v(thinking_mode=True, model_path="v3_default")
-        _v(thinking_effort="high", model_path="v3_default")
-
-    def test_thinking_with_auto_model_path_allowed(self):
-        # "auto" defers selection to the server (which picks v3 currently).
-        _v(thinking_mode=True, model_path="auto")
-        # "default" is the backward-compatible alias for "auto".
-        _v(thinking_mode=True, model_path="default")
-
-    def test_thinking_with_v25_model_path_rejected(self):
-        with pytest.raises(ValueError, match="only supported on v3 models"):
-            _v(thinking_mode=True, model_path="v2.5_default")
-        with pytest.raises(ValueError, match="only supported on v3 models"):
-            _v(thinking_effort="high", model_path="v2.5_default")
-
-    def test_thinking_with_v2_model_path_rejected(self):
-        with pytest.raises(ValueError, match="only supported on v3 models"):
-            _v(thinking_mode=True, model_path="v2_default")
-
-    def test_thinking_with_v26_model_path_rejected(self):
-        with pytest.raises(ValueError, match="only supported on v3 models"):
-            _v(thinking_mode=True, model_path="v2.6_default")
-
-    def test_thinking_off_with_non_v3_model_path_allowed(self):
-        # The guard only kicks in when thinking is enabled.
-        _v(model_path="v2.5_default")
-        _v(model_path="v2_default")
-
-
-
-================================================
 FILE: tests/unit/test_validate_test_set.py
 ================================================
 from typing import Any
@@ -12698,15 +13196,18 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from tabpfn_client.api_models import GetModelLimitsResponse
+from tabpfn_client.api_models import GetSettingsResponse
 from tabpfn_client.client import ServiceClient
-from tabpfn_client.estimator import FALLBACK_PREDICT_ROW_PAIRS_BUDGET, validate_test_set
+from tabpfn_client.estimator import validate_test_set
+
+
+DEFAULT_BUDGET = 250_000 * 1_000_000
 
 
 def _limits(
     test_set_max_rows: int = 1_000_000,
-    predict_row_pairs_budget: int | None = FALLBACK_PREDICT_ROW_PAIRS_BUDGET,
-) -> GetModelLimitsResponse:
+    predict_row_pairs_budget: int = DEFAULT_BUDGET,
+) -> GetSettingsResponse:
     model_limit: dict[str, Any] = {
         "train_set_max_rows": 1_000_000,
         "train_set_max_cells": 100_000_000,
@@ -12716,14 +13217,17 @@ def _limits(
         "max_cols": 2_000,
         "max_classes": 10,
     }
-    if predict_row_pairs_budget is not None:
-        model_limit["predict_row_pairs_budget"] = predict_row_pairs_budget
-    return GetModelLimitsResponse.model_validate(
+    model_limit["predict_row_pairs_budget"] = predict_row_pairs_budget
+    return GetSettingsResponse.model_validate(
         {
             "default_model_version": "v3",
             "max_model_limit": model_limit,
             "model_limits": {"v3": model_limit},
             "dataset_max_size_bytes": 100_000_000,
+            "async_settings": {
+                "use_above_trainset_size_bytes": 50 * 1024 * 1024,
+                "poll_timeout_secs": 7200.0,
+            },
         }
     )
 
@@ -12735,11 +13239,9 @@ def _X(n_rows: int) -> np.ndarray:
 def _validate(
     n_test_rows: int,
     train_rows: int | None = None,
-    limits: GetModelLimitsResponse | None = None,
+    limits: GetSettingsResponse | None = None,
 ):
-    with patch.object(
-        ServiceClient, "get_model_limits", return_value=limits or _limits()
-    ):
+    with patch.object(ServiceClient, "get_settings", return_value=limits or _limits()):
         validate_test_set(_X(n_test_rows), None, train_rows=train_rows)
 
 
@@ -12758,30 +13260,22 @@ def test_adaptive_limit_shrinks_with_train_rows():
 
 def test_adaptive_limit_never_exceeds_static_limit():
     # Small train sets leave the static cap binding
-    small_train = FALLBACK_PREDICT_ROW_PAIRS_BUDGET // 1_000_000 // 10
+    small_train = DEFAULT_BUDGET // 1_000_000 // 10
     _validate(1_000_000, train_rows=small_train)
     with pytest.raises(ValueError, match="exceeds the maximum of 1000000"):
         _validate(1_000_001, train_rows=small_train)
 
 
-def test_server_sent_budget_takes_precedence():
-    # Half the fallback budget -> 125k test rows for 1M train rows
+def test_smaller_budget_shrinks_adaptive_limit():
+    # Half the default budget -> 125k test rows for 1M train rows
     limits = _limits(predict_row_pairs_budget=125_000 * 1_000_000)
     _validate(125_000, train_rows=1_000_000, limits=limits)
     with pytest.raises(ValueError, match="exceeds the maximum of 125000"):
         _validate(125_001, train_rows=1_000_000, limits=limits)
 
 
-def test_fallback_budget_applies_when_server_omits_it():
-    # Older servers don't send predict_row_pairs_budget
-    limits = _limits(predict_row_pairs_budget=None)
-    _validate(250_000, train_rows=1_000_000, limits=limits)
-    with pytest.raises(ValueError, match="exceeds the maximum of 250000"):
-        _validate(250_001, train_rows=1_000_000, limits=limits)
-
-
 def test_no_limits_available_skips_validation():
-    with patch.object(ServiceClient, "get_model_limits", return_value=None):
+    with patch.object(ServiceClient, "get_settings", return_value=None):
         validate_test_set(_X(2_000_000), None, train_rows=1_000_000)
 
 
