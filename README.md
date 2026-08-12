@@ -23,6 +23,8 @@ It is edited *only* in its own checkout — never from inside a consuming
 project. If you are an AI agent, read [`AGENTS.md`](AGENTS.md) before
 touching anything.
 
+---
+
 <a id="update"></a>
 
 ## Using this library in a project
@@ -99,113 +101,9 @@ git submodule status
 
 </details>
 
-## Contents
-
-| Path | What you'll find |
-|---|---|
-| [`SYNTHESIS.md`](SYNTHESIS.md) | **Start here.** The cross-paper synthesis of the TFM paradigm: lineage timeline (PFNs → TabPFN v1/v2/2.5/3 → scaling / adaptation / extensions), the design axes on which the field varies, recurring weaknesses, open frontiers, and a one-card-per-paper appendix. |
-| [`SUMMARIES.md`](SUMMARIES.md) | The per-paper tour, chronological: venue, where each paper fits, what it contains, strengths and limitations. |
-| [`papers/`](papers/) | The PDFs, foldered by year and prefixed with the release month — `papers/<year>/<MM>_Author_et_al._Title.pdf` — with full-text extractions mirrored under [`papers/text/`](papers/text/) as `papers/text/<year>/<same-name>.txt`. |
-| [`REPOSITORIES.md`](REPOSITORIES.md) | What each code dump is, why it's kept, and what to grep for when building on it. |
-| [`repositories/`](repositories/) | The flat-text code snapshots themselves (made with `gitingest`). |
-| [`PROJECT_SPECIFIC.template.md`](PROJECT_SPECIFIC.template.md) | Template a consuming project copies to `PROJECT_SPECIFIC.md` for its own notes. |
-| [`CHANGELOG.md`](CHANGELOG.md) | Human-readable log of library updates — check it before updating a project's pin. |
-| [`scripts/`](scripts/) | Maintenance tools — see below. |
-
-The shared documents are **project-neutral by contract**: they describe
-the literature, never any one project's pipeline. Project-specific notes
-live in that project's own `PROJECT_SPECIFIC.md`.
-
-## How to browse
-
-- *"I want to understand the field"* → read `SYNTHESIS.md` top to bottom.
-- *"What did paper X actually do?"* → `SUMMARIES.md`, or grep the full
-  text in `papers/text/<year>/`.
-- *"How does the official implementation handle Y?"* → `REPOSITORIES.md`
-  to pick the right dump, then grep `repositories/*.txt` by symbol name.
-
-## Scripts
-
-Windows PowerShell (one command per line — no `&&`):
-
-```bash
-python -m venv .venv
-```
-
-```bash
-.venv\Scripts\Activate.ps1
-```
-
-```bash
-pip install -r requirements.txt
-```
-
-Everything is run from the repository root.
-
-### `scripts/maintain.py` — the one command to run
-
-Runs the whole maintenance sweep and prints a single consolidated report:
-re-dumps the upstream repositories, checks every paper has an up-to-date
-text extraction, checks whether newer arXiv versions of the papers exist,
-and checks this library against Zotero.
-
-```bash
-python scripts/maintain.py                  # full sweep
-python scripts/maintain.py --check-only     # change nothing, just report
-python scripts/maintain.py --skip repos     # skip the slow dump refresh
-```
-
-### `scripts/refresh_repositories.py` — re-snapshot the code dumps
-
-Overwrites every `repositories/*.txt` with a fresh `gitingest` dump of
-its upstream GitHub source, under the same filename so existing greps
-keep resolving. Atomic (temp file + swap) with a shrink guard that
-refuses a new dump smaller than 50 % of the old one.
-
-```bash
-python scripts/refresh_repositories.py
-python scripts/refresh_repositories.py --only NanoTabPFN
-python scripts/refresh_repositories.py --force-shrink --only "PFNS.txt"
-```
-
-### `scripts/extract_paper_text.py` — PDF → text
-
-Writes `papers/<year>/X.pdf` to `papers/text/<year>/X.txt`, stripping
-control bytes so the result stays greppable. Step 2 of adding a paper.
-
-```bash
-python scripts/extract_paper_text.py papers/2026/06_Kong_and_Das_Introducing_TabFM.pdf
-python scripts/extract_paper_text.py --all      # fill in anything missing
-python scripts/extract_paper_text.py --check    # report gaps, write nothing
-```
-
-### `scripts/check_zotero_sync.py` — Zotero ↔ library consistency
-
-Compares the Zotero collection that mirrors this library against
-`papers/` and reports what diverged: papers in one place but not the
-other, year/month/title/author mismatches, and missing arXiv IDs or DOIs.
-Read-only on both sides — it queries a copy of `zotero.sqlite` and never
-writes to Zotero or moves a file.
-
-```bash
-python scripts/check_zotero_sync.py
-python scripts/check_zotero_sync.py --collection "Foundation Models"
-python scripts/check_zotero_sync.py --json      # machine-readable
-```
-
-### `scripts/check_paper_versions.py` — are the PDFs current?
-
-For every paper with an arXiv ID, asks arXiv whether a newer version
-exists than the one on disk, and reports the ones worth re-downloading.
-Never downloads anything itself.
-
-```bash
-python scripts/check_paper_versions.py
-```
-
 <a id="the-read-only-rule"></a>
 
-## The read-only rule
+### The read-only rule
 
 Inside a consuming project, `tfm-library/` is **read-only**. Never edit,
 add, move, or delete anything in it — a change there is not tracked by
@@ -219,20 +117,227 @@ submodule's status and can never be pushed upstream. All project-specific
 notes about this literature belong there, following the rules in the
 template.
 
-## Housekeeping notes
+### Where to look for what
 
-- `repositories/TabPFN Wide.txt` (~366 MB) exceeds GitHub's file limit
-  and is gitignored; regenerate locally with
-  `python scripts/refresh_repositories.py --only "TabPFN Wide.txt"`.
-- **`repositories/VSC Documentation.txt` is the one deliberate exception
-  to the TFM-only scope, and it is a load-bearing one — do not remove
-  it.** It is the full KU Leuven / Flemish Supercomputer Centre user
-  documentation. Every project consuming this library trains and evaluates
-  on VSC, so SLURM scripting, partition and GPU choice, the Lustre/GPFS
-  storage split, and credit accounting are shared questions across all of
-  them; having the answers greppable offline is worth far more than the
-  file costs. No further non-TFM files should be added.
-- This repository is **public**.
+- *"I want to understand the field"* → read `SYNTHESIS.md` top to bottom.
+- *"What did paper X actually do?"* → `SUMMARIES.md`, or grep the full
+  text in `papers/text/<year>/`.
+- *"How does the official implementation handle Y?"* → `REPOSITORIES.md`
+  to pick the right dump, then grep `repositories/*.txt` by symbol name.
+- *"Which papers is the field actually building on?"* → open
+  `scripts/citations/Citations.ipynb`.
+
+---
+
+# What is in here, folder by folder
+
+## Root — the documents
+
+Everything a reader consumes directly. The three shared documents are
+**project-neutral by contract**: they describe the literature, never any
+one project's pipeline. Project-specific notes live in that project's own
+`PROJECT_SPECIFIC.md`.
+
+| File | What it is |
+|---|---|
+| [`SYNTHESIS.md`](SYNTHESIS.md) | **Start here.** The cross-paper synthesis of the TFM paradigm: lineage timeline (PFNs → TabPFN v1/v2/2.5/3 → scaling / adaptation / extensions), the design axes on which the field varies, recurring weaknesses, open frontiers, and a one-card-per-paper appendix. |
+| [`SUMMARIES.md`](SUMMARIES.md) | The per-paper tour, chronological: venue, where each paper fits, what it contains, strengths and limitations. Opens with an overview table of all papers. |
+| [`REPOSITORIES.md`](REPOSITORIES.md) | The guide to the code dumps: what each one is, why it is kept, and what to grep for when building on it. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Human-readable log of library updates, newest first, one dated section per day. Read it before moving a project's pin. |
+| [`AGENTS.md`](AGENTS.md) | The contract for AI agents. Which side of the read-only boundary you are on, and the rules for each side. |
+| [`PROJECT_SPECIFIC.template.md`](PROJECT_SPECIFIC.template.md) | Template a consuming project copies to `PROJECT_SPECIFIC.md` for its own notes. Gitignored here under that name. |
+| [`requirements.txt`](requirements.txt) | Dependencies of the maintenance scripts — and nothing else. There is deliberately no `pyproject.toml`: this is a knowledge base, not an installable package. |
+
+## `papers/` — the literature
+
+PDFs foldered by year and prefixed with the **release month**, so the
+filesystem sorts chronologically and cannot disagree with the documents:
+
+```
+papers/<year>/<MM>_Author_et_al._Title.pdf
+papers/text/<year>/<MM>_Author_et_al._Title.txt
+```
+
+`papers/text/` mirrors the PDF tree exactly, one UTF-8 extraction per
+paper, so an agent can grep the full text of any paper without PDF
+tooling. **Never hand-edit those** — they are generated, and a manual fix
+is lost on the next extraction.
+
+Naming: underscores, no spaces or commas; `Author_and_Author` for two
+authors, `Author_et_al.` for three or more; names ASCII-folded
+(`Müller` → `Muller`).
+
+## `repositories/` — the code dumps
+
+Flat-text snapshots of upstream implementations, one `.txt` per
+repository, made with [`gitingest`](https://github.com/cyclotruc/gitingest).
+This is what makes "what does the official code actually do" answerable
+offline against the exact code a paper shipped.
+[`REPOSITORIES.md`](REPOSITORIES.md) describes every one of them; two
+deserve mention here because they are exceptions:
+
+- **`TabPFN Wide.txt`** (~366 MB) exceeds GitHub's file limit and is
+  **gitignored**. Regenerate it locally with
+  `python scripts/dumps/refresh_repositories.py --only "TabPFN Wide.txt"`.
+- **`VSC Documentation.txt`** is the one deliberate exception to the
+  TFM-only scope, and a load-bearing one — **do not remove it**. It is the
+  full KU Leuven / Flemish Supercomputer Centre user documentation. Every
+  project consuming this library trains and evaluates on VSC, so SLURM
+  scripting, partition and GPU choice, the Lustre/GPFS storage split, and
+  credit accounting are shared questions across all of them; having the
+  answers greppable offline is worth far more than the file costs. No
+  further non-TFM files should be added.
+
+Cite these dumps **by symbol name, never by line number** — a refresh
+moves every line by thousands.
+
+## `data/` — data the scripts produce
+
+Small, tracked, append-only datasets. Currently one:
+
+| File | What it is |
+|---|---|
+| `data/citations.csv` | One row per paper per source per snapshot date: `date, paper, source, citations, match, matched_id, matched_title`. Written by `scripts/citations/citations.py`, read by the notebook. It is in git on purpose — the history *is* the dataset. |
+
+## `scripts/` — the maintenance tools
+
+Run everything from the repository root. Set up once (Windows PowerShell;
+one command per line, no `&&`):
+
+```bash
+python -m venv .venv
+```
+
+```bash
+.venv\Scripts\Activate.ps1
+```
+
+```bash
+pip install -r requirements.txt
+```
+
+### The two you actually run
+
+| File | What it does |
+|---|---|
+| `scripts/maintain.py` | **The one command.** Runs every stage and prints one consolidated report: fill in missing text extractions, check document consistency, check cited symbols, check against Zotero, check for newer arXiv versions, re-dump the repositories. |
+| `scripts/propagate_to_downstream.py` | Pushes this commit out to every project on disk that embeds the library, moving each one's submodule pin. This folder is the ground truth. |
+
+```bash
+python scripts/maintain.py                     # full sweep
+python scripts/maintain.py --check-only        # change nothing, just report
+python scripts/maintain.py --skip repos        # skip the slow dump refresh
+python scripts/maintain.py --include citations # add the opt-in citation snapshot
+```
+
+`propagate_to_downstream.py` refuses to run when this repository is dirty
+or has unpushed commits, because a pin must exist on `origin` or a
+collaborator's `git submodule update --init` cannot fetch it. It commits
+**only** the submodule path, so unrelated work in a consuming project is
+never swept into the bump, and it never pushes downstream unless asked.
+
+```bash
+python scripts/propagate_to_downstream.py --dry-run   # show the plan
+python scripts/propagate_to_downstream.py             # update + commit locally
+python scripts/propagate_to_downstream.py --push      # also push each project
+```
+
+### `scripts/papers/` — adding and extracting papers
+
+| File | What it does |
+|---|---|
+| `new_paper.py` | Files a downloaded PDF under the house naming rule, extracts its text, and inserts **placeholders** for the summary entry, overview row, timeline row, appendix card and changelog line — each in the right chronological slot. It writes no prose: that is the actual work, and an auto-written summary nobody notices is worse than none. |
+| `extract_paper_text.py` | PDF → `papers/text/<year>/<same-name>.txt`. Strips control bytes and the line-number gutters that ICLR/NeurIPS templates print, so the result stays greppable. |
+
+```bash
+python scripts/papers/new_paper.py ~/Downloads/2607.27546v1.pdf
+python scripts/papers/new_paper.py paper.pdf --dry-run   # decide nothing
+python scripts/papers/extract_paper_text.py --all        # fill in anything missing
+python scripts/papers/extract_paper_text.py --check      # report gaps, write nothing
+```
+
+Placeholders read `TODO(new-paper)` and `check_docs.py` fails while any of
+them survives, so a half-finished paper cannot be committed by accident.
+
+### `scripts/checks/` — is everything still consistent?
+
+All four are **read-only** and exit non-zero when something is wrong, so
+they compose with `maintain.py` and with the pre-commit hook.
+
+| File | What it verifies |
+|---|---|
+| `check_docs.py` | Every paper has a text extraction, a summary entry, an overview row, a timeline row and an appendix card, with counts agreeing; all four sequences are chronological; every relative link and `#anchor` resolves; the changelog is newest-first with no duplicate or future dates; the shared documents name no consuming project; no unfinished scaffolds remain. |
+| `check_symbols.py` | Every code symbol cited in the documents still exists in the dump it is cited against — the check AGENTS.md rule 5 asks for after a refresh. Also flags any `` `dump.txt:1234` `` line-number citation. |
+| `check_zotero_sync.py` | The Zotero collection mirroring this library against `papers/`: what is in one place and not the other, year/month/title/author mismatches, missing arXiv IDs or DOIs. Queries a copy of `zotero.sqlite`; never writes to Zotero or moves a file. |
+| `check_paper_versions.py` | Asks arXiv whether a newer version exists than the PDF on disk. Never downloads anything — replacing a paper can change its year folder and month prefix, and the summaries may quote version-specific numbers, so it stays a manual decision. |
+
+```bash
+python scripts/checks/check_docs.py
+python scripts/checks/check_symbols.py --verbose
+python scripts/checks/check_zotero_sync.py --collection "Foundation Models"
+python scripts/checks/check_paper_versions.py
+```
+
+### `scripts/citations/` — which papers is the field building on?
+
+| File | What it does |
+|---|---|
+| `citations.py` | Looks up each paper's citation count and **appends** it to `data/citations.csv`, never rewriting history. Sources: OpenAlex and Semantic Scholar by default (open APIs, no key); Google Scholar only on request, because scraping it breaks Google's terms of service and gets the IP CAPTCHA-blocked. Matches by DOI, else arXiv ID, else a title search that must clear a similarity threshold — and records which, so a wrong match is visible. |
+| `Citations.ipynb` | Reads that CSV and plots it: current standings, movement between snapshots, and citations per month since release — the one number comparable between a 2021 paper and a 2026 one. |
+
+```bash
+python scripts/citations/citations.py             # snapshot + append
+python scripts/citations/citations.py --dry-run   # look, write nothing
+python scripts/citations/citations.py --report    # read the stored history
+```
+
+A single snapshot gives you a ranking; several give you a trend, which is
+the point. Run it every month or two and **commit the CSV** — the series
+only exists because the file is in git.
+
+### `scripts/dumps/` — refreshing the code snapshots
+
+| File | What it does |
+|---|---|
+| `refresh_repositories.py` | Overwrites every `repositories/*.txt` with a fresh `gitingest` dump of its upstream source, under the same filename so existing greps keep resolving. Atomic (temp file + swap), with per-repository include/exclude filters and a shrink guard that refuses a new dump smaller than half the old one. |
+
+```bash
+python scripts/dumps/refresh_repositories.py
+python scripts/dumps/refresh_repositories.py --only NanoTabPFN
+```
+
+Two warnings from this script are **permanent and expected**. The shrink
+guard on `On Finetuning Tabular Foundation Models.txt` fails *correctly*:
+upstream deleted its entire `exp/` directory including all 342
+`report.json` reports, so this dump is now the only surviving copy —
+never `--force-shrink` it. And `TabForestPFN.txt` reports SKIP because it
+is too large for gitingest's clone timeout; refresh it with the
+sparse-clone recipe in the script's docstring.
+
+### `scripts/hooks/` — catching mistakes before they are committed
+
+| File | What it does |
+|---|---|
+| `pre-commit` | Runs `check_docs.py` on every commit, and `check_symbols.py` when a document or a dump is staged. Offline only — nothing here touches the network. |
+| `install.py` | Points git at this folder via `core.hooksPath`, so the hook itself stays under version control instead of hiding in `.git/hooks/`. |
+
+```bash
+python scripts/hooks/install.py
+python scripts/hooks/install.py --status
+python scripts/hooks/install.py --uninstall
+```
+
+Bypass a single commit with `git commit --no-verify`.
+
+### `scripts/lib/` — shared internals
+
+| File | What it is |
+|---|---|
+| `library.py` | Everything more than one script needs to know about the shape of this repository: where the papers are, how a filename decomposes into date/author/title, how to read the arXiv stamp out of an extraction, how to parse `SUMMARIES.md`, and how GitHub slugifies a heading. It exists so the scripts cannot drift apart in how they answer those questions — which they had already started to. |
+
+Not run directly.
+
+---
 
 ## Consuming projects
 
@@ -245,3 +350,31 @@ The two credit projects attack the same problem from opposite ends of design
 axis (a) in [`SYNTHESIS.md`](SYNTHESIS.md): CreditPFN adapts a finished model
 with real data, CreditICL changes what the model is pretrained on in the
 first place.
+
+This repository is **public**.
+
+---
+
+## Contents
+
+| Path | What you'll find |
+|---|---|
+| [`SYNTHESIS.md`](SYNTHESIS.md) | The cross-paper synthesis of the field — start here. |
+| [`SUMMARIES.md`](SUMMARIES.md) | Per-paper summaries, chronological, with an overview table. |
+| [`REPOSITORIES.md`](REPOSITORIES.md) | Guide to the code dumps: what each is and what to grep for. |
+| [`CHANGELOG.md`](CHANGELOG.md) | Update log, newest first — read before bumping a pin. |
+| [`AGENTS.md`](AGENTS.md) | Rules for AI agents, on either side of the read-only boundary. |
+| [`PROJECT_SPECIFIC.template.md`](PROJECT_SPECIFIC.template.md) | Template for a consuming project's own notes. |
+| [`requirements.txt`](requirements.txt) | Dependencies of the maintenance scripts. |
+| [`papers/`](papers/) | PDFs as `<year>/<MM>_Author_et_al._Title.pdf`. |
+| [`papers/text/`](papers/text/) | Full-text extractions, mirroring the PDF tree. |
+| [`repositories/`](repositories/) | Flat-text code snapshots of the upstream implementations. |
+| [`data/`](data/) | Append-only datasets the scripts produce (citation history). |
+| [`scripts/maintain.py`](scripts/maintain.py) | Run every check and refresh; one report. |
+| [`scripts/propagate_to_downstream.py`](scripts/propagate_to_downstream.py) | Move every downstream project's pin to this commit. |
+| [`scripts/papers/`](scripts/papers/) | File a new paper; extract PDF text. |
+| [`scripts/checks/`](scripts/checks/) | Document, symbol, Zotero and arXiv-version checks. |
+| [`scripts/citations/`](scripts/citations/) | Citation snapshots and the notebook that plots them. |
+| [`scripts/dumps/`](scripts/dumps/) | Re-snapshot the upstream repositories. |
+| [`scripts/hooks/`](scripts/hooks/) | The pre-commit hook and its installer. |
+| [`scripts/lib/`](scripts/lib/) | Shared helpers the scripts import. |

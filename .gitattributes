@@ -1,4 +1,11 @@
 *.md text eol=lf
 *.py text eol=lf
 *.txt text eol=lf
+*.csv text eol=lf
+*.ipynb text eol=lf
 *.pdf binary
+
+# The git hooks are shell scripts. With core.autocrlf=true they would be
+# checked out with CRLF, and `#!/bin/sh\r` is not a program: the hook
+# fails with an error that points nowhere near the real cause.
+scripts/hooks/* text eol=lf

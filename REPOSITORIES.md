@@ -83,7 +83,7 @@ This file lives at the repo root; the dumps live in
 upstream source, named exactly as in the table above (`TabPFN .txt`
 keeps its intentional trailing space). Line counts are in the table;
 the only file not tracked by git is `TabPFN Wide.txt` (~366 MB,
-gitignored — regenerate with `python scripts/refresh_repositories.py`).
+gitignored — regenerate with `python scripts/dumps/refresh_repositories.py`).
 
 ### The one deliberate exception to the TFM-only scope
 
@@ -237,7 +237,7 @@ layout.
 > dump would therefore be 37 % of the size and would silently destroy the
 > hyperparameter evidence the "Verified config facts" table below is built
 > from — data that no longer exists anywhere upstream. The shrink guard in
-> `scripts/refresh_repositories.py` currently blocks this, reporting it as
+> `scripts/dumps/refresh_repositories.py` currently blocks this, reporting it as
 > a FAIL on every run; that FAIL is **correct and should be left alone**.
 
 **What it is.** A Yandex Research code dump for the Rubachev et al.
@@ -580,7 +580,7 @@ hosted API. Not relevant to a self-hosted training workflow.
 
 **Upstream:** [docs.priorlabs.ai/overview](https://docs.priorlabs.ai/overview).
 Prior Labs **no longer publishes** the docs GitHub source, so this file
-cannot be refreshed by ``scripts/refresh_repositories.py``. It's
+cannot be refreshed by ``scripts/dumps/refresh_repositories.py``. It's
 listed in ``SKIP_NON_GIT`` and must be refreshed by hand (copy the
 relevant pages from the live docs site) when the on-disk snapshot
 goes stale.
@@ -1020,7 +1020,7 @@ spirit as the upstream `FinetunedTabPFNClassifier` per-fit row cap.
 ## Refreshing this folder
 
 - For the upstream code repos (`TabPFN .txt`, `PFNS.txt`, etc.), run
-  `python scripts/refresh_repositories.py` (see its module docstring
+  `python scripts/dumps/refresh_repositories.py` (see its module docstring
   for `--only` / `--force-shrink` / `--timeout`). It re-dumps every
   mapped file via gitingest and **overwrites the existing file under
   the same filename** — atomically, with a shrink guard — so existing

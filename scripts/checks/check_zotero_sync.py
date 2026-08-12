@@ -32,9 +32,9 @@ override with ``--data-dir`` / ``--base-path`` if needed.
 
 Usage::
 
-    python scripts/check_zotero_sync.py
-    python scripts/check_zotero_sync.py --collection "Foundation Models"
-    python scripts/check_zotero_sync.py --json
+    python scripts/checks/check_zotero_sync.py
+    python scripts/checks/check_zotero_sync.py --collection "Foundation Models"
+    python scripts/checks/check_zotero_sync.py --json
 
 Exit code is 0 when nothing diverged, 1 otherwise (so it can gate a
 maintenance run).
@@ -52,7 +52,7 @@ import tempfile
 import unicodedata
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 _PAPERS = _ROOT / "papers"
 
 DEFAULT_COLLECTION = "Foundation Models"

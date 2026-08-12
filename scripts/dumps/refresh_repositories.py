@@ -40,11 +40,11 @@ Running it
     Press *play* in your IDE on this file → refreshes every entry.
     Equivalent CLI calls::
 
-        python scripts/refresh_repositories.py
-        python scripts/refresh_repositories.py --only "NanoTabPFN.txt"
-        python scripts/refresh_repositories.py --only NanoTabPFN     # .txt added for you
-        python scripts/refresh_repositories.py --only "TabPFN .txt" --only "PFNS.txt"
-        python scripts/refresh_repositories.py --force-shrink
+        python scripts/dumps/refresh_repositories.py
+        python scripts/dumps/refresh_repositories.py --only "NanoTabPFN.txt"
+        python scripts/dumps/refresh_repositories.py --only NanoTabPFN     # .txt added for you
+        python scripts/dumps/refresh_repositories.py --only "TabPFN .txt" --only "PFNS.txt"
+        python scripts/dumps/refresh_repositories.py --force-shrink
 
 Very large repositories
     gitingest clones before it filters, and the installed release
@@ -276,9 +276,9 @@ SKIP_NON_GIT: dict[str, str] = {
 def _default_repositories_dir() -> Path:
     """Resolve ``<repo-root>/repositories`` from this file's location.
 
-    Layout assumed:  ``<repo-root>/scripts/refresh_repositories.py``.
+    Layout assumed:  ``<repo-root>/scripts/dumps/refresh_repositories.py``.
     """
-    return Path(__file__).resolve().parents[1] / "repositories"
+    return Path(__file__).resolve().parents[2] / "repositories"
 
 
 def _silence_gitingest_logging() -> None:

@@ -15,8 +15,8 @@ blog posts) are listed as unverifiable rather than silently skipped.
 
 Usage::
 
-    python scripts/check_paper_versions.py
-    python scripts/check_paper_versions.py --json
+    python scripts/checks/check_paper_versions.py
+    python scripts/checks/check_paper_versions.py --json
 
 Requires network access. Exit code 1 if any paper is outdated.
 """
@@ -27,12 +27,13 @@ import argparse
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 _TEXT = _ROOT / "papers" / "text"
 
 _API = "http://export.arxiv.org/api/query?id_list={ids}&max_results=100"
@@ -73,12 +74,28 @@ def local_papers() -> tuple[dict[str, dict], list[str]]:
 
 
 def query_arxiv(ids: list[str]) -> dict[str, dict]:
-    """Ask arXiv for the current version of each id (one batched request)."""
+    """Ask arXiv for the current version of each id (one batched request).
+
+    arXiv answers a busy moment with 429 rather than queueing, and this
+    stage runs inside ``maintain.py`` — without a retry a transient
+    throttle fails the whole sweep and says nothing about the papers.
+    """
     url = _API.format(ids=",".join(ids))
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "tfm-library-maintenance/1.0"})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        root = ET.fromstring(r.read())
+    root = None
+    for attempt, wait in enumerate((5, 15, 40)):
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "tfm-library-maintenance/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                root = ET.fromstring(r.read())
+            break
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429 or attempt == 2:
+                raise
+            print(f"  arXiv rate-limited; retrying in {wait}s", file=sys.stderr)
+            time.sleep(wait)
+    if root is None:
+        raise urllib.error.URLError("arXiv did not answer")
 
     out: dict[str, dict] = {}
     for entry in root.findall(f"{_ATOM}entry"):

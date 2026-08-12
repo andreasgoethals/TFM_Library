@@ -12,11 +12,24 @@
 # Pinned loosely: these are dev tools, and a newer minor release breaking
 # a one-off maintenance run is cheaper than a stale pin nobody bumps.
 
-# scripts/extract_paper_text.py — PDF -> papers/text/<year>/*.txt
+# scripts/papers/ — PDF -> papers/text/<year>/*.txt, and filing a new paper
 pypdf>=5.1
 
-# scripts/refresh_repositories.py — re-dump repositories/*.txt from GitHub
+# scripts/dumps/refresh_repositories.py — re-dump repositories/*.txt
 gitingest>=0.1.4
 
-# scripts/check_zotero_sync.py uses only the standard library (sqlite3),
-# so Zotero consistency checks work with no third-party dependency.
+# scripts/citations/Citations.ipynb — the notebook only. citations.py
+# itself is standard-library, so snapshots run without these.
+pandas>=2.0
+matplotlib>=3.8
+jupyter>=1.0
+
+# Everything in scripts/checks/ uses only the standard library (sqlite3,
+# urllib, csv), so the consistency checks work with no third-party
+# dependency at all.
+#
+# NOT installed by default, on purpose:
+#   scholarly     — Google Scholar counts for citations.py --source scholar.
+#                   Scraping Scholar breaks Google's terms of service and
+#                   gets the IP CAPTCHA-blocked, so it is opt-in twice
+#                   over: install it yourself, then confirm at the prompt.

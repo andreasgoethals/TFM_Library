@@ -7,20 +7,29 @@ Stages, in order (cheap checks first so failures surface fast):
 Stage            What it does                                    Mutating?
 ===============  ==============================================  ==========
 ``text``         fill in any missing ``papers/text/**`` files     yes
+``docs``         coverage, chronology, links, project-neutrality  no
+``symbols``      cited code symbols still exist in the dumps      no
 ``zotero``       compare ``papers/`` with the Zotero collection   no
 ``versions``     ask arXiv whether newer paper versions exist     no
 ``repos``        re-dump every ``repositories/*.txt``             yes
+``citations``    append today's citation counts (opt-in)          yes
 ===============  ==============================================  ==========
 
-``repos`` runs last because it is by far the slowest (network clones of
+``repos`` runs late because it is by far the slowest (network clones of
 every upstream repository) and the least urgent.
+
+``citations`` is **opt-in**: it queries two external APIs for every paper,
+takes minutes, and appends a row per paper to ``data/citations.csv``.
+That is a deliberate, occasional act — a monthly cadence is plenty — not
+something to do on every maintenance sweep. Ask for it by name.
 
 Usage::
 
-    python scripts/maintain.py                    # everything
+    python scripts/maintain.py                    # everything but citations
     python scripts/maintain.py --check-only       # no writes anywhere
     python scripts/maintain.py --skip repos       # everything but the dumps
     python scripts/maintain.py --only zotero      # a single stage
+    python scripts/maintain.py --include citations   # add the opt-in stage
 
 Exit code is 0 only if every stage reported clean.
 """
@@ -38,19 +47,31 @@ _SCRIPTS = _ROOT / "scripts"
 
 # stage -> (argv, mutating, one-line description)
 STAGES: dict[str, tuple[list[str], bool, str]] = {
-    "text": ([sys.executable, str(_SCRIPTS / "extract_paper_text.py"), "--all"],
+    "text": ([sys.executable, str(_SCRIPTS / "papers" / "extract_paper_text.py"), "--all"],
              True, "extract text for any paper missing it"),
-    "zotero": ([sys.executable, str(_SCRIPTS / "check_zotero_sync.py")],
+    "docs": ([sys.executable, str(_SCRIPTS / "checks" / "check_docs.py"), "--quiet"],
+             False, "document consistency (coverage, order, links, neutrality)"),
+    "symbols": ([sys.executable, str(_SCRIPTS / "checks" / "check_symbols.py")],
+                False, "cited code symbols still present in the dumps"),
+    "zotero": ([sys.executable, str(_SCRIPTS / "checks" / "check_zotero_sync.py")],
                False, "Zotero <-> library consistency"),
-    "versions": ([sys.executable, str(_SCRIPTS / "check_paper_versions.py")],
+    "versions": ([sys.executable, str(_SCRIPTS / "checks" / "check_paper_versions.py")],
                  False, "newer arXiv versions of held papers"),
-    "repos": ([sys.executable, str(_SCRIPTS / "refresh_repositories.py")],
+    "repos": ([sys.executable, str(_SCRIPTS / "dumps" / "refresh_repositories.py")],
               True, "re-dump repositories/*.txt from upstream"),
+    "citations": ([sys.executable, str(_SCRIPTS / "citations" / "citations.py")],
+                  True, "append today's citation counts to data/citations.csv"),
 }
+
+# Stages that never run unless named: slow, external, and appending to a
+# tracked data file. See the module docstring.
+OPTIONAL = {"citations"}
 
 # read-only substitute used by --check-only
 CHECK_ONLY_OVERRIDE: dict[str, list[str]] = {
-    "text": [sys.executable, str(_SCRIPTS / "extract_paper_text.py"), "--check"],
+    "text": [sys.executable, str(_SCRIPTS / "papers" / "extract_paper_text.py"), "--check"],
+    "citations": [sys.executable, str(_SCRIPTS / "citations" / "citations.py"),
+                  "--report"],
 }
 
 
@@ -70,12 +91,17 @@ def main(argv: list[str] | None = None) -> int:
                     choices=list(STAGES), help="skip a stage (repeatable)")
     ap.add_argument("--only", action="append", default=[], metavar="STAGE",
                     choices=list(STAGES), help="run only this stage (repeatable)")
+    ap.add_argument("--include", action="append", default=[], metavar="STAGE",
+                    choices=sorted(OPTIONAL),
+                    help=f"also run an opt-in stage ({', '.join(sorted(OPTIONAL))})")
     ap.add_argument("--quiet", action="store_true",
                     help="suppress per-stage output, print the summary only")
     args = ap.parse_args(argv)
 
+    asked = set(args.only) | set(args.include)
     selected = [s for s in STAGES
-                if (not args.only or s in args.only) and s not in args.skip]
+                if (not args.only or s in args.only) and s not in args.skip
+                and (s not in OPTIONAL or s in asked)]
     if args.check_only:
         selected = [s for s in selected
                     if not STAGES[s][1] or s in CHECK_ONLY_OVERRIDE]

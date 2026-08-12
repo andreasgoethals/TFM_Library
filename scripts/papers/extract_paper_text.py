@@ -12,9 +12,9 @@ Layout (mirrored, year folder for year folder)::
 
 Usage (from the library root)::
 
-    python scripts/extract_paper_text.py papers/2026/06_Author_et_al._Title.pdf
-    python scripts/extract_paper_text.py --all      # fill in any missing ones
-    python scripts/extract_paper_text.py --check    # report gaps, write nothing
+    python scripts/papers/extract_paper_text.py papers/2026/06_Author_et_al._Title.pdf
+    python scripts/papers/extract_paper_text.py --all      # fill in any missing ones
+    python scripts/papers/extract_paper_text.py --check    # report gaps, write nothing
 
 Requires ``pypdf`` (``pip install -r requirements.txt``).
 """
@@ -25,7 +25,7 @@ import argparse
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 _PAPERS = _ROOT / "papers"
 _TEXT = _PAPERS / "text"
 

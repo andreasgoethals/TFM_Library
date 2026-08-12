@@ -4,6 +4,91 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-12
+
+`scripts/` reorganised by job, four new tools, and a `README.md` rebuilt
+around "what is in each folder".
+
+- **`scripts/` now has subfolders**, one per job: `papers/` (add and
+  extract), `checks/` (four read-only consistency checks), `citations/`,
+  `dumps/` (the gitingest refresh), `hooks/`, and `lib/` for shared code.
+  `maintain.py` and `propagate_to_downstream.py` stay at the top because
+  they are the two you actually run. Every documented path was updated;
+  nothing else changed about how the scripts behave.
+- **New `scripts/lib/library.py`.** The shape of this repository —
+  where papers live, how a filename decomposes into date/author/title,
+  how to read an arXiv stamp out of an extraction, how GitHub slugifies a
+  heading — was being re-derived in each script, slightly differently
+  each time. One of those re-derivations was already wrong. It now has a
+  single implementation.
+- **New `scripts/citations/`: `citations.py` + `Citations.ipynb`.**
+  Records each paper's citation count and **appends** it to
+  `data/citations.csv` (tracked in git — the history is the dataset).
+  OpenAlex and Semantic Scholar by default; Google Scholar only on
+  request, because scraping it breaks Google's terms and CAPTCHA-blocks
+  the IP. Each source is a separate row rather than an average: they
+  disagree by 2× or more, and the notebook compares a paper against
+  itself over time within one source. Matching is by DOI, else arXiv ID,
+  else a title search that must clear a similarity threshold — and the
+  matched record's id and title are stored, so a wrong match is visible
+  instead of silently poisoning a series. A paper found nowhere is
+  recorded as absent, never as zero.
+- **New `scripts/papers/new_paper.py`.** Does the mechanical half of the
+  five-step add-a-paper procedure: files the PDF under the house naming
+  rule (metadata from the arXiv API, falling back to the PDF's own arXiv
+  banner rather than to today's date), extracts the text, and inserts
+  `TODO(new-paper)` placeholders in the correct chronological slot in all
+  four documents. It writes no prose on purpose — a plausible
+  auto-summary is worse than a missing one, because nobody would notice
+  it was never written.
+- **New `scripts/checks/check_symbols.py`**, wired into `maintain.py` as
+  the `symbols` stage. AGENTS.md rule 5 asks for a spot-check that cited
+  symbols survive a dump refresh; this does all 175 of them. Attribution
+  is the whole difficulty: subsections inherit their parent's dump,
+  headings naming several dumps are satisfied by any one, a sentence that
+  names a dump adds it, and `SUMMARIES.md`/`SYNTHESIS.md` are checked
+  against the whole corpus rather than a dump guessed from context. A
+  naive version reported 33 failures, all false. Four genuine absences
+  are listed with their reason — names upstream deleted, a path the
+  refresh filters out — because the documents describe them *as* absent.
+- **New pre-commit hook** (`scripts/hooks/`, installed with
+  `python scripts/hooks/install.py`). Runs `check_docs.py` on every commit
+  and `check_symbols.py` when a document or dump is staged. Offline only.
+  Installed via `core.hooksPath` so the hook stays under version control
+  instead of hiding in `.git/hooks/`.
+- **`check_docs.py` now fails on unfinished scaffolds.** Without it a
+  `TODO(new-paper)` placeholder would satisfy every coverage count while
+  saying nothing, which is worse than a missing entry.
+- **`README.md` restructured.** Introduction and the submodule commands
+  first, then one section per folder describing every file in it, then
+  the contents table at the end.
+- `requirements.txt` gained `pandas`/`matplotlib`/`jupyter` for the
+  notebook only — `citations.py` itself is standard-library, so snapshots
+  run without them. `scholarly` is deliberately *not* listed.
+
+## 2026-08-07
+
+- **New `scripts/propagate_to_downstream.py`.** Finds every repository on
+  disk that embeds this library as a submodule and moves its pin to the
+  commit checked out here — this folder is the ground truth. It refuses to
+  run when this repository is dirty or has unpushed commits, because a pin
+  must exist on `origin` or a collaborator's `submodule update --init`
+  cannot fetch it; it commits only the submodule path, so unrelated work in
+  a consuming project is never swept into the bump; and it never pushes
+  downstream unless asked. `--dry-run` shows the plan.
+- **New `scripts/check_docs.py`**, wired into `maintain.py` as the `docs`
+  stage. Checks coverage (every paper has an extraction, a summary entry, an
+  overview row, a timeline row and an appendix card, with counts agreeing),
+  chronological order across all four sequences, link and anchor
+  resolution, changelog ordering/duplicates/future dates, and
+  project-neutrality of the shared documents.
+- The anchor check implements **GitHub's** slug rule, which deletes
+  punctuation but preserves the surrounding spaces — so `Timeline & lineage`
+  becomes `timeline--lineage` with two hyphens. Naive implementations
+  collapse whitespace and report a false failure on every heading
+  containing punctuation, which is what a throwaway check did before this
+  script existed.
+
 ## 2026-08-06
 
 - Added **Luo 2026-07 — Memory Efficient Tabular Foundation Models**

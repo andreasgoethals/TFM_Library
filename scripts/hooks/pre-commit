@@ -1,0 +1,52 @@
+#!/bin/sh
+# TFM Library pre-commit hook.
+#
+# Runs the fast, offline consistency checks before a commit is written, so
+# a broken link, a paper missing from one of the four sequences, or an
+# unfinished new_paper.py scaffold is caught here rather than after it has
+# been pushed and pinned by a downstream project. Nothing here touches the
+# network: the Zotero, arXiv-version and dump-refresh stages stay manual.
+#
+# Install:    python scripts/hooks/install.py
+# Bypass:     git commit --no-verify        (use it when you mean to)
+
+set -e
+
+# Prefer the project virtualenv — the checks import pypdf.
+if   [ -x ".venv/Scripts/python.exe" ]; then PY=".venv/Scripts/python.exe"
+elif [ -x ".venv/bin/python" ];         then PY=".venv/bin/python"
+elif command -v python  >/dev/null 2>&1; then PY="python"
+elif command -v python3 >/dev/null 2>&1; then PY="python3"
+else
+    echo "pre-commit: no python found; skipping the consistency checks" >&2
+    exit 0
+fi
+
+export PYTHONIOENCODING=utf-8
+staged=$(git diff --cached --name-only)
+
+fail=0
+
+# Always: coverage, chronology, links, anchors, changelog, neutrality,
+# unfinished scaffolds. Costs ~0.2 s.
+if ! "$PY" scripts/checks/check_docs.py --quiet; then
+    fail=1
+fi
+
+# Only when the documents or the dumps changed: are the cited code
+# symbols still in the dumps? It reads every dump, so it is not free.
+if printf '%s\n' "$staged" | grep -qE '^(REPOSITORIES|SUMMARIES|SYNTHESIS)\.md$|^repositories/'; then
+    if ! "$PY" scripts/checks/check_symbols.py >/dev/null; then
+        echo "pre-commit: a cited code symbol is missing from its dump." >&2
+        echo "            run: $PY scripts/checks/check_symbols.py" >&2
+        fail=1
+    fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+    echo "" >&2
+    echo "pre-commit: refusing the commit — see above." >&2
+    echo "            Commit anyway with: git commit --no-verify" >&2
+    exit 1
+fi
+exit 0
