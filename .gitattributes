@@ -1,8 +1,6 @@
 *.md text eol=lf
 *.py text eol=lf
 *.txt text eol=lf
-*.csv text eol=lf
-*.ipynb text eol=lf
 *.pdf binary
 
 # The git hooks are shell scripts. With core.autocrlf=true they would be

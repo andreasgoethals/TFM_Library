@@ -28,7 +28,9 @@ space with a hyphen — *without* collapsing runs. So "Timeline & lineage"
 becomes ``timeline--lineage`` with two hyphens, since deleting the ``&``
 leaves the spaces on either side of it. Collapsing whitespace produces
 ``timeline-lineage`` and reports a false failure on every heading that
-contains punctuation.
+contains punctuation. The rule lives in ``lib/library.py`` rather than
+here, because this script having its own copy is exactly how the wrong
+version got written the first time.
 
 Usage::
 
@@ -47,7 +49,8 @@ import re
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.library import ROOT as _ROOT, github_slug  # noqa: E402
 
 DOCS = ["README.md", "AGENTS.md", "SUMMARIES.md", "SYNTHESIS.md",
         "REPOSITORIES.md", "CHANGELOG.md", "PROJECT_SPECIFIC.template.md"]
@@ -58,13 +61,6 @@ PROJECT_MARKERS = ["CreditPFN", "CreditICL"]
 PROJECT_PATHS = [r"\bsrc/train\b", r"\bsrc/eval\b", r"\bsrc/data\b",
                  r"\bsrc/model\b", r"\bconfig/train\b", r"\bconfig/data\b",
                  r"\bdata/processed\b", r"\bsanitize\.py\b"]
-
-
-def github_slug(heading: str) -> str:
-    """Slugify a heading the way GitHub does (see module docstring)."""
-    s = heading.strip().lower()
-    s = re.sub(r"[^\w\s-]", "", s)     # drop punctuation and emoji
-    return s.replace(" ", "-")         # NOT \s+ -> '-': runs are preserved
 
 
 class Report:

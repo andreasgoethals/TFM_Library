@@ -6,33 +6,21 @@ One line per change; one dated section per day.
 
 ## 2026-08-12
 
-`scripts/` reorganised by job, four new tools, and a `README.md` rebuilt
+`scripts/` reorganised by job, three new tools, and a `README.md` rebuilt
 around "what is in each folder".
 
 - **`scripts/` now has subfolders**, one per job: `papers/` (add and
-  extract), `checks/` (four read-only consistency checks), `citations/`,
-  `dumps/` (the gitingest refresh), `hooks/`, and `lib/` for shared code.
-  `maintain.py` and `propagate_to_downstream.py` stay at the top because
-  they are the two you actually run. Every documented path was updated;
-  nothing else changed about how the scripts behave.
+  extract), `checks/` (four read-only consistency checks), `dumps/` (the
+  gitingest refresh), `hooks/`, and `lib/` for shared code. `maintain.py`
+  and `propagate_to_downstream.py` stay at the top because they are the
+  two you actually run. Every documented path was updated; nothing else
+  changed about how the scripts behave.
 - **New `scripts/lib/library.py`.** The shape of this repository —
   where papers live, how a filename decomposes into date/author/title,
   how to read an arXiv stamp out of an extraction, how GitHub slugifies a
   heading — was being re-derived in each script, slightly differently
   each time. One of those re-derivations was already wrong. It now has a
   single implementation.
-- **New `scripts/citations/`: `citations.py` + `Citations.ipynb`.**
-  Records each paper's citation count and **appends** it to
-  `data/citations.csv` (tracked in git — the history is the dataset).
-  OpenAlex and Semantic Scholar by default; Google Scholar only on
-  request, because scraping it breaks Google's terms and CAPTCHA-blocks
-  the IP. Each source is a separate row rather than an average: they
-  disagree by 2× or more, and the notebook compares a paper against
-  itself over time within one source. Matching is by DOI, else arXiv ID,
-  else a title search that must clear a similarity threshold — and the
-  matched record's id and title are stored, so a wrong match is visible
-  instead of silently poisoning a series. A paper found nowhere is
-  recorded as absent, never as zero.
 - **New `scripts/papers/new_paper.py`.** Does the mechanical half of the
   five-step add-a-paper procedure: files the PDF under the house naming
   rule (metadata from the arXiv API, falling back to the PDF's own arXiv
@@ -62,9 +50,18 @@ around "what is in each folder".
 - **`README.md` restructured.** Introduction and the submodule commands
   first, then one section per folder describing every file in it, then
   the contents table at the end.
-- `requirements.txt` gained `pandas`/`matplotlib`/`jupyter` for the
-  notebook only — `citations.py` itself is standard-library, so snapshots
-  run without them. `scholarly` is deliberately *not* listed.
+- **Considered and rejected: tracking citation counts per paper.** Built
+  and tested, then removed, so nobody rebuilds it without knowing why.
+  Google Scholar — the number people actually quote — has no API, and
+  scraping it violates Google's terms and CAPTCHA-blocks the IP; the only
+  fast route is a paid third-party scraper. The free alternatives are not
+  a substitute: OpenAlex indexes the arXiv preprint record separately from
+  the published one and returned **0** for most of this collection, while
+  Semantic Scholar returned 68 for the same paper. Semantic Scholar's
+  anonymous pool also rate-limited a single 44-paper sweep **173 times**.
+  If this is ever revisited, use the batch endpoints — Semantic Scholar
+  takes 500 ids in one POST, OpenAlex 50 per filtered page — so the whole
+  library is two requests, not 88.
 
 ## 2026-08-07
 

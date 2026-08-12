@@ -124,8 +124,6 @@ template.
   text in `papers/text/<year>/`.
 - *"How does the official implementation handle Y?"* → `REPOSITORIES.md`
   to pick the right dump, then grep `repositories/*.txt` by symbol name.
-- *"Which papers is the field actually building on?"* → open
-  `scripts/citations/Citations.ipynb`.
 
 ---
 
@@ -191,14 +189,6 @@ deserve mention here because they are exceptions:
 Cite these dumps **by symbol name, never by line number** — a refresh
 moves every line by thousands.
 
-## `data/` — data the scripts produce
-
-Small, tracked, append-only datasets. Currently one:
-
-| File | What it is |
-|---|---|
-| `data/citations.csv` | One row per paper per source per snapshot date: `date, paper, source, citations, match, matched_id, matched_title`. Written by `scripts/citations/citations.py`, read by the notebook. It is in git on purpose — the history *is* the dataset. |
-
 ## `scripts/` — the maintenance tools
 
 Run everything from the repository root. Set up once (Windows PowerShell;
@@ -227,7 +217,7 @@ pip install -r requirements.txt
 python scripts/maintain.py                     # full sweep
 python scripts/maintain.py --check-only        # change nothing, just report
 python scripts/maintain.py --skip repos        # skip the slow dump refresh
-python scripts/maintain.py --include citations # add the opt-in citation snapshot
+python scripts/maintain.py --only zotero       # a single stage
 ```
 
 `propagate_to_downstream.py` refuses to run when this repository is dirty
@@ -278,23 +268,6 @@ python scripts/checks/check_zotero_sync.py --collection "Foundation Models"
 python scripts/checks/check_paper_versions.py
 ```
 
-### `scripts/citations/` — which papers is the field building on?
-
-| File | What it does |
-|---|---|
-| `citations.py` | Looks up each paper's citation count and **appends** it to `data/citations.csv`, never rewriting history. Sources: OpenAlex and Semantic Scholar by default (open APIs, no key); Google Scholar only on request, because scraping it breaks Google's terms of service and gets the IP CAPTCHA-blocked. Matches by DOI, else arXiv ID, else a title search that must clear a similarity threshold — and records which, so a wrong match is visible. |
-| `Citations.ipynb` | Reads that CSV and plots it: current standings, movement between snapshots, and citations per month since release — the one number comparable between a 2021 paper and a 2026 one. |
-
-```bash
-python scripts/citations/citations.py             # snapshot + append
-python scripts/citations/citations.py --dry-run   # look, write nothing
-python scripts/citations/citations.py --report    # read the stored history
-```
-
-A single snapshot gives you a ranking; several give you a trend, which is
-the point. Run it every month or two and **commit the CSV** — the series
-only exists because the file is in git.
-
 ### `scripts/dumps/` — refreshing the code snapshots
 
 | File | What it does |
@@ -333,7 +306,7 @@ Bypass a single commit with `git commit --no-verify`.
 
 | File | What it is |
 |---|---|
-| `library.py` | Everything more than one script needs to know about the shape of this repository: where the papers are, how a filename decomposes into date/author/title, how to read the arXiv stamp out of an extraction, how to parse `SUMMARIES.md`, and how GitHub slugifies a heading. It exists so the scripts cannot drift apart in how they answer those questions — which they had already started to. |
+| `library.py` | Everything more than one script needs to know about the shape of this repository: where the papers and documents live, how to build the house filename from author/month/title, how to read the arXiv banner out of a paper, and how GitHub slugifies a heading. It exists so the scripts cannot drift apart in how they answer those questions — two of them once implemented the slug rule differently, and the wrong one reported twelve valid anchors as broken. |
 
 Not run directly.
 
@@ -369,12 +342,10 @@ This repository is **public**.
 | [`papers/`](papers/) | PDFs as `<year>/<MM>_Author_et_al._Title.pdf`. |
 | [`papers/text/`](papers/text/) | Full-text extractions, mirroring the PDF tree. |
 | [`repositories/`](repositories/) | Flat-text code snapshots of the upstream implementations. |
-| [`data/`](data/) | Append-only datasets the scripts produce (citation history). |
 | [`scripts/maintain.py`](scripts/maintain.py) | Run every check and refresh; one report. |
 | [`scripts/propagate_to_downstream.py`](scripts/propagate_to_downstream.py) | Move every downstream project's pin to this commit. |
 | [`scripts/papers/`](scripts/papers/) | File a new paper; extract PDF text. |
 | [`scripts/checks/`](scripts/checks/) | Document, symbol, Zotero and arXiv-version checks. |
-| [`scripts/citations/`](scripts/citations/) | Citation snapshots and the notebook that plots them. |
 | [`scripts/dumps/`](scripts/dumps/) | Re-snapshot the upstream repositories. |
 | [`scripts/hooks/`](scripts/hooks/) | The pre-commit hook and its installer. |
 | [`scripts/lib/`](scripts/lib/) | Shared helpers the scripts import. |
