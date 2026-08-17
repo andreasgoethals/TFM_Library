@@ -23,6 +23,35 @@ It is a **read-only knowledge base**, not a code library. Nothing here is
 imported or installed. Downstream agents *read* the literature and grep
 the scraped implementations.
 
+## This repository mirrors one Zotero collection
+
+The owner's reference manager is **Zotero**, and it holds *all* of their
+sources — causal inference, credit risk, statistics, deep learning,
+regulation, and more — not only tabular foundation models. It is the
+upstream of this repository, and it is visible to an agent working here:
+`scripts/checks/check_zotero_sync.py` reads it, and with Zotero's **Local
+API** enabled (Settings → Advanced → "Allow other applications on this
+computer to communicate with Zotero") the whole library is queryable at
+`http://localhost:23119/api/users/0/`.
+
+**This repository mirrors exactly one of those collections:
+`1.14. Tabular Foundation Models`.** That collection is the definition of
+what belongs in `papers/` — one PDF here per item there, and nothing
+else. Two consequences an agent must respect:
+
+- **Seeing a source in Zotero is not a reason to add it here.** If the
+  owner keeps a paper in `1.10. Causal ML` or `1.8. Credit Risk
+  Modelling` and not in `1.14`, that is a deliberate judgement that it is
+  out of this repository's scope. Do not "helpfully" pull it in.
+- **A divergence between the two is a report, not a repair.** Run the
+  check, tell the owner what differs, and let them decide which side is
+  wrong. Never add or delete a paper to make the numbers agree.
+
+The collection is looked up by name, and the numeric prefixes exist only
+for ordering, so the checker matches an unambiguous substring —
+`--collection "Tabular Foundation Models"` keeps working if `1.14.`
+is renumbered.
+
 ## The flow is one-directional
 
 ```
@@ -53,7 +82,10 @@ downstream edit can ever reach this repository.
    lineage, direct TFM competitors, and TFM variants/derivatives.
    Benchmarks, non-foundation-model tabular deep learning, general ML
    methods, and domain application papers are **out of scope** even when
-   the corpus cites them heavily.
+   the corpus cites them heavily — and even when you can see them in the
+   owner's Zotero, which holds their whole reading list. The operational
+   test is membership of the `1.14. Tabular Foundation Models`
+   collection; see [above](#this-repository-mirrors-one-zotero-collection).
 
    **There is exactly one deliberate exception, and it is important:**
    `repositories/VSC Documentation.txt`, the KU Leuven / Flemish

@@ -176,10 +176,24 @@ class ZoteroReader:
         shutil.rmtree(self._tmp.parent, ignore_errors=True)
 
     def collection_id(self, name: str) -> int | None:
+        """Exact name first, then a unique substring match.
+
+        Zotero collections here are numbered for ordering
+        (``1.14. Tabular Foundation Models``), so an exact-only lookup
+        would break the moment the numbering is renumbered. A substring
+        match is accepted only when it is unambiguous.
+        """
         row = self.db.execute(
             "select collectionID from collections where collectionName=?", (name,)
         ).fetchone()
-        return row[0] if row else None
+        if row:
+            return row[0]
+        rows = self.db.execute(
+            "select collectionID, collectionName from collections "
+            "where collectionName like ?", (f"%{name}%",)).fetchall()
+        if len(rows) == 1:
+            return rows[0][0]
+        return None
 
     def collection_names(self) -> list[str]:
         return [r[0] for r in self.db.execute(
@@ -202,11 +216,17 @@ class ZoteroReader:
                 where ic.itemID=? order by ic.orderIndex""", (item_id,))]
 
     def items(self, collection_id: int) -> list[dict]:
+        # Trashed items keep their collection membership until the trash is
+        # emptied, so without this join a deleted item is reported as
+        # "in Zotero but missing from papers/" — a permanent false alarm
+        # about a paper the owner already decided to remove.
         rows = self.db.execute(
             """select i.itemID, t.typeName from collectionItems ci
                  join items i on i.itemID = ci.itemID
                  join itemTypes t on t.itemTypeID = i.itemTypeID
-                where ci.collectionID=?""", (collection_id,)).fetchall()
+                 left join deletedItems d on d.itemID = i.itemID
+                where ci.collectionID=? and d.itemID is null""",
+            (collection_id,)).fetchall()
         out = []
         for item_id, type_name in rows:
             atts = self.db.execute(

@@ -44,6 +44,16 @@ around "what is in each folder".
   and `check_symbols.py` when a document or dump is staged. Offline only.
   Installed via `core.hooksPath` so the hook stays under version control
   instead of hiding in `.git/hooks/`.
+- **`check_zotero_sync.py`: two fixes, and the Zotero check is now
+  clean for the first time.** It counted **trashed** items as collection
+  members, because Zotero keeps collection membership until the trash is
+  emptied — so a paper deliberately deleted in Zotero was reported
+  forever as "in Zotero but missing from `papers/`". The standing "1
+  issue to resolve by hand" (*From Tables to Time*, allegedly missing a
+  PDF attachment) was that phantom; both sides now report 44/44 and
+  agree. Collection lookup also accepts an unambiguous substring, so the
+  numbered collection names used here (`1.14. Tabular Foundation
+  Models`) keep resolving when the numbering changes.
 - **`check_docs.py` now fails on unfinished scaffolds.** Without it a
   `TODO(new-paper)` placeholder would satisfy every coverage count while
   saying nothing, which is worse than a missing entry.
