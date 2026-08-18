@@ -23,34 +23,67 @@ It is a **read-only knowledge base**, not a code library. Nothing here is
 imported or installed. Downstream agents *read* the literature and grep
 the scraped implementations.
 
-## This repository mirrors one Zotero collection
+## Zotero is upstream of this repository
 
 The owner's reference manager is **Zotero**, and it holds *all* of their
 sources — causal inference, credit risk, statistics, deep learning,
-regulation, and more — not only tabular foundation models. It is the
-upstream of this repository, and it is visible to an agent working here:
-`scripts/checks/check_zotero_sync.py` reads it, and with Zotero's **Local
-API** enabled (Settings → Advanced → "Allow other applications on this
-computer to communicate with Zotero") the whole library is queryable at
-`http://localhost:23119/api/users/0/`.
+regulation, fairness, and more — not only tabular foundation models. It
+is the upstream of this repository and it is **queryable by an agent
+working here**, so use it rather than guessing.
 
-**This repository mirrors exactly one of those collections:
-`1.14. Tabular Foundation Models`.** That collection is the definition of
-what belongs in `papers/` — one PDF here per item there, and nothing
-else. Two consequences an agent must respect:
+| | How | Can it write? |
+|---|---|---|
+| **Local API** | `http://localhost:23119/api/users/0/…` — mirrors the Zotero Web API, no key, requires Zotero running with Settings → Advanced → *Allow other applications on this computer to communicate with Zotero* | **No.** `501 Method not implemented` |
+| **Web API** | `https://api.zotero.org/users/<id>/…` with header `Zotero-API-Key` | Yes |
+| **`zotero.sqlite`** | direct file read | **Never write.** And reads are unreliable — see below |
+
+The API key lives in the **`ZOTERO_API_KEY` user environment variable**.
+Read it from the environment; never write it into a file in this
+repository, which is public.
+
+**Do not read `zotero.sqlite` when Zotero is running.** The file lags the
+application by an unbounded amount — it has been observed reporting 26
+collections while the live API reported 16, because the deletions were
+still sitting in an open transaction. Use the Local API and treat the
+SQLite path as a fallback for when Zotero is closed.
+
+### Which collection this repository mirrors
+
+**`09. Tabular Foundation Models`.** That collection *is* the definition
+of what belongs in `papers/` — one PDF here per item there, and nothing
+else. Three rules follow:
 
 - **Seeing a source in Zotero is not a reason to add it here.** If the
-  owner keeps a paper in `1.10. Causal ML` or `1.8. Credit Risk
-  Modelling` and not in `1.14`, that is a deliberate judgement that it is
-  out of this repository's scope. Do not "helpfully" pull it in.
-- **A divergence between the two is a report, not a repair.** Run the
-  check, tell the owner what differs, and let them decide which side is
-  wrong. Never add or delete a paper to make the numbers agree.
+  owner keeps a paper in `11. Causal ML` or `15. Credit Risk Modelling`
+  and not in the TFM collection, that is a deliberate judgement that it
+  is out of scope. Do not "helpfully" pull it in.
+- **A divergence is a report, not a repair.** Run the check, say what
+  differs, let the owner decide which side is wrong. Never add or delete
+  a paper to make the numbers agree.
+- **Match the collection by name substring, never by number.** The
+  numeric prefixes are sort keys and get renumbered; `"Tabular Foundation
+  Models"` is stable. `check_zotero_sync.py` already does this.
 
-The collection is looked up by name, and the numeric prefixes exist only
-for ordering, so the checker matches an unambiguous substring —
-`--collection "Tabular Foundation Models"` keeps working if `1.14.`
-is renumbered.
+### Use Zotero as the metadata source
+
+When you need a paper's venue, DOI, authors, year, abstract or citation
+key, **query Zotero first**. It is curated, it is the same record the
+owner will cite from, and it is more reliable than re-deriving the
+information from a PDF's first page or recalling it. In order of
+preference:
+
+1. The Zotero item (Local API) — `creators`, `date`, `DOI`,
+   `publicationTitle`/`proceedingsTitle`, `abstractNote`, `citationKey`.
+2. CrossRef by DOI, or OpenAlex — authoritative and free.
+3. The PDF itself.
+
+Never invent bibliographic detail. If none of the three can confirm a
+field, say it is unconfirmed and leave it empty.
+
+**Better BibTeX** is installed and maintains a `citationKey` on every
+item, reachable at `http://localhost:23119/better-bibtex/json-rpc`
+(read-only). Cite by that key when writing anything the owner will paste
+into a manuscript.
 
 ## The flow is one-directional
 
@@ -84,8 +117,8 @@ downstream edit can ever reach this repository.
    methods, and domain application papers are **out of scope** even when
    the corpus cites them heavily — and even when you can see them in the
    owner's Zotero, which holds their whole reading list. The operational
-   test is membership of the `1.14. Tabular Foundation Models`
-   collection; see [above](#this-repository-mirrors-one-zotero-collection).
+   test is membership of the `09. Tabular Foundation Models` collection;
+   see [above](#which-collection-this-repository-mirrors).
 
    **There is exactly one deliberate exception, and it is important:**
    `repositories/VSC Documentation.txt`, the KU Leuven / Flemish
@@ -96,8 +129,10 @@ downstream edit can ever reach this repository.
    offline is worth more than the file costs. Do not add further non-TFM
    files without the owner's explicit request.
 3. **Papers are added ONLY when the owner explicitly says so** (or adds
-   one themselves). Never collect papers proactively. When the owner does
-   ask, follow all five steps:
+   one themselves). Never collect papers proactively — the trigger is
+   always the owner, and the source of truth for *what* is in scope is
+   the `09. Tabular Foundation Models` collection in Zotero. When the
+   owner does ask, follow all five steps:
    1. PDF into `papers/<year>/` as `MM_Author_et_al._Title.pdf`, where
       `<year>` and `MM` are the year and **month** of the version being
       filed, so papers sort chronologically. Underscores, no spaces or
@@ -113,8 +148,12 @@ downstream edit can ever reach this repository.
       section, and an appendix card.
    5. Log it in `CHANGELOG.md`.
 
-   `python scripts/papers/new_paper.py <pdf>` does steps 1–2 and puts
-   `TODO(new-paper)` placeholders in the right chronological slot for 3–5.
+   `python scripts/papers/new_paper.py --zotero <item-key>` does steps
+   1–2 and puts `TODO(new-paper)` placeholders in the right chronological
+   slot for 3–5. **Prefer the `--zotero` form**: it takes the title,
+   authors, date and PDF from the curated Zotero item instead of
+   re-deriving them, and refuses any item outside the mirrored
+   collection. A plain PDF path still works as a fallback.
    It writes **no prose** — steps 3 and 4 are the actual work and are
    yours. `check_docs.py` fails while any placeholder survives.
 4. **Cite code dumps by symbol name, never by line number.** The dumps

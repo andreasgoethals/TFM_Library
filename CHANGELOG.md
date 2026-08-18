@@ -4,6 +4,44 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-18
+
+Zotero documented as the upstream of this library, in `AGENTS.md` (the
+rules) and `README.md` (the workflow).
+
+- **`new_paper.py` can start from a Zotero item: `--zotero <key>`.** It
+  takes the title, authors, date and the attached PDF straight from the
+  record the owner already curated, instead of re-deriving them from the
+  PDF — which is exactly how a wrong author list got introduced during
+  this work. It **refuses an item that is not in the mirrored
+  collection**, so the scope rule is enforced by the tool rather than by
+  memory, and it warns when Zotero's date disagrees with the arXiv
+  banner, since that disagreement decides the filename.
+- **`09. Tabular Foundation Models` in Zotero is now the stated
+  definition of what belongs in `papers/`.** The owner's Zotero holds
+  their whole reading list — causal inference, credit risk, statistics,
+  regulation — and an agent working here can query all of it. That makes
+  an explicit rule necessary: seeing a source in Zotero is *not* a reason
+  to add it here, because a paper kept in `11. Causal ML` and not in the
+  TFM collection is a deliberate scope judgement. Divergence between the
+  two is a **report, not a repair**.
+- **Documented the three ways into Zotero and what each can do.** The
+  Local API (`localhost:23119`) is read-only — it answers `501 Method not
+  implemented` to a write — the Web API can write with a key held in the
+  `ZOTERO_API_KEY` environment variable, and `zotero.sqlite` must never
+  be written at all.
+- **Recorded the trap that cost the most time: `zotero.sqlite` lags the
+  running application by an unbounded amount.** It reported 26
+  collections while the live API reported 16, because the deletions were
+  still inside an open transaction. Any tool here reads the Local API and
+  treats the file as a fallback for when Zotero is closed.
+- **Agents must now source bibliographic metadata from Zotero first**,
+  then CrossRef/OpenAlex, then the PDF — and never invent a field. Better
+  BibTeX maintains a `citationKey` on every item, which is what to cite
+  by when writing anything destined for a manuscript.
+- The collection is matched **by name substring, never by number**, so
+  the mirror survives renumbering — which it has already had to.
+
 ## 2026-08-12
 
 `scripts/` reorganised by job, three new tools, and a `README.md` rebuilt

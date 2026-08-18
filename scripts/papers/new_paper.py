@@ -23,13 +23,20 @@ empty one because nobody would notice it was never written. Every
 placeholder is loud, and ``check_docs.py`` fails while any remains, so a
 half-finished paper cannot be committed by accident.
 
-Metadata comes from the arXiv API when the PDF carries an arXiv stamp,
-otherwise from the PDF's own metadata and first page — both are guesses,
-so the proposed filename is always shown for confirmation and every
-field can be overridden.
+Metadata comes from **Zotero** when you pass ``--zotero KEY``: the item
+is already curated, so its title, authors and date beat anything derived
+from the PDF, and the attached PDF is used directly. The item must be in
+the mirrored ``Tabular Foundation Models`` collection — that collection
+defines what belongs in ``papers/`` (AGENTS.md), so an item outside it is
+refused rather than filed.
+
+Without ``--zotero`` it falls back to the arXiv API, then to the PDF's
+own metadata and first page. Those are guesses, so the proposed filename
+is always shown for confirmation and every field can be overridden.
 
 Usage::
 
+    python scripts/papers/new_paper.py --zotero VGNJPZAJ   # preferred
     python scripts/papers/new_paper.py ~/Downloads/2607.27546v1.pdf
     python scripts/papers/new_paper.py paper.pdf --title "TabX" --month 03
     python scripts/papers/new_paper.py paper.pdf --dry-run   # decide nothing
@@ -42,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import json
 import re
 import shutil
 import sys
@@ -65,6 +73,24 @@ _ARXIV_ANY = re.compile(r"arXiv[:\s]\s*(\d{4}\.\d{4,5})", re.I)
 _ARXIV_API = "http://export.arxiv.org/api/query?id_list={ids}"
 _ATOM = "{http://www.w3.org/2005/Atom}"
 _UA = "tfm-library-maintenance/1.0"
+
+_ZOTERO_LOCAL = "http://localhost:23119/api/users/0"
+# The collection that defines what belongs in papers/ (AGENTS.md). Matched
+# as a substring: the numeric prefixes are sort keys and get renumbered.
+MIRRORED = "Tabular Foundation Models"
+
+
+def _zotero_base_path() -> str | None:
+    """Zotero's base attachment directory, from its own preferences."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "checks"))
+        import check_zotero_sync as _z          # noqa: PLC0415
+        return _z.read_zotero_prefs().get("extensions.zotero.baseAttachmentPath")
+    except Exception:
+        return None
+
+
+_ZOTERO_BASE = _zotero_base_path()
 
 
 @dataclass
@@ -177,6 +203,88 @@ def from_pdf(pdf: Path) -> Meta:
     today = _dt.date.today()
     return Meta(title=title, authors=authors, year=str(today.year),
                 month=f"{today.month:02d}", source="PDF metadata (unreliable)")
+
+
+def from_zotero(key: str) -> tuple[Meta, Path]:
+    """Read one item out of Zotero and return its metadata and its PDF.
+
+    This is the preferred entry point. Zotero already holds a curated,
+    human-checked record — title, authors, date, DOI — so taking it from
+    there beats re-deriving it from the PDF's first page, which is how a
+    wrong author list gets in. It also enforces the scope rule: the item
+    must be in the mirrored collection.
+    """
+    def api(path: str):
+        req = urllib.request.Request(_ZOTERO_LOCAL + path,
+                                     headers={"Zotero-API-Version": "3"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    try:
+        item = api(f"/items/{key}")
+    except (urllib.error.URLError, urllib.error.HTTPError) as exc:
+        sys.exit(f"could not reach Zotero ({exc}).\n"
+                 f"Zotero must be running with Settings -> Advanced -> "
+                 f"'Allow other applications on this computer to "
+                 f"communicate with Zotero' enabled.")
+    d = item["data"]
+
+    # scope check: AGENTS.md says the mirrored collection defines papers/
+    names = {c["key"]: c["data"]["name"] for c in api("/collections?limit=100")}
+    mine = [names.get(c, "?") for c in d.get("collections", [])]
+    if not any(MIRRORED in n for n in mine):
+        sys.exit(f"'{d.get('title', key)}' is not in a collection named "
+                 f"'{MIRRORED}'.\nIt is in: {', '.join(mine) or '(none)'}\n"
+                 f"That collection defines what belongs in papers/ — add it "
+                 f"there first, or this library is not where it goes.")
+
+    authors = [(c.get("firstName", "") + " " + c.get("lastName", "")).strip()
+               or c.get("name", "")
+               for c in d.get("creators", [])
+               if c.get("creatorType") == "author"]
+    date = (item.get("meta", {}).get("parsedDate") or d.get("date") or "")
+    m = re.match(r"(\d{4})-(\d{2})", date)
+    if not m:
+        sys.exit(f"Zotero has no usable date for this item ({date!r}). "
+                 f"Fix it in Zotero, or pass --year/--month.")
+    arx = re.search(r"(\d{4}\.\d{4,5})", (d.get("url", "") + d.get("DOI", "")))
+
+    # the PDF: a linked file resolved against Zotero's base directory
+    pdf_path = None
+    for child in api(f"/items/{key}/children"):
+        cd = child["data"]
+        if cd.get("contentType") != "application/pdf":
+            continue
+        p = cd.get("path", "")
+        if p.startswith("attachments:") and _ZOTERO_BASE:
+            cand = Path(_ZOTERO_BASE) / p[len("attachments:"):]
+            if cand.is_file():
+                pdf_path = cand
+                break
+    if pdf_path is None:
+        sys.exit("that Zotero item has no resolvable PDF attachment; "
+                 "attach the PDF in Zotero first.")
+
+    meta = Meta(title=d.get("title", ""), authors=authors, year=m.group(1),
+                month=m.group(2), arxiv=arx.group(1) if arx else None,
+                source="Zotero")
+
+    # Zotero's date is the item's date, which is often the venue's; this
+    # library files by the *version on disk*, which is what the arXiv
+    # banner records. When they disagree the filename is at stake, so say
+    # so rather than silently picking one.
+    stamp = _ARXIV_STAMP.search(pdf_text(pdf_path, 1))
+    if stamp:
+        _, _, _, mon, year = stamp.groups()
+        banner = f"{year}-{MONTHS[mon]:02d}"
+        if banner != meta.date:
+            print(f"  NOTE: Zotero says {meta.date}, the PDF's arXiv banner "
+                  f"says {banner}.")
+            print(f"        This library files by the version on disk, so "
+                  f"{banner} is probably right.")
+            print(f"        Override with --year {year} --month "
+                  f"{MONTHS[mon]:02d} if so.")
+    return meta, pdf_path
 
 
 def resolve(pdf: Path, args: argparse.Namespace) -> Meta:
@@ -316,7 +424,13 @@ def scaffold_changelog(meta: Meta) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("pdf", help="the downloaded PDF, from anywhere on disk")
+    ap.add_argument("pdf", nargs="?",
+                    help="the downloaded PDF, from anywhere on disk")
+    ap.add_argument("--zotero", metavar="KEY",
+                    help="take the paper from Zotero instead: metadata and "
+                         "the attached PDF both come from the item, which is "
+                         "more reliable than re-reading the PDF. The item "
+                         f"must be in the '{MIRRORED}' collection.")
     ap.add_argument("--title"), ap.add_argument("--arxiv", metavar="ID")
     ap.add_argument("--authors", metavar='"A Name, B Name"',
                     help="comma-separated, full names or surnames")
@@ -330,11 +444,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--yes", action="store_true", help="skip the confirmation")
     args = ap.parse_args(argv)
 
-    src = Path(args.pdf).expanduser()
-    if not src.is_file():
-        sys.exit(f"not found: {src}")
-
-    meta = resolve(src, args)
+    if args.zotero:
+        meta, src = from_zotero(args.zotero)
+        for field, value in (("title", args.title), ("year", args.year)):
+            if value:
+                setattr(meta, field, value)
+        if args.authors:
+            meta.authors = [a.strip() for a in args.authors.split(",") if a.strip()]
+        if args.month:
+            meta.month = f"{int(args.month):02d}"
+    else:
+        if not args.pdf:
+            ap.error("give a PDF path or --zotero KEY")
+        src = Path(args.pdf).expanduser()
+        if not src.is_file():
+            sys.exit(f"not found: {src}")
+        meta = resolve(src, args)
     dest = PAPERS / meta.year / meta.filename
     rel = f"papers/{meta.year}/{meta.filename}"
 
@@ -345,10 +470,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  metadata from : {meta.source}")
     print(f"  title         : {meta.title}")
     print(f"  authors       : {', '.join(meta.authors) or TODO}  -> {meta.cite}")
-    stamped = meta.source in ("arXiv API", "PDF + arXiv banner")
-    print(f"  date          : {meta.date}"
-          f"{'   (arXiv version stamp)' if stamped else '   <- GUESSED: this'}"
-          f"{'' if stamped else ' is todays month, not the papers'}")
+    label = {"arXiv API": "   (arXiv version stamp)",
+             "PDF + arXiv banner": "   (arXiv version stamp)",
+             "Zotero": "   (from the Zotero item)",
+             }.get(meta.source, "   <- GUESSED: todays month, not the paper's")
+    print(f"  date          : {meta.date}{label}")
     print(f"  arXiv         : {meta.arxiv or '-'}")
     print(f"  destination   : {rel}")
     print(bar)

@@ -127,6 +127,86 @@ template.
 
 ---
 
+## Zotero — the upstream of this library
+
+The papers here are not collected ad hoc. They are the contents of **one
+Zotero collection**, `09. Tabular Foundation Models`, mirrored onto disk.
+Zotero decides *what* is in scope; this repository decides *how* it is
+written up.
+
+That means the answer to "should this paper be in the library?" is never
+a judgement call made here — it is a question about whether the owner put
+it in that collection.
+
+### One-time setup
+
+Turn on Zotero's local API: **Settings → Advanced → "Allow other
+applications on this computer to communicate with Zotero"**. Everything
+below then works while Zotero is running, with no key and no account:
+
+```bash
+curl http://localhost:23119/api/users/0/collections
+```
+
+Writing to Zotero additionally needs an API key from
+[zotero.org/settings/keys](https://www.zotero.org/settings/keys), kept in
+the `ZOTERO_API_KEY` environment variable. **Never put it in a file in
+this repository — this repository is public.**
+
+### Adding a paper, starting from Zotero
+
+1. Add it to `09. Tabular Foundation Models` in Zotero, with the PDF
+   attached and its metadata filled in (DOI or arXiv ID at minimum).
+2. Copy the item key (right-click → *Export Item…*, or read it from the
+   API) and run:
+
+   ```bash
+   python scripts/papers/new_paper.py --zotero VGNJPZAJ
+   ```
+
+   Title, authors, date and the PDF all come **from the Zotero item** —
+   no retyping, and nothing re-derived from the PDF's first page, which
+   is where wrong author lists come from. It refuses outright if the item
+   is not in the mirrored collection, so the scope rule is enforced by
+   the tool rather than by memory. Passing a plain PDF path still works
+   and falls back to the arXiv API.
+3. Write the prose. `check_docs.py` fails while a scaffold is unfinished.
+4. `python scripts/checks/check_zotero_sync.py` — both sides should now
+   report the same count and match one-for-one.
+
+### Keeping the two in step
+
+```bash
+python scripts/checks/check_zotero_sync.py
+```
+
+It compares the collection against `papers/` and reports what diverged:
+items on one side only, year/month/title/author mismatches, missing
+identifiers, broken attachment links. It is **read-only on both sides**
+and it never moves a file or edits a Zotero item.
+
+Two things worth knowing about how it behaves:
+
+- **It matches the collection by name substring**, not by number. The
+  numeric prefixes are sort keys and get renumbered; `"Tabular Foundation
+  Models"` is stable.
+- **It ignores trashed items.** Zotero keeps collection membership until
+  the trash is emptied, so without that filter a paper you deliberately
+  deleted is reported forever as "missing from `papers/`".
+
+A divergence is a **report, not a repair** — decide which side is wrong
+and fix that side by hand. Nothing here deletes a paper to make two
+numbers agree.
+
+### Don't read `zotero.sqlite` while Zotero is running
+
+It lags the running application by an unbounded amount: it has been seen
+reporting 26 collections while the live API reported 16, because the
+deletions were still inside an open transaction. Use the local API. The
+SQLite path is a fallback for when Zotero is closed, nothing more.
+
+---
+
 # What is in here, folder by folder
 
 ## Root — the documents
