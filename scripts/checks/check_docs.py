@@ -6,10 +6,12 @@ to re-derive slightly differently each time — and getting them subtly wrong
 is worse than not running them. It validates:
 
 * **Coverage.** Every PDF has a text extraction, a `SUMMARIES.md` entry, a
-  `SUMMARIES.md` overview row, a `SYNTHESIS.md` timeline row and a
-  `SYNTHESIS.md` appendix card — and the counts all agree.
-* **Chronology.** Entries, rows, timeline and cards are sorted by
-  `YYYY-MM`, and the `SUMMARIES.md` table order matches the entry order.
+  `SUMMARIES.md` overview row and a `SYNTHESIS.md` timeline row — and the
+  counts all agree.
+* **Completeness.** Every `SUMMARIES.md` entry carries all four house
+  sections: where it fits, what it contains, strengths, limitations.
+* **Chronology.** Entries, rows and timeline are sorted by `YYYY-MM`, and
+  the `SUMMARIES.md` table order matches the entry order.
 * **Links.** Every relative link resolves to a file that exists.
 * **Anchors.** Every `#fragment` resolves either to an explicit
   `<a id="...">` or to a heading, using **GitHub's** slug rules.
@@ -94,23 +96,37 @@ def check_coverage(rep: Report) -> dict[str, int]:
     entries = re.findall(r"^## (20\d\d-\d\d) — ", s, re.M)
     rows = re.findall(r"^\| (20\d\d-\d\d) \|", s, re.M)
     timeline = re.findall(r"^\| (20\d\d-\d\d) \|", y, re.M)
-    cards = re.findall(r"^\*\*[^*]*?(20\d\d-\d\d)", y, re.M)
 
+    # SYNTHESIS no longer carries a per-paper appendix: it is a synthesis,
+    # and the complete per-paper reference lives in SUMMARIES.md. Coverage
+    # of the synthesis is therefore checked against its timeline, which is
+    # the one place every paper must still appear.
     counts = {"papers": len(pdfs), "texts": len(txts),
               "SUMMARIES entries": len(entries), "SUMMARIES rows": len(rows),
-              "SYNTHESIS timeline": len(timeline), "SYNTHESIS cards": len(cards)}
+              "SYNTHESIS timeline": len(timeline)}
     if len(set(counts.values())) != 1:
         rep.fail("counts disagree: "
                  + ", ".join(f"{k}={v}" for k, v in counts.items()))
 
     for label, seq in (("SUMMARIES entries", entries), ("SUMMARIES rows", rows),
-                       ("SYNTHESIS timeline", timeline), ("SYNTHESIS cards", cards)):
+                       ("SYNTHESIS timeline", timeline)):
         if seq != sorted(seq):
             rep.fail(f"{label} are not in chronological order")
     if rows != entries:
         rep.fail("SUMMARIES overview-table order does not match entry order")
-    if sorted(cards) != sorted(timeline):
-        rep.fail("SYNTHESIS appendix cards and timeline cover different papers")
+    if sorted(timeline) != sorted(entries):
+        rep.fail("SYNTHESIS timeline and SUMMARIES entries cover different papers")
+
+    # every entry must carry the four house sections (AGENTS.md rule 3)
+    heads = list(re.finditer(r"^## (20\d\d-\d\d) — (.+?)$", s, re.M))
+    for i, m in enumerate(heads):
+        body = s[m.end(): heads[i + 1].start() if i + 1 < len(heads) else len(s)]
+        missing = [sec for sec in ("Where it fits", "What it contains",
+                                   "Strengths", "Limitations")
+                   if f"**{sec}" not in body]
+        if missing:
+            rep.fail(f"SUMMARIES.md: '{m.group(2)[:40]}' is missing "
+                     f"{', '.join(missing)}")
     return counts
 
 

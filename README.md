@@ -218,8 +218,8 @@ one project's pipeline. Project-specific notes live in that project's own
 
 | File | What it is |
 |---|---|
-| [`SYNTHESIS.md`](SYNTHESIS.md) | **Start here.** The cross-paper synthesis of the TFM paradigm: lineage timeline (PFNs → TabPFN v1/v2/2.5/3 → scaling / adaptation / extensions), the design axes on which the field varies, recurring weaknesses, open frontiers, and a one-card-per-paper appendix. |
-| [`SUMMARIES.md`](SUMMARIES.md) | The per-paper tour, chronological: venue, where each paper fits, what it contains, strengths and limitations. Opens with an overview table of all papers. |
+| [`SYNTHESIS.md`](SYNTHESIS.md) | **Start here.** The cross-paper synthesis of the TFM paradigm: lineage timeline (PFNs → TabPFN v1/v2/2.5/3 → scaling / adaptation / extensions), the design axes on which the field varies, recurring weaknesses, where the papers disagree with each other, and open frontiers. It contains no per-paper summaries — those are in `SUMMARIES.md`. |
+| [`SUMMARIES.md`](SUMMARIES.md) | **The complete per-paper reference.** One summary per paper, chronological: venue, where it fits, what it contains, strengths, limitations. Opens with an overview table of all papers. |
 | [`REPOSITORIES.md`](REPOSITORIES.md) | The guide to the code dumps: what each one is, why it is kept, and what to grep for when building on it. |
 | [`CHANGELOG.md`](CHANGELOG.md) | Human-readable log of library updates, newest first, one dated section per day. Read it before moving a project's pin. |
 | [`AGENTS.md`](AGENTS.md) | The contract for AI agents. Which side of the read-only boundary you are on, and the rules for each side. |
@@ -316,7 +316,7 @@ python scripts/propagate_to_downstream.py --push      # also push each project
 
 | File | What it does |
 |---|---|
-| `new_paper.py` | Files a downloaded PDF under the house naming rule, extracts its text, and inserts **placeholders** for the summary entry, overview row, timeline row, appendix card and changelog line — each in the right chronological slot. It writes no prose: that is the actual work, and an auto-written summary nobody notices is worse than none. |
+| `new_paper.py` | Files a downloaded PDF under the house naming rule, extracts its text, and inserts **placeholders** for the summary entry, overview row, timeline row and changelog line — each in the right chronological slot. It writes no prose: that is the actual work, and an auto-written summary nobody notices is worse than none. |
 | `extract_paper_text.py` | PDF → `papers/text/<year>/<same-name>.txt`. Strips control bytes and the line-number gutters that ICLR/NeurIPS templates print, so the result stays greppable. |
 
 ```bash
@@ -336,7 +336,7 @@ they compose with `maintain.py` and with the pre-commit hook.
 
 | File | What it verifies |
 |---|---|
-| `check_docs.py` | Every paper has a text extraction, a summary entry, an overview row, a timeline row and an appendix card, with counts agreeing; all four sequences are chronological; every relative link and `#anchor` resolves; the changelog is newest-first with no duplicate or future dates; the shared documents name no consuming project; no unfinished scaffolds remain. |
+| `check_docs.py` | Every paper has a text extraction, a summary entry, an overview row and a timeline row, with counts agreeing; every summary carries all four house sections; the sequences are chronological; every relative link and `#anchor` resolves; the changelog is newest-first with no duplicate or future dates; the shared documents name no consuming project; no unfinished scaffolds remain. |
 | `check_symbols.py` | Every code symbol cited in the documents still exists in the dump it is cited against — the check AGENTS.md rule 5 asks for after a refresh. Also flags any `` `dump.txt:1234` `` line-number citation. |
 | `check_zotero_sync.py` | The Zotero collection mirroring this library against `papers/`: what is in one place and not the other, year/month/title/author mismatches, missing arXiv IDs or DOIs. Queries a copy of `zotero.sqlite`; never writes to Zotero or moves a file. |
 | `check_paper_versions.py` | Asks arXiv whether a newer version exists than the PDF on disk. Never downloads anything — replacing a paper can change its year folder and month prefix, and the summaries may quote version-specific numbers, so it stays a manual decision. |

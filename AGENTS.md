@@ -144,8 +144,11 @@ downstream edit can ever reach this repository.
    3. Add a `SUMMARIES.md` entry in the house style (venue → where it
       fits → what it contains → strengths/limitations), plus a row in the
       overview table.
-   4. Integrate into `SYNTHESIS.md`: timeline row, the fitting thematic
-      section, and an appendix card.
+   4. Integrate into `SYNTHESIS.md`: a timeline row, and — the part that
+      matters — a place in the argument. `SYNTHESIS.md` carries no
+      per-paper appendix: it compares and contrasts, so a new paper earns
+      its place by what it confirms, extends or contradicts. If it
+      disputes an existing result, say so in *Where the papers disagree*.
    5. Log it in `CHANGELOG.md`.
 
    `python scripts/papers/new_paper.py --zotero <item-key>` does steps

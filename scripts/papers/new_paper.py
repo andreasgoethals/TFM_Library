@@ -10,7 +10,7 @@ forgotten timeline row. This script does those, and only those:
 1.   File the PDF as ``papers/<year>/<MM>_Author_et_al._Title.pdf``  automated
 2.   Extract text to ``papers/text/<year>/<same>.txt``               automated
 3.   ``SUMMARIES.md`` entry + overview row                           scaffolded
-4.   ``SYNTHESIS.md`` timeline row + appendix card                   scaffolded
+4.   ``SYNTHESIS.md`` timeline row                                   scaffolded
 5.   ``CHANGELOG.md`` line                                           scaffolded
 ===  ===========================================================  =========
 
@@ -381,22 +381,13 @@ def scaffold_synthesis(meta: Meta) -> None:
     row = f"| {meta.date} | {short} | {TODO}: what it establishes | {TODO} |"
     text = "\n".join(_insert_sorted_line(text.split("\n"), row, meta.date,
                                          r"^\| (20\d\d-\d\d) \|"))
-
-    card = (f"**{meta.cite} {meta.date} — {meta.title}.** {TODO} — one line of\n"
-            f"framing. *Method:* {TODO} *Strength:* {TODO} *Weakness:* {TODO}\n")
-    cards = list(re.finditer(r"^\*\*[^*]*?(20\d\d-\d\d)", text, re.M))
-    later = [c for c in cards if c.group(1) > meta.date]
-    if later:
-        at = later[0].start()
-        text = text[:at] + card + "\n" + text[at:]
-    elif cards:
-        c = cards[-1]
-        nxt = text.find("\n\n", c.end())
-        end = text.find("\n## ", c.end())
-        at = len(text) if end == -1 else end
-        para_end = text.rfind("\n\n", 0, at) + 2 if nxt != -1 else at
-        text = text[:para_end] + card + "\n" + text[para_end:]
     SYNTHESIS.write_text(text, encoding="utf-8", newline="\n")
+    # Only the timeline row is scaffolded. SYNTHESIS.md carries no
+    # per-paper appendix any more — it is a synthesis, and the complete
+    # per-paper reference is the SUMMARIES.md entry. Placing the paper in
+    # the argument itself (which thematic section, which papers it agrees
+    # or conflicts with) cannot be scaffolded, so it is listed as a manual
+    # step at the end of a run instead of being faked with a placeholder.
 
 
 def scaffold_changelog(meta: Meta) -> None:
@@ -514,7 +505,7 @@ def main(argv: list[str] | None = None) -> int:
     anchor = scaffold_summaries(meta, rel)
     print(f"  [3/5] SUMMARIES.md   entry + overview row  (anchor #{anchor})")
     scaffold_synthesis(meta)
-    print("  [4/5] SYNTHESIS.md   timeline row + appendix card")
+    print("  [4/5] SYNTHESIS.md   timeline row")
     scaffold_changelog(meta)
     print("  [5/5] CHANGELOG.md   one line")
 
@@ -528,6 +519,11 @@ def main(argv: list[str] | None = None) -> int:
     print("  Read the neighbouring entries first — the house style is")
     print("  venue -> where it fits -> what it contains -> strengths ->")
     print("  limitations, and 'where it fits' must link existing papers.")
+    print()
+    print("  Then place the paper in SYNTHESIS.md by hand: the timeline row")
+    print("  is scaffolded, but which thematic section it belongs to — and")
+    print("  which papers it agrees with, extends, or contradicts — is the")
+    print("  judgement the synthesis exists for, and cannot be templated.")
     print(bar)
     return 0
 

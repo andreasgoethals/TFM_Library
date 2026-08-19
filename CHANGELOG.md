@@ -28,6 +28,34 @@ One line per change; one dated section per day.
   mechanisms (APT's mixture block, EquiTabPFN's target equivariance),
   which is decent evidence it was a real limitation rather than a
   cosmetic one. Recorded against weakness §5 and design axis (d).
+- **`SUMMARIES.md` is now the complete per-paper reference, and the only
+  one.** Every entry carries all four house sections — where it fits, what
+  it contains, strengths, limitations — where previously only 2 of 46 did.
+  The strengths and limitations were folded in from the `SYNTHESIS.md`
+  appendix cards, which said the same things about the same papers in a
+  second place. Entries are rewrapped from a ~55-character hard wrap to
+  ~96, roughly doubling the readable line length.
+- **`SYNTHESIS.md` is now a synthesis and nothing else — the 46-card
+  per-paper appendix is gone.** Two documents were each half a per-paper
+  reference; they are now one reference and one argument. The synthesis
+  opens by stating its own shape, each section inherits the previous one
+  instead of restarting, and a new **Where the papers disagree** section
+  makes the contested claims explicit: what was asserted, who overturned
+  it, and whether it is settled — TuneTables' PEFT premise overturned by
+  Rubachev, retrieval withdrawn by the lab that introduced it, the
+  real-vs-synthetic prior question still open, CausalFM's theorem losing
+  to CausalPFN's empirics, and the architectural "consensus" that one
+  strong open model declines.
+- **APT and EquiTabPFN entered the argument, not just the timeline.** Both
+  had been filed with a timeline row and a card but were absent from the
+  prose. APT now sits in the prior discussion as the third lever
+  (adaptive, next to Mitra's mixing and O'Prior's comparison), and
+  EquiTabPFN anchors a new thread on symmetry running through the whole
+  model line — rows, then columns, then targets, each discovered late and
+  each explaining a workaround the field had been paying for.
+- `check_docs.py` follows: it no longer counts appendix cards, and instead
+  **verifies every summary carries all four sections**, so an incomplete
+  entry now fails the build rather than passing unnoticed.
 - Caveat recorded for the credit projects: EquiTabPFN finds 5 of 86
   benchmark datasets have **ordinal** targets, which are genuinely *not*
   permutation-equivariant — relevant to rating-grade targets.
