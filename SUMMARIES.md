@@ -51,6 +51,7 @@ inside your project's copy of this folder and write them there.
 | 2025-06 | Ye et al. | A Closer Look at TabPFN v2 — Understanding Its Strengths and Extending Its Capabilities | Empirical analysis identifying v2 weaknesses and proposing patches that became v2.5 specialist checkpoints. | [pdf](papers/2025/06_Ye_et_al._A_Closer_Look_at_TabPFN_v2_Understanding_Its_Strengths_and_Extending_Its_Capabilities.pdf) |
 | 2025-07 | Garg et al. | **Real-TabPFN** — Improving Tabular Foundation Models via Continued Pre-training With Real-World Data | **The reference continued-pretraining recipe.** Continue-pretrains TabPFNv2 on 71 curated real datasets; +0.022 ROC-AUC on the OpenML AutoML benchmark. | [pdf](papers/2025/07_Garg_et_al._Real_TabPFN_Improving_Tabular_Foundation_Models_via_Continued_Pre_training_With_Real_World_Data.pdf) |
 | 2025-10 | Zhang et al. | Mitra — Mixed Synthetic Priors for Enhancing Tabular Foundation Models | A "mixed" synthetic prior interpolating between TabPFN's and ForestPFN's priors. | [pdf](papers/2025/10_Zhang_et_al._Mitra_Mixed_Synthetic_Priors_for_Enhancing_Tabular_Foundation_Models.pdf) |
+| 2025-10 | Wu and Bergman | **APT** — Zero-shot Meta-learning for Tabular Prediction Tasks with Adversarially Pre-trained Transformer | Makes the synthetic prior *adaptive*: adversarial data agents shift their own generating distribution to keep challenging the model. A mixture block removes the class-count cap. | [pdf](papers/2025/10_Wu_and_Bergman_Zero_shot_Meta_learning_for_Tabular_Prediction_Tasks_with_Adversarially_Pre_trained_Transformer.pdf) |
 | 2025-11 | Robertson et al. | Do-PFN — In-Context Learning for Causal Effect Estimation | PFN trained to predict ``do``-interventions; in-context causal effect estimation. | [pdf](papers/2025/11_Robertson_et_al._Do_PFN_In_Context_Learning_for_Causal_Effect_Estimation.pdf) |
 | 2025-11 | Zhang et al. | TabPFN — One Model to Rule Them All | Survey-style win aggregation across many domains. | [pdf](papers/2025/11_Zhang_et_al._TabPFN_One_Model_to_Rule_Them_All.pdf) |
 | 2025-11 | Bouadi et al. | **Orion-MSP** — Multi-Scale Sparse Attention for Tabular In-Context Learning | Multi-scale features + block-sparse attention + Perceiver memory for bidirectional flow between stages; scales to wide tables. | [pdf](papers/2025/11_Bouadi_et_al._Orion_MSP_Multi_Scale_Sparse_Attention_for_Tabular_In_Context_Learning.pdf) |
@@ -59,6 +60,7 @@ inside your project's copy of this folder and write them there.
 | 2025-12 | Spinaci et al. | **ConTextTab** — A Semantics-Aware Tabular In-Context Learner | Table-native ICL with per-modality (text/date/number) embeddings trained on large-scale *real* tables; new standard on the semantically rich CARTE benchmark. | [pdf](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf) |
 | 2025-12 | Arazi et al. | **TabSTAR** — A Tabular Foundation Model for Tabular Data with Text Fields | Unfreezes a text encoder and conditions on *target tokens* for semantically target-aware representations; no dataset-specific parameters, and pretraining shows scaling laws in dataset count. | [pdf](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) |
 | 2025-12 | Balazadeh Meresht et al. | **CausalPFN** — Amortized Causal Effect Estimation via In-Context Learning | One transformer trained on simulated ignorable DGPs returns calibrated CATE/ATE for new observational tables out of the box; best average rank over 310 tasks. | [pdf](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) |
+| 2025-12 | Arbel et al. | **EquiTabPFN** — A Target-Permutation Equivariant Prior Fitted Network | Names a real architectural defect: TabPFN is not equivariant to the *ordering of target dimensions*, leaving an irreducible "equivariance gap". | [pdf](papers/2025/12_Arbel_et_al._EquiTabPFN_A_Target_Permutation_Equivariant_Prior_Fitted_Network.pdf) |
 | 2026-01 | Hoo et al. | From Tables to Time — Extending TabPFN-v2 to Time Series Forecasting | Native time-axis attention version of TabPFN. | [pdf](papers/2026/01_Hoo_et_al._From_Tables_to_Time_Extending_TabPFN_v2_to_Time_Series_Forecasting.pdf) |
 | 2026-01 | Klein and Hoffart | Position — Foundation Models for Tabular Data within Systemic Contexts Need Grounding | Position paper from SAP: tabular FMs trained on isolated tables miss the operational context (business rules, code, data models) that gives data meaning. Proposes Semantically Linked Tables (SLT) and FMSLT as a new model class. | [pdf](papers/2026/01_Klein_and_Hoffart_Position_Foundation_Models_for_Tabular_Data_within_Systemic_Contexts_Need_Grounding.pdf) |
 | 2026-01 | Ma et al. | TabDPT — Scaling Tabular Foundation Models on Real Data | Real-data-only TabPFN competitor; retrieval-based self-supervision on OpenML. | [pdf](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) |
@@ -827,6 +829,72 @@ regression benchmarks**, with better sample efficiency.
 
 ---
 
+<a id="apt"></a>
+
+## 2025-10 — Wu and Bergman — APT (Adversarially Pre-trained Transformer)
+
+**Venue:** ICML 2025 (PMLR 267), Vancouver ·
+University of California, Berkeley + **Capital One** ·
+**PDF:** [open](papers/2025/10_Wu_and_Bergman_Zero_shot_Meta_learning_for_Tabular_Prediction_Tasks_with_Adversarially_Pre_trained_Transformer.pdf)
+
+**Where it fits.** A prior-design paper, and the second in this collection
+after [O'Prior](#oprior) to treat the synthetic task distribution as the
+variable rather than the backdrop — but by a different route. O'Prior
+compares *fixed* generators against each other; APT makes the generator
+**adaptive**, letting it react to the model it is training. It also
+attacks the class-count cap, which [EquiTabPFN](#equitabpfn) attacks two
+months later by an unrelated mechanism — two independent answers to the
+same weakness, and a good illustration that it was a real one.
+
+**What it contains.** Two contributions. First, **adversarial synthetic
+data agents**: alongside the ordinary random generators, a fraction of
+the pretraining data comes from agents that continuously shift their own
+data-generating distribution to produce datasets the model currently
+handles badly. Only 12.5% of generators are adversarial (lr 1e-1, weight
+decay 1e-5, soft-discretisation temperature 1e-2, resets every 2,000
+gradient steps) — a small perturbation of the prior, not a replacement.
+Second, a **mixture block** output design that handles an arbitrary
+number of classes, removing the fixed-width final layer that caps
+PFN classification.
+
+The evaluation is unusually honest about scope. On the 35 OpenML-CC18
+datasets with ≤2,000 rows, **no filtering is applied** on class count,
+feature count, categorical features or missing values — the filters
+TabPFN v1's headline result relied on. Given a one-hour budget per
+algorithm:
+
+| | mean rank ↓ | ROC-AUC ↑ | wins | time (s) |
+|---|---|---|---|---|
+| **APT** | **3.86** | **0.921** | **13** | **0.90** |
+| CatBoost | 4.03 | 0.918 | 6 | 3,542 |
+| TabPFN | 4.57 | 0.913 | 4 | 0.86 |
+| XGBoost | 5.37 | 0.914 | 4 | 3,608 |
+
+Regression is checked separately on OpenML-CTR23, where adversarial
+pretraining also improves on TabPFN. An analysis section shows the
+adversarial agents produce a measurably more diverse dataset collection
+than the ordinary generator, and that the mixture block both generalises
+to unseen class counts and accelerates pretraining convergence.
+
+**Strengths.** The adversarial generator is a genuinely different lever
+on the prior from anything else here: Mitra *mixes* fixed priors,
+O'Prior *compares* them, APT lets the prior chase the model's weaknesses.
+Dropping the dataset filters is the right call and makes the comparison
+mean something. Beating tuned CatBoost on rank while running ~4,000×
+faster is the practical headline. And like
+[Luo](#memory-efficient-tfms), it is written partly from inside a
+deploying institution — Capital One — which is still rare in this
+collection.
+
+**Limitations.** The baseline is **TabPFN v1** (with its class cap merely
+raised from 10 to 26 for fairness), not v2, so the comparison is a
+generation behind by the time of publication. APT does not beat GBDTs on
+large datasets and inherits TabPFN's quadratic attention cost, which the
+paper acknowledges and does not solve. The regression evidence is thinner
+than the classification evidence, and there is no calibration analysis.
+
+---
+
 ## 2025-11 — Robertson et al. — Do-PFN
 
 **arXiv:** [2506.06039](https://arxiv.org/abs/2506.06039) ·
@@ -1127,6 +1195,68 @@ limitation is the mirror of the synthetic camp's: training on real tables
 raises contamination questions, and the gains concentrate where columns
 carry natural-language meaning, which is exactly where a purely numeric
 domain gains least.
+
+---
+
+<a id="equitabpfn"></a>
+
+## 2025-12 — Arbel et al. — EquiTabPFN
+
+**DOI:** [10.52202/085713-2097](https://doi.org/10.52202/085713-2097) ·
+NeurIPS 2025 (Advances in Neural Information Processing Systems 38) ·
+INRIA + University of Freiburg / ELLIS Institute Tübingen + **Prior Labs** ·
+**PDF:** [open](papers/2025/12_Arbel_et_al._EquiTabPFN_A_Target_Permutation_Equivariant_Prior_Fitted_Network.pdf)
+
+**Where it fits.** A critique from *inside* the lab that builds TabPFN —
+Frank Hutter is an author — which makes it unusually credible. It
+identifies a symmetry of tabular data that the architecture violates,
+where the field had previously identified only the two it respects (row
+order and, since TabICL, column order).
+
+**What it contains.** The observation is simple once stated: a
+classifier's target dimensions have no canonical ordering, so permuting
+them should not change predictions — and in TabPFN it does. The paper
+formalises this as the **target-equivariance gap**,
+
+> `E_equi(f) := L(f) − L(f_equi)`
+
+the loss difference between a function and its permutation-averaged
+counterpart. The gap is *irreducible* for a non-equivariant architecture,
+and the paper shows empirically that it shrinks only slowly over TabPFN
+training — the model is spending capacity learning a symmetry it could
+have been given for free. This is also the real reason for the ensembling
+over class permutations that TabPFN needs in practice.
+
+The fix is architectural: equivariant encoders and decoders plus a
+bi-attention mechanism extended over the **target** axis, so equivariance
+holds by construction. Evaluation is on TabZilla, split deliberately into
+76 tasks with ≤10 classes and 10 tasks with >10 classes — more classes
+than were ever seen in pretraining. On the latter, EquiTabPFN attains the
+best median relative accuracy of all models, while **TabPFN v2 falls
+below a linear model and random forests**. No ensembling is used.
+
+The baseline design deserves note. Because v2's prior and training code
+are not public, the authors also train **TabPFNv2\*** — v2's exact
+architecture on the *public* prior they used themselves — so the
+comparison isolates the architecture rather than confounding it with a
+better closed prior.
+
+**Strengths.** Names and formalises a real defect rather than reporting
+another benchmark win, and the mechanism explains an existing workaround
+(permutation ensembling) rather than just adding one. The TabPFNv2\*
+control is exactly the comparison this library has repeatedly noted is
+missing when a closed prior is involved. The class-count limit is removed
+**by construction** instead of by post-processing, which is what makes it
+cheaper rather than more expensive. Code is released.
+
+**Limitations.** Self-attention over targets costs quadratically in the
+number of target dimensions — fine for most tabular problems, not for
+very many classes. More interesting: **some targets genuinely are not
+permutation-equivariant.** Ordinal outcomes have a real order, and the
+authors find 5 of the 86 surveyed datasets are of this kind; handling
+them would require changing the prior, since it is currently equivariant
+by construction. That caveat matters directly for ordinal credit-risk
+targets such as rating grades. Classification only.
 
 ---
 
@@ -1932,6 +2062,8 @@ proper comparison is ever needed. Any claim from this source should be
 attributed to Google's blog, not to the literature.
 
 ---
+
+<a id="memory-efficient-tfms"></a>
 
 ## 2026-07 — Luo et al. — Memory Efficient Tabular Foundation Models
 

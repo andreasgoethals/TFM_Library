@@ -4,6 +4,34 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-19
+
+- Added **Wu and Bergman 2025-10 — APT** (ICML 2025) and **Arbel et al.
+  2025-12 — EquiTabPFN** (NeurIPS 2025), 44 → 46 papers, both filed
+  straight from Zotero with `new_paper.py --zotero`.
+- **APT makes the prior adaptive.** A minority (12.5%) of pretraining
+  generators are adversarial agents that shift their own data-generating
+  distribution toward whatever the model currently handles badly. That is
+  a third distinct lever on prior design alongside Mitra's *mixing* and
+  O'Prior's *comparison*, and the one most directly relevant to designing
+  a domain-targeted prior. Its evaluation also drops the class/feature/
+  categorical/missing-value filters that earlier PFN headlines relied on.
+- **EquiTabPFN names an architectural defect from inside Prior Labs.**
+  Tabular targets have no canonical ordering, yet permuting them changes
+  TabPFN's predictions; the paper formalises the irreducible
+  *target-equivariance gap* and closes it by construction. Two
+  consequences worth carrying: it explains why permutation ensembling was
+  needed at all, and its **TabPFNv2\*** baseline — v2's architecture
+  retrained on the *public* prior — is the control this library has
+  repeatedly noted is missing whenever a closed prior is compared.
+- Both papers independently remove the **class-count cap**, by unrelated
+  mechanisms (APT's mixture block, EquiTabPFN's target equivariance),
+  which is decent evidence it was a real limitation rather than a
+  cosmetic one. Recorded against weakness §5 and design axis (d).
+- Caveat recorded for the credit projects: EquiTabPFN finds 5 of 86
+  benchmark datasets have **ordinal** targets, which are genuinely *not*
+  permutation-equivariant — relevant to rating-grade targets.
+
 ## 2026-08-18
 
 Zotero documented as the upstream of this library, in `AGENTS.md` (the
