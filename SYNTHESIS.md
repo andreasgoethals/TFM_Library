@@ -87,6 +87,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-06 | Purucker et al. — Beyond IID | BeyondArena: unified non-IID benchmark (142 datasets); TFM ICL fails temporal/grouped/large data | TabArena, TabReD, TabPFN-2.6/TabICLv2 |
 | 2026-06 | Kong & Das — TabFM (Google, blog only) | Third independent lab converges on the TabPFN×TabICL hybrid; hundreds of millions of synthetic SCM tables; productized as BigQuery `AI.PREDICT` | TabPFN (row/col attention) + TabICL (row compression); TimesFM's zero-shot pitch |
 | 2026-07 | Luo 2026 (Memory-Efficient TFMs) | Post-hoc INT4 quantization: 7.6× less memory, ~87% lower deployment requirement, negligible accuracy loss — an open alternative to proprietary distillation | TabPFN v2.5/v2.6, TabICL; deployment constraints |
+| 2026-08 | Shaheen 2026 | Pretraining on a *single* real table transfers across domains; feature count (not row count) predicts transfer; argues TFMs are learned retrieval-and-aggregation, not prior-fitted Bayesian inference | Nagler 2023 localisation; TabDPT procedure; challenges Müller 2021 |
 
 
 ## Foundations — Prior-Fitted Networks & Bayesian in-context learning
@@ -98,6 +99,35 @@ What makes this more than a heuristic is the training objective. The prior-data 
 The design choices in the original paper are worth dwelling on because nearly all of them survive into modern TFMs. The architecture is a transformer *encoder* without positional encodings, making it permutation-equivariant over dataset rows — the correct inductive bias, since a dataset is a set, not a sequence. Each (x, y) pair is embedded by simple linear layers and summed; training examples attend to each other, while test queries attend only to the training set and not to one another, keeping test predictions conditionally independent and cheap to batch. For regression, the paper introduces the Riemann head — a histogram distribution whose bucket borders equalize prior-data mass, with half-normal tails — proven able to approximate any Riemann-integrable density in KL. This bucketed distributional output (itself borrowed from distributional RL, Bellemare 2017) is the direct ancestor of TabPFNv2's regression head and thus of any PFN-based LGD regressor. Even the preprocessing conventions persist: zero-padding to a fixed feature budget with √(max/used) rescaling, and standardization computed from *training rows only* to avoid test leakage.
 
 A second, less-cited foundation deserves equal billing, because it is the only rigorous account of *why* the recipe works and where it must fail. Nagler (2023) shows that the Bayesian motivation is not the only available reading: treating a PFN as a **pre-tuned but untrained predictor** — a fixed function of the context set rather than an approximate posterior — recovers its behaviour under a plain bias–variance decomposition, and explains the otherwise puzzling fact that PFN accuracy keeps improving on datasets far larger than any seen in pretraining. The decomposition yields an asymmetry that structures much of what follows: a predictor's **variance** vanishes if its sensitivity to any individual context row vanishes, which attention-based averaging delivers for free; but its **bias** vanishes only if the predictor is **localised** around the test point, and the transformer architectures used in PFNs guarantee no such thing. PFNs therefore inherit half of consistency by construction and none of the other half. Read forward, this is a remarkably good predictor of the empirical literature: the retrieval-based models (LoCalPFN, TabDPT) that later delivered the largest gains over base TabPFN are, mechanically, localisation fixes discovered by experiment rather than derived from the theory.
+
+That prediction has now been made into an argument. **Shaheen (2026)**, written jointly by the
+Layer 6 AI group behind TabDPT and by TabPFN's own senior author, reports that a transformer
+pretrained by self-supervision on a **single real table** — vectorized MNIST — transfers
+in-context to a semantically unrelated one such as California Housing, and that a model trained
+on one modest table roughly matches a random forest across 107 held-out CC-18 and CTR-23
+datasets. The authors take this as evidence against the prior-fitting account itself: the
+Bayesian reading requires the downstream task to lie in the support of the prior, and a prior
+induced by one table plainly does not cover California housing prices. Their alternative is that
+a TFM learns a **retrieval-and-aggregation procedure** — nearer to k-nearest neighbours than to
+a fitted predictor — so pretraining teaches the model *how to compare rows and pool their
+labels*, not *what the world looks like*. The supporting evidence is a "retrieve and copy" probe
+on which model quality tracks the ability to locate relevant rows inside its own context
+(proposed as the tabular counterpart of induction heads), plus an intervention forcing `W_Q =
+W_K` so that attention becomes an explicit negative squared distance and each layer is made more
+kNN-like by construction.
+
+Read against Nagler, this is less a refutation than a completion: he showed that variance
+vanishes for free but bias vanishes only under *localisation*, and retrieval is what
+localisation looks like when a transformer learns it rather than has it engineered. It also
+reframes what a good pretraining corpus is. Because pretraining manufactures tasks by choosing a
+target column and a feature subset, a **wide** table yields combinatorially many tasks, and
+Shaheen finds feature count dominates every other meta-feature in predicting transfer (R² = 0.67
+from simple properties alone) while row count contributes almost nothing — with the operational
+corollary that **column-level** cleaning helps while **dataset-level filtering, deduplication
+included, does not**. Two caveats keep this from settling the matter: the study pretrains on
+real data only, so it does not directly speak to the synthetic-prior models whose Bayesian
+justification it questions, and it uses only row-based attention, leaving v2's cell-based
+bi-attention and the column-compress designs untested.
 
 The intellectual lineage is explicit. PFNs sit in the tradition of learning-to-learn in a forward pass (Hochreiter 2001; Santoro 2016; Gordon 2019) and of simulation-based/amortized inference (Papamakarios & Murray 2016; Cranmer 2020), and are closest architecturally to Conditional and Attentive Neural Processes (Garnelo 2018; Kim 2018) — which Müller et al. outperform on GP posterior emulation. The differentiator from Neural Processes is less the architecture than the *framing*: the loss is interpreted as PPD approximation under an explicit, exchangeable prior, which is what turns "a set-conditioned predictor" into "a Bayesian inference machine" and, later, licenses the position that PFNs are the future of Bayesian prediction generally (Müller et al. 2025) and the statistics-community reading of TabPFN as approximate Bayesian inference (Zhang et al. 2025).
 
@@ -273,6 +303,8 @@ a later result removes the ground from an earlier one.
 | Column-embed → row-compress → **ICL** is the settled architecture | Qu 2025/2026; Grinsztajn 2026 (v3); Kong & Das 2026 (TabFM) — three independent labs | **Hosseinzadeh 2026** deliberately stays **row-based**, arguing row attention is easier to make efficient as context grows | **Consensus is narrower than it looks** — three converged, the strongest open row-based model went the other way |
 | Architectural gains are attributable | the whole line, implicitly | **Bouadi 2026 (O'Prior)**: "prior work conflates architectural improvements with prior improvements — TabPFN v2 enriched both simultaneously, making attribution impossible" | **Conceded.** O'Prior fixes everything but the prior and shows the prior alone moves ROC-AUC substantially |
 | TabPFN respects the symmetries of tabular data | v1 (rows), v2/TabICL (columns) | **Arbel 2025 (EquiTabPFN)**: *target* order was missed; permuting class labels changes predictions, and the permutation ensembling every generation performs is a Monte-Carlo patch for it | **Accepted and fixed** — though EquiTabPFN's own caveat is that ordinal targets are *not* permutation-equivariant, so the symmetry is domain-dependent |
+| Pretraining works by inducing a **Bayesian prior** over data-generating processes, so a task must lie in the prior's support | Müller 2021; Hollmann 2023/2025; Müller 2025 | **Shaheen 2026**: a model pretrained on *one* table (MNIST) transfers to California Housing — a prior induced by one table cannot cover that task. Proposes learned **retrieval-and-aggregation** instead | **Live challenge to the corpus's founding claim**, and from a team including TabPFN's own senior author. Scope limits — real-data pretraining, row-based attention only — stop it being decisive |
+| Only a very **diverse, massive** pretraining corpus enables out-of-domain generalisation | the scaling line: Qu 2026 (~35M synthetic tables); Grinsztajn 2026 (8T tokens); Kong & Das 2026 (hundreds of millions) | **Shaheen 2026**: one table suffices for non-trivial transfer, and what matters is the number of *tasks* a corpus yields — hence table **width**, not corpus size | **Awkward for the scaling race.** Diversity may be a proxy for task count, which width buys far more cheaply |
 | TFMs are general-purpose tabular predictors | the field's headline framing | **Purucker 2026 (BeyondArena)**, co-authored by Prior Labs: on non-IID splits — temporal and grouped — tuned RealMLP and CatBoost win, and the gap grows with sample size and categorical cardinality | **Qualified, by the developers themselves.** Generality is regime-bound |
 | Model choice is what a benchmark measures | every leaderboard here | **Tanna 2026 (credit)**: on imbalanced credit data the *context-construction strategy* explained more AUC variance than the choice of TFM — 3–4 points, wider than the spread between models | **Uncomfortable, and largely untested elsewhere.** Every comparison in this synthesis holds context construction fixed |
 
@@ -287,7 +319,10 @@ was a statement about a gap, not a proposal. The models that later
 delivered the largest gains over base TabPFN — LoCalPFN's retrieved
 neighbourhoods, TabDPT's retrieval-aligned contexts — are localisation
 fixes arrived at by experiment. The theory predicted where the headroom
-would be found three years before it was found.
+would be found three years before it was found — and **Shaheen (2026)** has now
+closed the loop by arguing that retrieval is not merely a useful add-on but the
+mechanism the models learn anyway, which would make Nagler's localisation gap the
+single most predictive piece of theory in this collection.
 
 **Two independent fixes for one limitation.** TabPFN's fixed-width output
 capped classification at ten classes. **APT (Wu 2025)** removed the cap

@@ -4,6 +4,38 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-20
+
+- Added **Shaheen et al. 2026-08 — Understanding the Surprising Generalization
+Properties of Tabular Foundation Models** (arXiv 2608.17957), 46 → 47 papers, filed
+from Zotero with `new_paper.py --zotero`.
+- **This is the first paper in the collection to attack the paradigm's founding
+claim.** Every model here descends from Müller 2021's argument that a PFN approximates
+the Bayesian posterior predictive *under its prior*, which requires downstream tasks to
+lie in that prior's support. Shaheen trains 88 models, each on a **single real table**,
+and evaluates them on 107 held-out datasets: one trained only on vectorized MNIST
+transfers to California Housing. A prior induced by one table cannot cover that task, so
+the authors propose TFMs are learned **retrieval-and-aggregation** procedures — closer
+to kNN than to a fitted predictor — and back it with a retrieve-and-copy probe and a
+`W_Q = W_K` intervention that makes attention an explicit negative squared distance.
+- Recorded in **Where the papers disagree** as two rows, because it disputes two
+separate consensus positions: the Bayesian account of *why* TFMs work, and the scaling
+line's premise that only a massive, diverse corpus enables out-of-domain transfer.
+- **It also completes Nagler 2023.** His localisation gap said bias vanishes only if the
+predictor localises around the query, which nothing in the architecture guarantees; if
+retrieval is what the models learn regardless, that 2023 analysis becomes the most
+predictive piece of theory in this collection. Noted in the Foundations section.
+- Two corpus-design findings worth carrying: **feature count predicts transfer and row
+count does not** (R² = 0.67 from simple meta-features, width dominating), because
+pretraining manufactures tasks from target-column and feature-subset choices, so wide
+tables yield combinatorially many tasks; and **column-level cleaning helps while
+dataset-level filtering, deduplication included, does not**.
+- Discounts recorded: real-data pretraining only, so it does not directly speak to the
+synthetic-prior frontier it questions; row-based attention only, so v2's cell-based
+bi-attention and the column-compress designs are untested; preprint; no calibration
+reported — pointed given that calibrated posteriors are what the Bayesian framing was
+invoked to explain.
+
 ## 2026-08-19
 
 - Added **Wu and Bergman 2025-10 — APT** (ICML 2025) and **Arbel et al.

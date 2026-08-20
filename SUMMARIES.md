@@ -72,8 +72,11 @@ this folder and write them there.
 | 2026-06 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets, IID + temporal + grouped splits): TFM ICL wins tiny/small IID data but **loses to tuned RealMLP/GBDTs under temporal & grouped splits**, with the gap growing with sample size and high-cardinality categoricals. Fine-tuning explicitly untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-06 | Kong and Das (Google) | **TabFM** — Introducing TabFM: A zero-shot foundation model for tabular data | *Blog post, not a paper.* Google's TabPFN+TabICL **hybrid** (alternating row/column attention → row compression → ICL over row embeddings), trained on hundreds of millions of synthetic SCM datasets; TabArena Elo vs tuned GBDTs; shipping into **BigQuery `AI.PREDICT`**. | [pdf](papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf) |
 | 2026-07 | Luo et al. | **Memory Efficient Tabular Foundation Models** | Post-hoc **INT4 quantization** cuts TFM memory by up to **7.6×** (~87% lower deployment requirement) with negligible accuracy loss — an open alternative to the proprietary distillation engines. First paper here written from inside a bank. | [pdf](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf) |
+| 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Pretraining on a *single* real table transfers across domains, which the Bayesian prior-fitting account cannot explain; argues TFMs are learned **retrieval-and-aggregation** procedures instead. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 
 ---
+
+<a id="pfns-2021"></a>
 
 ## 2021-12 — Müller et al. — Transformers Can Do Bayesian Inference
 
@@ -2024,5 +2027,92 @@ large table sizes — quantization shrinks the weights, not the in-context activ
 complementary to, not a substitute for, the architectural work in TabDPT-Turbo and the
 row-compression line. No calibration analysis is reported, which matters because quantization
 can plausibly perturb predicted probabilities more than it perturbs accuracy.
+
+---
+
+<a id="shaheen-retrieval"></a>
+
+## 2026-08 — Shaheen et al. — Understanding the Surprising Generalization Properties of Tabular
+Foundation Models
+
+**arXiv:** [2608.17957](https://arxiv.org/abs/2608.17957) (18 August 2026, preprint) ·
+Polytechnique Montréal / Mila / Chandar Lab · University of Toronto · **Layer 6 AI** ·
+**Prior Labs** / ELLIS Institute Tübingen / University of Freiburg · Cohere ·
+**PDF:** [open](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf)
+
+**Where it fits.** The most direct challenge in this collection to the claim the
+whole paradigm was built on. Every model here descends from
+[Müller 2021](#pfns-2021)'s argument that a PFN approximates the Bayesian posterior
+predictive *under its prior* — which entails that downstream tasks must lie in the
+prior's support. This paper shows a model pretrained on **one real table** transferring
+to a semantically unrelated one, and argues the Bayesian account cannot accommodate
+that. It is also the strongest confirmation yet of [Nagler](#nagler-theory)'s 2023
+localisation analysis, and it is written across the two rival labs: the Layer 6 AI team
+behind [TabDPT](#tabdpt) together with **Frank Hutter**, TabPFN's own senior author.
+
+**What it contains.** The setup is deliberately austere: the row-based backbone shared
+by TabPFN v1 and TabDPT, TabDPT's pretraining procedure, retrieval disabled during
+pretraining (enabled at inference), and **one real dataset per model**. Eighty-eight
+such models are trained, one per TabDPT pretraining dataset, and each is evaluated on
+107 held-out datasets — 72 CC-18 classification and 35 CTR-23 regression tasks, with no
+overlap between pretraining and evaluation.
+
+The headline is the title's "surprising": a transformer trained only on **vectorized MNIST**
+produces strong in-context performance on **California Housing**, and one trained only on the
+COLLEGES table roughly matches a random forest across both benchmark suites. Three regularities
+follow.
+
+- **Transfer is universal or absent.** Rank correlation across evaluation sets is high:
+  a pretraining table that helps on one downstream task tends to help on all of them.
+  There is *no* within-domain advantage — some domains are simply better to pretrain on
+  (other-science good, deterministic-simulated poor).
+- **Feature count predicts transfer; row count does not.** An XGBoost regressor over
+  simple dataset meta-features recovers **R² = 0.67** of the variance in downstream
+  generalisation, and **number of features dominates the importances** while number of
+  instances has negligible predictive power.
+- **Unique task count is the active ingredient.** Because pretraining manufactures tasks
+  by picking a target column and a feature subset, a wide table yields combinatorially
+  many tasks — which is why width, not height, matters. More unique tasks monotonically
+  improves transfer.
+
+Scaled to corpora, the task-centric view gives an asymmetric and practically useful result:
+**column-level** cleaning (dropping duplicated, excessively correlated or uninformative columns)
+consistently improves downstream performance, whereas **dataset-level filtering — including
+deduplication — does nothing**. Adding the "bad" single-table datasets to the good ones still
+tends to *improve* generalisation.
+
+The interpretive claim is the paper's real contribution. It argues the prior-fitting account is
+unsatisfying because it requires the downstream task to be covered by the prior, which
+single-table transfer contradicts outright, and proposes instead that TFMs learn a
+**retrieval-and-aggregation procedure** — closer to k-nearest neighbours than to a fitted
+predictor. Three pieces of evidence: a "retrieve and copy" probe showing model quality tracks
+its ability to locate relevant rows *within its own context* (offered as the tabular analogue of
+induction heads in LLMs); an architectural intervention tying `W_Q = W_K` under
+qk-normalisation, which makes each attention score an explicit negative squared distance and so
+strictly more kNN-like; and the observation that the strongest single-dataset models converge on
+similar attention-map patterns, hinting at a shared retrieval space.
+
+**Strengths.** The experiment is the argument: 88 single-table pretrainings against 107
+held-out datasets is an expensive, clean design, and holding architecture and procedure
+fixed while varying only the pretraining table is the same controlled discipline
+[O'Prior](#oprior) brought to synthetic priors. The width-over-height finding is
+immediately actionable for anyone assembling a real-data corpus, and the
+column-versus-dataset asymmetry is the rare corpus-design result that tells you what
+*not* to bother doing. The retrieval account also retrofits an explanation onto several
+otherwise loose ends in this literature — why retrieval-based models (LoCalPFN, TabDPT)
+gained most, why Nagler's localisation gap was where the headroom lay, and why
+context construction can outweigh model choice. Cross-lab authorship including TabPFN's
+senior author makes the challenge to the Bayesian framing hard to dismiss as rivalry.
+
+**Limitations.** The authors are candid: they cannot exclude mechanisms besides learned
+retrieval, so the account is the best available reading rather than a demonstration. Two
+scope limits matter more for this collection. The study uses **only real-data
+pretraining**, so it does not directly license claims about the synthetic-prior models
+that dominate the frontier — the very models whose Bayesian justification it questions.
+And it uses **only row-based attention** (TabPFN v1 / TabDPT), not the cell-based
+bi-attention of TabPFN v2 or the column-compress designs of TabICL and v3, so whether
+the retrieval story holds for the current architectures is untested. Being a preprint,
+it is also unreviewed, and no calibration is reported — which is a real gap given that
+calibrated posteriors are precisely what the Bayesian framing was invoked to explain.
 
 ---
