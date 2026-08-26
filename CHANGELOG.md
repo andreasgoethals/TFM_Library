@@ -4,6 +4,30 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-26
+
+Zotero-side only — no papers added, no documents changed in substance.
+
+- **`08. TabPFN Originals` retired in favour of a saved search.** The collection held
+six hand-picked papers; the intent was "anything the TabPFN originators wrote", which is
+a rule, not a list. `★ TabPFN Originals (auto)` matches any item with **Müller,
+Hollmann, Grinsztajn or Hutter** among the creators and returns **22** items — a strict
+superset that misses none of the six. All six were already in other collections, so
+deleting the collection stranded nothing.
+- **Collections renumbered `00`–`18`** to close the gap the deletion left. `Tabular
+Foundation Models` is now **`08`**, and every reference in `AGENTS.md`, `README.md` and
+the assignment rules moved with it. This is the second renumbering; nothing broke either
+time, because every tool matches the collection by **name substring** rather than by
+number — which is now stated as the reason in `AGENTS.md`.
+- **`★ My publications` removed** — Zotero has My Publications built in.
+- **`★ Added in the last 30 days` was genuinely broken**, not merely empty: 51 items
+qualified while the search returned none. The value `30 d` is not parseable — Zotero
+reads `isInTheLast` as `<number> <unit>` with a spelled-out unit — so it is now `30
+days`.
+- Useful discovery for future work: the local API endpoint **`/searches/<key>/items`
+executes a saved search and returns its results**, so a saved search can be verified
+programmatically instead of by eye.
+
 ## 2026-08-20
 
 - Added **Shaheen et al. 2026-08 — Understanding the Surprising Generalization

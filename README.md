@@ -130,7 +130,7 @@ template.
 ## Zotero — the upstream of this library
 
 The papers here are not collected ad hoc. They are the contents of **one
-Zotero collection**, `09. Tabular Foundation Models`, mirrored onto disk.
+Zotero collection**, `08. Tabular Foundation Models`, mirrored onto disk.
 Zotero decides *what* is in scope; this repository decides *how* it is
 written up.
 
@@ -155,7 +155,7 @@ this repository — this repository is public.**
 
 ### Adding a paper, starting from Zotero
 
-1. Add it to `09. Tabular Foundation Models` in Zotero, with the PDF
+1. Add it to `08. Tabular Foundation Models` in Zotero, with the PDF
    attached and its metadata filled in (DOI or arXiv ID at minimum).
 2. Copy the item key (right-click → *Export Item…*, or read it from the
    API) and run:

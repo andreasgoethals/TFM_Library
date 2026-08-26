@@ -49,20 +49,22 @@ SQLite path as a fallback for when Zotero is closed.
 
 ### Which collection this repository mirrors
 
-**`09. Tabular Foundation Models`.** That collection *is* the definition
+**`08. Tabular Foundation Models`.** That collection *is* the definition
 of what belongs in `papers/` — one PDF here per item there, and nothing
 else. Three rules follow:
 
 - **Seeing a source in Zotero is not a reason to add it here.** If the
-  owner keeps a paper in `11. Causal ML` or `15. Credit Risk Modelling`
+  owner keeps a paper in `10. Causal ML — Foundations` or `16. Credit Risk Modelling`
   and not in the TFM collection, that is a deliberate judgement that it
   is out of scope. Do not "helpfully" pull it in.
 - **A divergence is a report, not a repair.** Run the check, say what
   differs, let the owner decide which side is wrong. Never add or delete
   a paper to make the numbers agree.
 - **Match the collection by name substring, never by number.** The
-  numeric prefixes are sort keys and get renumbered; `"Tabular Foundation
-  Models"` is stable. `check_zotero_sync.py` already does this.
+  numeric prefixes are sort keys and get renumbered — they have been
+  renumbered twice already — so `"Tabular Foundation Models"` is the
+  stable handle. `check_zotero_sync.py` already does this, which is why
+  neither renumbering broke it.
 
 ### Use Zotero as the metadata source
 
@@ -117,7 +119,7 @@ downstream edit can ever reach this repository.
    methods, and domain application papers are **out of scope** even when
    the corpus cites them heavily — and even when you can see them in the
    owner's Zotero, which holds their whole reading list. The operational
-   test is membership of the `09. Tabular Foundation Models` collection;
+   test is membership of the `08. Tabular Foundation Models` collection;
    see [above](#which-collection-this-repository-mirrors).
 
    **There is exactly one deliberate exception, and it is important:**
@@ -131,7 +133,7 @@ downstream edit can ever reach this repository.
 3. **Papers are added ONLY when the owner explicitly says so** (or adds
    one themselves). Never collect papers proactively — the trigger is
    always the owner, and the source of truth for *what* is in scope is
-   the `09. Tabular Foundation Models` collection in Zotero. When the
+   the `08. Tabular Foundation Models` collection in Zotero. When the
    owner does ask, follow all five steps:
    1. PDF into `papers/<year>/` as `MM_Author_et_al._Title.pdf`, where
       `<year>` and `MM` are the year and **month** of the version being
