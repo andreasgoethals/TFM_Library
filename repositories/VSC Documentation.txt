@@ -8659,10 +8659,18 @@ FILE: source/brussel/tier1_sofia_changelog.rst
 Tier-1 sofia changelog
 ######################
 
+2026-08-12
+----------
+* Insulation of the main cooling loop completed.
+
+2026-08-10
+----------
+* Motherboard replaced on node hm001.
+
 2026-08-04
 ----------
-* Planned intervention on the cooling system: water leak on rack 3 fixed
-* Memory module replaced on node hc034
+* Planned intervention on the cooling system: water leak on rack 3 fixed.
+* Memory module replaced on node hc034.
 
 2026-07-24
 ----------
@@ -8676,26 +8684,28 @@ Tier-1 sofia changelog
 
 2026-07-15
 ----------
-* Planned intervention on cooling: firmware upgrade of the CDU and fix the CDU monitoring.
+* Planned intervention on cooling: firmware upgrade of the CDU and fix the CDU
+  monitoring.
 
 
 2026-07-13
 ----------
-* Create new `Globus collection <https://app.globus.org/file-manager/collections/d9e37ac8-6279-45a6-8622-0e7811aa8ace>`__
-  for sofia: the existing one had an incorrect configuration that caused absolute paths to not work.
-  The previous is marked as legacy and will be removed by October 1.
+* Created a new `Globus collection <https://app.globus.org/file-manager/collections/d9e37ac8-6279-45a6-8622-0e7811aa8ace>`__
+  for sofia: the existing one had an incorrect configuration that caused
+  absolute paths to not work. The previous is marked as legacy and will be
+  removed by October 1.
 
 
 2026-07-09
 ----------
 * Planned intervention on the cooling system.
-* Compute nodes shut down for 6 hours (unscheduled) to fix a new water leak in
+* Compute nodes shut down for 6 hours (unscheduled) to fix a water leak in
   the cooling system.
 
 
 2026-07-07
 ----------
-* **sofia** enters production
+* **sofia** enters production.
 
 
 2026-07-06
@@ -29677,10 +29687,6 @@ Note that project storage (even in the absence of automatic cleanup) should not 
 
 Also keep in mind that project storage is a paid service (charged based on peak usage per month) while temporarily increasing your scratch quotum can be done for free. If you only need more workspace for your own calculations, it may therefore be more advantageous to ask for a higher scratch quotum than to make more use of project storage. In general, we recommend to only use project storage if strictly required and to use scratch storage whenever possible. For all storage related requests, see also the `HPC Service Catalog <https://icts.kuleuven.be/sc/onderzoeksgegevens/english-version/HPC-storage>`_.
 
-.. note::
-
-   Project storage on the GPFS1 file system is still under construction.
-
 External storage
 ----------------
 As a general rule, data should be removed from HPC storage once it is no longer needed in further computations or postprocessing. Usually at least part of this data needs to be preserved for e.g. possible future reanalysis, sharing with other researchers, publication, et cetera. Such data then first needs to be copied to external storage (a process typically referred to as 'outflow'). Carefully consider your choice of external storage, in particular when it comes to (long-term) data safety, pricing, and how well it can be reached from within the HPC environment. Your options may include:
@@ -32759,6 +32765,14 @@ transfer files to and from your VSC account on the clusters.
 
 You can `download FileZilla`_ from the `FileZilla project page`_.
 
+.. warning::
+
+   |sofia| Connecting to Tier-1 **sofia** using an MFA certificate held in
+   an SSH Agent does not work in the FileZilla client.
+
+   We recommend using the :ref:`Globus platform <globus platform>` instead.
+
+
 Prerequisites
 =============
 
@@ -35802,18 +35816,10 @@ FILE: source/leuven/mindwell_quick_start.rst
 Mindwell quick start guide
 ==========================
 
-The KU Leuven / UHasselt Tier-2 cluster *Mindwell* is planned to enter
+The KU Leuven / UHasselt Tier-2 cluster *Mindwell* entered
 production around mid 2026. Mindwell contains thin nodes, large memory
-nodes and GPU nodes.
-
-.. note::
-
-   All vsc3 users can now try out Mindwell for free by submitting
-   jobs using the "lp_mindwell_pilot" credit account.
-
-   Mindwell is planned to enter production on Monday June 15.
-   From that point onwards, you will need to use your regular
-   credit accounts to run on Mindwell.
+nodes, nodes intended for interactive work and GPU nodes. The regular credit
+accounts can be used on all clusters, including Mindwell.
 
 Mindwell does not have separate login nodes and can be accessed from the
 :ref:`Genius login nodes <tier2_login_nodes>`.
@@ -38055,7 +38061,7 @@ FILE: source/leuven/tier2_hardware/mindwell_hardware.rst
 Mindwell hardware
 =================
 
-The KU Leuven / UHasselt Tier-2 cluster *Mindwell* is planned to enter
+The KU Leuven / UHasselt Tier-2 cluster *Mindwell* entered
 production around mid 2026. Mindwell contains thin nodes, large memory
 nodes and GPU nodes.
 
@@ -38106,19 +38112,20 @@ Hardware details
 Storage
 -------
 
-A new parallel filesystem will be installed together with the cluster
-(IBM Storage Scale, 5.8 PB, connected over NDR). We will assign scratch storage
-on this new filesystem and also offer project storage (similar to the current
-`staging` storage). The compute nodes will also be connected to the existing
-Lustre filesystem (through an Infiniband HDR-100 network), so all your existing
-data will be accessible from the new cluster. Please read more about the
+A new IBM Storage Scale (also known as GPFS) parallel filesystem with a capacity
+of 5.8 PB is connected over NDR to the Mindwell cluster. Both scratch and project
+storage (the latter being similar to the `staging` storage on the Lustre parallel
+filesystem) are available on this new filesystem.
+The Mindwell compute nodes are also connected to the existing Lustre filesystem
+(through an Infiniband HDR-100 network), so all your existing
+data is accessible from the new cluster. Please read more about the
 :ref:`available scratch filesystems <leuven_scratch>` for detailed information and
 best practices.
 
 Additional highlights
 ---------------------
 
-- Software modules will only be installed for toolchains starting from 2024a
+- Software modules are only provided for toolchains starting from 2024a
   (CPU partitions) or 2025a (GPU partitions).
 - All nodes are interconnected using an Infiniband NDR network.
 - Similar to the wICE Sapphire Rapids and the H100 nodes, the new cluster is direct liquid cooled.
@@ -38220,6 +38227,7 @@ The diagram below shows these parallel file systems (at the bottom) and the
 networks that connect them to the compute nodes (at the top).
 
 .. figure:: kuluh_pfs.svg
+   :class: dark-light
    :alt: Parallel file systems at KU Leuven/UHasselt
 
    Diagram of the parallel file systems on the KU Leuven/UHasselt Tier-2

@@ -31,6 +31,7 @@ Directory structure:
     │   └── tabicl/
     │       ├── __about__.py
     │       ├── __init__.py
+    │       ├── _torch_devices.py
     │       ├── _finetune/
     │       │   ├── __init__.py
     │       │   ├── base.py
@@ -132,9 +133,11 @@ Directory structure:
     │           └── _train_config.py
     ├── tests/
     │   ├── __init__.py
+    │   ├── test_inference.py
     │   ├── test_numpy_inputs.py
     │   ├── test_sklearn.py
-    │   └── test_string_input.py
+    │   ├── test_string_input.py
+    │   └── torch_devices_helpers.py
     ├── tutorials/
     │   ├── README.rst
     │   ├── classification_2D_proba.py
@@ -162,7 +165,7 @@ FILE: README.md
 This repository is the official implementation of **TabICLv2** ([ICML 2026](https://arxiv.org/abs/2602.11139)) 
 and **TabICL** ([ICML 2025](https://arxiv.org/abs/2502.05564)).
 
-**State-of-the-art accuracy even without hyperparameter tuning:** 
+**State-of-the-art performance even without hyperparameter tuning:** 
 TabICLv2 is the new state-of-the-art model for tabular classification and regression 
 on the [TabArena](https://tabarena.ai) and [TALENT](https://arxiv.org/abs/2407.00956) benchmarks. 
 It does not require hyperparameter tuning 
@@ -266,7 +269,7 @@ clf = TabICLClassifier(
     model_path=None,  # path to checkpoint, None downloads from Hugging Face
     allow_auto_download=True,  # auto-download checkpoint if not found locally
     checkpoint_version="tabicl-classifier-v2-20260212.ckpt",  # pretrained checkpoint version
-    device=None,  # inference device, None auto-selects CUDA or CPU; specify "mps" for Apple Silicon
+    device=None,  # inference device: None auto-selects CUDA â†’ XPU â†’ MPS â†’ CPU
     use_amp="auto",  # automatic mixed precision for faster inference
     use_fa3="auto",  # Flash Attention 3 for Hopper GPUs (e.g. H100)
     offload_mode="auto",  # automatically decide when to use cpu/disk offloading
@@ -599,7 +602,7 @@ please cite our papers for **[TabICL](https://arxiv.org/abs/2502.05564)** and **
 
 ## Star history
 
-[![Star History Chart](https://api.star-history.com/svg?repos=soda-inria/tabicl&type=date&legend=top-left)](https://www.star-history.com/#soda-inria/tabicl&type=date&legend=top-left)
+[![Star History Chart](https://star-history.dera.page/svg?repos=soda-inria/tabicl&type=date&legend=top-left)](https://star-history.dera.page/#soda-inria/tabicl&type=date&legend=top-left)
 
 
 
@@ -629,6 +632,10 @@ Bug fixes
 ---------
 
 - When unpickling a TabICL estimator, the fitted attributes `device_`, `model_`, etc. are only state if the pickled model was fitted. ([PR#121](https://github.com/soda-inria/tabicl/pull/121))
+
+- Improve non-CUDA GPU inference reliability and performance (including XPU): inference now consistently runs on the configured backend device, uses backend-appropriate autocast, and queries available memory plus async stream/event primitives through backend-agnostic `torch.<backend>` APIs (with safe synchronous fallbacks when async is unavailable). This fixes pathological auto-batch sizing (e.g. batch size forced to 1) and restores expected accelerated inference behavior on supported non-CUDA GPU backends. When `device=None`, estimators now default to CUDA when available, otherwise XPU, then MPS, and then CPU. ([PR#144](https://github.com/soda-inria/tabicl/pull/144))
+
+- Improve Apple Silicon MPS inference: MPS now uses the same AMP, auto-batching, and memory-aware inference path as other accelerators instead of falling back to the CPU path. `use_amp="auto"` is device-aware (off on CPU; size heuristic on CUDA/XPU/MPS), and float16 KV caches are kept on MPS when AMP is enabled. MPS is included in the default device order (CUDA â†’ XPU â†’ MPS â†’ CPU). ([PR#144](https://github.com/soda-inria/tabicl/pull/144))
 
 
 2.1.0
@@ -985,7 +992,6 @@ doc = [
 ]
 forecast = [                                                                                                                                                                                                        
     "pandas>=2.1.2",
-    "gluonts>=0.16.0",  # calendar features
     "statsmodels>=0.14.5",  # seasonal detection
     "matplotlib>=3.10.3",  # plotting
 ]
@@ -1060,16 +1066,13 @@ exclude_lines = [
 ]
 
 [tool.uv]
-# gluonts pins an old numpy version which is not available for Python 3.14. The
-# following override is a temporary workaround to avoid having uv build numpy
-# from source on Python 3.14 and later.
-# The <2.5 cap exists because overrides REPLACE every numpy requirement,
-# including numba's own "numpy<2.5" â€” without it, uv installs numpy 2.5+,
-# which numba (<=0.66) rejects at import time, breaking tabicl.shap and the
-# docs build. Relax when numba supports newer numpy.
-override-dependencies = [
-    "numpy>=2.4; python_version >= '3.14'",
-    "numpy<2.5; python_version < '3.14'",
+# Cooldown period for PyPI releases to mitigate supply chain attacks.
+exclude-newer = "7 days"
+# Must resolve dependencies for major platforms in uv.lock
+required-environments = [
+    "sys_platform == 'darwin'",
+    "sys_platform == 'linux'",
+    "sys_platform == 'win32'",
 ]
 
 
@@ -1188,16 +1191,6 @@ FILE: docs/conf.py
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import warnings
-
-# Suppress known gluonts warning on Python >= 3.14 during docs builds.
-warnings.filterwarnings(
-    "ignore",
-    message="Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.",
-    category=UserWarning,
-    module="gluonts\\.pydantic",
-)
-
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -1247,6 +1240,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "skrub": ("https://skrub-data.org/stable/", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
 }
 
@@ -1404,6 +1398,9 @@ It also plugs directly into scikit-learn pipelines:
    pipeline = make_pipeline(TableVectorizer(), TabICLClassifier())
    pipeline.fit(X_train, y_train)
    pipeline.predict(X_test)
+
+See more in the tutorial :ref:`tabicl_with_skrub` on how to create a pipeline
+with good parameters.
 
 For **time-series forecasting**, install the extra dependencies and use
 :class:`tabicl.TabICLForecaster`:
@@ -3131,6 +3128,119 @@ def __getattr__(name):
         return getattr(_finetune, name)
 
     raise AttributeError(f"module 'tabicl' has no attribute {name}")
+
+
+
+================================================
+FILE: src/tabicl/_torch_devices.py
+================================================
+"""Shared torch device resolution helpers."""
+
+from __future__ import annotations
+
+import functools
+import subprocess
+import sys
+import warnings
+from typing import Optional, Union
+
+import torch
+
+# Preference order when ``device=None``: CUDA â†’ XPU â†’ MPS â†’ CPU.
+DEFAULT_DEVICE_PREFERENCE = ("cuda", "xpu", "mps", "cpu")
+
+# Virtualized Apple Silicon can silently corrupt MPS ``F.linear`` on 3D inputs.
+MPS_NUMERICS_ISSUE_URL = "https://github.com/pytorch/pytorch/issues/192934"
+
+
+def _sysctl(name: str) -> str | None:
+    """Return a sysctl string value, or None if unavailable."""
+    try:
+        return subprocess.check_output(
+            ["sysctl", "-n", name], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+@functools.lru_cache(maxsize=1)
+def mps_possibly_faulty() -> bool:
+    """Return whether this macOS host may have broken MPS numerics.
+
+    GitHub Actions macOS arm64 runners are VirtualMac guests (``hw.model`` like
+    ``VirtualMac2,1``, CPU brand like ``Apple M1 (Virtual)``). On those hosts
+    MPS can silently return incorrect results (PyTorch issue
+    https://github.com/pytorch/pytorch/issues/192934). Real Apple Silicon is fine.
+
+    Always runs the hardware identity check on Darwin; returns ``False`` on other
+    platforms.
+    """
+    if sys.platform != "darwin":
+        return False
+
+    brand = _sysctl("machdep.cpu.brand_string") or ""
+    model = _sysctl("hw.model") or ""
+    return "Virtual" in brand or model.startswith("VirtualMac")
+
+
+def backend_is_available(device_type: str) -> bool:
+    """Return whether ``torch.<device_type>`` reports itself available.
+
+    Uses the usual backend convention where accelerators expose
+    ``torch.<backend>.is_available()``. CPU is always available.
+    """
+    if device_type == "cpu":
+        return True
+
+    backend_api = getattr(torch, device_type, None)
+    is_available = getattr(backend_api, "is_available", None)
+    if not callable(is_available):
+        return False
+    return bool(is_available())
+
+
+def resolve_default_device() -> torch.device:
+    """Return the default device: CUDA â†’ XPU â†’ MPS â†’ CPU.
+
+    On virtualized macOS hosts with known-bad MPS numerics, MPS is skipped and
+    CPU is used instead (with a warning).
+    """
+    for device_type in DEFAULT_DEVICE_PREFERENCE:
+        if not backend_is_available(device_type):
+            continue
+        if device_type == "mps" and mps_possibly_faulty():
+            warnings.warn(
+                "MPS appears to run on virtualized Apple Silicon where PyTorch "
+                f"can return incorrect results ({MPS_NUMERICS_ISSUE_URL}). "
+                "Falling back to CPU because device=None. Pass device='mps' to "
+                "force MPS anyway, or device='cpu' to choose CPU silently.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            continue
+        return torch.device(device_type)
+    return torch.device("cpu")
+
+
+def resolve_torch_device(device: Optional[Union[str, torch.device]] = None) -> torch.device:
+    """Resolve ``None``, a device string, or a ``torch.device`` to a concrete device.
+
+    ``None`` selects :func:`resolve_default_device`. Explicit ``mps`` on a
+    possibly faulty virtualized Mac keeps MPS but warns and recommends CPU.
+    """
+    if device is None:
+        return resolve_default_device()
+
+    resolved = torch.device(device) if isinstance(device, str) else device
+    if resolved.type == "mps" and mps_possibly_faulty():
+        warnings.warn(
+            "device='mps' was requested on virtualized Apple Silicon where "
+            f"PyTorch can return incorrect results ({MPS_NUMERICS_ISSUE_URL}). "
+            "Consider passing device='cpu' instead.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    return resolved
 
 
 
@@ -7171,6 +7281,7 @@ import uuid
 import math
 import shutil
 import psutil
+import warnings
 import weakref
 import itertools
 from enum import Enum, auto
@@ -7186,6 +7297,20 @@ from torch import Tensor
 
 from .kv_cache import KVCache
 from .attention import flash_attn3_toggle
+from tabicl._torch_devices import resolve_torch_device
+
+
+def devices_match(a: torch.device, b: torch.device) -> bool:
+    """Return whether two devices refer to the same backend placement.
+
+    ``torch.device("cuda")`` (index ``None``) matches ``cuda:0``, and likewise
+    for MPS/XPU. When both sides carry an explicit index they must agree.
+    """
+    if a.type != b.type:
+        return False
+    if a.index is None or b.index is None:
+        return True
+    return a.index == b.index
 
 
 class MemoryEstimator:
@@ -7550,12 +7675,13 @@ class DiskTensor:
 
 
 class AsyncCopyManager:
-    """Manages asynchronous GPU-to-CPU copies using CUDA streams.
+    """Manages asynchronous device-to-CPU copies using backend streams.
 
-    Uses a dedicated CUDA stream for device-to-host (D2H) transfers, allowing
-    GPU computation to overlap with data movement. The workflow is:
+    Uses a dedicated backend stream (when available) for device-to-host (D2H)
+    transfers, allowing device computation to overlap with data movement.
+    The workflow is:
 
-    1. GPU tensor is copied to a pinned buffer on the copy stream
+    1. Device tensor is copied to a pinned buffer on the copy stream
     2. An event is recorded to track completion
     3. When the event completes, data is written to final target (CPU/disk)
     4. The pinned buffer is returned to the pool for reuse
@@ -7563,7 +7689,7 @@ class AsyncCopyManager:
     Parameters
     ----------
     device : torch.device
-        The CUDA device to use for transfers.
+        The execution device to use for transfers.
 
     max_pending : int, default=4
         Maximum number of pending async copies before blocking. Higher values
@@ -7574,7 +7700,8 @@ class AsyncCopyManager:
 
     Notes
     -----
-    - Only works with CUDA devices; falls back to sync copy for CPU
+    - Uses async copy when backend stream/event APIs are available
+    - Falls back to sync copy for backends without async stream support
     - Pending copies are automatically drained when max_pending is reached
     - Call ``drain_all()`` to ensure all copies complete before using the data
     """
@@ -7584,27 +7711,70 @@ class AsyncCopyManager:
         self.max_pending = max_pending
         self.buffer_pool = buffer_pool or PinnedBufferPool(max_buffers_per_shape=8)
 
-        # Create dedicated copy stream
-        self._copy_stream: Optional[torch.cuda.Stream] = None
-        if device.type == "cuda":
-            self._copy_stream = torch.cuda.Stream(device=device)
+        backend_name = getattr(device, "type", None)
+        self._backend_api = getattr(torch, backend_name, None) if backend_name is not None else None
+
+        is_available = getattr(self._backend_api, "is_available", None)
+        backend_available = callable(is_available) and is_available() if self._backend_api is not None else False
+
+        # Create dedicated copy stream when backend exposes stream/event primitives.
+        self._copy_stream: Optional[Any] = None
+        stream_ctor = getattr(self._backend_api, "Stream", None)
+        if backend_available and callable(stream_ctor):
+            try:
+                self._copy_stream = stream_ctor(device=device)
+            except Exception:
+                self._copy_stream = None
 
         # Pending copies: (pinned_buffer, target, indices, event)
-        self._pending: List[Tuple[Tensor, Any, tuple, Optional[torch.cuda.Event]]] = []
+        self._pending: List[Tuple[Tensor, Any, tuple, Optional[Any]]] = []
         self._bytes_written: float = 0.0  # Track bytes in MB for flush control
+        self._warned_sync_fallback = False
+
+    def _warn_sync_fallback(self, reason: str) -> None:
+        """Warn once per manager when async copy is unavailable for this backend.
+
+        MPS has no stream/event D2H APIs, so the sync fallback is expected and
+        stays silent there. Unexpected backends still warn once.
+        """
+        if self._warned_sync_fallback:
+            return
+
+        if self.device.type == "mps":
+            return
+
+        warnings.warn(
+            f"AsyncCopyManager falling back to synchronous copy on backend '{self.device.type}': {reason}.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+        self._warned_sync_fallback = True
+
+    def _sync_copy(
+        self,
+        device_tensor: Tensor,
+        target: Union[Tensor, DiskTensor],
+        indices: tuple,
+        reason: Optional[str] = None,
+    ) -> None:
+        """Fallback synchronous copy path used when async primitives are unavailable."""
+        if reason is not None:
+            self._warn_sync_fallback(reason)
+        target[indices] = device_tensor.cpu()
+        self._bytes_written += device_tensor.numel() * device_tensor.element_size() / (1024 * 1024)
 
     def submit_copy(
         self,
-        gpu_tensor: Tensor,
+        device_tensor: Tensor,
         target: Union[Tensor, DiskTensor],
         indices: tuple,
     ) -> None:
-        """Submit an async copy from GPU to target storage.
+        """Submit an async copy from the execution device to target storage.
 
         Parameters
         ----------
-        gpu_tensor : Tensor
-            Source tensor on GPU.
+        device_tensor : Tensor
+            Source tensor on the execution device.
 
         target : Union[Tensor, DiskTensor]
             Target storage (CPU tensor or disk tensor).
@@ -7613,27 +7783,42 @@ class AsyncCopyManager:
             Indices where to write in the target.
         """
         if self._copy_stream is None:
-            # Fallback to sync copy if no CUDA
-            target[indices] = gpu_tensor.cpu()
-            self._bytes_written += gpu_tensor.numel() * gpu_tensor.element_size() / (1024 * 1024)
+            self._sync_copy(device_tensor, target, indices, reason="backend does not provide async stream support")
+            return
+
+        current_stream_fn = getattr(self._backend_api, "current_stream", None)
+        stream_ctx_fn = getattr(self._backend_api, "stream", None)
+        event_ctor = getattr(self._backend_api, "Event", None)
+        if (
+            not callable(current_stream_fn)
+            or not callable(stream_ctx_fn)
+            or not callable(event_ctor)
+            or not hasattr(device_tensor, "record_stream")
+        ):
+            self._sync_copy(
+                device_tensor,
+                target,
+                indices,
+                reason="backend does not provide full async stream/event primitives",
+            )
             return
 
         # Get a pinned buffer
-        pinned_buf = self.buffer_pool.get(tuple(gpu_tensor.shape), gpu_tensor.dtype)
+        pinned_buf = self.buffer_pool.get(tuple(device_tensor.shape), device_tensor.dtype)
 
         # Capture compute stream before switching context
-        compute_stream = torch.cuda.current_stream(device=self.device)
+        compute_stream = current_stream_fn(device=self.device)
 
-        # Tell the caching allocator that copy_stream is also using gpu_tensor's memory,
+        # Tell the caching allocator that copy_stream is also using device_tensor's memory,
         # so it won't be reclaimed until the copy completes.
-        gpu_tensor.record_stream(self._copy_stream)
+        device_tensor.record_stream(self._copy_stream)
 
-        # Async copy GPU -> pinned buffer on dedicated stream
-        with torch.cuda.stream(self._copy_stream):
-            # Wait for compute stream to finish producing gpu_tensor
+        # Async copy device -> pinned buffer on dedicated stream
+        with stream_ctx_fn(self._copy_stream):
+            # Wait for compute stream to finish producing device_tensor
             self._copy_stream.wait_stream(compute_stream)
-            pinned_buf.copy_(gpu_tensor, non_blocking=True)
-            event = torch.cuda.Event()
+            pinned_buf.copy_(device_tensor, non_blocking=True)
+            event = event_ctor()
             event.record(self._copy_stream)
 
         self._pending.append((pinned_buf, target, indices, event))
@@ -7699,8 +7884,8 @@ class InferenceManager:
     4. OOM Recovery: Automatically reduces batch size when out-of-memory errors
        occur, retrying until inference succeeds or minimum batch size is reached.
 
-    5. Async Data Transfer: Uses dedicated CUDA streams for overlapping
-       computation with GPU-to-CPU data movement.
+    5. Async Data Transfer: Uses backend stream/event primitives for
+       overlapping computation with device-to-CPU data movement when available.
 
     6. Result Merging: Combines outputs from multiple batches into a single
        contiguous tensor.
@@ -7797,7 +7982,7 @@ class InferenceManager:
 
         device : Optional[str or torch.device], default=None
             Device to use for computation. If None, defaults to CUDA if available,
-            otherwise CPU.
+            otherwise XPU, then MPS, and falls back to CPU.
 
         use_amp : bool, default=True
             Whether to use automatic mixed precision (AMP) during inference.
@@ -7852,8 +8037,9 @@ class InferenceManager:
             Set to 0 to disable pinned memory entirely.
 
         use_async : bool, default=True
-            Whether to use async D2H (device-to-host) copy with CUDA streams.
-            Enables overlapping computation with data transfer for better throughput.
+            Whether to use async D2H (device-to-host) copy with backend stream/event
+            primitives when available. Enables overlapping computation with data
+            transfer for better throughput.
 
         async_depth : int, default=4
             Maximum number of pending async copies before blocking. Higher values
@@ -7887,12 +8073,7 @@ class InferenceManager:
         self.offload_mode = self._normalize_offload(offload)
 
         # Setup device
-        if device is None:
-            self.exe_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        elif isinstance(device, str):
-            self.exe_device = torch.device(device)
-        else:
-            self.exe_device = device
+        self.exe_device = resolve_torch_device(device)
 
         # Initialize buffer pool
         self._buffer_pool = PinnedBufferPool()
@@ -7930,23 +8111,88 @@ class InferenceManager:
         """
         return psutil.virtual_memory().available / (1024 * 1024)
 
+    def _get_device_backend_api(self) -> Optional[Any]:
+        """Return torch backend module matching the execution device type.
+
+        This relies on common backend naming conventions where
+        ``torch.device("<backend>").type == "<backend>"`` and backend-specific
+        APIs live under ``torch.<backend>`` (e.g. ``torch.cuda``, ``torch.xpu``).
+        """
+        backend_name = self.exe_device.type
+        backend_api = getattr(torch, backend_name, None)
+        if backend_api is None:
+            return None
+
+        is_available = getattr(backend_api, "is_available", None)
+        if callable(is_available) and not is_available():
+            return None
+
+        return backend_api
+
+    def _empty_backend_cache(self, backend_api: Optional[Any] = None) -> None:
+        """Best-effort cache clearing for the current execution backend."""
+        if backend_api is None:
+            backend_api = self._get_device_backend_api()
+        if backend_api is None:
+            return
+
+        empty_cache = getattr(backend_api, "empty_cache", None)
+        if callable(empty_cache):
+            empty_cache()
+
+    def _is_tensor_on_exe_device(self, tensor: Tensor) -> bool:
+        """Return whether the tensor is already on the configured execution device."""
+        return isinstance(tensor, torch.Tensor) and devices_match(tensor.device, self.exe_device)
+
     def get_available_gpu_memory(self) -> float:
         """Get available GPU memory in MB.
 
-        Synchronizes CUDA operations and clears cache before checking to get
+        Synchronizes device operations and clears cache before checking to get
         an accurate reading of available memory.
+
+        Backends that expose ``mem_get_info`` (CUDA, XPU) use that API. On MPS,
+        which does not provide ``mem_get_info``, free memory is approximated as
+        ``recommended_max_memory - current_allocated_memory`` so that
+        auto-batching can still run.
 
         Returns
         -------
         float
-            Available GPU memory in megabytes, or 0.0 if CUDA is not
-            available or execution device is CPU.
+            Available GPU memory in megabytes, or 0.0 if the selected backend
+            does not expose memory information.
         """
-        if not torch.cuda.is_available() or self.exe_device.type != "cuda":
+        backend_api = self._get_device_backend_api()
+        if backend_api is None:
             return 0.0
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        return torch.cuda.mem_get_info(self.exe_device)[0] / (1024 * 1024)
+
+        synchronize = getattr(backend_api, "synchronize", None)
+        if callable(synchronize):
+            synchronize()
+
+        self._empty_backend_cache(backend_api)
+
+        mem_get_info = getattr(backend_api, "mem_get_info", None)
+        if callable(mem_get_info):
+            try:
+                free_mem, _ = mem_get_info(self.exe_device)
+            except TypeError:
+                # Some backends may expose mem_get_info() without a device argument.
+                free_mem, _ = mem_get_info()
+            except Exception:
+                return 0.0
+            return free_mem / (1024 * 1024)
+
+        # MPS (and similar) fallback without mem_get_info.
+        recommended = getattr(backend_api, "recommended_max_memory", None)
+        current = getattr(backend_api, "current_allocated_memory", None)
+        if callable(recommended) and callable(current):
+            try:
+                free_mem = recommended() - current()
+            except Exception:
+                return 0.0
+            return max(0.0, free_mem) / (1024 * 1024)
+
+        return 0.0
 
     def get_available_disk_space(self, path: Optional[str]) -> float:
         """Get available disk space at the specified path in MB.
@@ -7968,7 +8214,7 @@ class InferenceManager:
         try:
             os.makedirs(path, exist_ok=True)
             return shutil.disk_usage(path).free / (1024 * 1024)
-        except Exception:
+        except OSError:
             return 0.0
 
     def _estimate_tensor_mb(self, shape: Tuple[int, ...], dtype: torch.dtype, repeat: int = 1) -> float:
@@ -8205,9 +8451,11 @@ class InferenceManager:
         -------
         Tensor
             Tensor on the execution device. If already on the correct
-            device, returns the same tensor without copying.
+            device, returns the original tensor.
         """
-        if isinstance(tensor, torch.Tensor) and self.exe_device.type == "cuda" and not tensor.is_cuda:
+        if self._is_tensor_on_exe_device(tensor):
+            return tensor
+        if isinstance(tensor, torch.Tensor):
             return tensor.to(self.exe_device, non_blocking=True)
         return tensor
 
@@ -8230,8 +8478,8 @@ class InferenceManager:
     def _run_forward(self, forward_fn: Callable[..., Tensor], inputs: Dict[str, Any]) -> Tensor:
         """Execute forward function with no_grad and optional AMP."""
         with torch.no_grad(), flash_attn3_toggle(self.use_fa3):
-            if self.use_amp and self.exe_device.type == "cuda":
-                with torch.autocast(device_type="cuda"):
+            if self.use_amp:
+                with torch.autocast(device_type=self.exe_device.type):
                     return forward_fn(**inputs)
             return forward_fn(**inputs)
 
@@ -8281,8 +8529,10 @@ class InferenceManager:
 
         Notes
         -----
-        - For CPU execution (no CUDA), batching is not supported and the forward
-          function is called once with all inputs.
+        - For CPU execution, batching is not supported and the forward runs once
+          via ``_run_forward`` (optional AMP + input preparation).
+        - Accelerator backends with a usable memory query (CUDA, XPU, and MPS via
+          an approximate free-memory estimate) use auto-batching and OOM recovery.
         - When OOM occurs, batch size is halved and inference is retried.
         - Async copy is used when ``use_async=True`` and offloading to CPU/disk.
         """
@@ -8294,9 +8544,10 @@ class InferenceManager:
         if not auto_batch:
             return self._run_forward(forward_fn, self._prepare_inputs(inputs))
 
-        # CPU/MPS execution: batching not supported (requires CUDA memory APIs)
-        if self.exe_device.type in ("cpu", "mps"):
-            return forward_fn(**inputs)
+        # CPU: no accelerator memory APIs for safe batch sizing; still route
+        # through _run_forward so AMP/no_grad wrapping stays consistent.
+        if self.exe_device.type == "cpu":
+            return self._run_forward(forward_fn, self._prepare_inputs(inputs))
 
         # Extract shape/dtype info
         first_value = next(iter(inputs.values()))
@@ -8307,11 +8558,11 @@ class InferenceManager:
 
         *batch_dims, seq_len, in_dim = first_value.shape
         input_dtype = first_value.dtype
-        inputs_on_cuda = first_value.is_cuda
+        inputs_on_device = self._is_tensor_on_exe_device(first_value)
         total_bs = math.prod(batch_dims)
 
         # Estimate batch size
-        gpu_mem, batch_size = self.estimate_safe_batch_size(seq_len, include_inputs=not inputs_on_cuda, in_dim=in_dim)
+        gpu_mem, batch_size = self.estimate_safe_batch_size(seq_len, include_inputs=not inputs_on_device, in_dim=in_dim)
 
         if self.verbose:
             print(
@@ -8365,7 +8616,7 @@ class InferenceManager:
 
         # Setup async copy manager if using async and offloading
         async_copy: Optional[AsyncCopyManager] = None
-        if self.use_async and self.exe_device.type == "cuda" and mode != OffloadMode.GPU:
+        if self.use_async and mode != OffloadMode.GPU:
             async_copy = AsyncCopyManager(
                 self.exe_device,
                 max_pending=self.async_depth,
@@ -8443,7 +8694,7 @@ class InferenceManager:
 
                 return outputs
 
-            except torch.cuda.OutOfMemoryError as e:
+            except torch.OutOfMemoryError as e:
                 if async_copy is not None:
                     async_copy.clear()
 
@@ -8459,8 +8710,7 @@ class InferenceManager:
                 if self.verbose:
                     print(f"OOM with batch_size={batch_size}, reducing to {max(self.min_batch_size, batch_size // 2)}")
 
-                if self.exe_device.type == "cuda":
-                    torch.cuda.empty_cache()
+                self._empty_backend_cache()
 
                 batch_size = max(self.min_batch_size, batch_size // 2)
 
@@ -8642,7 +8892,8 @@ class MgrConfig:
 
     **Async transfer:**
 
-    - ``use_async``: Use async CUDA streams for GPU-to-CPU transfers.
+    - ``use_async``: Use async device-to-host transfers with backend stream/event
+      primitives when available (falls back to synchronous copy otherwise).
     - ``async_depth``: Max pending async copies before blocking.
     """
 
@@ -14389,6 +14640,7 @@ from sklearn.utils.validation import check_is_fitted
 
 from tabicl import InferenceConfig
 from tabicl._model.tabicl import TabICL
+from tabicl._torch_devices import resolve_torch_device
 
 
 def _check_version_compatibility(metadata: dict) -> None:
@@ -14434,19 +14686,16 @@ class TabICLBaseEstimator(BaseEstimator):
 
     def _resolve_device(self) -> None:
         """Resolve the target device from the init parameter."""
-        if self.device is None:
-            self.device_ = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        elif isinstance(self.device, str):
-            self.device_ = torch.device(self.device)
-        else:
-            self.device_ = self.device
+        self.device_ = resolve_torch_device(self.device)
 
     def _resolve_amp_fa3(self) -> tuple:
         """Resolve the ``"auto"`` option for ``use_amp`` and ``use_fa3``.
 
         Called by ``_build_inference_config`` at ``fit()`` and ``__setstate__``.
-        Explicit bool values are returned as-is, while ``"auto"`` triggers a simple
-        heuristic based on ``n_samples_in_`` and ``n_features_in_``:
+        Explicit bool values are returned as-is, while ``"auto"`` triggers a
+        device-aware heuristic based on ``n_samples_in_`` and ``n_features_in_``.
+
+        AMP / FA3 size heuristic on CUDA:
 
         +--------------------------------------+-------+-------+
         | Regime                               |  AMP  |  FA3  |
@@ -14458,8 +14707,19 @@ class TabICLBaseEstimator(BaseEstimator):
         | Large  (n >= 10240)                  |  on   |  on   |
         +--------------------------------------+-------+-------+
 
+        Device overrides for ``"auto"``:
+
+        - **AMP on CPU**: stays off. ``torch.autocast(device_type="cpu")``
+          (bfloat16) works when ``use_amp=True`` is set explicitly, but local
+          benchmarks found it much slower than fp32 on CPU.
+        - **AMP on MPS / XPU**: same size heuristic as CUDA.
+        - **FA3**: CUDA-only. FlashAttention-3 kernels require NVIDIA CUDA; on
+          CPU / MPS / XPU, ``use_fa3="auto"`` resolves to ``False``. Explicit
+          ``use_fa3=True`` is still accepted but is a no-op at runtime off CUDA.
+
         When ``use_amp=False`` (explicitly disabled by the user) and the data
-        is above the small threshold, FA3 is enabled as a fallback accelerator.
+        is above the small threshold on CUDA, FA3 is enabled as a fallback
+        attention accelerator.
 
         The thresholds are based on preliminary observations and are not rigorously
         tuned. It assumes that the training set is large relative to the test set
@@ -14477,22 +14737,29 @@ class TabICLBaseEstimator(BaseEstimator):
         n_samples = getattr(self, "n_samples_in_", 0)
         n_features = getattr(self, "n_features_in_", 0)
         small_data = n_samples < 1024 and n_features < 60
+        device_type = getattr(getattr(self, "device_", None), "type", None)
 
         # -- AMP --
         if self.use_amp == "auto":
-            use_amp = not small_data
+            if device_type == "cpu":
+                use_amp = False
+            else:
+                # CUDA, XPU, MPS, and other accelerators: size heuristic.
+                use_amp = not small_data
         else:
             use_amp = bool(self.use_amp)
 
-        # -- FA3 --
+        # -- FA3 (CUDA-only; flash_attn_interface kernels require NVIDIA GPUs) --
         if self.use_fa3 == "auto":
-            if small_data:
+            if device_type != "cuda":
+                use_fa3 = False
+            elif small_data:
                 use_fa3 = False
             elif not use_amp:
-                # AMP is off and use FA3 as the main accelerator for attention
+                # AMP is off: use FA3 as the main attention accelerator on CUDA
                 use_fa3 = True
             else:
-                # AMP is on and FA3 only adds meaningful benefit at large scale
+                # AMP is on: FA3 only adds meaningful benefit at large scale
                 use_fa3 = n_samples >= 10240
         else:
             use_fa3 = bool(self.use_fa3)
@@ -14535,16 +14802,16 @@ class TabICLBaseEstimator(BaseEstimator):
         """Move KV cache to the current device, auto-upcasting if needed.
 
         When the cache contains reduced-precision tensors (float16/bfloat16)
-        and the target environment cannot use them directly (CPU, MPS, or
-        CUDA without AMP), the tensors are upcast to float32 and a warning
-        is emitted.
+        and AMP is disabled, the tensors are upcast to float32 and a warning
+        is emitted. With AMP enabled, reduced-precision caches are kept on
+        CPU, CUDA, XPU, and MPS.
         """
         if not (hasattr(self, "model_kv_cache_") and self.model_kv_cache_ is not None):
             return
 
         use_amp, _ = self._resolve_amp_fa3()
-        # CPU and MPS do not support float16 attention; CUDA needs AMP on
-        needs_upcast = self.device_.type in ("cpu", "mps") or not use_amp
+        # Keep reduced precision when AMP is on; otherwise upcast for fp32 attention.
+        needs_upcast = not use_amp
         upcast_dtype = torch.float32 if needs_upcast else None
 
         # Warn once if we are actually upcasting reduced-precision tensors
@@ -14552,13 +14819,9 @@ class TabICLBaseEstimator(BaseEstimator):
             first_cache = next(iter(self.model_kv_cache_.values()))
             cache_dtype = next(iter(first_cache.col_cache.kv.values())).key.dtype
             if cache_dtype != torch.float32:
-                if self.device_.type in ("cpu", "mps"):
-                    reason = f"{self.device_.type.upper()} does not support float16/bfloat16 attention"
-                else:
-                    reason = "AMP is not enabled"
                 warnings.warn(
                     f"KV cache contains {cache_dtype} tensors (typically from AMP). "
-                    f"Automatically upcasting to float32 because {reason}.",
+                    "Automatically upcasting to float32 because AMP is not enabled.",
                     UserWarning,
                     stacklevel=3,
                 )
@@ -14931,8 +15194,9 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
 
         The cache retains whatever dtype the model produced during ``fit()``
         (float16 when AMP is active, float32 otherwise). If the cache is later
-        loaded on CPU or on CUDA without AMP, the tensors are automatically
-        upcast to float32 to avoid dtype-mismatch errors.
+        loaded on a device without AMP, the tensors are automatically upcast to
+        float32 to avoid dtype-mismatch errors. With AMP enabled, reduced-precision
+        caches are kept on CPU, CUDA, XPU, and MPS.
 
     model_path : Optional[str | Path] = None
         Path to the pre-trained model checkpoint file.
@@ -14959,10 +15223,10 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
         - `'tabicl-classifier-v1-20250208.ckpt'`: The version used in our TabICLv1 paper.
 
     device : Optional[str or torch.device], default=None
-        Device to use for inference. If None, automatically selects CUDA if
-        available, otherwise CPU. Can be specified as a string (``'cuda'``,
-        ``'cpu'``, ``'mps'``) or a ``torch.device`` object. MPS (Apple Silicon
-        GPU) is supported but must be explicitly requested.
+        Device to use for inference. If None, automatically selects CUDA when
+        available, otherwise XPU, then MPS (Apple Silicon), and falls back to
+        CPU. Can be specified as a string (``'cuda'``, ``'xpu'``, ``'cpu'``,
+        ``'mps'``) or a ``torch.device`` object.
 
     use_amp : bool or "auto", default="auto"
         Controls automatic mixed precision (AMP) for inference.
@@ -14979,6 +15243,11 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
             | Large  (n >= 10240)                  |  on   |  on   |
             +--------------------------------------+-------+-------+
 
+            The AMP columns apply on CUDA / XPU / MPS. On CPU, ``use_amp="auto"``
+            stays off (explicit ``use_amp=True`` still enables bfloat16 autocast,
+            but local benchmarks found it much slower than fp32). The FA3 column
+            applies on CUDA only (``use_fa3="auto"`` is always off on CPU / MPS / XPU).
+
             The above heuristic is based on the observation that AMP can introduce overhead that outweighs
             its benefits for small inputs. In addition, it assumes that the training set is large relative to
             the test set and does not account for KV-cache scenarios. If it is suboptimal for your workload,
@@ -14986,9 +15255,9 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
 
     use_fa3 : bool or "auto", default="auto"
         Whether to use Flash Attention 3 that can speed up inference for large datasets on NVIDIA Hopper
-        GPUs like H100. Only effective when FA3 is installed.
+        GPUs like H100. Only effective on CUDA when FA3 is installed; a no-op on CPU / MPS / XPU.
         - True / False: force on / off.
-        - "auto": Automatically enable FA3 based on input data size using a simple heuristic (see above).
+        - "auto": Enable FA3 from the size heuristic above on CUDA only; always off on other devices.
 
     offload_mode : str or bool, default='auto'
         Controls where column-wise embedding outputs are stored during inference.
@@ -15760,7 +16029,7 @@ class TransformToNumerical(TransformerMixin, BaseEstimator):
         cat_tfm = OrdinalEncoder(
             dtype=np.int64, handle_unknown="use_encoded_value", unknown_value=-1, encoded_missing_value=-1
         )
-        num_tfm = SimpleImputer()
+        num_tfm = SimpleImputer(keep_empty_features=True)
 
         if not hasattr(X, "columns"):  # proxy way to check whether X is a dataframe without importing pandas
             # no dataframe, so we can't do column-wise transformations. Instead, we check if it's already numeric and if not, raise an error.
@@ -15867,6 +16136,8 @@ class UniqueFeatureFilter(TransformerMixin, BaseEstimator):
 
        - With few samples, it's difficult to reliably assess feature variability.
        - A feature might appear constant in few samples but vary in the complete dataset.
+    3. If every feature would be removed, the first one is kept so that the output
+       always has at least one column.
     """
 
     def __init__(self, threshold: int = 1):
@@ -15898,6 +16169,13 @@ class UniqueFeatureFilter(TransformerMixin, BaseEstimator):
             self.features_to_keep_ = np.array(
                 [len(np.unique(X[:, i])) > self.threshold for i in range(self.n_features_in_)]
             )
+
+            # Every feature is constant. Dropping all of them leaves a zero-column
+            # matrix that downstream steps cannot handle, so keep the first one: the
+            # model then sees a single uninformative feature and falls back to the
+            # marginal distribution of the target.
+            if not self.features_to_keep_.any():
+                self.features_to_keep_[0] = True
 
         self.n_features_out_ = np.sum(self.features_to_keep_)
 
@@ -17001,8 +17279,9 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
 
         The cache retains whatever dtype the model produced during ``fit()``
         (float16 when AMP is active, float32 otherwise). If the cache is later
-        loaded on CPU or on CUDA without AMP, the tensors are automatically
-        upcast to float32 to avoid dtype-mismatch errors.
+        loaded on a device without AMP, the tensors are automatically upcast to
+        float32 to avoid dtype-mismatch errors. With AMP enabled, reduced-precision
+        caches are kept on CPU, CUDA, XPU, and MPS.
 
     model_path : Optional[str or Path], default=None
         Path to the pre-trained model checkpoint file.
@@ -17025,10 +17304,10 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
         Checkpoints are downloaded from https://huggingface.co/jingang/TabICL.
 
     device : Optional[str or torch.device], default=None
-        Device to use for inference. If None, automatically selects CUDA if
-        available, otherwise CPU. Can be specified as a string (``'cuda'``,
-        ``'cpu'``, ``'mps'``) or a ``torch.device`` object. MPS (Apple Silicon
-        GPU) is supported but must be explicitly requested.
+        Device to use for inference. If None, automatically selects CUDA when
+        available, otherwise XPU, then MPS (Apple Silicon), and falls back to
+        CPU. Can be specified as a string (``'cuda'``, ``'xpu'``, ``'cpu'``,
+        ``'mps'``) or a ``torch.device`` object.
 
     use_amp : bool or "auto", default="auto"
         Controls automatic mixed precision (AMP) for inference.
@@ -17045,6 +17324,11 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
             | Large  (n >= 10240)                  |  on   |  on   |
             +--------------------------------------+-------+-------+
 
+            The AMP columns apply on CUDA / XPU / MPS. On CPU, ``use_amp="auto"``
+            stays off (explicit ``use_amp=True`` still enables bfloat16 autocast,
+            but local benchmarks found it much slower than fp32). The FA3 column
+            applies on CUDA only (``use_fa3="auto"`` is always off on CPU / MPS / XPU).
+
             The above heuristic is based on the observation that AMP can introduce overhead that outweighs
             its benefits for small inputs. In addition, it assumes that the training set is large relative to
             the test set and does not account for KV-cache scenarios. If it is suboptimal for your workload,
@@ -17052,9 +17336,9 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
 
     use_fa3 : bool or "auto", default="auto"
         Whether to use Flash Attention 3 that can speed up inference for large datasets on NVIDIA Hopper
-        GPUs like H100. Only effective when FA3 is installed.
+        GPUs like H100. Only effective on CUDA when FA3 is installed; a no-op on CPU / MPS / XPU.
         - True / False: force on / off.
-        - "auto": Automatically enable FA3 based on input data size using a simple heuristic (see above).
+        - "auto": Enable FA3 from the size heuristic above on CUDA only; always off on other devices.
 
     offload_mode : str or bool, default='auto'
         Controls where column-wise embedding outputs are stored during inference.
@@ -18178,7 +18462,7 @@ class TabICLUnsupervised(BaseEstimator):
         Random seed for reproducibility.
 
     device : str or None, default=None
-        Device for inference. None auto-selects CUDA or CPU.
+        Device for inference. None auto-selects CUDA â†’ XPU â†’ MPS â†’ CPU.
 
     estimator_params : dict or None, default=None
         Additional keyword arguments forwarded to the inner
@@ -20154,7 +20438,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, Union, overl
 import numpy as np
 import pandas as pd
 from joblib.parallel import Parallel, delayed
-from pandas.core.internals import ArrayManager, BlockManager
+from pandas.core.internals import BlockManager
 from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
@@ -20274,7 +20558,7 @@ class TimeSeriesDataFrame(pd.DataFrame):
         *args,
         **kwargs,
     ):
-        if isinstance(data, (BlockManager, ArrayManager)):
+        if isinstance(data, BlockManager):
             # necessary for copy constructor to work in pandas <= 2.0.x. In >= 2.1.x this is replaced by _constructor_from_mgr
             pass
         elif isinstance(data, pd.DataFrame):
@@ -21462,7 +21746,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import gluonts.time_feature
 
 from tabicl.forecast.transforms._base import TimeTransform
 
@@ -21488,13 +21771,31 @@ class IndexEncoder(TimeTransform):
         """
         return df.assign(running_index=range(len(df)))
 
+_SEASONAL_MAPPINGS = {
+    "second_of_minute": "second",
+    "minute_of_hour": "minute",
+    "hour_of_day": "hour",
+    "day_of_month": "day",
+    "month_of_year": "month",
+}
+_ZERO_INDEXED = {
+    "second",
+    "minute",
+    "hour",
+    "dayofweek",
+    "day_of_week",
+    "weekday",
+    "microsecond",
+    "nanosecond",
+}
+
 
 class DatetimeEncoder(TimeTransform):
     """Transform that creates calendar-based temporal features.
 
     Extracts calendar components (e.g., year) and encodes seasonal
     patterns (e.g., hour of day, day of week) as sin/cosine pairs using
-    ``gluonts.time_feature``.
+    ``pd.DatetimeIndex`` attributes.
 
     Parameters
     ----------
@@ -21540,13 +21841,20 @@ class DatetimeEncoder(TimeTransform):
         """
         df = df.copy()
         timestamps = df.index.get_level_values("timestamp")
+        assert isinstance(timestamps, pd.DatetimeIndex), "Index must have a 'timestamp' level of type DatetimeIndex"
 
         for component in self.components:
             df[component] = getattr(timestamps, component)
 
         for feature_name, periods in self.seasonal_features.items():
-            feature_func = getattr(gluonts.time_feature, f"{feature_name}_index")
-            feature = feature_func(timestamps).astype(np.int32)
+            if feature_name not in ["week_of_year", "week", "weekofyear"]:
+                feature_name_ = _SEASONAL_MAPPINGS.get(feature_name, feature_name)
+                feature = getattr(timestamps, feature_name_).astype(np.int32)
+                if feature_name_ not in _ZERO_INDEXED:
+                    feature -= 1  # Adjust for 0-based indexing
+            else:
+                feature = timestamps.isocalendar().week.to_numpy(dtype=np.int32)
+                feature -= 1  # Adjust for 0-based indexing
 
             if periods is not None:
                 for p in periods:
@@ -23315,7 +23623,7 @@ class SCMPrior(Prior):
             The selected prior type name
         """
         if self.prior_type == "mix_scm":
-            return np.random.choice(["mlp_scm", "tree_scm"], p=self.fixed_hp.get("mix_probas", [0.7, 0.3]))
+            return np.random.choice(["mlp_scm", "tree_scm"], p=self.fixed_hp.get("mix_probs", [0.7, 0.3]))
         else:
             return self.prior_type
 
@@ -26298,8 +26606,8 @@ class TreeSCM(nn.Module):
         num_layers: int = 5,
         hidden_dim: int = 10,
         tree_model: str = "xgboost",
-        max_depth_lambda: float = 0.5,
-        n_estimators_lambda: float = 0.5,
+        tree_depth_lambda: float = 0.5,
+        tree_n_estimators_lambda: float = 0.5,
         sampling: str = "normal",
         pre_sample_cause_stats: bool = False,
         noise_std: float = 0.01,
@@ -26325,8 +26633,8 @@ class TreeSCM(nn.Module):
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim
         self.tree_model = tree_model
-        self.tree_depth_lambda = max_depth_lambda
-        self.tree_n_estimators_lambda = n_estimators_lambda
+        self.tree_depth_lambda = tree_depth_lambda
+        self.tree_n_estimators_lambda = tree_n_estimators_lambda
         self.sampling = sampling
         self.pre_sample_cause_stats = pre_sample_cause_stats
         self.noise_std = noise_std
@@ -31183,13 +31491,347 @@ FILE: tests/__init__.py
 
 
 ================================================
+FILE: tests/test_inference.py
+================================================
+"""Device-agnostic inference plumbing: placement, AMP, auto-batching, async copies.
+
+CUDA, XPU, and MPS share one inference path (CPU is the only early-return
+exception).
+
+CUDA and XPU expose async copy primitives, while MPS does not.
+
+Other devices backends should still work, but will fall back to synchronous
+copies with a warning if they don't expose all the required primitives.
+"""
+
+import warnings
+from collections import OrderedDict
+from unittest.mock import MagicMock
+
+import pytest
+import torch
+
+from tabicl._model.inference import AsyncCopyManager, InferenceManager, devices_match
+
+
+@pytest.mark.parametrize(
+    "left, right, expected",
+    [
+        ("cpu", "cpu", True),
+        ("cuda", "cuda:0", True),
+        ("cuda:0", "cuda", True),
+        ("cuda:0", "cuda:0", True),
+        ("cuda:0", "cuda:1", False),
+        ("mps", "mps:0", True),
+        ("mps:0", "mps", True),
+        ("mps:0", "mps:0", True),
+        ("xpu", "xpu:0", True),
+        ("xpu:0", "xpu", True),
+        ("xpu:0", "xpu:1", False),
+        ("cuda", "cpu", False),
+        ("cuda", "mps", False),
+        ("mps", "xpu", False),
+    ],
+)
+def test_devices_match(left, right, expected):
+    """Unindexed devices match index 0; different indices or backends do not."""
+    assert devices_match(torch.device(left), torch.device(right)) is expected
+
+
+@pytest.mark.parametrize("device_backend", ["cpu", "cuda", "xpu", "mps"])
+def test_is_tensor_on_exe_device_accepts_unindexed_and_indexed(device_backend):
+    """``device='cuda'`` must match tensors that land on ``cuda:0`` (same for MPS/XPU)."""
+    backend_api = (
+        getattr(torch, device_backend, None) if device_backend != "cpu" else None
+    )
+    if device_backend != "cpu" and (
+        backend_api is None
+        or not callable(getattr(backend_api, "is_available", None))
+        or not backend_api.is_available()
+    ):
+        pytest.skip(f"{device_backend} backend is not available on this host")
+
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(device=device_backend, use_amp=False, use_fa3=False, use_async=False)
+
+    # configure() stores an unindexed device (e.g. ``cuda``); tensors usually get index 0.
+    assert mgr.exe_device.index is None or device_backend == "cpu"
+
+    on_device = torch.zeros(1, device=device_backend)
+    on_cpu = torch.zeros(1, device="cpu")
+    assert mgr._is_tensor_on_exe_device(on_device) is True
+    assert mgr._is_tensor_on_exe_device(on_cpu) is (device_backend == "cpu")
+    # Avoid a redundant host -> device copy when the tensor is already placed correctly.
+    moved = mgr._to_exe_device(on_device)
+    assert moved is on_device
+
+
+@pytest.mark.parametrize("device_backend", ["cuda", "xpu", "mps"])
+def test_get_available_gpu_memory_non_zero_for_available_backends(device_backend):
+    """Check that device memory inspection works and always returns positive values."""
+    backend_api = getattr(torch, device_backend, None)
+    if (
+        backend_api is None
+        or not callable(getattr(backend_api, "is_available", None))
+        or not backend_api.is_available()
+    ):
+        pytest.skip(f"{device_backend} backend is not available on this host")
+
+    if device_backend == "mps" and not torch.backends.mps.is_available():
+        pytest.skip("MPS backend is not available on this host")
+
+    mgr = InferenceManager(enc_name="tf_col", out_dim=16)
+    mgr.configure(device=device_backend)
+    available_mb = mgr.get_available_gpu_memory()
+
+    assert available_mb > 0.0, (
+        f"Expected non-zero available memory for backend '{device_backend}', "
+        f"got {available_mb} MB"
+    )
+
+
+class _FakeNoAsyncBackend:
+    @staticmethod
+    def is_available():
+        return True
+
+
+@pytest.mark.parametrize("device_type", ["cuda", "xpu"])
+def test_async_copy_manager_uses_backend_async_primitives(device_type):
+    """Check that the async copy manager uses CUDA/XPU Stream/Event primitives.
+
+    CUDA and XPU device backends are expected to always expose Stream/Event primitives.
+    """
+    device = torch.device(device_type)
+    manager = AsyncCopyManager(device=device, max_pending=2)
+    if manager._copy_stream is None:
+        pytest.skip(
+            f"{device_type} async stream setup is not supported in this runtime"
+        )
+
+    src = torch.ones((4,), dtype=torch.float32, device=device)
+    dst = torch.zeros((4,), dtype=torch.float32)
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        manager.submit_copy(src, dst, (slice(None),))
+
+    # With async-capable backend, copy is pending before drain.
+    assert len(manager._pending) == 1
+    assert not any(issubclass(w.category, RuntimeWarning) for w in caught_warnings)
+    manager.drain_all()
+
+    assert len(manager._pending) == 0
+    assert torch.equal(dst, src.cpu())
+    assert manager.get_bytes_written() == pytest.approx(
+        src.numel() * src.element_size() / (1024 * 1024)
+    )
+
+
+def test_async_copy_manager_falls_back_to_sync_without_async_primitives(monkeypatch):
+    """Other unknown backends without Stream/Event copy synchronously and warn."""
+    backend_name = "fakenoasync"
+    monkeypatch.setattr(torch, backend_name, _FakeNoAsyncBackend, raising=False)
+
+    device = type("Device", (), {"type": backend_name})()
+    manager = AsyncCopyManager(device=device)
+
+    src = torch.ones((4,), dtype=torch.float32)
+    dst = torch.zeros((4,), dtype=torch.float32)
+
+    with pytest.warns(RuntimeWarning, match="falling back to synchronous copy"):
+        manager.submit_copy(src, dst, (slice(None),))
+
+    # No async primitives: direct sync copy, no pending events.
+    assert len(manager._pending) == 0
+    assert torch.equal(dst, src)
+    assert manager.get_bytes_written() == pytest.approx(
+        src.numel() * src.element_size() / (1024 * 1024)
+    )
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+def test_async_copy_manager_mps_sync_fallback_is_silent():
+    """MPS has no D2H streams; sync fallback must not warn."""
+    manager = AsyncCopyManager(device=torch.device("mps"))
+    src = torch.ones((4,), dtype=torch.float32, device="mps")
+    dst = torch.zeros((4,), dtype=torch.float32)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        manager.submit_copy(src, dst, (slice(None),))
+
+    assert len(manager._pending) == 0
+    assert torch.equal(dst, src.cpu())
+    assert not any(
+        issubclass(w.category, RuntimeWarning) and "AsyncCopyManager" in str(w.message)
+        for w in caught
+    )
+
+
+def test_cpu_path_uses_run_forward():
+    """CPU still skips auto-batching but must go through ``_run_forward``."""
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(device="cpu", use_amp=False, use_fa3=False, use_async=False)
+
+    called = {"run_forward": 0}
+
+    original = mgr._run_forward
+
+    def _spy(forward_fn, inputs):
+        called["run_forward"] += 1
+        return original(forward_fn, inputs)
+
+    mgr._run_forward = _spy
+
+    features = torch.randn(2, 3, 5, 1)
+
+    def forward_fn(features):
+        return torch.zeros(*features.shape[:-1], 4, dtype=features.dtype)
+
+    out = mgr(forward_fn, OrderedDict([("features", features)]))
+    assert called["run_forward"] == 1
+    assert out.shape == (2, 3, 5, 4)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+def test_mps_path_uses_run_forward_and_amp():
+    """MPS must not take the old CPU-like early return; AMP should engage."""
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(
+        device="mps", use_amp=True, use_fa3=False, use_async=False, offload="gpu"
+    )
+
+    called = {"run_forward": 0, "saw_autocast": False}
+    original = mgr._run_forward
+
+    def _spy(forward_fn, inputs):
+        called["run_forward"] += 1
+        return original(forward_fn, inputs)
+
+    mgr._run_forward = _spy
+
+    features = torch.randn(2, 3, 8, 1, device="mps")
+
+    def forward_fn(features):
+        # Device-typed query: bare is_autocast_enabled() is CUDA-centric.
+        called["saw_autocast"] = bool(torch.is_autocast_enabled("mps"))
+        return torch.zeros(
+            *features.shape[:-1], 4, device=features.device, dtype=features.dtype
+        )
+
+    out = mgr(forward_fn, OrderedDict([("features", features)]))
+    assert called["run_forward"] >= 1
+    assert called["saw_autocast"] is True
+    assert out.device.type == "mps"
+    assert out.shape == (2, 3, 8, 4)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+def test_mps_auto_batch_uses_memory_estimate(monkeypatch):
+    """With an approximate free-memory query, MPS should enter the batching path."""
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(
+        device="mps",
+        use_amp=False,
+        use_fa3=False,
+        use_async=False,
+        offload="gpu",
+        min_batch_size=1,
+    )
+
+    # Force a tiny safe batch so the manager must split.
+    monkeypatch.setattr(mgr, "get_available_gpu_memory", lambda: 1.0)
+    monkeypatch.setattr(
+        mgr,
+        "estimate_safe_batch_size",
+        lambda seq_len, include_inputs=True, in_dim=None, max_bs=50000: (1.0, 1),
+    )
+
+    features = torch.randn(4, 2, 8, 1, device="mps")
+    n_calls = {"n": 0}
+
+    def forward_fn(features):
+        n_calls["n"] += 1
+        return torch.zeros(
+            *features.shape[:-1], 4, device=features.device, dtype=features.dtype
+        )
+
+    out = mgr(forward_fn, OrderedDict([("features", features)]))
+    assert (
+        n_calls["n"] >= 2
+    )  # batch size 1 over leading dim product 8 -> multiple calls
+    assert out.shape == (4, 2, 8, 4)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="MPS not available")
+def test_mps_memory_estimate_uses_recommended_minus_current(monkeypatch):
+    """The MPS memory inspection API is specific compared to CUDA/XPU.
+
+    In particular, it does not expose mem_get_info, and the available memory is
+    therefore estimated as recommended_max_memory minus
+    current_allocated_memory.
+    """
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(device="mps")
+
+    fake_api = MagicMock()
+    fake_api.is_available.return_value = True
+    fake_api.mem_get_info = None
+    fake_api.recommended_max_memory.return_value = 8 * 1024 * 1024 * 1024
+    fake_api.current_allocated_memory.return_value = 2 * 1024 * 1024 * 1024
+    fake_api.synchronize = MagicMock()
+    fake_api.empty_cache = MagicMock()
+
+    monkeypatch.setattr(mgr, "_get_device_backend_api", lambda: fake_api)
+    available_mib = mgr.get_available_gpu_memory()
+    assert available_mib == pytest.approx(6 * 1024.0)
+
+
+
+================================================
 FILE: tests/test_numpy_inputs.py
 ================================================
+import warnings
+
 import numpy as np
 import pytest
+import torch
 from sklearn.base import clone, is_classifier
+from sklearn.datasets import make_classification, make_friedman1
+from sklearn.metrics import log_loss, r2_score
+from sklearn.model_selection import train_test_split
 
-from src.tabicl import TabICLClassifier, TabICLRegressor
+from tabicl import TabICLClassifier, TabICLRegressor
+from tabicl._model.inference import InferenceManager
+from tabicl._sklearn.preprocessing import UniqueFeatureFilter
+from tabicl._torch_devices import (
+    MPS_NUMERICS_ISSUE_URL,
+    resolve_default_device,
+    resolve_torch_device,
+)
+from tests.torch_devices_helpers import skip_if_device_unusable
+
+
+_DEVICES = ["cpu", "cuda", "xpu", "mps"]
+
+
+def _patch_backend_availability(
+    monkeypatch, *, cuda_available, xpu_available, mps_available
+):
+    class _FakeXPUBackend:
+        @staticmethod
+        def is_available():
+            return xpu_available
+
+    class _FakeMPSBackend:
+        @staticmethod
+        def is_available():
+            return mps_available
+
+    monkeypatch.setattr(torch, "xpu", _FakeXPUBackend, raising=False)
+    monkeypatch.setattr(torch, "mps", _FakeMPSBackend, raising=False)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: cuda_available)
 
 
 @pytest.mark.parametrize(
@@ -31263,8 +31905,11 @@ def test_tabicl_supports_nans(estimator):
         TabICLRegressor(random_state=0),
     ],
 )
-def test_tabicl_supports_bool_object_and_string_inputs(estimator, X):
-    est = clone(estimator)
+@pytest.mark.parametrize("device", _DEVICES)
+def test_tabicl_supports_bool_object_and_string_inputs(estimator, X, device):
+    skip_if_device_unusable(device)
+
+    est = clone(estimator).set_params(device=device)
 
     if is_classifier(est):
         y = np.array([0, 1, 0, 1])
@@ -31277,6 +31922,280 @@ def test_tabicl_supports_bool_object_and_string_inputs(estimator, X):
     assert y_pred.shape == y.shape
 
 
+@pytest.mark.parametrize(
+    "estimator_cls",
+    [
+        TabICLClassifier,
+        TabICLRegressor,
+    ],
+)
+@pytest.mark.parametrize(
+    "cuda_available, xpu_available, mps_available, expected_device",
+    [
+        (True, True, True, "cuda"),
+        (True, False, True, "cuda"),
+        (False, True, True, "xpu"),
+        (False, True, False, "xpu"),
+        (False, False, True, "mps"),
+        (False, False, False, "cpu"),
+    ],
+)
+def test_tabicl_default_device_selection(
+    monkeypatch, estimator_cls, cuda_available, xpu_available, mps_available, expected_device
+):
+    _patch_backend_availability(
+        monkeypatch,
+        cuda_available=cuda_available,
+        xpu_available=xpu_available,
+        mps_available=mps_available,
+    )
+    # Preference-order tests assume healthy MPS hardware.
+    monkeypatch.setattr(
+        "tabicl._torch_devices.mps_possibly_faulty", lambda: False
+    )
+
+    assert resolve_default_device().type == expected_device
+
+    est = estimator_cls(random_state=0)
+    est._resolve_device()
+    assert est.device_.type == expected_device
+
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    mgr.configure(device=None, use_amp=False, use_fa3=False, use_async=False)
+    assert mgr.exe_device.type == expected_device
+
+
+def test_resolve_default_device_falls_back_from_faulty_mps(monkeypatch):
+    _patch_backend_availability(
+        monkeypatch, cuda_available=False, xpu_available=False, mps_available=True
+    )
+    monkeypatch.setattr("tabicl._torch_devices.mps_possibly_faulty", lambda: True)
+
+    with pytest.warns(
+        RuntimeWarning, match=rf"virtualized Apple Silicon.*{MPS_NUMERICS_ISSUE_URL}.*Falling back to CPU"
+    ):
+        assert resolve_default_device().type == "cpu"
+
+    est = TabICLClassifier(random_state=0, device=None)
+    with pytest.warns(RuntimeWarning, match="Falling back to CPU"):
+        est._resolve_device()
+    assert est.device_.type == "cpu"
+
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    with pytest.warns(RuntimeWarning, match="Falling back to CPU"):
+        mgr.configure(device=None, use_amp=False, use_fa3=False, use_async=False)
+    assert mgr.exe_device.type == "cpu"
+
+
+def test_resolve_explicit_mps_warns_but_keeps_mps_on_faulty_host(monkeypatch):
+    _patch_backend_availability(
+        monkeypatch, cuda_available=False, xpu_available=False, mps_available=True
+    )
+    monkeypatch.setattr("tabicl._torch_devices.mps_possibly_faulty", lambda: True)
+
+    with pytest.warns(
+        RuntimeWarning,
+        match=rf"device='mps' was requested.*{MPS_NUMERICS_ISSUE_URL}.*device='cpu'",
+    ):
+        resolved = resolve_torch_device("mps")
+    assert resolved.type == "mps"
+
+    est = TabICLClassifier(random_state=0, device="mps")
+    with pytest.warns(RuntimeWarning, match="device='mps' was requested"):
+        est._resolve_device()
+    assert est.device_.type == "mps"
+
+    mgr = InferenceManager(enc_name="tf_col", out_dim=4)
+    with pytest.warns(RuntimeWarning, match="device='mps' was requested"):
+        mgr.configure(device="mps", use_amp=False, use_fa3=False, use_async=False)
+    assert mgr.exe_device.type == "mps"
+
+
+def test_resolve_mps_no_warning_on_healthy_host(monkeypatch):
+    _patch_backend_availability(
+        monkeypatch, cuda_available=False, xpu_available=False, mps_available=True
+    )
+    monkeypatch.setattr("tabicl._torch_devices.mps_possibly_faulty", lambda: False)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert resolve_default_device().type == "mps"
+        assert resolve_torch_device("mps").type == "mps"
+
+    assert not any(issubclass(w.category, RuntimeWarning) for w in caught)
+
+
+@pytest.mark.parametrize(
+    "estimator_cls",
+    [
+        TabICLClassifier,
+        TabICLRegressor,
+    ],
+)
+@pytest.mark.parametrize(
+    "device_type, n_samples, n_features, expected_amp",
+    [
+        ("cpu", 2000, 100, False),
+        ("mps", 2000, 100, True),
+        ("cuda", 2000, 100, True),
+        ("xpu", 2000, 100, True),
+        ("mps", 100, 10, False),  # small-data heuristic
+        ("cuda", 100, 10, False),
+    ],
+)
+def test_resolve_amp_is_device_aware(
+    estimator_cls, device_type, n_samples, n_features, expected_amp
+):
+    est = estimator_cls(random_state=0, use_amp="auto", use_fa3="auto")
+    est.device_ = torch.device(device_type)
+    est.n_samples_in_ = n_samples
+    est.n_features_in_ = n_features
+    use_amp, _ = est._resolve_amp_fa3()
+    assert use_amp is expected_amp
+
+
+@pytest.mark.parametrize(
+    "estimator_cls",
+    [
+        TabICLClassifier,
+        TabICLRegressor,
+    ],
+)
+@pytest.mark.parametrize(
+    "device_type, n_samples, n_features, use_amp, expected_fa3",
+    [
+        # FA3 auto is CUDA-only.
+        ("cpu", 20000, 100, "auto", False),
+        ("mps", 20000, 100, "auto", False),
+        ("xpu", 20000, 100, "auto", False),
+        ("cuda", 100, 10, "auto", False),  # small data
+        ("cuda", 2000, 100, "auto", False),  # medium + AMP on â†’ FA3 off
+        ("cuda", 20000, 100, "auto", True),  # large + AMP on â†’ FA3 on
+        ("cuda", 2000, 100, False, True),  # medium + AMP off â†’ FA3 fallback
+        ("mps", 2000, 100, False, False),  # AMP off does not enable FA3 off CUDA
+    ],
+)
+def test_resolve_fa3_auto_is_cuda_only(
+    estimator_cls, device_type, n_samples, n_features, use_amp, expected_fa3
+):
+    est = estimator_cls(random_state=0, use_amp=use_amp, use_fa3="auto")
+    est.device_ = torch.device(device_type)
+    est.n_samples_in_ = n_samples
+    est.n_features_in_ = n_features
+    _, use_fa3 = est._resolve_amp_fa3()
+    assert use_fa3 is expected_fa3
+
+
+def test_resolve_fa3_explicit_true_preserved_off_cuda():
+    est = TabICLClassifier(random_state=0, use_amp=False, use_fa3=True)
+    est.device_ = torch.device("mps")
+    est.n_samples_in_ = 100
+    est.n_features_in_ = 10
+    _, use_fa3 = est._resolve_amp_fa3()
+    assert use_fa3 is True
+
+
+@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("kv_cache", [False, True])
+@pytest.mark.parametrize("use_amp", [False, True])
+def test_tabicl_regressor_device_cpu_r2_parity(device, kv_cache, use_amp):
+    """Accelerator predictions should roughly match CPU on a small regression task."""
+    skip_if_device_unusable(device)
+
+    # Float16 AMP introduces cross-device numeric drift; fp32 should match tightly.
+    if use_amp:
+        rtol, atol, score_tol = 1e-1, 5e-1, 1e-2
+    else:
+        rtol, atol, score_tol = 1e-4, 1e-4, 1e-5
+
+    X, y = make_friedman1(n_samples=200, n_features=20, noise=1.0, random_state=0)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.4, random_state=0
+    )
+
+    preds = {}
+    scores = {}
+    for d in ("cpu", device):
+        reg = TabICLRegressor(
+            n_estimators=2,
+            device=d,
+            kv_cache=kv_cache,
+            use_amp=use_amp,
+            use_fa3=False,
+            random_state=0,
+            verbose=False,
+        )
+        reg.fit(X_train, y_train)
+        pred = reg.predict(X_test)
+        preds[d] = pred
+        scores[d] = r2_score(y_test, pred)
+
+    assert abs(scores["cpu"] - scores[device]) < score_tol
+    np.testing.assert_allclose(preds["cpu"], preds[device], rtol=rtol, atol=atol)
+
+
+@pytest.mark.parametrize("device", ["cuda", "xpu", "mps"])
+@pytest.mark.parametrize("kv_cache", [False, True])
+@pytest.mark.parametrize("use_amp", [False, True])
+def test_tabicl_classifier_device_cpu_logloss_parity(device, kv_cache, use_amp):
+    """Accelerator probabilities should roughly match CPU on a small classification task."""
+    skip_if_device_unusable(device)
+
+    # Float16 AMP introduces cross-device numeric drift; fp32 should match tightly.
+    if use_amp:
+        rtol, atol, score_tol = 1e-1, 1e-1, 1e-2
+    else:
+        rtol, atol, score_tol = 1e-4, 1e-4, 1e-5
+
+    X, y = make_classification(
+        n_samples=200,
+        n_features=20,
+        n_informative=10,
+        n_redundant=2,
+        n_classes=3,
+        random_state=0,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.4, random_state=0
+    )
+
+    probas = {}
+    scores = {}
+    for d in ("cpu", device):
+        clf = TabICLClassifier(
+            n_estimators=2,
+            device=d,
+            kv_cache=kv_cache,
+            use_amp=use_amp,
+            use_fa3=False,
+            random_state=0,
+            verbose=False,
+        )
+        clf.fit(X_train, y_train)
+        proba = clf.predict_proba(X_test)
+        probas[d] = proba
+        scores[d] = log_loss(y_test, proba, labels=clf.classes_)
+
+    assert abs(scores["cpu"] - scores[device]) < score_tol
+    np.testing.assert_allclose(probas["cpu"], probas[device], rtol=rtol, atol=atol)
+
+
+def test_tabicl_fits_all_constant_features():
+    """No feature is informative: one column is kept, so fit falls back to the marginal."""
+
+    X = np.tile(np.array([0.4, 1.0, 0.5, 118.2]), (6, 1))
+    y = np.array([-3.2, -1.0, 0.5, 2.0, -0.7, 1.1])
+
+    # Constant features are still dropped as long as one informative feature remains.
+    assert UniqueFeatureFilter().fit_transform(np.c_[np.ones(6), y]).shape == (6, 1)
+
+    y_pred = TabICLRegressor(n_estimators=4, random_state=0).fit(X, y).predict(X)
+
+    assert np.allclose(y_pred, y_pred[0])
+    assert abs(y_pred[0] - y.mean()) < y.std()
+
+
+
 ================================================
 FILE: tests/test_sklearn.py
 ================================================
@@ -31284,22 +32203,39 @@ import copy
 
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose
 from sklearn.datasets import make_classification, make_regression
 from sklearn.utils.estimator_checks import parametrize_with_checks
 
 from tabicl import TabICLClassifier, TabICLRegressor
+from tests.torch_devices_helpers import skip_if_device_unusable
 
 
 # n_estimators=2 ensures the full preprocessing and ensembling pipeline is tested:
 # n_estimators=1 skips shuffling and uses only one norm method, while n_estimators=2
 # exercises feature/class shuffling, multiple normalization methods, and ensemble averaging.
-@parametrize_with_checks([TabICLClassifier(n_estimators=2), TabICLRegressor(n_estimators=2)])
+#
+_DEVICES = ["cpu", "cuda", "xpu", "mps"]
+_SKLEARN_ESTIMATORS = [
+    est
+    for device in _DEVICES
+    for est in (
+        TabICLClassifier(n_estimators=2, device=device),
+        TabICLRegressor(n_estimators=2, device=device),
+    )
+]
+
+
+@parametrize_with_checks(_SKLEARN_ESTIMATORS)
 def test_sklearn_compatible_estimator(estimator, check):
+    skip_if_device_unusable(estimator.get_params()["device"])
     check(estimator)
 
 
-def test_serialization():
-    clf = TabICLClassifier(n_estimators=2)
+@pytest.mark.parametrize("device", _DEVICES)
+def test_serialization(device):
+    skip_if_device_unusable(device)
+    clf = TabICLClassifier(n_estimators=2, device=device)
     assert not hasattr(clf, "model_")
     assert not hasattr(clf, "model_kv_cache_")
     clone = copy.deepcopy(clf)
@@ -31314,18 +32250,32 @@ def test_serialization():
     assert hasattr(clf, "model_kv_cache_")
 
 
+def test_all_nan_column():
+    """An all-NaN feature column must not break fit or predict_proba (gh-147)."""
+    X, y = make_classification(n_samples=50, n_features=5, random_state=42)
+    X = np.hstack([X, np.full((X.shape[0], 1), np.nan)])
+    clf = TabICLClassifier(n_estimators=2)
+    clf.fit(X[:40], y[:40])
+    proba = clf.predict_proba(X[40:])
+    assert proba.shape == (10, 2)
+    assert np.all(np.isfinite(proba))
+    assert_allclose(proba.sum(axis=1), 1.0)
+
+
 class TestClassifierKVCache:
+    @pytest.mark.parametrize("device", _DEVICES)
     @pytest.mark.parametrize("kv_cache", ["kv", "repr"])
-    def test_kv_cache(self, kv_cache):
+    def test_kv_cache(self, device, kv_cache):
         """Predictions with kv cache should match predictions without cache."""
+        skip_if_device_unusable(device)
         X, y = make_classification(n_samples=50, n_features=5, random_state=42)
         X_train, X_test = X[:40], X[40:]
         y_train = y[:40]
-        clf = TabICLClassifier(n_estimators=2)
+        clf = TabICLClassifier(n_estimators=2, device=device)
         clf.fit(X_train, y_train)
         pred_no_cache = clf.predict_proba(X_test)
 
-        clf_cached = TabICLClassifier(n_estimators=2, kv_cache=kv_cache)
+        clf_cached = TabICLClassifier(n_estimators=2, device=device, kv_cache=kv_cache)
         clf_cached.fit(X_train, y_train)
         pred_cached = clf_cached.predict_proba(X_test)
 
@@ -31333,17 +32283,19 @@ class TestClassifierKVCache:
 
 
 class TestRegressorKVCache:
+    @pytest.mark.parametrize("device", _DEVICES)
     @pytest.mark.parametrize("kv_cache", ["kv", "repr"])
-    def test_kv_cache(self, kv_cache):
+    def test_kv_cache(self, device, kv_cache):
         """Predictions with kv cache should match predictions without cache."""
+        skip_if_device_unusable(device)
         X, y = make_regression(n_samples=50, n_features=5, random_state=42)
         X_train, X_test = X[:40], X[40:]
         y_train = y[:40]
-        reg = TabICLRegressor(n_estimators=2)
+        reg = TabICLRegressor(n_estimators=2, device=device)
         reg.fit(X_train, y_train)
         pred_no_cache = reg.predict(X_test)
 
-        reg_cached = TabICLRegressor(n_estimators=2, kv_cache=kv_cache)
+        reg_cached = TabICLRegressor(n_estimators=2, device=device, kv_cache=kv_cache)
         reg_cached.fit(X_train, y_train)
         pred_cached = reg_cached.predict(X_test)
 
@@ -31427,6 +32379,59 @@ def test_string_numpy_object_array_raises(Estimator):
 
     with pytest.raises(ValueError, match="castable to a numeric dtype"):
         est.fit(X, y)
+
+
+================================================
+FILE: tests/torch_devices_helpers.py
+================================================
+"""Shared torch device availability helpers for tests."""
+
+from __future__ import annotations
+
+import pytest
+import torch
+
+from tabicl._torch_devices import (
+    backend_is_available,
+    mps_possibly_faulty,
+)
+
+
+def device_available(device: str | torch.device | None) -> bool:
+    """Return whether a torch device backend is available on this host.
+
+    Uses the shared :func:`tabicl._torch_devices.backend_is_available` helper so
+    test skips stay aligned with library default-device selection.
+    """
+    if device is None:
+        # The default device is always available (CPU fallback if needed).
+        return True
+    try:
+        device_type = torch.device(device).type
+    except (TypeError, RuntimeError, ValueError):
+        return False
+
+    return backend_is_available(device_type)
+
+
+def skip_if_device_unusable(device: str | None) -> None:
+    """Skip the current test when ``device`` cannot be used reliably.
+
+    ``device=None`` is always usable: on virtualized Apple Silicon the library
+    falls back to CPU. Explicit ``mps`` is skipped when MPS is missing or the
+    host is a known-bad VirtualMac guest.
+    """
+    if device is None:
+        return
+
+    if not device_available(device):
+        pytest.skip(f"{device} device is not available on this host")
+    if device == "mps" and mps_possibly_faulty():
+        pytest.skip(
+            "MPS skipped on virtualized Apple Silicon "
+            "(https://github.com/pytorch/pytorch/issues/192934)"
+        )
+
 
 
 ================================================
@@ -31579,7 +32584,7 @@ plt.show()
 ================================================
 FILE: tutorials/finetune_classifier.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 6160: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 6229: character maps to <undefined>
 
 
 ================================================
@@ -31713,7 +32718,7 @@ ft_pred = reg.predict(X_test)
 ft_mse, ft_mae, ft_r2 = _metrics(ft_pred, y_test)
 
 if is_main_process:
-    header = f"{'metric':<10}{'pretrained':>14}{'fine-tuned':>14}{'Î”':>14}"
+    header = f"{'metric':<10}{'pretrained':>14}{'fine-tuned':>14}{'delta':>14}"
     rule = "=" * len(header)
     print()
     print(rule)
@@ -31721,10 +32726,11 @@ if is_main_process:
     print(rule)
     print(header)
     print("-" * len(header))
-    print(f"{'MSE â†“':<10}{base_mse:>14.4f}{ft_mse:>14.4f}{ft_mse - base_mse:>+14.4f}")
-    print(f"{'MAE â†“':<10}{base_mae:>14.4f}{ft_mae:>14.4f}{ft_mae - base_mae:>+14.4f}")
-    print(f"{'RÂ² â†‘':<10}{base_r2:>14.4f}{ft_r2:>14.4f}{ft_r2 - base_r2:>+14.4f}")
+    print(f"{'MSE':<10}{base_mse:>14.4f}{ft_mse:>14.4f}{ft_mse - base_mse:>+14.4f}")
+    print(f"{'MAE':<10}{base_mae:>14.4f}{ft_mae:>14.4f}{ft_mae - base_mae:>+14.4f}")
+    print(f"{'R2':<10}{base_r2:>14.4f}{ft_r2:>14.4f}{ft_r2 - base_r2:>+14.4f}")
     print(rule)
+    print("lower is better: MSE, MAE;  higher is better: R2")
 
 # %%
 # Figure 1 â€” Predictions + residuals
@@ -32257,10 +33263,25 @@ scores = cross_val_score(reg, X, y, cv=2, scoring="roc_auc_ovr")
 print(f"ROC AUC without skrub: {scores.mean():.3f} (+/- {scores.std():.3f}), time: {time.time()-start_time:.1f} s")
 
 # %%
+# .. _tabicl_with_skrub:
 # TabICL with skrub
 # -------------------------------------
 #
 # With skrub, we can embed high-cardinality string columns using semantics-aware methods into numerical features.
+# The function :func:`skrub.tabular_pipeline` provides a convenient way to initialize a pipeline.
+# In addition to estimators from ``scikit-learn``, it accepts instances of type
+# :class:`tabicl.TabICLClassifier` and :class:`tabicl.TabICLRegressor` with TabICL-suitable defaults for
+# :class:`skrub.TableVectorizer` as the first step and the estimator itself as the second step.
+# Here is a short example on how to use it:
+#
+# .. code-block:: python
+#
+#    from skrub import tabular_pipeline
+#
+#    pipeline = tabular_pipeline(TabICLClassifier())
+#
+# Let's take a look below to see how this works behind the scenes.
+#
 # The `TableVectorizer <https://skrub-data.org/stable/reference/generated/skrub.TableVectorizer.html>`_
 # applies different conversions to columns of a dataframe.
 # Here, for efficiency reasons, we use the StringEncoder with lower-dimensional embeddings
@@ -32269,8 +33290,11 @@ print(f"ROC AUC without skrub: {scores.mean():.3f} (+/- {scores.std():.3f}), tim
 # which then treats them as categoricals.
 # (Without "passthrough", they would be one-hot encoded by default,
 # which is not the recommended way to handle categoricals for TabICL.)
-# We also provide advanced settings for the DatetimeEncoder,
-# even though our example dataset here does not contain dates.
+#
+# .. note::
+#    We also provide advanced settings for the DatetimeEncoder,
+#    even though our example dataset here does not contain dates. This also serves to show how to
+#    adjust parameters.
 
 pipeline = make_pipeline(
     TableVectorizer(
@@ -32754,6 +33778,11 @@ jobs:
           version: "0.5.4"
       - name: Install hatch
         run: uv pip install --system hatch
+      - name: Show installed package versions
+        shell: bash
+        run: |
+          hatch env create "hatch-test.py${{ matrix.python-version }}"
+          uv pip list --python "$(hatch env find "hatch-test.py${{ matrix.python-version }}")"
       - name: Run tests
         run: hatch test
       - name: Upload coverage reports to Codecov
@@ -32779,16 +33808,30 @@ jobs:
           version: "0.5.4"
       - name: Install hatch
         run: uv pip install --system hatch
-      - name: Install package and dev dependencies
+      - name: Create hatch test environment
+        shell: bash
+        run: hatch env create "hatch-test.py3.13"
+      - name: Install nightly dependencies into hatch test environment
+        shell: bash
         run: |
-          uv pip install --system -e ".[all]"
-          uv pip install --system --pre --upgrade \
+          HATCH_TEST_ENV="$(hatch env find "hatch-test.py3.13")"
+          echo "HATCH_TEST_ENV=$HATCH_TEST_ENV" >> "$GITHUB_ENV"
+          # Upgrade scientific stack / torch nightlies inside the same env that
+          # hatch test would use (not the system interpreter).
+          uv pip install --python "$HATCH_TEST_ENV" --pre --upgrade \
             --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple \
             numpy scipy scikit-learn
-          uv pip install --system --pre --upgrade \
+          uv pip install --python "$HATCH_TEST_ENV" --pre --upgrade \
             --extra-index-url https://download.pytorch.org/whl/nightly/cpu \
             torch
+      - name: Show installed package versions
+        shell: bash
+        run: uv pip list --python "$HATCH_TEST_ENV"
       - name: Run tests
-        run: hatch test
+        shell: bash
+        run: |
+          # Call pytest via the hatch-test interpreter directly so hatch does
+          # not re-sync the env and replace the nightlies installed above.
+          "$HATCH_TEST_ENV/bin/python" -m pytest
 
 

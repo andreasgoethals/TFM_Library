@@ -1820,11 +1820,11 @@ pretraining in the base release.
 
 One integration consequence worth flagging for anyone writing checkpoints: the **regressor
 criterion handling differs between v2.6 and v3**. TabPFN regressors predict a *bar distribution*
-over a fixed grid of borders. In v3, ``model.forward`` takes ``test_targets_MB`` and the
-checkpoint loader **strips** any ``criterion.*`` keys and rebuilds the bar distribution from the
-model's own ``regression_borders`` buffer; v2.6 has no ``test_targets_MB`` and so the loader
-**requires** the ``criterion.*`` keys. Writing ``criterion.*`` unconditionally therefore
-round-trips for both bases — required by v2.6, harmlessly stripped by v3. The checkpoint format
+over a fixed grid of borders, and the two generations save that grid in different places: up to
+v2.6 as ``criterion.*`` state stored beside the model, from v3 as a ``regression_borders`` buffer
+on the model itself. The loader keeps ``criterion.*`` out of the model state either way, then
+``_resolve_regression_borders`` prefers the checkpoint's saved borders and falls back to the
+buffer. Writing ``criterion.*`` unconditionally therefore round-trips for both bases. The checkpoint format
 itself is the standard four-key ``torch.save`` dict (``state_dict``, ``config``,
 ``architecture_name``, ``inference_config``); valid ``architecture_name`` strings are
 ``tabpfn_v2``, ``tabpfn_v2_5``, ``tabpfn_v2_6``, ``tabpfn_v3``.

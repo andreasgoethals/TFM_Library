@@ -4,6 +4,31 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-27
+
+Dumps refreshed, and the two code citations the refresh invalidated corrected.
+No papers added; no claim about the literature changed.
+
+- **`repositories/` refreshed** (TabPFN, TabDPT, TabICL, TabTune, NanoTabICL,
+TabPFN Client / Extensions / V2 Finetuning, VSC Documentation).
+- **TabDPT moved its worked examples out of `tests/`.** `cls_example.py` and
+`reg_example.py` now live in `examples/`; `tests/` holds a real pytest suite
+(`test_cls.py`, `test_reg.py`, `test_estimator.py`, `test_inference.py`).
+`REPOSITORIES.md` pointed at the old path.
+- **TabPFN dropped the `test_targets_MB` signature sniff.** The loader used to
+decide v2.6-vs-v3 regressor criterion handling by inspecting `model.forward`
+for that parameter. It now branches on the data instead: `criterion.*` is
+always separated out of the model state, and `_resolve_regression_borders`
+prefers the checkpoint's saved borders, falls back to the model's
+`regression_borders` buffer, and raises if neither is present. Corrected in
+`REPOSITORIES.md` and `SUMMARIES.md`. **The practical advice is unchanged** —
+write `criterion.*` for regressors unconditionally and the checkpoint
+round-trips on both architectures.
+- **Worth knowing if you use TabTune:** its vendored TabPFN copy *still* carries
+the `test_targets_MB` sniff and the vestigial parameter it tests for, so on this
+point TabTune's bundled loader and current upstream are not interchangeable.
+Recorded in `REPOSITORIES.md`.
+
 ## 2026-08-26
 
 Zotero-side only — no papers added, no documents changed in substance.

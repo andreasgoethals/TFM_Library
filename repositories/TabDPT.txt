@@ -4,6 +4,9 @@ Directory structure:
     ├── LICENSE
     ├── paper_evaluation.py
     ├── pyproject.toml
+    ├── examples/
+    │   ├── cls_example.py
+    │   └── reg_example.py
     ├── notebooks/
     │   └── analysis.ipynb
     ├── src/
@@ -22,9 +25,12 @@ Directory structure:
     │       ├── cls_datasets.csv
     │       └── reg_datasets.csv
     └── tests/
-        ├── cls_example.py
-        ├── reg_example.py
-        └── test_tabdpt_estimator.py
+        ├── device_utils.py
+        ├── test_cls.py
+        ├── test_estimator.py
+        ├── test_inference.py
+        ├── test_reg.py
+        └── test_utils.py
 
 ================================================
 FILE: README.md
@@ -60,7 +66,7 @@ Model weights are available on [Hugging Face](https://huggingface.co/Layer6/TabD
 
 ### Installation From Source
 
-To set up this repo, first ensure you have Python 3.10 or 3.11. Then, run the following:
+To set up this repo, first ensure you have Python 3.10 or newer. Then, run the following:
 ```
 git clone git@github.com:layer6ai-labs/TabDPT.git
 cd TabDPT
@@ -93,7 +99,11 @@ For better runtime performance, adjust `context_size` or `n_ensembles` to trade 
 
 ### Working Examples
 
-See `tests/cls_example.py` and `tests/reg_example.py` for examples of how to use TabDPT once installed.
+See `examples/cls_example.py` and `examples/reg_example.py` for examples of how to use TabDPT once installed.
+
+### Unit Tests
+
+Unit tests are in the `tests/` directory and can be run using `pytest`.
 
 ## Overview
 
@@ -497,10 +507,20 @@ from tabdpt_datasets.openml import OpenMLDataset, TabZillaDataset
 CLS_DATASET_PATH = "tabdpt_datasets/data_splits/cls_datasets.csv"
 REG_DATASET_PATH = "tabdpt_datasets/data_splits/reg_datasets.csv"
 
+# fmt: off
+TABARENA_IDS = [
+    363621, 363629, 363614, 363698, 363626, 363685, 363625, 363696, 363675, 363707, 363671, 363612,
+    363615, 363711, 363682, 363684, 363674, 363700, 363702, 363620, 363677, 363704, 363623, 363697,
+    363694, 363708, 363706, 363689, 363624, 363619, 363676, 363712, 363632, 363691, 363681, 363686,
+    363679, 363678, 363705, 363627, 363613, 363618, 363672, 363693, 363683, 363631, 363630, 363616,
+    363699, 363628, 363673
+]
+# fmt: on
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run TabDPT evaluation")
-    parser.add_argument("--context_size", type=int, help="Context size for the model")
+    parser.add_argument("--context-size", type=int, help="Context size for the model")
     parser.add_argument("--fold", type=int, default=0, help="Fold number to use for evaluation")
     parser.add_argument("--n-ensembles", type=int, default=8, help="Number of ensembles to use for evaluation")
     parser.add_argument("--temperature", type=float, default=1., help="Temperature for classification")
@@ -509,13 +529,20 @@ if __name__ == "__main__":
     parser.add_argument("--use-cpu", action="store_true", help="If true, use CPU for evalutation")
     parser.add_argument("--gpu-to-use", type=int, default=0, help="Which GPU to use")
     parser.add_argument("--results-folder", type=str, default="eval_output", help="Parent results directory")
+    parser.add_argument(
+        "--suites", nargs="+", default=["cc18", "ctr23", "tabarena"], choices=["cc18", "ctr23", "tabarena"],
+        help="Which suites to evaluate. Use to resume only the missing suites without redoing others.",
+    )
+    parser.add_argument(
+        "--model-weight-path", type=str, default=None,
+        help="Path to model weights. Defaults to the estimator's default (v1.2).",
+    )
     args = parser.parse_args()
 
     if args.use_cpu:
         device = "cpu"
     else:
-        device = "cuda"
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_to_use)
+        device = f"cuda:{args.gpu_to_use}"
 
     df_eval_cls = pd.read_csv(CLS_DATASET_PATH)
     cc18_test_df = df_eval_cls[df_eval_cls["test"] == True]
@@ -529,6 +556,7 @@ if __name__ == "__main__":
     did_tid_mapping.update(dict(zip(ctr23_dids, ctr23_test_df["tid"])))
 
     results = {
+        "suite": [],
         "name": [],
         "acc": [],
         "f1": [],
@@ -540,23 +568,45 @@ if __name__ == "__main__":
         "train_time": [],
         "inference_time": [],
     }
-    model_cls = TabDPTClassifier(device=device)
-    model_reg = TabDPTRegressor(device=device)
+    model_cls = TabDPTClassifier(device=device, model_weight_path=args.model_weight_path)
+    model_reg = TabDPTRegressor(device=device, model_weight_path=args.model_weight_path)
 
-    pbar = tqdm(
-        itertools.chain(itertools.product(["cls"], cc18_dids), itertools.product(["reg"], ctr23_dids)),
-        total=(len(cc18_dids) + len(ctr23_dids)),
+    suites = set(args.suites)
+    tasks = []
+    if "cc18" in suites:
+        tasks += list(zip(itertools.repeat("cc18"), cc18_dids))
+    if "ctr23" in suites:
+        tasks += list(zip(itertools.repeat("ctr23"), ctr23_dids))
+    if "tabarena" in suites:
+        tasks += list(zip(itertools.repeat("tabarena"), TABARENA_IDS))
+
+    print(f"""Total of {len(tasks)} tasks are loaded from {', '.join(suites)}.""")
+
+    os.makedirs(args.results_folder, exist_ok=True)
+    datetime_string = datetime.now().isoformat(timespec="seconds").replace("T", "_").replace(":", "-")
+    csv_name = (
+        f"results_{datetime_string}_context={args.context_size}_"
+        f"fold={args.fold}_N={args.n_ensembles}_seed={args.seed}.csv"
     )
-    for mode, did in pbar:
-        if mode == "cls":
-            tid = did_tid_mapping[did]
-            dataset = TabZillaDataset(task_id=tid, fold=args.fold)
+    csv_path = os.path.join(args.results_folder, csv_name)
+
+    pbar = tqdm(tasks, total=len(tasks))
+    for suite, ident in pbar:
+        if suite == "cc18":
+            dataset = TabZillaDataset(task_id=did_tid_mapping[ident], fold=args.fold)
             dataset.prepare_data(".cache")
             dataset_name = dataset.name
-        else:
-            dataset = OpenMLDataset("openml_dataset", task_id=int(did_tid_mapping[did]), fold=args.fold)
+            mode = "cls"
+        elif suite == "ctr23":
+            dataset = OpenMLDataset("openml_dataset", task_id=int(did_tid_mapping[ident]), fold=args.fold)
             dataset.prepare_data(".cache")
             dataset_name = dataset.openml_dataset.name
+            mode = "reg"
+        else:
+            dataset = OpenMLDataset("openml_dataset", task_id=int(ident), fold=args.fold)
+            dataset.prepare_data(".cache")
+            dataset_name = dataset.openml_dataset.name
+            mode = "cls" if dataset.metadata["target_type"] == "classification" else "reg"
 
         pbar.set_description(f"Running {dataset_name}")
 
@@ -621,6 +671,7 @@ if __name__ == "__main__":
             r2 = r2_score(y_test, pred_val)
             f1, acc, auc, ce_loss = None, None, None, None
 
+        results["suite"].append(suite)
         results["name"].append(dataset_name)
         results["acc"].append(acc)
         results["f1"].append(f1)
@@ -632,6 +683,8 @@ if __name__ == "__main__":
         results["train_time"].append(train_time)
         results["inference_time"].append(inference_time)
 
+        pd.DataFrame(results).to_csv(csv_path, index=False)
+
         print(f"\nDataset: {dataset_name}")
         print(f"X_train shape: {X_train.shape}, X_test shape: {X_test.shape}")
         print(f"train_time: {train_time:.4f}s, inference_time: {inference_time:.4f}s")
@@ -642,26 +695,45 @@ if __name__ == "__main__":
             print(f"mse {mse}, corr {corr}, r2 {r2}")
 
     df = pd.DataFrame(results)
-
-    datetime_string = datetime.now().isoformat(timespec="seconds")
-    datetime_string = datetime_string.replace("T", "_").replace(":", "-")
-    csv_name = (
-        f"results_{datetime_string}_context={args.context_size}_"
-        f"fold={args.fold}_N={args.n_ensembles}_seed={args.seed}.csv"
-    )
-
-    os.makedirs(args.results_folder, exist_ok=True)
-    df.to_csv(os.path.join(args.results_folder, csv_name), index=False)
+    df.to_csv(csv_path, index=False)
 
     def robust_iqm(x):
         try:
+            x = np.asarray(x, dtype=float)
             x = x[~np.isnan(x)]
-            return metrics.aggregate_iqm(x)
+            return metrics.aggregate_iqm(x) if len(x) else None
         except TypeError:
             return None
 
-    print(f"IQM for Fold {args.fold}, N={args.n_ensembles}, T={args.temperature}:")
-    print(df[["acc", "auc", "corr", "r2"]].apply(lambda x: robust_iqm(x)))
+    weights_used = args.model_weight_path or "<estimator default (v1.2)>"
+    lines = [
+        f"TabDPT v1.2 paper evaluation",
+        f"weights: {weights_used}",
+        f"fold={args.fold}  N={args.n_ensembles}  T={args.temperature}  context={args.context_size}  seed={args.seed}",
+        f"csv: {csv_name}",
+        "",
+    ]
+    for suite in ["cc18", "ctr23", "tabarena"]:
+        sub = df[df["suite"] == suite]
+        if sub.empty:
+            continue
+        lines.append(f"[{suite}] datasets={len(sub)}  IQM:")
+        for metric in ["acc", "auc", "corr", "r2"]:
+            val = robust_iqm(sub[metric])
+            if val is not None:
+                lines.append(f"\t{metric}: {val:.4f}")
+    lines.append("")
+    lines.append("[all] IQM:")
+    for metric in ["acc", "auc", "corr", "r2"]:
+        val = robust_iqm(df[metric])
+        if val is not None:
+            lines.append(f"\t{metric}: {val:.4f}")
+
+    summary = "\n".join(lines)
+    print(summary)
+    txt_name = csv_name.replace(".csv", ".txt")
+    with open(os.path.join(args.results_folder, txt_name), "w") as f:
+        f.write(summary + "\n")
 
 
 
@@ -713,9 +785,19 @@ Repository = "https://github.com/layer6ai-labs/TabDPT-inference"
 Paper = "https://arxiv.org/abs/2410.18164"
 Model = "https://huggingface.co/Layer6/TabDPT"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/tabdpt"]
+
+[tool.coverage.report]
+show_missing = true
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.1",
+    "pytest-cov>=5.0.0,<8.0",
     "rliable>=1.2.0,<2.0",
     "pandas>=2.3.2,<3.0",
     "openml>=0.15.1,<1.0",
@@ -723,6 +805,53 @@ dev = [
     "tenacity>=9.1.2,<10.0",
     "gdown>=5.2.0,<6.0",
 ]
+
+
+
+================================================
+FILE: examples/cls_example.py
+================================================
+from sklearn.datasets import load_digits
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+from tabdpt import TabDPTClassifier
+
+X, y = load_digits(return_X_y=True)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+model = TabDPTClassifier()
+model.fit(X_train, y_train)
+y_pred = model.predict(
+    X_test,
+    n_ensembles=8,
+    temperature=1.,
+    context_size=None,
+    permute_classes=True,
+    seed=42,
+)
+print(accuracy_score(y_test, y_pred))
+
+
+
+================================================
+FILE: examples/reg_example.py
+================================================
+from sklearn.datasets import fetch_california_housing
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+
+from tabdpt import TabDPTRegressor
+
+X, y = fetch_california_housing(return_X_y=True)
+X, y = X[:4096], y[:4096]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+model = TabDPTRegressor()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test, n_ensembles=2, seed=42)
+print(r2_score(y_test, y_pred))
 
 
 
@@ -3159,92 +3288,557 @@ did,tid,num_instances,num_features,num_missing_values,source,test
 
 
 ================================================
-FILE: tests/cls_example.py
+FILE: tests/device_utils.py
 ================================================
+"""Shared test helpers: device selection and RNG seeding.
+
+Tests prioritize GPU; CPU is used only when no GPU has enough free memory available.
+"""
+
+
+def seed_everything(seed: int = 42) -> None:
+    """Seed RNGs for reproducible test predictions."""
+    import random
+
+    import numpy as np
+    import torch
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def pick_device(min_free_gb: float = 2.0) -> str:
+    """Automatically select GPU when available"""
+    import torch
+
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            try:
+                free, _ = torch.cuda.mem_get_info(i)
+            except RuntimeError:
+                continue
+            if free / 1e9 >= min_free_gb:
+                return f"cuda:{i}"
+    return "cpu"
+
+
+
+================================================
+FILE: tests/test_cls.py
+================================================
+"""Classification: the v1.2 model (now the default) must match or beat the recorded v1.1 result."""
+import unittest
+
 from sklearn.datasets import load_digits
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 from tabdpt import TabDPTClassifier
 
-X, y = load_digits(return_X_y=True)
+from device_utils import pick_device, seed_everything
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+DEVICE = pick_device()
 
-model = TabDPTClassifier()
-model.fit(X_train, y_train)
-y_pred = model.predict(
-    X_test,
-    n_ensembles=8,
-    temperature=1.,
-    context_size=None,
-    permute_classes=True,
-    seed=42,
+V1_CLS_ACC = 0.9916
+TOLERANCE = 2e-2
+
+
+class TestClassification(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup dataset and the v1.2 model, then gather predictions."""
+        seed_everything(42)
+        X, y = load_digits(return_X_y=True)
+        cls.X_train, cls.X_test, cls.y_train, cls.y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+        cls.base_model = TabDPTClassifier(device=DEVICE)
+        cls.base_model.fit(cls.X_train, cls.y_train)
+        cls.y_train_pred = cls.base_model.predict(cls.X_train, seed=42)
+        cls.y_test_pred = cls.base_model.predict(cls.X_test, seed=42)
+
+    def test_accuracy(self):
+        """Train prediction should be perfect; v1.2 test accuracy should be at least v1.1's."""
+        train_acc = accuracy_score(self.y_train, self.y_train_pred)
+        test_acc = accuracy_score(self.y_test, self.y_test_pred)
+        print(f"\n[cls] v1.2 test acc {test_acc:.4f} vs v1.1 {V1_CLS_ACC:.4f} (delta {test_acc - V1_CLS_ACC:+.4f})")
+
+        self.assertAlmostEqual(
+            train_acc, 1.,
+            msg=f"train accuracy {train_acc:.4f} below expectation 1.0",
+        )
+        self.assertGreaterEqual(
+            test_acc, V1_CLS_ACC - TOLERANCE,
+            msg=f"v1.2 accuracy {test_acc:.4f} regressed >{TOLERANCE} below v1.1 {V1_CLS_ACC}",
+        )
+
+    def test_shape_and_targets(self):
+        self.assertEqual(self.y_test_pred.shape, self.y_test.shape)
+
+
+
+================================================
+FILE: tests/test_estimator.py
+================================================
+"""TabDPTEstimator init and weight loading, exercised against the real in-repo v1.2 checkpoint."""
+import pytest
+import torch
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    PowerTransformer,
+    QuantileTransformer,
+    RobustScaler,
+    StandardScaler,
 )
-print(accuracy_score(y_test, y_pred))
+
+from tabdpt import TabDPTClassifier
+from tabdpt import estimator
+from tabdpt.estimator import TabDPTEstimator
+from tabdpt.utils import Log1pScaler
+
+from device_utils import pick_device
+
+DEVICE = pick_device()
+
+V12_MAX_FEATURES = 128
+V12_MAX_NUM_CLASSES = 16
+
+
+def build(**kwargs):
+    """Construct a base estimator using the default HF-downloaded weights."""
+    return TabDPTEstimator(mode="cls", device=DEVICE, **kwargs)
+
+
+# --- Real weight loading + init ---
+
+def test_real_v12_load_and_init():
+    """The v1.2 checkpoint loads, exposes the right dims, and populates real tensors."""
+    model = TabDPTClassifier(device=DEVICE)
+    assert model.max_features == V12_MAX_FEATURES
+    assert model.max_num_classes == V12_MAX_NUM_CLASSES
+    assert isinstance(model.scaler, StandardScaler)  # default normalizer
+
+    thinking = model.model.thinking_embed
+    assert thinking.shape[0] == model.model.n_thinking_rows > 0
+    assert torch.isfinite(thinking).all()
+    assert thinking.abs().sum().item() > 0
+
+
+def test_default_downloads_from_hf():
+    est = build()
+    assert est.path.endswith(estimator._MODEL_NAME)
+
+
+# --- Normalizer selection ---
+
+@pytest.mark.parametrize(
+    "normalizer,scaler_cls",
+    [
+        ("standard", StandardScaler),
+        ("minmax", MinMaxScaler),
+        ("robust", RobustScaler),
+        ("power", PowerTransformer),
+        ("quantile-uniform", QuantileTransformer),
+        ("quantile-normal", QuantileTransformer),
+        ("log1p", Log1pScaler),
+        (None, type(None)),
+    ],
+)
+def test_normalizer_selects_scaler(normalizer, scaler_cls):
+    est = build(normalizer=normalizer)
+    assert isinstance(est.scaler, scaler_cls)
+
+
+# --- Invalid args ---
+
+def test_invalid_normalizer_raises():
+    with pytest.raises(ValueError):
+        build(normalizer="not-a-scaler")
+
+
+def test_invalid_feature_reduction_raises():
+    with pytest.raises(AssertionError):
+        build(feature_reduction="bad")
+
+
+def test_invalid_faiss_metric_raises():
+    with pytest.raises(AssertionError):
+        build(faiss_metric="bad")
 
 
 
 ================================================
-FILE: tests/reg_example.py
+FILE: tests/test_inference.py
 ================================================
+"""Integration tests exercising the inference code paths on small synthetic data."""
+import unittest
+
+import numpy as np
+
+from tabdpt import TabDPTClassifier, TabDPTRegressor
+
+from device_utils import pick_device, seed_everything
+
+DEVICE = pick_device()
+N_TRAIN = 60
+N_CLASSES = 3
+
+
+class TestClassifier(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        seed_everything(0)
+        cls.X = np.random.normal(size=(N_TRAIN, 5)).astype(np.float32)
+        cls.y = np.random.randint(0, N_CLASSES, N_TRAIN)
+        cls.model = TabDPTClassifier(device=DEVICE)  # verbose=True covers the tqdm ensemble path
+        cls.model.fit(cls.X, cls.y)
+
+    def test_full_context_probs_sum_to_one(self):
+        p = self.model.predict_proba(self.X, context_size=2048)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+        np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
+
+    def test_retrieval_path(self):
+        p = self.model.predict_proba(self.X, context_size=20)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+        np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
+
+    def test_return_logits(self):
+        logits = self.model.predict_proba(self.X, context_size=2048, return_logits=True)
+        self.assertEqual(logits.shape[0], N_TRAIN)
+        # Generally, rows shouldn't all sum to one - if they do, we're probably returning probabilities instead of logits
+        self.assertFalse(np.allclose(logits.sum(axis=1), 1.0, atol=1e-4))
+
+    def test_single_sample_is_2d(self):
+        p = self.model.predict_proba(self.X[:1], context_size=2048)
+        self.assertEqual(p.shape, (1, N_CLASSES))
+
+    def test_predict_single_and_ensemble(self):
+        single = self.model.predict(self.X, n_ensembles=1, context_size=2048, seed=0)
+        ens = self.model.predict(self.X, n_ensembles=4, context_size=2048, seed=0)
+        for pred in (single, ens):
+            self.assertEqual(pred.shape, (N_TRAIN,))
+            self.assertTrue(set(np.unique(pred)).issubset({0, 1, 2}))
+
+    def test_ensemble_predict_proba_permute_flag(self):
+        for permute in (True, False):
+            p = self.model.ensemble_predict_proba(
+                self.X, n_ensembles=2, context_size=2048, permute_classes=permute, seed=1
+            )
+            self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+            np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
+
+    def test_class_perm(self):
+        p = self.model.predict_proba(self.X, context_size=2048, class_perm=np.array([1, 2, 0]), seed=0)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+        p_noperm = self.model.predict_proba(self.X, context_size=2048, seed=0)
+        np.testing.assert_allclose(p, p_noperm[:, [1, 2, 0]], atol=1e-2)
+
+
+class TestLargeClass(unittest.TestCase):
+    """num_classes > max_num_classes triggers the digit-decomposition path."""
+
+    @classmethod
+    def setUpClass(cls):
+        seed_everything(1)
+        n_classes = 18  # > max_num_classes (16) for the v1.2 weights
+        n_rows = n_classes * 10
+        cls.n_classes = n_classes
+        cls.X = np.random.normal(size=(n_rows, 5)).astype(np.float32)
+        cls.y = np.tile(np.arange(n_classes), n_rows // n_classes)
+        cls.model = TabDPTClassifier(device=DEVICE, verbose=False)
+        cls.model.fit(cls.X, cls.y)
+
+    def test_large_class_probs(self):
+        self.assertGreater(self.model.num_classes, self.model.max_num_classes)
+        p = self.model.predict_proba(self.X, context_size=2048)
+        self.assertEqual(p.shape, (self.X.shape[0], self.n_classes))
+        np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
+
+
+class TestRegressor(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        seed_everything(2)
+        cls.X = np.random.normal(size=(N_TRAIN, 5)).astype(np.float32)
+        cls.y = np.random.normal(size=N_TRAIN).astype(np.float32)
+        cls.model = TabDPTRegressor(device=DEVICE, verbose=False)
+        cls.model.fit(cls.X, cls.y)
+
+    def test_full_context(self):
+        pred = self.model.predict(self.X, n_ensembles=1, context_size=2048)
+        self.assertEqual(pred.shape, (N_TRAIN,))
+
+    def test_retrieval_path(self):
+        pred = self.model.predict(self.X, n_ensembles=1, context_size=20)
+        self.assertEqual(pred.shape, (N_TRAIN,))
+
+    def test_ensemble(self):
+        pred = self.model.predict(self.X, n_ensembles=3, context_size=2048, seed=0)
+        self.assertEqual(pred.shape, (N_TRAIN,))
+        self.assertTrue(np.all(np.isfinite(pred)))
+
+
+class TestEstimatorConfig(unittest.TestCase):
+    """Estimator construction options: feature reduction, missing indicators, faiss metric."""
+
+    def _cls_data(self, n_features, seed=3):
+        seed_everything(seed)
+        X = np.random.normal(size=(N_TRAIN, n_features)).astype(np.float32)
+        y = np.random.randint(0, N_CLASSES, N_TRAIN)
+        return X, y
+
+    def test_feature_reduction_pca(self):
+        X, y = self._cls_data(n_features=140)  # > max_features (128) -> PCA reduction
+        model = TabDPTClassifier(device=DEVICE, feature_reduction="pca", verbose=False)
+        model.fit(X, y)
+        self.assertIsNotNone(model.V)
+        model.to("cpu")  # exercises the V.to(device) branch
+        p = model.predict_proba(X, context_size=2048)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+
+    def test_feature_reduction_subsample(self):
+        X, y = self._cls_data(n_features=140)
+        model = TabDPTClassifier(device=DEVICE, feature_reduction="subsample", verbose=False)
+        model.fit(X, y)
+        p = model.predict_proba(X, context_size=2048, seed=1)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+
+    def test_missing_indicators(self):
+        X, y = self._cls_data(n_features=5)
+        X[::4, 0] = np.nan
+        X[1::5, 2] = np.nan
+        model = TabDPTClassifier(device=DEVICE, missing_indicators=True, verbose=False)
+        model.fit(X, y)
+        p = model.predict_proba(X, context_size=2048)
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+
+    def test_faiss_ip_metric(self):
+        X, y = self._cls_data(n_features=5)
+        model = TabDPTClassifier(device=DEVICE, faiss_metric="ip", verbose=False)
+        model.fit(X, y)
+        p = model.predict_proba(X, context_size=20)  # retrieval -> uses the ip index
+        self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+
+================================================
+FILE: tests/test_reg.py
+================================================
+"""Regression: the v1.2 model (now the default) must match or beat the recorded v1.1 result."""
+import unittest
+
 from sklearn.datasets import fetch_california_housing
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
 from tabdpt import TabDPTRegressor
 
-X, y = fetch_california_housing(return_X_y=True)
-X, y = X[:4096], y[:4096]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+from device_utils import pick_device, seed_everything
 
-model = TabDPTRegressor()
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test, n_ensembles=2, seed=42)
-print(r2_score(y_test, y_pred))
+DEVICE = pick_device()
+
+V1_REG_R2 = 0.85
+TOLERANCE = 5e-2
+TRAIN_MIN_R2 = 0.98
+
+
+class TestRegression(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Setup dataset and the v1.2 model (default weights), then gather predictions."""
+        seed_everything(42)
+        X, y = fetch_california_housing(return_X_y=True)
+        cls.X_train, cls.X_test, cls.y_train, cls.y_test = train_test_split(X[:4096], y[:4096], test_size=0.33, random_state=42)
+
+        cls.base_model = TabDPTRegressor(device=DEVICE)
+        cls.base_model.fit(cls.X_train, cls.y_train)
+
+        cls.y_train_pred = cls.base_model.predict(cls.X_train, seed=42)
+        cls.y_test_pred = cls.base_model.predict(cls.X_test, seed=42)
+
+    def test_accuracy(self):
+        """Train prediction should be near-perfect; v1.2 test R2 should be at least v1.1's."""
+        train_r2 = r2_score(self.y_train, self.y_train_pred)
+        test_r2 = r2_score(self.y_test, self.y_test_pred)
+        print(f"\n[reg] v1.2 test R2 {test_r2:.4f} vs v1.1 {V1_REG_R2:.4f} (delta {test_r2 - V1_REG_R2:+.4f})")
+
+        self.assertGreaterEqual(
+            train_r2, TRAIN_MIN_R2 - TOLERANCE,
+            msg=f"train R2 {train_r2:.4f} is over {TOLERANCE} below expectation {TRAIN_MIN_R2}",
+        )
+        self.assertGreaterEqual(
+            test_r2, V1_REG_R2 - TOLERANCE,
+            msg=f"v1.2 R2 {test_r2:.4f} regressed >{TOLERANCE} below v1.1 {V1_REG_R2}",
+        )
+
+    def test_shape_and_targets(self):
+        self.assertEqual(self.y_test_pred.shape, self.y_test.shape)
 
 
 
 ================================================
-FILE: tests/test_tabdpt_estimator.py
+FILE: tests/test_utils.py
 ================================================
-from unittest.mock import MagicMock, patch
+"""Integration test on utility functions."""
 
-from tabdpt import estimator
+import unittest
+
+import numpy as np
+import torch
+
+from tabdpt.utils import (
+    FAISS,
+    Log1pScaler,
+    clip_outliers,
+    convert_to_torch_tensor,
+    flash_context,
+    generate_random_permutation,
+    maskmean,
+    maskstd,
+    normalize_data,
+    pad_x,
+)
 
 
-@patch("tabdpt.estimator.hf_hub_download", return_value="my/hf/path")
-@patch("tabdpt.estimator.safe_open")
-@patch("tabdpt.estimator.torch.cuda.is_available", return_value=False)
-@patch("tabdpt.estimator.json.loads", return_value={"env": {}})
-@patch("tabdpt.estimator.OmegaConf.create")
-@patch("tabdpt.estimator.TabDPTModel.load", return_value=MagicMock(num_features=10, n_out=2))
-def test_model_weight_path_set_or_download_from_hf(
-    mock_model_load,
-    mock_omega_create,
-    mock_json_loads,
-    mock_cuda_available,
-    mock_safe_open,
-    mock_hf_hub_download,
-):
-    mock_file = MagicMock()
-    mock_file.metadata.return_value = {"cfg": "{}"}
-    mock_file.keys.return_value = ["tensor1"]
-    mock_file.get_tensor.return_value = MagicMock()
-    mock_safe_open.return_value.__enter__.return_value = mock_file
+class TestPermutation(unittest.TestCase):
+    def test_seeded_is_reproducible(self):
+        a = generate_random_permutation(50, seed=7)
+        b = generate_random_permutation(50, seed=7)
+        self.assertTrue(torch.equal(a, b))
+        self.assertEqual(sorted(a.tolist()), list(range(50)))
 
-    # load from local path
-    local_path = "/test/path/model.safetensors"
-    dpt_estimator = estimator.TabDPTEstimator(mode="cls", model_weight_path=local_path)
-    mock_hf_hub_download.assert_not_called()
-    assert dpt_estimator.path == local_path
+    def test_unseeded_length(self):
+        self.assertEqual(generate_random_permutation(10).shape[0], 10)
 
-    # load from hf path
-    dpt_estimator = estimator.TabDPTEstimator(mode="cls")
-    mock_hf_hub_download.assert_called_once_with(
-        repo_id="Layer6/TabDPT",
-        filename=estimator._MODEL_NAME,
-    )
-    assert dpt_estimator.path == "my/hf/path"
+
+class TestFlashContext(unittest.TestCase):
+    def test_non_flash_passthrough(self):
+        class Dummy:
+            use_flash = False
+
+            @flash_context
+            def run(self, x):
+                return x * 2
+
+        self.assertEqual(Dummy().run(3), 6)
+
+
+class TestMaskedStats(unittest.TestCase):
+    def setUp(self):
+        self.x = torch.tensor([[1.0, 2.0], [3.0, 10.0], [5.0, 6.0]])
+        self.mask = torch.tensor([[True, True], [True, False], [True, True]])
+
+    def test_maskmean_ignores_masked(self):
+        mean = maskmean(self.x, self.mask, dim=0)
+        # Column 1 excludes the masked 10.0 -> mean of {2, 6} = 4.
+        self.assertAlmostEqual(mean[0, 0].item(), 3.0, places=5)
+        self.assertAlmostEqual(mean[0, 1].item(), 4.0, places=5)
+
+    def test_maskstd_positive(self):
+        std = maskstd(self.x, self.mask, dim=0)
+        self.assertTrue(torch.all(std > 0))
+
+
+class TestNormalizeData(unittest.TestCase):
+    def test_zero_mean_unit_std(self):
+        data = torch.tensor([[1.0], [2.0], [3.0], [4.0]])
+        out = normalize_data(data)
+        self.assertAlmostEqual(out.mean().item(), 0.0, places=5)
+
+    def test_return_mean_std(self):
+        data = torch.tensor([[1.0], [2.0], [3.0], [4.0]])
+        out, mean, std = normalize_data(data, return_mean_std=True)
+        self.assertEqual(mean.shape, (1, 1))
+        self.assertEqual(std.shape, (1, 1))
+
+    def test_eval_pos_uses_prefix(self):
+        data = torch.tensor([[0.0], [0.0], [100.0]])
+        # Stats computed on the first two rows only, which are 0's, so std collapses to ~1e-6.
+        out = normalize_data(data, eval_pos=2)
+        self.assertGreater(out[2, 0].item(), 1e6)
+
+
+class TestClipOutliers(unittest.TestCase):
+    def test_clips_extreme_value(self):
+        data = torch.cat([torch.zeros(20, 1), torch.tensor([[1000.0]])], dim=0)
+        clipped = clip_outliers(data, n_sigma=4)
+        self.assertLess(clipped.max().item(), 1000.0)
+
+
+class TestConvertToTorch(unittest.TestCase):
+    def test_from_numpy(self):
+        out = convert_to_torch_tensor(np.array([1.0, 2.0]))
+        self.assertTrue(torch.is_tensor(out))
+
+    def test_tensor_passthrough(self):
+        t = torch.tensor([1.0])
+        self.assertIs(convert_to_torch_tensor(t), t)
+
+    def test_invalid_type_raises(self):
+        with self.assertRaises(TypeError):
+            convert_to_torch_tensor([1, 2, 3])
+
+
+class TestPadX(unittest.TestCase):
+    def test_pads_to_num_features(self):
+        out = pad_x(torch.ones(2, 3), num_features=5)
+        self.assertEqual(out.shape, (2, 5))
+        self.assertEqual(out[:, 3:].sum().item(), 0.0)
+
+    def test_none_is_noop(self):
+        x = torch.ones(2, 3)
+        self.assertIs(pad_x(x, None), x)
+
+
+class TestFAISS(unittest.TestCase):
+    def setUp(self):
+        self.X = np.arange(20, dtype=np.float32).reshape(10, 2)
+
+    def test_l2_self_nearest(self):
+        index = FAISS(self.X, metric="l2")
+        idx = index.get_knn_indices(self.X, k=1)
+        self.assertTrue(np.array_equal(idx[:, 0], np.arange(10)))
+
+    def test_ip_metric(self):
+        index = FAISS(self.X, metric="ip")
+        idx = index.get_knn_indices(self.X[:3], k=2)
+        self.assertEqual(idx.shape, (3, 2))
+
+    def test_torch_query(self):
+        index = FAISS(self.X, metric="l2")
+        idx = index.get_knn_indices(torch.from_numpy(self.X), k=1)
+        self.assertEqual(idx.shape, (10, 1))
+
+    def test_invalid_metric_raises(self):
+        with self.assertRaises(ValueError):
+            FAISS(self.X, metric="cosine")
+
+
+class TestLog1pScaler(unittest.TestCase):
+    def test_sign_preserving(self):
+        scaler = Log1pScaler()
+        scaler.fit(np.array([[1.0]]))
+        out = scaler.fit_transform(np.array([[-1.0], [0.0], [np.e - 1]]))
+        self.assertAlmostEqual(out[0, 0], -np.log1p(1.0), places=5)
+        self.assertAlmostEqual(out[1, 0], 0.0, places=5)
+        self.assertAlmostEqual(out[2, 0], 1.0, places=5)
+
+    def test_transform_matches_fit_transform(self):
+        scaler = Log1pScaler()
+        X = np.array([[2.0], [-3.0]])
+        np.testing.assert_allclose(scaler.transform(X), scaler.fit_transform(X))
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 

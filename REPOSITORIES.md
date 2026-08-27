@@ -451,8 +451,10 @@ TabPFN-2.6, TabICL and the published Real-TabPFN-2.5 weights.
   Useful for *contamination checking* — any dataset on this list
   must NOT appear in a held-out evaluation set, or the comparison is
   unfair to TabDPT's competitors.
-* `tests/cls_example.py`, `reg_example.py` — minimum working
-  example.
+* `examples/cls_example.py`, `reg_example.py` — minimum working
+  example. They sat in `tests/` until upstream put a real pytest
+  suite there (`test_cls.py`, `test_reg.py`, `test_estimator.py`,
+  `test_inference.py`), so older notes point at the wrong path.
 
 **When to grep this file:** when implementing the TabDPT
 TabDPT baseline, or when checking that your held-out
@@ -547,13 +549,23 @@ mislabel an unknown architecture as `"base"`), and loading such a
 checkpoint needs `weights_only=False`, because PyTorch ≥ 2.6 rejects the
 embedded pydantic config objects by default.
 
-**v2.6-vs-v3 criterion handling (regressors).** v3's
-`model.forward` takes `test_targets_MB`, so the loader STRIPS the
-`criterion.*` keys and rebuilds the bar-distribution from the model's
-`regression_borders` buffer; v2.6 has no `test_targets_MB`, so the
-loader REQUIRES the `criterion.*` keys. Writing `criterion.*` for regressors
-unconditionally — required by v2.6, harmlessly stripped by v3 — makes a
-saved regressor checkpoint round-trip for both architectures.
+**v2.6-vs-v3 criterion handling (regressors).** The two generations
+store the bar-distribution borders in different places — up to v2.6 as
+`criterion.*` state saved beside the model, from v3 as a
+`regression_borders` buffer on the model itself. The loader no longer
+branches on the architecture at all: it always separates `criterion.*`
+out of the model state, then `_resolve_regression_borders` takes the
+checkpoint's saved borders if they are there, falls back to the buffer,
+and raises if neither is. Writing `criterion.*` for regressors
+unconditionally therefore round-trips for both architectures — and is
+what `save_tabpfn_model` itself does.
+
+Older releases decided the same thing by sniffing `model.forward` for a
+`test_targets_MB` parameter. Upstream has removed it, but **`TabTune.txt`
+still vendors a TabPFN copy that carries both the `test_targets_MB`
+sniff and the vestigial parameter it tests for** — so a checkpoint
+written for current upstream and a checkpoint written for TabTune's
+bundled loader are not interchangeable on this point.
 
 **When to grep this file:** checkpoint names, the 4-key checkpoint
 schema, public API surface, inference-time preprocessing names,
