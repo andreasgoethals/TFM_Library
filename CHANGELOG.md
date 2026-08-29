@@ -4,6 +4,23 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-08-29
+
+- Added **Eo et al. 2026-08 — EXAONE Tabular 1.0** (arXiv 2608.25774), LG AI Research. Attacks
+the row-compression boundary that TabICL/TabICLv2/TabPFN-3 all rely on: its CAST architecture
+interleaves feature-axis and item-axis attention at every layer instead. A 20.8M-parameter model
+ranks **first on TabArena classification** with no tuning and ties Google's 1.64B TabFM at ~1.3%
+of the parameters. Leads CRPS on ScoringBench — the most credit-risk-relevant result here, since
+it measures the whole predictive distribution rather than the conditional mean.
+- Added **Zheng et al. 2025-11 — From Tables to Signals** (arXiv 2511.18278). The first
+frequency-domain account of why TabPFN works: it defines a **context kernel** (the ICL analogue
+of the NTK) and shows TabPFN's effective bandwidth grows with the number of **context rows**,
+where an MLP's is fixed by its architecture. Converges with Nagler's localisation argument and
+Shaheen's retrieval account, and explains why positional encoding was needed to make TabPFN work
+on time series.
+- **New citation convention in `SUMMARIES.md` and `SYNTHESIS.md`:** a reference to another paper
+now carries its **title** alongside the author-year, on first mention in each section, so a
+passage can be read without looking the citation up. Recorded in `AGENTS.md`.
 ## 2026-08-27
 
 Dumps refreshed, and the two code citations the refresh invalidated corrected.

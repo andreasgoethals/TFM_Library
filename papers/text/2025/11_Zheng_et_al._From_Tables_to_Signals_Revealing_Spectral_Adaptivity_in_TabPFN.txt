@@ -1,0 +1,1163 @@
+From Tables to Signals: Revealing Spectral Adaptivity in TabPFN
+Jianqiao Zheng* Cameron Gordon* Yiping Ji Hemanth Saratchandran Simon Lucey
+Australian Institute for Machine Learning
+University of Adelaide
+{first.last}@adelaide.edu.au
+*Equal contribution
+Abstract
+Task-agnostic tabular foundation models such as
+TabPFN have achieved impressive performance on tabular
+learning tasks, yet the origins of their inductive biases re-
+main poorly understood. In this work, we study TabPFN
+through the lens of signal reconstruction and provide the
+first frequency-based analysis of its in-context learning be-
+havior. We show that TabPFN possesses a broader effective
+frequency capacity than standard ReLU-MLPs, even with-
+out hyperparameter tuning. Moreover, unlike MLPs whose
+spectra evolve primarily over training epochs, we find that
+TabPFN’s spectral capacity adapts directly to the number of
+samples provided in-context, a phenomenon we termSpec-
+tral Adaptivity. We further demonstrate that positional en-
+coding modulates TabPFN’s frequency response, mirroring
+classical results in implicit neural representations. Finally,
+we show that these properties enable TabPFN to perform
+training-free and hyperparameter-free image denoising, il-
+lustrating its potential as a task-agnostic implicit model.
+Our analysis provides new insight into the structure and in-
+ductive biases of tabular foundation models and highlights
+their promise for broader signal reconstruction tasks.
+1. Introduction
+Task agnostic in-context learning approaches - of which
+TabPFN is a leading example - have recently revolutionized
+tabular machine learning [24, 24]. These Prior Fitted Net-
+works (PFNs) trained on synthetic data are found to have
+strong performance without the need for selecting induc-
+tive biases [20, 21, 31]. However, the properties of tabular
+foundation models are still not well understood - with most
+works currently treating them as a highly effective but mys-
+terious black-box. In parallel, over the last decade implicit
+neural representations (INRs) have revolutionized the field
+of machine learning [57]. INRs seek to reconstruct signals
+implicitly through the trained weights of a neural network
+T abPFN
+0.2× Nyquist
+ 1.0× Nyquist
+ 8× Nyquist
+ReLU
+ReLU+PE
+Figure 1. Signal reconstruction results at various sampling rates
+(columns) using TabPFN, ReLU-MLPs, and ReLU-MLPs with
+positional encoding (PE). ReLU-MLPs fail to reconstruct high-
+frequency components regardless of the amount of data provided,
+indicating that their spectrum is essentially insensitive to the num-
+ber of samples. Positional encoding methods can extend their
+high-frequency capacity; however, hyperparameters tuned for one
+sampling rate (rightmost column) may cause unstable and noisy
+reconstructions at other sampling rates (leftmost column), requir-
+ing careful task-specific selection. In contrast, we find that the
+spectral capacity of TabPFN naturally adapts to the number of con-
+text samples—a phenomenon we refer to asSpectral Adaptivity.
+[57]. As they can be used to approximately reconstruct a
+fixedexplicitsignal - such as a 1D signal or 2D image -
+they act as a useful test bed for understanding the theoret-
+ical inductive priors within neural networks, architectures,
+and optimizers [46, 47]. By examining tabular foundation
+models through this lens we can demonstrate that in con-
+trast to ReLU-MLPs whose spectral properties evolve dur-
+ing the course of gradient descent [38], TabPFN has a spec-
+tral bias that is controlled with the number ofsamplespro-
+vided to the in-context window. We show that - similar to
+work in implicit neural representations - that the inductive
+biases found in in-context models can be controlled with ap-
+propriate positional encoding. In this paper, we propose to
+1
+arXiv:2511.18278v1  [cs.LG]  23 Nov 2025
+
+provide a partial explanatory lens to TabPFN by examining
+these models through a signal reconstruction lens - bridging
+results with rapidly developing theoretical understanding in
+the properties of implicit neural representations.
+Our paper has two audiences: the first is the tabular ma-
+chine learning community, who may benefit from the bridge
+to theoretical tools for understanding the learning properties
+of tabular foundation models. Secondly, within the implicit
+neural representation community, it is often underappreci-
+ated that different signal domains necessitate models with
+specifically manipulated inductive biases to perform opti-
+mally. This involves an onerous, domain-specific search
+over architecture, hyperparameter, and optimizer configu-
+rations in order to achieve strong performance highlight-
+ing that no single ‘one-size-fits-all’ model exists [26]. For
+those we wish to highlight the potential for task-agnostic
+in-context models to be performant for signal reconstruc-
+tion tasks without hyperparameter tuning. While the current
+context limitations of models render large implicit neural
+tasks - such as Neural Radiance Fields [30] - infeasible at
+the current time, we believe this path will be one of grow-
+ing importance as research to overcome the limitations of
+context windows continues its rapid development [18, 50].
+Our contributions include:
+1. We apply frequency-based signal analysis to examine
+the in-context learning behavior of TabPFN. Similar to
+ReLU-MLPs, we show that TabPFN exhibits a bias to-
+ward predicting low-frequency components, and that po-
+sitional encoding can partially alleviate this bias.
+2. Unlike MLPs, we find that the spectral capacity of
+TabPFN naturally adapts to the number of context sam-
+ple, a phenomenon we refer to asSpectral Adaptivity.
+3. We show that TabPFN can be applied directly with-
+out fine-tuning to signal reconstruction tasks, enabling
+training-free and hyperparameter-free image denoising.
+Paper overview: Section 3 develops our theoretical
+framework, introducing the context kernel and formalising
+spectral adaptivity for in-context models. Section 4 then
+explores an expository 1D signal-reconstruction task as mi-
+croscope to examine TabPFN’s inductive biases, contrasting
+it with ReLU-MLPs. Section 5 lifts this lens to a 2D in-
+verse problem, building a training-free TabPFN pipeline for
+denoising and comparing it against standard INR baselines.
+Section 6 examines how positional encodings can act as fre-
+quency “dials” for TabPFN enabling it to learn higher fre-
+quency details with fewer samples - a result which provides
+insight to a recent methodological trend showing that po-
+sitional encoding is required to use TabPFN for time-series
+data [22]), and Section 7 concludes with limitations and im-
+plications for future tabular and vision applications.
+2. Related Work
+2.1. In-Context Tabular Learning
+In-Context Learning (ICL) has been emerged as a key
+paradigm in which models perform tasks by analyzing
+prompts containing input-output pairs, without explicit
+training or parameter updates [3, 8, 35, 56]. Recently,
+TabPFN - a family of in-context models that apply a trans-
+former trained to approximate posterior predictive distribu-
+tions over synthetic tasks - has emerged as the leading tab-
+ular foundational model for small datasets [10, 18, 20, 21,
+24, 31]. These models have been applied to multiple tasks
+including time-series modeling [22], reinforcement learn-
+ing [49], traffic forecasting [25], and medical data analysis
+[54]. Intriguingly, TabPFN has shown a remarkable ability
+to transfer without fine-tuning to new domains with prop-
+erly encoded data. For example, [9, 19] find that TabPFN
+is able to solve graph problems formulated in a tabular for-
+mat. In some cases, such as for time-series data, this has
+required the positional encoding or Fourier domain conver-
+sion of certain features for strong performance [5, 22, 25].
+The practical utility of TabPFN has meant that there is
+significant interest in understanding its properties beyond a
+black-box. However, to date there are only a papers explor-
+ing its properties. For example, by exploring the decision-
+boundaries in input spaces [28], the statistical properties of
+Prior-Fitted Networks [32], robustness to noise injection or
+corrupted data [33, 36], or by examining how heterogeneity
+is handled [60]. In addition, there is significant interest in
+scaling to larger context windows, either through architec-
+tural modification [18, 21, 37], data reduction [13, 14, 27],
+or tiling and hierarchical inference strategies [50, 60].
+2.2. Signal Reconstruction
+Signal reconstruction is a core problem in vision and signal
+processing. The Shannon–Nyquist theorem [34, 51] states
+that a band-limited function with maximum frequencyωis
+fully determined by samples taken at rate2ω. While this
+bound describes the worst-case sampling requirements for
+broadband signals, additional structure - such as sparsity
+or smoothness - can enable accurate recovery from sub-
+stantially fewer samples [4]. INRs build on this princi-
+ple of domain-agnostic approximation by parameterizing
+a continuous signal as a coordinate-based neural network
+[11, 29, 52, 57]. This framework has transformed several
+areas of computer vision: for instance, NeRF methods treat
+radiance fields as continuous functions and achieve high-
+quality novel-view synthesis from sparse observations [16,
+30]. In scientific machine learning, Physics-Informed Neu-
+ral Networks (PINNs) extend this idea by embedding physi-
+cal constraints directly into the coordinate-based model, en-
+abling reliable reconstruction of solution fields even with
+extremely limited measurements [40, 43]. A growing body
+2
+
+0 0.5
+0.03 0.7
+0.97 0.3
+1 0.5
+0.2
+0.4
+0.79
+0.03
+TabPFN(            ,    ) 
+Figure 2. Recasting 1-D signal as tabular dataset. By representing
+sampled points(x i, yi)as rows of a table, TabPFN can be applied
+to signal reconstruction: the model predictsˆyfor query inputs(ˆx)
+in a single forward pass. Framing signals as tabular data enables
+analysis of TabPFN from a signal reconstruction perspective.
+of theoretical work seeks to explain why INRs are effective
+signal models - connecting activation functions, curvature
+constraints, sampling behavior, and invertibility to the types
+of frequencies a network can represent [7, 46–48]. These
+analyses provide a principled lens for understanding how
+neural architectures implicitly shape the reconstruction of
+continuous signals. We adopt this reconstruction viewpoint
+for TabPFN. By recasting signals as tabular datasets and
+analyzing TabPFN through a sampling-theoretic lens, we
+connect its in-context learning behavior to the rapidly de-
+veloping theory behind INRs and reveal how its frequency
+response adapts to the number of context samples.
+2.3. Spectral Bias in Neural Networks
+Neural networks are known to exhibit a simplicity or spec-
+tral bias: they tend to fit low-complexity, low-frequency
+structure before high-frequency detail [2, 6, 15]. This has
+been demonstrated both empirically [1, 59] and supported
+theoretically via Fourier analysis for both ReLU [38] and
+sigmoid MLPs [58]. Related work on coordinate-based
+INRs [42] shows that increasing network bandwidth can
+suppress low frequencies unless explicit priors (e.g., acti-
+vation choices) are provided. Additionally, positional en-
+codings have been analyzed from a frequency-domain per-
+spective to reveal how they shape learned spectral content
+[61]. Despite this growing literature, the spectral behaviour
+of tabular foundation models remains largely unexplored.
+Our work helps to address this gap.
+3. Spectral Properties of TabPFN
+In this section, we aim to theoretically compare the fre-
+quency response characteristics of optimization-based mod-
+els (e.g., ReLU-MLPs) and in-context learning models
+(e.g., TabPFN). Building upon the concepts of Neural Tan-
+gent Kernel (NTK) and spectral bias for optimization-based
+models, we introduce the notions ofcontext kerneland
+spectral adaptivityto describe in-context learning models.
+3.1. Problem Setup
+For simplicity, we consider a 1-D signal representation
+problem. Let the ground-truth function bey=a(x), x∈
+[0,1], and let the training dataset beD N ={(x i, yi)}N
+i=1.
+Our goal is to learn a model that approximates this function.
+Performance is evaluated using the mean squared error on
+a set of test (or query) pointsq j. Fig. 2 illustrates how an
+in-context learning model addresses this problem.
+3.2. Preliminaries: Spectral Bias of ReLU-MLPs
+To address the 1-D signal representation problem using a
+ReLU-MLP modelf(x;θ)trained via gradient descent, the
+standard objective isL(θ)= 1
+N
+PN
+i=1 ∥f(x i;θ)−y i∥2 Un-
+der the assumptions of the NTK regime [23], the training
+dynamics can be approximated by kernel regression. The
+Neural Tangent Kernel (NTK) is defined as
+KNTK =
+
+∇θf(X;θ)
+⊤
+∇θf(X;θ).(1)
+Let the eigenvalue decomposition beK=QΛQ ⊤. Then,
+the evolution of the function during training can be ex-
+pressed as
+ft(x) =
+X
+k
+
+1−e −λkt
+bk ϕk(x),(2)
+whereλ k are the eigenvalues of the NTK, typically corre-
+sponding to thek-th frequency componentϕ k(x), andtde-
+notes the training epoch. During training, ReLU-MLPs tend
+to fit low-frequency components first and progressively cap-
+ture higher-frequency details as optimization proceeds.
+Remark 1(Spectral Bias [38]).The spectral bias of ReLU-
+MLPs arises from both the parameterization and the opti-
+mization process. Given a fixed model architecture, initial-
+ization, and optimizer, the number of training epochs effec-
+tively governs the evolution of this spectral bias.
+3.3. Spectral Bias of ReLU-MLPs is Data Agnostic
+The NTK is an intrinsic property of a model that depends
+on its architecture (e.g., number of layers, width, skip con-
+nections, batch normalization) and initialization, as it is de-
+termined by the model’s gradients with respect to its param-
+eters [17, 23]. We refer to these factors collectively as the
+parameterizationin Remark 1.
+While it is well known that the spectral bias of
+ReLU-MLPs evolves with training epochs, relatively few
+works [55] have emphasized that this spectral bias is largely
+3
+
+1 32Eigen-index (k)
+10 7
+100Normalized eigenvalue
+Empirical NTK eigenvalues
+Depth
+1
+3
+5
+# samples
+64
+512
+4096
+Figure 3. Normalized eigenvalue spectra of the empirical NTKs
+for ReLU-MLPs of varying depths, evaluated with 64, 512, and
+4096 training samples. Across different sampling densities, the
+eigenvalue decay profiles remain unchanged, whereas network
+depth induces clear separations between curves. This demon-
+strates that NTK spectral properties are determined by the model
+architecture and are agnostic to the number of training samples.
+independent of the number of training samples. Although
+the NTK is computed from the training samples, it serves
+only as a discrete approximation of an underlying continu-
+ous kernel. Increasing the number of samples merely refines
+this approximation; it does not alter the intrinsic spectrum
+of the NTK, which ultimately governs the spectral bias.
+This observation leads to the following proposition.
+Proposition 1(Data-Agnostic Spectral Bias in
+ReLU-MLPs).For a ReLU-MLP with fixed architec-
+ture and initialization, the spectral distribution of its NTK,
+and consequently its spectral bias, remains invariant with
+respect to the number of training samplesN.
+As an empirical validation, in Fig. 3, we plot the eigen-
+value spectra of NTKs for MLPs with 1, 3, and 5 layers,
+computed fromN=64,512, and4096equally spaced sam-
+ples in[0,1]. We observe that deeper MLPs exhibit distinct
+spectral profiles, while varying the number of training sam-
+ples leaves the spectrum essentially unchanged.
+3.4. Preliminaries: In-Context Learning Model
+In-context learning (ICL) models, such as TabPFN [20],
+typically employ a Transformer-based architecture. Dur-
+ing pretraining, the model is exposed to a large number of
+synthetic tasks with known target functions, allowing it to
+learn a shared prior over the underlying data-generating pro-
+cesses. The pretraining objective is to predict the output for
+a new queryx ∗ given a small context setC={(x i, yi)}N
+i=1:
+min
+θ
+Ep(C,x∗,y∗)
+
+−logp θ(y∗ |x ∗,C)
+
+.
+Once pretrained, the model parameters are fixed, and the
+model can be viewed as a functiong(q;D)that performs
+1 4095Eigen-index (k)
+10 7
+100Normalized eigenvalue
+Empirical context kernel eigenvalues
+# samples
+64
+128
+256
+512
+1024
+2048
+4096
+Figure 4. Eigenvalue decay profiles of the empirical context ker-
+nel for TabPFN across multiple sampling densities. The spectra
+clearly depend on the number of samples: higher sampling densi-
+ties result in larger effective ranks and slower eigenvalue decay.
+This behavior contrasts with the sample-invariance observed in
+NTK spectra of classical MLPs, highlighting the sample-adaptive
+nature of the TabPFN context kernel.
+in-context inference. Given a new context setD, the model
+predicts outputs for query pointsqvia a single forward pass
+through the Transformer, without any gradient updates.
+3.5. Context Kernel & Spectral Adaptivity
+In-context learning (ICL) models predict query outputsq i
+through a single forward pass, without gradient-based pa-
+rameter updates. Hence, computing the Neural Tangent
+Kernel (NTK), which relies on derivatives with respect
+to model parameters, is not meaningful for these models.
+However, the NTK conceptually measures how model pre-
+dictions change in response to variations in training labels,
+mediated via network weights. Following this intuition, we
+define an analogous quantity for ICL models that directly
+captures the sensitivity of query outputs to context labels.
+Definition 1(Context Kernel).Given an in-context learn-
+ing (ICL) modelg: (X q,X c,y c)7→ ˆyq, we define itscon-
+text kernelas the Jacobian of the predicted query outputs
+with respect to the context labels:
+Kcontext := ∂g(X q;X c,y c)
+∂yc
+∈R M×N ,(3)
+whereM=|X q|is the number of query points andN=|X c|
+is the number of context points.
+The exact form ofK context is generally intractable.
+However, intuition can be gained from a single-layer atten-
+tion block. Let the Transformer compute query outputs as
+ˆyq =softmax
+ QqK⊤
+c√
+d
+
+yc,(4)
+4
+
+whereQ q=XqWQ,K c=XcWK. The context kernel can
+be approximated as
+Kcontext = ∂ ˆyq
+∂yc
+=softmax
+ QqK⊤
+c√
+d
+
+.(5)
+Unlike ReLU-based MLPs, whose NTK remains fixed
+after initialization, the Transformer’s attention mechanism
+induces an input-dependentK context, which varies with the
+similarity structure and number of context samplesN.
+Proposition 2.The context kernelK context of an ICL
+model, defined as the Jacobian of the predicted output with
+respect to the context labels, depends on the number of con-
+text samplesN. AsNincreases, its spectrum becomes pro-
+gressively flatter and approaches the identity:
+lim
+N→∞
+Kcontext = ∂g(X;X,y)
+∂y →I.(6)
+To emperically validate this, in Fig. 4, we plot the eigen-
+value spectra of context kernels for TabPFN computed from
+N= 64,512, and4096equally spaced samples in[0,1].
+We observe that the spectrum flattens asNincreases, in
+contrast to the near sample-invariance observed for NTKs
+of ReLU MLPs.
+Remark 2(Spectral Adaptivity).The frequency response
+of an in-context learning model (e.g., TabPFN) depends on
+both its parameterization and the number of context sam-
+ples. Given a fixed pretrained model, increasing the num-
+ber of context samples expands its range of representable
+frequencies. With few samples, the model captures only low-
+frequency components; with more samples, it can represent
+higher-frequency components. We refer to this phenomenon
+asspectral adaptivity.
+4. Synthetic Experiments
+In this section, we use controlled synthetic experiments to
+analyse the spectral behaviour of TabPFN and ReLU MLPs,
+and to validate the proposed concept ofspectral adaptiv-
+ity. Specifically, we study how their frequency responses
+evolve under varying numbers of training epochs (spectral
+bias) and sample densities (spectral adaptivity). We define
+the target function as
+y= sin(2πkx+φ),(7)
+where the frequencykis geometrically sampled between
+0.5and20, and the phaseφis uniformly sampled in[0,2π].
+We compare TabPFN v2 against MLPs with1,3, and5hid-
+den layers of width128, trained using the Adam optimiser
+with a learning rate of3×10 −3 and no weight decay. The
+output magnitude at each frequency component is reported
+as thespectral gain.
+Algorithm 1TabPFN Patch Denoising
+Require:Noisy imageI, patch sizeP
+Ensure:Denoised image ˆI
+1: ˆIdenoised ←0
+2:for allpatchesI patch do
+3:foreach channelch∈R, G, Bdo
+4:y noisy ←pixel values ofI patch, ch
+5:Initialize TabPFN regressorf
+6:Fitfon(X coords, ynoisy)
+7:Predict denoisedˆy=f(X coords)
+8: ˆIdenoised, patch, ch =ˆy
+9:end for
+10:end for
+11:return ˆIDenoised
+4.1. Varying Number of Epochs
+We first examine the effect of optimisation steps on the
+spectral behaviour of ReLU MLPs and TabPFN. Here,256
+training samples are uniformly spaced between0and1, and
+2048test samples are used for evaluation. TabPFN does not
+involve gradient-based optimisation, so its result directly re-
+flects its inherent spectral capacity, independent of training
+epochs. MLPs are trained for100,300,1000,3000, and
+10000epochs. As shown in Fig. 5, the frequency responses
+of MLPs gradually evolve with training, confirming their
+training-dependentspectral bias. The spectral response of
+TabPFN is comparable to that of a well-trained deep MLP.
+4.2. Varying Number of Training Samples
+We next vary the number of training samples from256to
+8192, uniformly sampled from[0,1], and evaluate on16384
+test points. All MLPs are trained for1000epochs. As
+shown in Fig. 6, the spectral response of TabPFN contin-
+ues to evolve as the number of training points increases,
+exhibiting stronger responses to higher frequencies as the
+sampling density increases. This stands in stark contrast
+to MLPs, whose spectral responses remain effectively un-
+changed. These results empirically validate our theoreti-
+cal claim that in-context learning models possessspectral
+adaptivity: their effective spectral bandwidth expands with
+the number of in-context samples.
+5. TabPFN for Image Denoising
+We adapt the image denoising pipeline from [45] to test
+TabPFN performance on a common signal reconstruction
+task. The denoising pipeline involves using a full set of
+training coordinatesxwith labels corrupted by measure-
+ment noiseˆy=y+ϵ. When trained under an implicit
+neural network the objective is to minimize the loss:
+L=∥f θ(x)−ˆy∥(8)
+5
+
+100 101
+Frequency
+0
+1Spectral Gain
+T abPFN vs Depth-1 MLP 
+100 101
+Frequency
+0
+1Spectral Gain
+T abPFN vs Depth-3 MLP 
+100 101
+Frequency
+0
+1Spectral Gain
+T abPFN vs Depth-5 MLP 
+T abPFN        MLP depth: 1 3 5 100 ep 300 ep 1k ep 3k ep 10k ep    MLP training epochs
+Figure 5. Spectral gain curves for TabPFN and ReLU MLPs with 1, 3, and 5 layers, evaluated across different training epochs. Each
+coloured curve corresponds to an MLP trained for a different number of epochs, illustrating how higher frequencies are learned progres-
+sively later during optimisation - a phenomenon commonly referred to as spectral bias. The black curve shows TabPFN’s spectral response,
+which already matches that of a well-trained deep MLP.
+4 16 64 256 1024 40968192
+Training samples
+1
+8
+64Frequency
+ReLU-MLP (Depth 1) 
+4 16 64 256 1024 40968192
+Training samples
+1
+8
+64Frequency
+ReLU-MLP (Depth 3) 
+4 16 64 256 1024 40968192
+Training samples
+1
+8
+64Frequency
+ReLU-MLP (Depth 5) 
+4 16 64 256 1024 40968192
+Training samples
+1
+8
+64Frequency
+T abPFN 
+0.2 0.4 0.6 0.8 1.0
+Spectral GainNyquist sampling rate
+Figure 6. Spectral gain heatmaps for TabPFN and ReLU MLPs with 1, 3, and 5 layers, evaluated across different number of training
+samples. Darker regions indicate higher spectral gain (successful reconstruction). The red dashed line denotes the Nyquist sampling limit,
+above which no method can theoretically recover frequencies. The spectrum of MLPs does not change with the number of samples, except
+for low-frequency regions truncated by the Nyquist limit. In contrast, TabPFN continues to recover higher frequencies as the number of
+samples increases, demonstrating its spectral adaptivity.
+As perfect reconstruction including the additive noise is
+not desired, this acts as a test for the implicit regulariza-
+tion, inductive biases, and signal filtering behavior of dif-
+ferent network types. We want to compare how TabPFN
+would perform under this scenario. We choose a (678,
+1020, 3) target image from the WIRE test [45]. As the total
+number of pixels exceeds TabPFNv2’s maximum context
+window, we employ a patching strategy described in Al-
+gorithm 1 which and predict TabPFN separately for each
+set of coordinates and channel. Similar chunking strate-
+gies have recently been employed to extend TabPFN be-
+yond its context window for tabular tasks [50]. For our pur-
+poses, this reflects an in-context forward pass for the tuple
+(xpatch,ˆy;xpatch) where the test and train data is the same.
+Note that no model training is occurring - the model re-
+mains fixed across the patches. In contrast, a single implicit
+neural representation would not be able to employ a similar
+patching strategy without costly retraining on each individ-
+ual patch - or employing potentially dozens or hundreds of
+patch-specific models in a kiloNeRF style voxelization [44].
+Fig. 7 shows the qualitative results of the denoising. We
+can note that despite operating wholly through in-context
+predictions that TabPFN denoises favourably when com-
+pared to leading implicit neural representations including
+WIRE [45], MFN [12], Gaussian activated networks [41],
+and RELU+Positional Encoding learned through gradient
+descent. In addition, we can note that TabPFN does not sim-
+ply act as a naive low-pass filter - while it shows a spectral
+bias towards low-pass frequencies it still learns high fre-
+quency components, through its sampling consistent with
+our theoretical discussion.
+6. TabPFN with Positional Encoding
+Positional encodings (e.g., Random Fourier Features [39])
+are widely used in implicit neural representations (INRs)
+to enrich the spectral expressivity of ReLU-MLPs [42, 53].
+Here, we investigate how positional encodings influence
+6
+
+RELU
+PSNR: 22.60 dB
+GAUSS
+PSNR: 25.16 dB
+RELU + PE
+PSNR: 27.05 dB
+(a) ReLU (b) Gaussian Activation [41] (c) ReLU+PE
+MFN
+PSNR: 28.38 dB
+WIRE
+PSNR: 29.48 dB
+TABPFN
+PSNR: 31.70 dB
+(d) MFN [12] (e) WIRE [45] (f) TabPFNv2 [21]
+Figure 7. Comparison of neural implicit image reconstruction across common activation functions and architectures. Each subplot shows
+the reconstructed image of an example scene corrupted with noise. For each method, the top-right inset displays a spatial zoom highlighting
+local texture fidelity, and the bottom-right inset shows the log-magnitude 2D Fourier spectrum, revealing frequency content captured by
+the model. PSNR values (dB) are reported below each image. Overall, WIRE and TabPFNv2 recover sharper spatial details and preserve
+higher-frequency components, while ReLU variants exhibit pronounced low-frequency smoothing without positional encoding.
+T abPFN
+0.75× Nyquist
+ 1.0× Nyquist
+ 2.0× Nyquist
+ 8.0× Nyquist
+Ground Truth
+Reconstruction
+0.0 0.2 0.4 0.6 0.8 1.0
+T abPFN + RFF
+0.0 0.2 0.4 0.6 0.8 1.0
+ 0.0 0.2 0.4 0.6 0.8 1.0
+ 0.0 0.2 0.4 0.6 0.8 1.0
+Figure 8. 1D signal reconstruction across sampling rates. Top: TabPFN using raw coordinate inputs. Bottom: TabPFN with Random
+Fourier Feature positional encoding. As sampling density increases, TabPFN progressively recovers higher-frequency content. Fourier
+Features substantially improves reconstruction for sampling below the Shannon-Nyquist limit (2fwherefis the maximum frequency).
+the spectral behavior of TabPFN. We begin with a 1D
+curve-fitting experiment using several types of positional
+encodings. We evaluate models under sampling densi-
+ties both below and above the Shannon-Nyquist rate. As
+shown in Fig. 8, positional encodings substantially improve
+the approximation quality when the sampling rate is be-
+low Nyquist. Next, we apply Random Fourier Feature
+(RFF) encodings with varying bandwidths, which modu-
+late the effective input frequency content. As illustrated in
+Fig. 9, increasing the encoding scale systematically shifts
+TabPFN’s frequency response: larger bandwidths amplify
+high-frequency components and reduce the number of sam-
+ples required to recover fine-scale details. This demon-
+strates that TabPFN’s spectral adaptivity can be further ad-
+7
+
+4 16 64 256 1024 4096
+Training samples
+1
+8
+64Frequency
+T abPFN (no PE) 
+4 16 64 256 1024 4096
+Training samples
+1
+8
+64Frequency
+T abPFN (with PE scale=0.1) 
+4 16 64 256 1024 4096
+Training samples
+1
+8
+64Frequency
+T abPFN (with PE scale=0.3) 
+4 16 64 256 1024 4096
+Training samples
+1
+8
+64Frequency
+T abPFN (with PE scale=1.0) 
+0.2 0.4 0.6 0.8 1.0
+Spectral GainNyquist sampling rate
+Figure 9. Effect of RFF positional encodings on TabPFN’s spectral behaviour. Increasing the encoding scale enables TabPFN to recover
+progressively higher frequencies using fewer samples. Low-scale encodings yield mild improvements over the no-PE baseline, whereas
+medium- and high-scale encodings substantially expand the recoverable bandwidth. These results demonstrate that RFF encodings modu-
+late TabPFN’s inductive bias and further enhance its spectral adaptivity.
+101 102 103 104
+Training samples
+0
+10
+20
+30
+40
+50
+60Frequency
+T abPFN v2
+T abPFN v2.5
+T abPFN v2 (rff scale=0.1)
+T abPFN v2 (rff scale=1.0)
+Figure 10. Frequency capacity of TabPFN under varying num-
+bers of training samples. We report the highest recoverable fre-
+quency (the first frequency with spectral gain≤0.95) for TabPFN
+v2, TabPFN v2.5, and TabPFN v2 augmented with RFF positional
+encodings of different bandwidths. Spectral adaptivity, where re-
+coverable frequency increases with sampling density, emerges as a
+general property of TabPFN-based in-context learning, and can be
+tuned through different pretraining strategies and input encodings.
+justed through input-encoding design, analogous to fre-
+quency modulation techniques used in coordinate-based
+networks. Finally, Fig. 10 plots the recoverable frequency
+versus the number of training samples. We additionally use
+this experiment to test the recently released TabPFNv2.5
+[18] We observe that: (a) different pretrained TabPFN mod-
+els (v2 and v2.5) exhibit distinct levels of spectral adap-
+tivity, but both show the sample-based adaption consistent
+with our analysis; (b) different input frequency encoding
+scales can induce different spectral profiles; and (c) for
+a fixed parametrization, the recoverable frequency consis-
+tently increases with the number of samples. These results
+collectively highlight spectral adaptivity as a common at-
+tribute of TabPFN-based in-context learning.
+7. Conclusion and Limitations
+This work reframes TabPFN as a model whose inductive
+bias is not fixed by its architecture, but is instead shaped by
+the data provided in-context. Through the lens of the con-
+text kernel, we show that TabPFN exhibitsspectral adap-
+tivity- its effective bandwidth expands as the sampling den-
+sity of the prompt increases. This is in contrast to the
+architecture-governed spectral behavior of ReLU MLPs and
+INRs, whose frequency profiles remain largely unchanged
+once the model is specified. Across 1D reconstruction
+and image denoising, we find that TabPFN can recover in-
+creasingly high-frequency structure without iterative opti-
+mization, and that positional encodings serve as predictable
+mechanisms for steering its frequency response.
+Our analysis inherits several limitations of the underly-
+ing model. TabPFN and related PFNs remain constrained
+by context-window size and input dimensionality [18, 37],
+which limits the spatial resolution and signal complexity of
+the vision tasks we can evaluate. The patching strategy used
+in our 2D experiments, while effective, introduces blend-
+ing artefacts that are absent in globally trained INRs. Fur-
+thermore, our context-kernel interpretation relies on a lo-
+cal linearization of a nonlinear transformer, leaving open
+how spectral adaptivity emerges from full attention dynam-
+ics and the structure of the pretraining distribution.
+Even so, the adaptive-spectral perspective suggests a
+broader design space for in-context models. If spectral be-
+havior can be influenced by context geometry, positional
+encodings, and synthetic pretraining tasks - not solely by
+model architecture - then PFNs offer a path toward training-
+8
+
+free signal models whose inductive biases evolve with the
+data they are given. Extending this idea to larger contexts,
+multi-scale visual signals, and temporally evolving prompts
+may connect tabular foundation models with implicit neural
+representations in a way that enables fast, adaptive recon-
+struction without gradient descent.
+Acknowledgments
+This research publication was supported in part by the
+CommBank Centre for Foundational AI Research.
+References
+[1] Devansh Arpit, Stanisław Jastrz˛ ebski, Nicolas Ballas, David
+Krueger, Emmanuel Bengio, Maxinder S. Kanwal, Tegan
+Maharaj, Asja Fischer, Aaron Courville, Yoshua Bengio, and
+Simon Lacoste-Julien. A closer look at memorization in deep
+networks. InProceedings of the 34th International Confer-
+ence on Machine Learning, pages 233–242. PMLR, 2017.
+3
+[2] Ronen Basri, Meirav Galun, Amnon Geifman, David Jacobs,
+Yoni Kasten, and Shira Kritchman. Frequency bias in neural
+networks for input of non-uniform density. InProceedings
+of the 37th International Conference on Machine Learning,
+pages 685–694. PMLR, 2020. 3
+[3] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Sub-
+biah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakan-
+tan, Pranav Shyam, Girish Sastry, Amanda Askell, Sand-
+hini Agarwal, Ariel Herbert-V oss, Gretchen Krueger, Tom
+Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler,
+Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric
+Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack
+Clark, Christopher Berner, Sam McCandlish, Alec Radford,
+Ilya Sutskever, and Dario Amodei. Language models are
+few-shot learners. InAdvances in Neural Information Pro-
+cessing Systems, pages 1877–1901. Curran Associates, Inc.,
+2020. 2
+[4] Steven L Brunton and J Nathan Kutz.Data-driven science
+and engineering: Machine learning, dynamical systems, and
+control. Cambridge University Press, 2022. 2
+[5] Sibo Cai, Xi Sun, and Hui Zhong. Explore the time series
+forecasting potential of tabpfn leveraging the intrinsic peri-
+odicity of data. In1st ICML Workshop on Foundation Mod-
+els for Structured Data. 2
+[6] Yuan Cao, Zhiying Fang, Yue Wu, Ding-Xuan Zhou, and
+Quanquan Gu. Towards understanding the spectral bias of
+deep learning, 2020. 3
+[7] Shin-Fang Chng, Ravi Garg, Hemanth Saratchandran, and
+Simon Lucey. Invertible neural warp for nerf. InEuropean
+Conference on Computer Vision, pages 405–421. Springer,
+2024. 3
+[8] Qingxiu Dong, Lei Li, Damai Dai, Ce Zheng, Jingyuan Ma,
+Rui Li, Heming Xia, Jingjing Xu, Zhiyong Wu, Tianyu Liu,
+Baobao Chang, Xu Sun, Lei Li, and Zhifang Sui. A survey
+on in-context learning, 2024. 2
+[9] Dmitry Eremeev, Gleb Bazhenov, Oleg Platonov, Artem
+Babenko, and Liudmila Prokhorenkova. Turning tabular
+foundation models into graph foundation models, 2025. 2
+[10] Nick Erickson, Lennart Purucker, Andrej Tschalzev, David
+Holzmüller, Prateek Mutalik Desai, David Salinas, and
+Frank Hutter. Tabarena: A living benchmark for machine
+learning on tabular data.arXiv preprint arXiv:2506.16791,
+2025. 2
+[11] Amer Essakine, Yanqi Cheng, Chun-Wun Cheng, Lipei
+Zhang, Zhongying Deng, Lei Zhu, Carola-Bibiane Schön-
+lieb, and Angelica I Aviles-Rivero. Where do we stand with
+implicit neural representations? a technical and performance
+survey, 2025. 2
+[12] Rizal Fathony, Anit Kumar Sahu, Devin Willmott, and J Zico
+Kolter. Multiplicative filter networks. InInternational Con-
+ference on Learning Representations, 2021. 6, 7
+[13] Benjamin Feuer, Chinmay Hegde, and Niv Cohen. Scaling
+tabpfn: Sketching and feature selection for tabular prior-data
+fitted networks, 2023. 2
+[14] Benjamin Feuer, Robin Tibor Schirrmeister, Valeriia
+Cherepanova, Chinmay Hegde, Frank Hutter, Micah Gold-
+blum, Niv Cohen, and Colin White. Tunetables: Context
+optimization for scalable prior-data fitted networks.arXiv
+preprint arXiv:2402.11137, 2024. 2
+[15] Sara Fridovich-Keil, Raphael Gontijo-Lopes, and Rebecca
+Roelofs. Spectral bias in practice: The role of function fre-
+quency in generalization, 2022. 3
+[16] Kyle Gao, Yina Gao, Hongjie He, Dening Lu, Linlin Xu,
+and Jonathan Li. Nerf: Neural radiance field in 3d vision:
+A comprehensive review (updated post-gaussian splatting),
+2025. 2
+[17] Eugene Golikov, Eduard Pokonechnyy, and Vladimir Korvi-
+akov. Neural tangent kernel: A survey, 2022. 3
+[18] Léo Grinsztajn, Klemens Flöge, Oscar Key, Felix Birkel,
+Brendan Roof, Phil Jund, Benjamin Jäger, Adrian Hayler,
+Dominik Safaric, Felix Jablonski Simone Alessi, Mihir
+Manium, Rosen Yu, Anurag Garg, Jake Robertson, Shi
+Bin (Liam) Hoo, Vladyslav Moroshan, Magnus Bühler,
+Lennart Purucker, Clara Cornu, Lilly Charlotte Wehrhahn,
+Alessandro Bonetto, Sauraj Gambhir, Noah Hollmann, and
+Frank Hutter. Tabpfn-2.5: Advancing the state of the art in
+tabular foundation models, 2025. 2, 8
+[19] Adrian Hayler, Xingyue Huang, Ismail Ilkan Ceylan,
+Michael M. Bronstein, and Ben Finkelshtein. Of graphs and
+tables: Zero-shot node classification with tabular foundation
+models. InNew Perspectives in Graph Machine Learning,
+2025. 2
+[20] Noah Hollmann, Samuel Müller, Katharina Eggensperger,
+and Frank Hutter. Tabpfn: A transformer that solves small
+tabular classification problems in a second. InInternational
+Conference on Learning Representations 2023, 2023. 1, 2, 4
+[21] Noah Hollmann, Samuel Müller, Lennart Purucker, Ar-
+jun Krishnakumar, Max Körfer, Shi Bin Hoo, Robin Tibor
+Schirrmeister, and Frank Hutter. Accurate predictions on
+small data with a tabular foundation model.Nature, 2025.
+1, 2, 7
+9
+
+[22] Shi Bin Hoo, Samuel Müller, David Salinas, and Frank Hut-
+ter. From tables to time: How tabpfn-v2 outperforms spe-
+cialized time series forecasting models, 2025. 2
+[23] Arthur Jacot, Franck Gabriel, and Clément Hongler. Neu-
+ral tangent kernel: Convergence and generalization in neural
+networks.Advances in neural information processing sys-
+tems, 31, 2018. 3
+[24] Jun-Peng Jiang, Si-Yang Liu, Hao-Run Cai, Qile Zhou, and
+Han-Jia Ye. Representation Learning for Tabular Data: A
+Comprehensive Survey, 2025. 1, 2
+[25] Xin Li, Pei Gao, Jian Zhou, Xinyue Xu, and Xiyao Li. Ar-
+chitectural bias vs. feature engineering: Deconstructing the
+limits of tabular foundation models in traffic forecasting. In
+Proceedings of the 2025 International Conference on Simu-
+lation, Modeling and Big Data, page 369–380, New York,
+NY , USA, 2025. Association for Computing Machinery. 2
+[26] Simon Lucey. Gradient descent as a shrinkage operator for
+spectral bias, 2025. 2
+[27] Junwei Ma, Valentin Thomas, Guangwei Yu, and Anthony
+Caterini. In-context data distillation with tabpfn, 2024. 2
+[28] Calvin McCarter. What exactly has tabpfn learned to do?,
+2025. 2
+[29] Lars Mescheder, Michael Oechsle, Michael Niemeyer, Se-
+bastian Nowozin, and Andreas Geiger. Occupancy networks:
+Learning 3d reconstruction in function space. InProceed-
+ings IEEE Conf. on Computer Vision and Pattern Recogni-
+tion (CVPR), 2019. 2
+[30] Ben Mildenhall, Pratul P. Srinivasan, Matthew Tancik,
+Jonathan T. Barron, Ravi Ramamoorthi, and Ren Ng. Nerf:
+Representing scenes as neural radiance fields for view syn-
+thesis. InECCV, 2020. 2
+[31] Samuel Müller, Noah Hollmann, Sebastian Pineda Arango,
+Josif Grabocka, and Frank Hutter. Transformers can do
+bayesian inference. InInternational Conference on Learn-
+ing Representations, 2022. 1, 2
+[32] Thomas Nagler. Statistical foundations of prior-data fitted
+networks. InProceedings of the 40th International Con-
+ference on Machine Learning, pages 25660–25676. PMLR,
+2023. 2
+[33] Ali Nawaz, Amir Ahmad, and Shehroz S. Khan. Assessing
+the robustness of tabular prior-data fitted network classifier.
+In1st ICML Workshop on Foundation Models for Structured
+Data, 2025. 2
+[34] H. Nyquist. Certain topics in telegraph transmission theory.
+Transactions of the American Institute of Electrical Engi-
+neers, 47(2):617–644, 1928. 2
+[35] Madhur Panwar, Kabir Ahuja, and Navin Goyal. In-context
+learning and bayesian inference. InR0-FoMo:Robustness of
+Few-shot and Zero-shot Learning in Large Foundation Mod-
+els, 2023. 2
+[36] Vasileios Papastergios and Anastasios Gounaris. Out in the
+wild: Investigating the impact of imperfect data on a tabular
+foundation model.Proceedings of the VLDB Endowment.
+ISSN, 2150:8097. 2
+[37] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Ma-
+rine Le Morvan. Tabicl: A tabular foundation model
+for in-context learning on large data.arXiv preprint
+arXiv:2502.05564, 2025. 2, 8
+[38] Nasim Rahaman, Aristide Baratin, Devansh Arpit, Felix
+Draxler, Min Lin, Fred Hamprecht, Yoshua Bengio, and
+Aaron Courville. On the spectral bias of neural networks.
+InProceedings of the 36th International Conference on Ma-
+chine Learning, pages 5301–5310. PMLR, 2019. 1, 3
+[39] Ali Rahimi and Benjamin Recht. Random features for large-
+scale kernel machines. InAdvances in Neural Information
+Processing Systems. Curran Associates, Inc., 2007. 6
+[40] M. Raissi, P. Perdikaris, and G.E. Karniadakis. Physics-
+informed neural networks: A deep learning framework for
+solving forward and inverse problems involving nonlinear
+partial differential equations.Journal of Computational
+Physics, 378:686–707, 2019. 2
+[41] Sameera Ramasinghe and Simon Lucey. Beyond periodicity:
+Towards a unifying framework for activations in coordinate-
+mlps. InComputer Vision – ECCV 2022, pages 142–158,
+Cham, 2022. Springer Nature Switzerland. 6, 7
+[42] Sameera Ramasinghe, Lachlan E MacDonald, and Simon
+Lucey. On the frequency-bias of coordinate-mlps.Ad-
+vances in Neural Information Processing Systems, 35:796–
+809, 2022. 3, 6
+[43] Sameera Ramasinghe, Hemanth Saratchandran, Violetta
+Shevchenko, and Simon Lucey. On the effectiveness of neu-
+ral priors in modeling dynamical systems.arXiv preprint
+arXiv:2303.05728, 2023. 2
+[44] Christian Reiser, Songyou Peng, Yiyi Liao, and Andreas
+Geiger. Kilonerf: Speeding up neural radiance fields with
+thousands of tiny mlps. InInternational Conference on Com-
+puter Vision (ICCV), 2021. 6
+[45] Vishwanath Saragadam, Daniel LeJeune, Jasper Tan, Guha
+Balakrishnan, Ashok Veeraraghavan, and Richard G Bara-
+niuk. Wire: Wavelet implicit neural representations. InConf.
+Computer Vision and Pattern Recognition, 2023. 5, 6, 7
+[46] Hemanth Saratchandran, Shin-Fang Chng, Sameera Ramas-
+inghe, Lachlan MacDonald, and Simon Lucey. Curvature-
+aware training for coordinate networks. InProceedings of
+the IEEE/CVF International Conference on Computer Vi-
+sion, pages 13328–13338, 2023. 1, 3
+[47] Hemanth Saratchandran, Sameera Ramasinghe, and Simon
+Lucey. From activation to initialization: Scaling insights for
+optimizing neural fields. InProceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition,
+pages 413–422, 2024. 1
+[48] Hemanth Saratchandran, Sameera Ramasinghe, Violetta
+Shevchenko, Alexander Long, and Simon Lucey. A sam-
+pling theory perspective on activations for implicit neural
+representations, 2024. 3
+[49] David Schiff, Ofir Lindenbaum, and Yonathan Efroni. Gra-
+dient free deep reinforcement learning with tabpfn, 2025. 2
+[50] Renat Sergazinov and Shao-An Yin. Chunked tabpfn: Ex-
+act training-free in-context learning for long-context tabular
+data, 2025. 2, 6
+[51] C.E. Shannon. Communication in the presence of noise.Pro-
+ceedings of the IRE, 37(1):10–21, 1949. 2
+[52] Vincent Sitzmann, Julien N.P. Martel, Alexander W.
+Bergman, David B. Lindell, and Gordon Wetzstein. Implicit
+neural representations with periodic activation functions. In
+arXiv, 2020. 2
+10
+
+[53] Matthew Tancik, Pratul P. Srinivasan, Ben Mildenhall, Sara
+Fridovich-Keil, Nithin Raghavan, Utkarsh Singhal, Ravi Ra-
+mamoorthi, Jonathan T. Barron, and Ren Ng. Fourier fea-
+tures let networks learn high frequency functions in low di-
+mensional domains, 2020. 6
+[54] Zifeng Wang, Chufan Gao, Cao Xiao, and Jimeng Sun. Med-
+itab: Scaling medical tabular data predictors via data consol-
+idation, enrichment, and refinement, 2024. 2
+[55] Lechao Xiao, Jeffrey Pennington, and Samuel Schoenholz.
+Disentangling trainability and generalization in deep neural
+networks. InInternational Conference on Machine Learn-
+ing, pages 10462–10472. PMLR, 2020. 3
+[56] Sang Michael Xie, Aditi Raghunathan, Percy Liang, and
+Tengyu Ma. An explanation of in-context learning as im-
+plicit bayesian inference, 2022. 2
+[57] Yiheng Xie, Towaki Takikawa, Shunsuke Saito, Or Litany,
+Shiqin Yan, Numair Khan, Federico Tombari, James Tomp-
+kin, Vincent Sitzmann, and Srinath Sridhar. Neural fields in
+visual computing and beyond. InComputer graphics forum,
+pages 641–676. Wiley Online Library, 2022. 1, 2
+[58] Zhiqin John Xu. Understanding training and generalization
+in deep learning by fourier analysis, 2018. 3
+[59] Zhi-Qin John Xu, Yaoyu Zhang, and Yanyang Xiao. Train-
+ing behavior of deep neural network in frequency domain.
+InNeural Information Processing, pages 264–274, Cham,
+2019. Springer International Publishing. 3
+[60] Han-Jia Ye, Si-Yang Liu, and Wei-Lun Chao. A closer look
+at tabPFN v2: Understanding its strengths and extending its
+capabilities. InThe Thirty-ninth Annual Conference on Neu-
+ral Information Processing Systems, 2025. 2
+[61] Jianqiao Zheng, Sameera Ramasinghe, and Simon Lucey.
+Rethinking positional encoding, 2021. 3
+11
+
+From Tables to Signals: Revealing Spectral Adaptivity in TabPFN
+Supplementary Material
+A. TabPFN Attention Structure
+A key question left open by the context-kernel analysis
+is how TabPFN’s internal representations change as more
+in-context samples are provided. In Sec. 3.5, we defined
+the context kernel and plotted its empirical version for
+TabPFN in Main Paper Fig. 4, since the true kernel is
+generally intractable. As TabPFN is Transformer-based,
+its context kernel depends on the self-attention mecha-
+nism shown in Eq. (5). We therefore examine the model’s
+attention patterns directly, as they are the main mecha-
+nism through which TabPFN modulates interactions be-
+tween context points and thus its spectral capacity. This
+section provides results examining how TabPFN’s attention
+maps (n×n) evolve with the number of in-context samples.
+These visualizations complement the main paper by show-
+ing how internal attention mechanisms become sharper and
+more expressive as the sampling density increases.
+A.1. Spectral Structure of Attention Maps via SVD
+To obtain a quantitative view of how TabPFN’s internal in-
+teractions become more expressive as the context grows, we
+analyse the spectral structure of its attention maps via sin-
+gular value decomposition (SVD). Fig. 1 reports the sin-
+gular value spectra of Layer 8 attention maps across the
+same range of sample sizes. The singular value spec-
+trum broadens with additional in-context samples, indicat-
+ing higher-rank attention maps and richer internal represen-
+tations. This trend mirrors the rise in recoverable frequen-
+cies reported in the main text and further supports the inter-
+pretation of TabPFN exhibitingspectral adaptivityat both
+representation and attention levels.
+A.2. Self-Attention Maps Across Layers
+We can visualize self-attention maps to observe whether in-
+creasing sample density leads to progressively sharper and
+more localized attention neighborhoods, as would be ex-
+pected from a model whose inductive bias adapts to sam-
+pling resolution. Fig. 2 presents self-attention maps for lay-
+ers 1, 4, 8, and 12 of TabPFN under context sample sizes
+ranging from64to4096. All attention matrices are aver-
+aged over 6 heads and subsampled to64×64for consistent
+visual comparison. We observe that as the number of sam-
+ples increases, the maps exhibit increasingly structured and
+localized patterns, reflecting the formation of more selec-
+tive attention neighborhoods and aligning with the sample-
+dependent behavior observed in the spectral experiments.
+0 10 20 30 40 50 60
+Index (k)
+10 2
+10 1
+100
+Normalized singular value
+SVD of attention maps from layer 8
+n_sample=64
+n_sample=256
+n_sample=512
+n_sample=1024
+n_sample=4096
+Figure 1. Singular value decomposition of Layer 8 self-attention
+maps (subsampled to same size of64×64from sample size) com-
+puted over different numbers of context samples (64–4096). As
+shown in Fig. 2, the attention maps become increasingly sharp
+and structured with more samples. The SVD results provide a
+quantitative view of this trend: attention maps obtain progressively
+richer spectra as the number of context samples increases, indicat-
+ing higher-rank and more expressive attention patterns.
+1
+
+Layer 1
+Samples: 64
+ Samples: 256
+ Samples: 512
+ Samples: 1024
+ Samples: 4096
+Layer 4
+Layer 8
+Layer 12
+0.010 0.015 0.020 0.025 0.030
+Self-Attention Maps between Context Samples
+Figure 2. Self-attention maps of TabPFN across transformer layers and different numbers of context samples. Columns correspond to
+context sample sizes (64,256,512,1024,4096), and rows correspond to Layers 1, 4, 8, and 12. All attention maps are averaged over 6
+heads and subsampled to64×64for consistent visual comparison. As sampling increases, the attention maps become sharper, more struc-
+tured, and more concentrated around local neighborhoods. These qualitative changes reflect the model’s increasingly expressive internal
+representations and complement the quantitative SVD analysis in Fig. 1, evidencing TabPFN’s sample-dependent attention behavior.
+2
+
+B. Denoising Patch Size Ablation
+In Section 5 we showed that TabPFN can perform im-
+age denoising competitively with leading INR methods.
+Because TabPFN is limited to a 10,000 sample context
+window, we adopted the patching strategy in Algorithm
+1. Here we examine how patch size affects performance
+and whether TabPFN’s strong results arise from operating
+on small patches. We evaluate TabPFN and all baselines
+across a range of patch sizes. For TabPFN, we test patches
+from 20-200 pixels (extending beyond its recommended
+100 pixel limit) and vary the number of regressors (n= 1
+and the defaultn= 8) to assess the effect of ensembling.
+INR methods are evaluated using patch sizes from 20-1000
+pixels, training each patch independently with the same hy-
+perparameters as in Section 5. Results are shown in Fig. 4.
+TabPFN exhibits consistently strong performance within its
+context window and degrades only mildly once this limit
+is exceeded. By contrast, INR performance depends heav-
+ily on patch size, with larger patches generally required for
+high quality results. This sensitivity likely reflects overfit-
+ting on small patches or a need to retune hyperparameters
+across patch sizes for best performance - issues that TabPFN
+avoids. Overall, TabPFN outperforms all baselines in both
+PSNR and runtime. To evaluate performance independent
+of patch size, Fig. 3 reports the maximum PSNR attained by
+each method. Increasing the number of TabPFN regressors
+fromn= 1ton= 8provides only marginal improvements,
+while substantially increasing computational cost.
+WIRE SIREN MFN ReLU ReLU
+(PE)
+Gauss T abPFN
+(n=1)
+T abPFN
+(n=8)
+24
+26
+28
+30
+32PSNR (dB)
+Figure 3. Maximum PSNR achieved by each method across all
+patch sizes in Fig. 4. TabPFN attains the highest PSNR overall,
+performing strongly even with a single regressor and showing only
+minor additional gains with an ensemble (n= 8).
+102
+Patch Size
+18
+20
+22
+24
+26
+28
+30
+32PSNR
+WIRE
+SIREN
+MFN
+ReLU
+ReLU+PE
+Gauss
+T abPFN (n=1)
+T abPFN (n=8)
+102
+Patch Size
+102
+103
+104
+Time (s)
+WIRE
+SIREN
+MFN
+ReLU
+ReLU+PE
+Gauss
+T abPFN (n=1)
+T abPFN (n=8)
+Figure 4. Patch-size ablation for TabPFN-based denoising. We
+vary patch size and report PSNR (top) and runtime (bottom). The
+gray region marks patch sizes that exceed TabPFN’s 100 pixel con-
+text limit. TabPFN achieves strong PSNR even with small patches
+and remains stable up to its limit, while INR baselines require
+larger patches to reach peak performance. Runtime decreases for
+all methods as patch size increases, but TabPFN reaches its mini-
+mum near the recommended context limit and rises once this win-
+dow is exceeded. Increasing the number of TabPFN regressors
+(n= 8) yields only small PSNR gains but increases runtime.
+3
