@@ -18,6 +18,9 @@ of the NTK) and shows TabPFN's effective bandwidth grows with the number of **co
 where an MLP's is fixed by its architecture. Converges with Nagler's localisation argument and
 Shaheen's retrieval account, and explains why positional encoding was needed to make TabPFN work
 on time series.
+- **`README.md` now opens with the commands that matter** — one section for updating this
+library, one for moving every consuming project's pin to the new commit, before any of the
+explanatory material. Nothing about the workflow changed; it was just buried.
 - **New citation convention in `SUMMARIES.md` and `SYNTHESIS.md`:** a reference to another paper
 now carries its **title** alongside the author-year, on first mention in each section, so a
 passage can be read without looking the citation up. Recorded in `AGENTS.md`.

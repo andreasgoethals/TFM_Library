@@ -25,6 +25,93 @@ touching anything.
 
 ---
 
+<a id="commands"></a>
+
+## The commands that matter
+
+Almost everything you type is one of two jobs: **changing this library**,
+or **getting those changes into the projects that use it**. Both are run
+from *this* repository's own checkout.
+
+One command per block — **Windows PowerShell has no `&&`**, so chaining
+with it is a parser error.
+
+### A — Update this library
+
+**Add a paper.** Put it in the Zotero `Tabular Foundation Models`
+collection first; that collection defines what belongs here. This files
+the PDF, extracts the text, and leaves `TODO(new-paper)` placeholders
+where the prose has to be written by hand:
+
+```bash
+python scripts/papers/new_paper.py --zotero ZOTERO_ITEM_KEY
+```
+
+**Refresh the code dumps** in `repositories/` from upstream:
+
+```bash
+python scripts/dumps/refresh_repositories.py
+```
+
+**Check everything before committing** — paper coverage, links, anchors,
+chronology, leftover placeholders, project-specific leakage, and whether
+every cited code symbol still exists in the dumps:
+
+```bash
+python scripts/maintain.py --check-only
+```
+
+**Commit and push.** The pre-commit hook re-runs the fast checks and
+refuses the commit while anything is broken:
+
+```bash
+git add -A
+```
+
+```bash
+git commit -m "Describe the change"
+```
+
+```bash
+git push
+```
+
+### B — Push the update out to the projects that use it
+
+A consuming project is pinned to one exact commit, so it sees **nothing**
+new until that pin moves.
+
+**Push this library first** (the last step of A). The pin is a commit id
+that has to exist on the remote, or a collaborator's `git submodule
+update --init` cannot fetch it. `propagate_to_downstream.py` refuses to
+run with uncommitted or unpushed work here for exactly that reason.
+
+**See the plan** — which projects on disk embed this library, and what
+each one would move from and to:
+
+```bash
+python scripts/propagate_to_downstream.py --dry-run
+```
+
+**Apply it.** Checks out this library's exact `HEAD` in every project it
+found, commits *only* the submodule path so unrelated work in progress is
+never swept in, and pushes each project:
+
+```bash
+python scripts/propagate_to_downstream.py --push
+```
+
+Leave off `--push` to commit each pin but review before publishing.
+
+To move a single project's pin by hand instead — from inside *that*
+project, not from here — see
+[Update it to the latest version](#2-update-it-to-the-latest-version).
+
+Everything else — setup, the read-only rule, Zotero, and what each folder
+and script is for — is below.
+
+---
+
 <a id="update"></a>
 
 ## Using this library in a project
