@@ -14,8 +14,7 @@ Directory structure:
     ├── uv.lock
     ├── .pre-commit-config.yaml
     ├── changelog/
-    │   ├── README.md
-    │   └── 382.fixed.md
+    │   └── README.md
     ├── examples/
     │   ├── README.md
     │   ├── bayesian_optimization/
@@ -163,6 +162,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.1] - 2026-09-01
+
+### Fixed
+
+- `interpretability.class_vote` reproduces `predict_proba` exactly only in full precision; the docstring now says so, and the test covering that identity pins `inference_precision=torch.float32` instead of flaking on CPUs where TabPFN enables bf16 autocast. ([#382](https://github.com/PriorLabs/tabpfn-extensions/pull/382))
+- Outlier detection no longer fails with `'numpy.ndarray' object has no attribute 'clone'` when the unsupervised model runs on the TabPFN client. ([#390](https://github.com/PriorLabs/tabpfn-extensions/pull/390))
+- `get_tabpfn_inf_explainer` now works with the remote backends: a model built with `inference_config={"PASSTHROUGH_INF": True}` is accepted instead of being rejected as unsupported, so inf-masking SHAP is no longer limited to local models. ([#391](https://github.com/PriorLabs/tabpfn-extensions/pull/391))
+
 
 ## [0.6.0] - 2026-08-19
 
@@ -639,7 +647,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabpfn-extensions"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
     "torch>=2.1",
     "pandas>=2.2.2",
@@ -5378,13 +5386,6 @@ bypass the check.
 
 
 ================================================
-FILE: changelog/382.fixed.md
-================================================
-`interpretability.class_vote` reproduces `predict_proba` exactly only in full precision; the docstring now says so, and the test covering that identity pins `inference_precision=torch.float32` instead of flaking on CPUs where TabPFN enables bf16 autocast.
-
-
-
-================================================
 FILE: examples/README.md
 ================================================
 # TabPFN Extensions Examples
@@ -9683,7 +9684,9 @@ We expose three adapters:
   is fixed, so the KV cache applies. It requires the model to be built with
   ``inference_config={"PASSTHROUGH_INF": True}`` (``tabpfn>=8.1.0``) so ``+inf`` reaches
   the model instead of being rejected at validation; unlike ``NaN``, which TabPFN's
-  preprocessing transforms before it reaches the model, ``+inf`` is carried through:
+  preprocessing transforms before it reaches the model, ``+inf`` is carried through.
+  This works with a local model and with the remote backends, which forward the flag
+  to the TabPFN they run:
 
   ```python
   clf = TabPFNClassifier(
@@ -10639,14 +10642,16 @@ def _model_has_inf_passthrough(
     """Whether ``model`` is configured to pass ``+/-inf`` through to TabPFN.
 
     Returns ``True`` only if we can positively confirm the ``PASSTHROUGH_INF``
-    inference-config flag is enabled. For estimators we can't introspect (e.g.
-    the tabpfn-client backend, which has no ``get_inference_config``) this
-    returns ``False`` â€” we simply can't vouch for inf support.
+    inference-config flag is enabled, from either of the two places a backend
+    keeps it: a local model resolves it into ``get_inference_config()``, while
+    a remote one forwards the ``inference_config`` constructor argument to the
+    server, where the flag takes effect exactly as it does locally.
     """
     get_inference_config = getattr(model, "get_inference_config", None)
-    if get_inference_config is None:
-        return False
-    return bool(getattr(get_inference_config(), "PASSTHROUGH_INF", False))
+    if get_inference_config is not None:
+        return bool(getattr(get_inference_config(), "PASSTHROUGH_INF", False))
+    config = getattr(model, "inference_config", None)
+    return bool(isinstance(config, dict) and config.get("PASSTHROUGH_INF"))
 
 
 @set_extension("interpretability")
@@ -10683,7 +10688,8 @@ def get_tabpfn_inf_explainer(
     ``inference_config={"PASSTHROUGH_INF": True}`` (available in
     ``tabpfn>=8.1.0``). Without it, TabPFN rejects non-finite inputs at
     validation and this function raises ``ValueError`` up front rather than
-    letting every coalition evaluation fail later.
+    letting every coalition evaluation fail later. The remote backends forward
+    the flag to the TabPFN they run, so this path works there too.
 
     Args:
         model: The TabPFN model to explain. Must be constructed with
@@ -16235,13 +16241,18 @@ class TabPFNUnsupervisedModel(BaseEstimator):
                 log_pred = torch.log(pred)
             else:
                 pred = model.predict(X_predict, output_type="full")
+                # Proper tensor construction to avoid warnings
                 logits = pred["logits"]
-                logits_tensor = logits.clone().detach()
+                logits_tensor = (
+                    logits.clone().detach()
+                    if torch.is_tensor(logits)
+                    else torch.as_tensor(logits)
+                )
                 # Match logits dtype/device: MPS rejects float64, and sklearn
                 # inputs arrive as float64, so cast before moving to the device.
                 y_tensor = y_predict.detach().to(
-                    dtype=logits.dtype,
-                    device=logits.device,
+                    dtype=logits_tensor.dtype,
+                    device=logits_tensor.device,
                 )
                 # criterion.forward returns the NLL, so -forward is log p_Î¸ directly.
                 log_pred = (
@@ -18860,14 +18871,18 @@ FILE: tests/test_interpretability_shapiq.py
 Focused on ``get_tabpfn_inf_explainer``, which masks absent features with
 ``+inf`` and relies on TabPFN's opt-in ``PASSTHROUGH_INF`` inference config.
 
-These are local-only: ``inference_config``/``PASSTHROUGH_INF`` is a local-tabpfn
-feature not exposed by the client backend. They run on CPU (fp32), where the
+The end-to-end cases are local-only, not because the feature is: the remote
+backends forward ``inference_config``/``PASSTHROUGH_INF`` to the TabPFN they
+run, and ``TestInfPassthroughDetection`` covers them with stubs. They run on
+CPU (fp32), where the
 value function is deterministic and the Shapley efficiency identity is tight â€”
 so we can compare the imputer's masking against hand-built masked predictions
 exactly, rather than merely asserting the pipeline "runs".
 """
 
 from __future__ import annotations
+
+from typing import ClassVar
 
 import numpy as np
 import pytest
@@ -19022,6 +19037,61 @@ def test_inf_explainer_handles_string_column(classification_data_with_text):
     expected_row = x0.astype(object).copy()
     expected_row[text_col] = np.inf
     assert np.allclose(got, predict_fn(clf, expected_row.reshape(1, -1)), atol=1e-5)
+
+
+class TestInfPassthroughDetection:
+    """Which backends may use the +inf masking path.
+
+    The flag lives in one of two places: a local model resolves it into
+    ``get_inference_config()``, while a remote backend only forwards the
+    ``inference_config`` constructor argument. Stubs stand in for the client
+    estimators, which are not a test dependency here.
+    """
+
+    class _Remote:
+        """Shaped like any tabpfn-client estimator: no resolvable config."""
+
+        def __init__(self, inference_config=None):
+            self.inference_config = inference_config
+
+    @pytest.mark.local_compatible
+    @pytest.mark.client_compatible
+    def test_remote_backend_with_the_flag_is_accepted(self):
+        """Both the managed API and a self-hosted endpoint honour the flag."""
+        model = self._Remote(inference_config={"PASSTHROUGH_INF": True})
+        assert tpe_shapiq._model_has_inf_passthrough(model)
+
+    @pytest.mark.local_compatible
+    @pytest.mark.client_compatible
+    def test_remote_backend_without_the_flag_is_rejected(self):
+        assert not tpe_shapiq._model_has_inf_passthrough(self._Remote())
+        assert not tpe_shapiq._model_has_inf_passthrough(
+            self._Remote(inference_config={"PASSTHROUGH_INF": False}),
+        )
+
+    @pytest.mark.local_compatible
+    @pytest.mark.client_compatible
+    def test_remote_backend_without_the_flag_raises(self, classification_data):
+        X, _ = classification_data
+        with pytest.raises(ValueError, match="PASSTHROUGH_INF"):
+            tpe_shapiq.get_tabpfn_inf_explainer(model=self._Remote(), data=X)
+
+    @pytest.mark.local_compatible
+    @pytest.mark.client_compatible
+    def test_local_model_still_uses_its_resolved_config(self):
+        """A local model's resolved config wins; its raw argument is not read."""
+
+        class _Local:
+            inference_config: ClassVar[dict] = {"PASSTHROUGH_INF": True}
+
+            def __init__(self, *, resolved: bool):
+                self._resolved = resolved
+
+            def get_inference_config(self):
+                return type("Cfg", (), {"PASSTHROUGH_INF": self._resolved})()
+
+        assert tpe_shapiq._model_has_inf_passthrough(_Local(resolved=True))
+        assert not tpe_shapiq._model_has_inf_passthrough(_Local(resolved=False))
 
 
 
@@ -20211,6 +20281,43 @@ def test_generate_synthetic_data_categorical(monkeypatch):
 
     assert isinstance(synthetic_X, torch.Tensor)
     assert synthetic_X.shape == (n_samples, X.shape[1])
+
+
+@pytest.mark.client_compatible
+@pytest.mark.local_compatible
+def test_outliers_accepts_array_logits(monkeypatch):
+    """`logits` is a tensor from the local package and an array from the client."""
+    from tabpfn.regressor import FullSupportBarDistribution
+
+    n_rows, n_features, n_bars = 6, 2, 8
+    # float64 throughout, as the client's own criterion and logits are.
+    criterion = FullSupportBarDistribution(
+        borders=torch.linspace(-3.0, 3.0, n_bars + 1, dtype=torch.float64)
+    )
+
+    class ArrayLogitsRegressor:
+        def predict(self, X, output_type):
+            assert output_type == "full"
+            return {
+                "logits": np.zeros((len(X), n_bars)),
+                "criterion": criterion,
+            }
+
+    X = torch.randn(n_rows, n_features)
+    model = unsupervised.TabPFNUnsupervisedModel(
+        tabpfn_clf=None, tabpfn_reg=ArrayLogitsRegressor()
+    )
+    model.X_ = X
+
+    def density(X_predict, _X_fit, _conditional_idx, column_idx):
+        return model.tabpfn_reg, X_predict, X_predict[:, column_idx]
+
+    monkeypatch.setattr(model, "density_", density)
+
+    log_p = model.outliers_single_permutation_(X, feature_permutation=[0, 1])
+
+    assert log_p.shape == (n_rows,)
+    assert torch.isfinite(log_p).all()
 
 
 

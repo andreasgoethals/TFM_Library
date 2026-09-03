@@ -8221,7 +8221,17 @@ sofia @ VUB-HPC
 :ref:`BrENIAC<breniac hardware>` (hosted by HPC-Leuven, 2016-2022) and
 :ref:`Hortense<Hortense hardware>` (hosted by HPC-UGent, 2021-2027).
 
-**sofia** has been in production since July 7th 2026 and is hosted by Vrije Universiteit Brussel.
+**sofia** has been in production since July 7, 2026, and is operated by Vrije
+Universiteit Brussel.
+
+The name **sofia** is inspired by the Greek name *Sophia* which means wisdom.
+This reflects one of the fundamental values of the VUB: the open pursuit of
+knowledge through science.
+**sofia** is a beacon for researchers, students, and innovators, illuminating
+the path, answering complex problems, and uncovering insights in different
+fields. Hence a shining sun is its symbol. **sofia** empowers the curious, the
+critical, and the creative to push the boundaries of what they know, reminding
+everyone that science is not just a tool, but a light to knowledge. 
 
 .. _sofia_help:
 
@@ -8589,9 +8599,21 @@ provides the following advantages:
   hardware architectures in use, ensuring access to the correct and
   optimized software binaries
 
-Propagating specific environment variables to your job can be done with the
-``--export=<environment_variables>`` option in Slurm. See :ref:`slurm_job_env`
-for more information.
+Propagating specific environment variables to the job environment can be done
+with the ``--export=<environment_variables>`` option in Slurm. For example, to
+export ``MYENVVAR=myval`` in the job, add it to the default exports (HOME,
+USER, TERM, PATH):
+
+.. code-block:: bash
+
+   sbatch --export=HOME,USER,TERM,PATH=/bin:/sbin,MYENVVAR=myval <job-script>
+
+.. warning::
+
+   Do **NOT** use ``--export=ALL``. This will only work on the exceptional
+   case of jobs submitted from within another job on the same cluster partition.
+
+See :ref:`slurm_job_env` for more information.
 
 If your workflow requires your full shell environment to be propagated, please
 refer to the VUB-HPC documentation on `how to copy your full shell environment into your job

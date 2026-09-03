@@ -41,6 +41,7 @@ Directory structure:
     │       │   └── regressor.py
     │       ├── _model/
     │       │   ├── __init__.py
+    │       │   ├── _cgroup_memory.py
     │       │   ├── attention.py
     │       │   ├── embedding.py
     │       │   ├── encoders.py
@@ -133,8 +134,18 @@ Directory structure:
     │           └── _train_config.py
     ├── tests/
     │   ├── __init__.py
+    │   ├── _cgroup_docker_probe.py
+    │   ├── conftest.py
+    │   ├── test_cgroup_memory_docker.py
+    │   ├── test_datetime_encoder.py
+    │   ├── test_finetune_early_stopping.py
+    │   ├── test_finetune_freezing.py
+    │   ├── test_finetune_string_input.py
     │   ├── test_inference.py
+    │   ├── test_inference_memory.py
     │   ├── test_numpy_inputs.py
+    │   ├── test_predict_allnan_categorical.py
+    │   ├── test_shap_categorical.py
     │   ├── test_sklearn.py
     │   ├── test_string_input.py
     │   └── torch_devices_helpers.py
@@ -160,19 +171,19 @@ FILE: README.md
 [![PyPI version](https://badge.fury.io/py/tabicl.svg)](https://badge.fury.io/py/tabicl)
 [![Downloads](https://img.shields.io/pypi/dm/tabicl)](https://pypistats.org/packages/tabicl)
 
-# TabICLv2: A state-of-the-art tabular foundation model
+# TabICLv2: An open tabular foundation model
 
 This repository is the official implementation of **TabICLv2** ([ICML 2026](https://arxiv.org/abs/2602.11139)) 
 and **TabICL** ([ICML 2025](https://arxiv.org/abs/2502.05564)).
 
-**State-of-the-art performance even without hyperparameter tuning:** 
-TabICLv2 is the new state-of-the-art model for tabular classification and regression 
+**Strong performance without hyperparameter tuning:** 
+TabICLv2 is a competitive model for tabular classification and regression 
 on the [TabArena](https://tabarena.ai) and [TALENT](https://arxiv.org/abs/2407.00956) benchmarks. 
 It does not require hyperparameter tuning 
-and still outperforms heavily tuned XGBoost, CatBoost, or LightGBM on TabArena on ~80% of datasets.
+and outperforms heavily tuned XGBoost, CatBoost, or LightGBM on TabArena on ~80% of datasets.
 
 **Easy to use:** TabICL is pip-installable and scikit-learn compliant. 
-It is also **open source** (including [pre-training](#pre-training) for v1), 
+It is also **open source** (including [pre-training](#pre-training)), 
 with a permissive license.
 
 **Speed:** TabICL performs `fit` and `predict` jointly via a single 
@@ -292,7 +303,7 @@ clf = TabICLClassifier(
 | **TabICLv1.1** (May 2025, no paper) | `tabicl-classifier-v1.1-20250506.ckpt` | â€” |
 | **TabICLv1** ([ICML 2025](https://arxiv.org/abs/2502.05564)) | `tabicl-classifier-v1-20250208.ckpt` | â€” |
 
-- **TabICLv2**: Our state-of-the-art model, supporting both classification and regression.
+- **TabICLv2**: Our latest model, supporting both classification and regression.
   Strongly improved accuracy over v1 through better synthetic pre-training data,
   architectural improvements, and better pre-training, with comparable runtime.
 - **TabICLv1.1**: TabICLv1 post-trained on an early version of the v2 prior. Classification only.
@@ -447,10 +458,15 @@ plot_shap(shap_values)
 
 Pre-training code (including synthetic data generation) is available for **both TabICLv1 and TabICLv2**.
 
-> **Disclaimer:** the TabICLv2 pre-training code has been vibe-migrated from the original
-> (private) pre-training codebase into this repository. While the port has been carefully
-> cross-checked against the original code and the released checkpoints, the training scripts
-> have not yet been tested end-to-end to reproduce the original pre-training results.
+> **Note:** The original pre-training likely used AMP with float16, but this can lead to instabilities 
+> (https://github.com/soda-inria/tabicl/pull/151#discussion_r3869087460), 
+> so we're leaving float32 as the default value in the scripts.
+> While the code has been vibe-migrated from the original
+> (private) pre-training codebase, users have been able to achieve good performance with it.
+> On systems with fewer CPU cores, it might speed up the training to reduce n_jobs 
+> (e.g., to 12 on a 64-core system). 
+> On 4xH100, it should be possible to reach 0.7-0.8s/step 
+> for stage 1 with float16 and 1s/step with float32.
 
 The easiest way to pre-train is to run the stage scripts in the `scripts` folder, which contain
 the full recipes (they launch `python -m tabicl.train` under `torchrun` with all arguments set).
@@ -464,9 +480,7 @@ bash scripts/train_v2_clf_stage3.sh   # loads the stage-2 checkpoint
 ```
 
 Available recipes:
-- **TabICLv2** ([arXiv](https://arxiv.org/abs/2602.11139), Â§4.1): the three-stage `graph_scm` recipe with
-  the Muon optimizer, with separate scripts for the classifier and regressor checkpoints â€”
-  classifier [stage 1](./scripts/train_v2_clf_stage1.sh), [stage 2](./scripts/train_v2_clf_stage2.sh),
+- **TabICLv2** ([arXiv](https://arxiv.org/abs/2602.11139), Â§4.1): classifier [stage 1](./scripts/train_v2_clf_stage1.sh), [stage 2](./scripts/train_v2_clf_stage2.sh),
   [stage 3](./scripts/train_v2_clf_stage3.sh); regressor [stage 1](./scripts/train_v2_reg_stage1.sh),
   [stage 2](./scripts/train_v2_reg_stage2.sh), [stage 3](./scripts/train_v2_reg_stage3.sh).
 - **TabICLv1**: [stage 1](./scripts/train_stage1.sh), [stage 2](./scripts/train_stage2.sh),
@@ -482,7 +496,7 @@ Training supports classification (cross-entropy) and quantile regression (pinbal
 `--regression_method quantile`), and both the **AdamW** (default) and **Muon** (`--muon True`)
 optimizers. See `python -m tabicl.train --help` for the full set of options.
 
-A note on the v2 training entry point: the paper reports using cautious weight decay, which is
+A note on the v2 training: the paper reports using cautious weight decay, which is
 available via `--use_cautious_wd`, but the released checkpoints were trained with it left `False`
 (it was not wired into Muon during the reference runs), so the v2 scripts keep it `False` to
 reproduce that behavior.
@@ -521,8 +535,7 @@ We have not tested if TabICL generalizes to datasets smaller than 300 samples.
 <img src="./docs/figures/tabiclv2_perf_vs_n_samples.png" width="70%" alt="Average rank vs. number of samples" style="display: block; margin: auto;">
 
 **What about the number of columns?**
-TabICLv2 is pre-trained on datasets between 2 and 100 columns. 
-We see good generalization to more columns and don't know where the limit is.
+TabICLv2 is pre-trained on datasets between 2 and 100 columns. It can degrade when going much beyond 100 features.
 
 <img src="./docs/figures/tabiclv2_perf_vs_n_features.png" width="70%" alt="Average rank vs. number of features" style="display: block; margin: auto;">
 
@@ -609,8 +622,8 @@ please cite our papers for **[TabICL](https://arxiv.org/abs/2502.05564)** and **
 ================================================
 FILE: CHANGES.md
 ================================================
-In development
-==============
+2.2.0
+=====
 
 New features
 ------------
@@ -622,20 +635,81 @@ New features
   (`--col_ssmax`/`--icl_ssmax` with `--ssmax_type`), feature grouping and target-aware embeddings
   (`--col_feature_group`, `--col_target_aware`, `--col_affine`), the RoPE variant
   (`--row_rope_interleaved`; v1 interleaved by default, v2 uses `False`), residual initialization
-  (`--zero_init`; v2 uses `False`), and FlashAttention-3 during training (`--use_flash_attn3`;
-  the v2 recipe enables it for stages 2 and 3 only). All CLI defaults reproduce the TabICLv1
-  model configuration; resuming a run re-seeds the data stream with the current step. Ships the
-  three-stage TabICLv2 curriculum scripts, separately for the classifier and regressor
-  checkpoints (`scripts/train_v2_{clf,reg}_stage{1,2,3}.sh`).
+  (`--zero_init`; v2 uses `False`), FlashAttention-3 during training (`--use_flash_attn3`;
+  the v2 recipe enables it for stages 2 and 3 only). The cuDNN SDPA backend is now
+  automatically disabled during training (slower than Flash Attention on Hopper). `--dtype` now
+  supports `bfloat16` in addition to `float16`/`float32`; the GradScaler is only enabled when the
+  computation graph contains a float16 path (either float16, 
+  or float32 with FlashAttention-3 enabled since it runs in float16 then). 
+  All CLI defaults reproduce the TabICLv1 model
+  configuration; resuming a run re-seeds the data stream with the current step.
+  ([PR#135](https://github.com/soda-inria/tabicl/pull/135))
+
+- Remove the GluonTS dependency from the forecasting module. ([PR#108](https://github.com/soda-inria/tabicl/pull/108), @daidahao)
+
+- Improve non-CUDA GPU inference reliability and performance (including XPU and Apple Silicon MPS): inference now consistently runs on the configured backend device, uses backend-appropriate autocast, and queries available memory plus async stream/event primitives through backend-agnostic `torch.<backend>` APIs (with safe synchronous fallbacks when async is unavailable). This fixes pathological auto-batch sizing (e.g. batch size forced to 1) and restores expected accelerated inference behavior on supported non-CUDA GPU backends. MPS now uses the same AMP, auto-batching, and memory-aware inference path as other accelerators instead of falling back to the CPU path. `use_amp="auto"` is device-aware (off on CPU; size heuristic on CUDA/XPU/MPS), and float16 KV caches are kept on MPS when AMP is enabled. When `device=None`, estimators now default to CUDA when available, otherwise XPU, then MPS, and then CPU. ([PR#144](https://github.com/soda-inria/tabicl/pull/144))
 
 Bug fixes
 ---------
 
-- When unpickling a TabICL estimator, the fitted attributes `device_`, `model_`, etc. are only state if the pickled model was fitted. ([PR#121](https://github.com/soda-inria/tabicl/pull/121))
+- Respect cgroup memory limits when estimating available CPU memory at inference, so
+  ``offload="auto"`` inside Docker or Kubernetes does not treat host RAM as free and get
+  OOM-killed with no traceback. ([PR#152](https://github.com/soda-inria/tabicl/pull/152))
 
-- Improve non-CUDA GPU inference reliability and performance (including XPU): inference now consistently runs on the configured backend device, uses backend-appropriate autocast, and queries available memory plus async stream/event primitives through backend-agnostic `torch.<backend>` APIs (with safe synchronous fallbacks when async is unavailable). This fixes pathological auto-batch sizing (e.g. batch size forced to 1) and restores expected accelerated inference behavior on supported non-CUDA GPU backends. When `device=None`, estimators now default to CUDA when available, otherwise XPU, then MPS, and then CPU. ([PR#144](https://github.com/soda-inria/tabicl/pull/144))
+- Fix the pre-training `GradScaler` being disabled for `--dtype float32 --use_flash_attn3 True` (the TabICLv2 stage 2 and 3 recipes), which degraded pre-training quality: FlashAttention-3 runs its backward pass in `float16` there, so loss scaling is still needed. (reported by @wangzhengli in [#153](https://github.com/soda-inria/tabicl/issues/153))
 
-- Improve Apple Silicon MPS inference: MPS now uses the same AMP, auto-batching, and memory-aware inference path as other accelerators instead of falling back to the CPU path. `use_amp="auto"` is device-aware (off on CPU; size heuristic on CUDA/XPU/MPS), and float16 KV caches are kept on MPS when AMP is enabled. MPS is included in the default device order (CUDA â†’ XPU â†’ MPS â†’ CPU). ([PR#144](https://github.com/soda-inria/tabicl/pull/144))
+- Finetuning now supports string/categorical features in DataFrames, matching the behavior of the base `TabICLClassifier` and `TabICLRegressor`. Previously, `FinetunedTabICLClassifier` and `FinetunedTabICLRegressor` would raise `ValueError: could not convert string to float` when the input contained categorical columns. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @zehua-jerry-yu in [#118](https://github.com/soda-inria/tabicl/issues/118))
+
+- Fix `DatetimeEncoder` sin/cos encoding off-by-one error that caused the first and last elements of a period to map to identical angles (e.g. Monday and Sunday getting the same encoding). The denominator was incorrectly `p-1` instead of `p`. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @christophM in [#136](https://github.com/soda-inria/tabicl/issues/136))
+
+- Fix `float16` input arrays crashing during Yeo-Johnson normalization in the preprocessing pipeline. The `PreprocessingPipeline` now upcasts `float16` to `float32` before fitting/transforming, avoiding scipy's narrow-exponent bound error. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @SebastienMelo in [#140](https://github.com/soda-inria/tabicl/issues/140))
+
+- Fix `predict_proba`/`predict` crashing with `TypeError` when a categorical column is all-NaN in the prediction batch. Removed the batch-global all-NaN feature-masking detection from the prediction path â€” it was intended for SHAP but did not work correctly with SHAP's coalition batching, and made predictions depend on batch composition. All-NaN columns now flow through normal preprocessing (OrdinalEncoder/SimpleImputer handle NaN natively). ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @Innixma in [#143](https://github.com/soda-inria/tabicl/issues/143))
+
+- Fix PyTorch autograd error when fine-tuning with partial module freezing (e.g. `freeze_col=True, freeze_row=True, freeze_icl=False`). An in-place operation on a tensor view from frozen modules conflicted with autograd; resolved by detaching before the in-place write. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @denisfouchard in [#128](https://github.com/soda-inria/tabicl/issues/128))
+
+- When unpickling a TabICL estimator, the fitted attributes `device_`, `model_`, etc. are only set if the pickled model was fitted. ([PR#121](https://github.com/soda-inria/tabicl/pull/121), @jeromedockes)
+
+- Fix `get_state`/`set_state` for `model_kv_cache_`. ([PR#124](https://github.com/soda-inria/tabicl/pull/124), @jeromedockes)
+
+- Fix default behaviour on NumPy arrays with string-valued columns. ([PR#123](https://github.com/soda-inria/tabicl/pull/123), @marineLM)
+
+- `n_threads` is now set to the minimum of `n_logical_cores` and `n_jobs`, rather than maximum. ([PR#107](https://github.com/soda-inria/tabicl/pull/107), @douglas-boubert)
+
+- Keep all-NaN columns in `SimpleImputer` so `predict_proba` does not crash on datasets where an entire feature is missing at prediction time. ([PR#148](https://github.com/soda-inria/tabicl/pull/148), @axsaucedo)
+
+- Fix `UnicodeEncodeError` in fine-tuning tutorials on Windows. ([PR#141](https://github.com/soda-inria/tabicl/pull/141), @maxdemarzi)
+
+- Fix `mix_probs` key in `SCMPrior`. ([PR#106](https://github.com/soda-inria/tabicl/pull/106), @nightcityblade)
+
+- Fix `early_stopping=False` silently discarding all fine-tuning updates: `best_state` was only updated inside the early-stopping branch, so disabling early stopping caused the pretrained weights to be restored after training. ([PR#151](https://github.com/soda-inria/tabicl/pull/151), @dholzmueller)
+
+- Fix `IndexError: Cannot choose from an empty sequence` crash when all input features are constant. The `UniqueFeatureFilter` now preserves at least one feature when all would otherwise be removed, allowing the model to gracefully degrade to predicting the target's marginal distribution instead of crashing. ([PR#150](https://github.com/soda-inria/tabicl/pull/150), @klemens-floege)
+
+Documentation
+-------------
+
+- Document `skrub.tabular_pipeline`'s new support for TabICL. ([PR#139](https://github.com/soda-inria/tabicl/pull/139), @ashwinvis)
+
+- Remove ambiguity on classification/regression in README. ([PR#134](https://github.com/soda-inria/tabicl/pull/134), @MarieSacksick)
+
+- Fix broken star history chart in README. ([PR#149](https://github.com/soda-inria/tabicl/pull/149), @FaintFlower)
+
+Maintenance
+-----------
+
+- Rename prior config variables for consistency. ([PR#105](https://github.com/soda-inria/tabicl/pull/105), @ChristopheMuller)
+
+- Add `pytest` to the `test` dependency group. ([PR#122](https://github.com/soda-inria/tabicl/pull/122), @jeromedockes)
+
+
+2.1.1
+=====
+
+New features
+------------
+
+- Add fine-tuning support for TabICL via `FinetunedTabICLClassifier` and `FinetunedTabICLRegressor`: full PyTorch training loop with AdamW, cosine-warmup schedule, early stopping, gradient clipping, AMP, DDP, partial module freezing, and checkpointing in the pre-training schema. ([PR#101](https://github.com/soda-inria/tabicl/pull/101), @JingangQu)
 
 
 2.1.0
@@ -941,7 +1015,7 @@ FILE: pyproject.toml
 [project]
 name = "tabicl"
 dynamic = ["version"]
-description = "TabICL: A state-of-the-art tabular foundation model"
+description = "TabICL: An open tabular foundation model"
 readme = "README.md"
 authors = [
     { name = "Jingang Qu" },
@@ -1038,7 +1112,7 @@ features = []
 [tool.hatch.envs.hatch-test]
 default-args = ["tests"]
 installer = "uv"
-features = ["test"]
+features = ["test", "forecast", "shap", "finetune"]
 
 [tool.hatch.envs.types]
 extra-dependencies = [
@@ -1230,6 +1304,7 @@ autodoc_default_options = {
     "inherited-members": False,
 }
 autodoc_typehints = "none"
+autodoc_mock_imports = ["shap", "shapiq"]
 # Keep default arguments as their source-code names (e.g. `DEFAULT_FIXED_HP`)
 # instead of evaluating them into the full dict/list repr, which bloats
 # signatures like `PriorDataset(..., scm_fixed_hp={<huge dict>}, ...)`.
@@ -1329,9 +1404,9 @@ Calling fit just stores the data, learning happens during predict.
 What TabICL can do
 ------------------
 
-**State-of-the-art accuracy â€” zero tuning required.** TabICLv2 is competitive
-with heavily tuned XGBoost, CatBoost, and LightGBM, and even outperforms them
-on ~80% of `TabArena <https://tabarena.ai>`__ datasets. It is state-of-the-art
+**Strong accuracy â€” zero tuning required.** TabICLv2 is competitive
+with heavily tuned XGBoost, CatBoost, and LightGBM, and outperforms them
+on ~80% of `TabArena <https://tabarena.ai>`__ datasets. It performs well
 on the `TabArena <https://tabarena.ai>`__ and
 `TALENT <https://arxiv.org/abs/2407.00956>`__ benchmarks, among other
 hyperparameter-tuned gradient boosted trees, as well as concurrent tabular
@@ -1455,9 +1530,9 @@ Available models
      - ``tabicl-classifier-v1-20250208.ckpt``
      - â€”
 
-- **TabICLv2** â€” state-of-the-art, supports classification and
-  regression. Improved accuracy through better synthetic pre-training
-  data, architectural improvements, and better pre-training, with
+- **TabICLv2** â€” supports classification and regression.
+  Improved accuracy through better synthetic pre-training data,
+  architectural improvements, and better pre-training, with
   comparable runtime to v1.
 - **TabICLv1.1** â€” TabICLv1 post-trained on an early v2 prior.
   Classification only.
@@ -2479,8 +2554,10 @@ FILE: scripts/train_v2_clf_stage1.sh
 #   Stage 3:  10K steps, 400-60,000 samples (log-u), 79-81% train, max LR 2e-5, grad clip  1
 #
 # Common: Muon optimizer, cautious weight decay parameter 0.01 (see note below),
-# cosine schedule, AMP, per-micro-batch train/test sizes (--seq_len_per_gp), up to
-# 100 features, 8 attention heads everywhere, graph_scm prior. AMP is always used.
+# cosine schedule, per-micro-batch train/test sizes (--seq_len_per_gp),
+# up to 100 features, 8 attention heads everywhere, graph_scm prior. The default
+# dtype is float32; float16 can be used for speedup (--dtype float16 --amp True) but may lead
+# to training instabilities.
 #
 # The classifier uses LayerNorm WITH biases (the --norm_type default; paper Table A.1),
 # unlike the regressor, which uses bias-free LayerNorm (--norm_type layernorm_nobias).
@@ -2575,8 +2652,8 @@ FILE: scripts/train_v2_clf_stage2.sh
 #
 # Stage 2: 40K steps on datasets with 400-10,240 samples (log-uniform), 79-81% of
 # samples for training, max LR 1e-4, gradient clipping 10. Continues from the Stage 1
-# checkpoint (weights only). FlashAttention-3 is enabled (--use_flash_attn3 True; used
-# when installed, runs attention in fp16) for stages 2 & 3 only.
+# checkpoint (weights only). FlashAttention-3 is enabled (--use_flash_attn3 True)
+# for stages 2 & 3 only.
 #
 # Adjust the placeholder paths and --nproc_per_node / --n_jobs for your hardware.
 
@@ -2676,8 +2753,7 @@ FILE: scripts/train_v2_clf_stage3.sh
 # samples for training, max LR 2e-5, gradient clipping 1. Continues from the Stage 2
 # checkpoint (weights only). Gradient checkpointing is off (--recompute False; the
 # reference run on H200s did not need it) -- set it to True if the largest datasets
-# do not fit in your GPU memory. FlashAttention-3 is enabled (--use_flash_attn3 True;
-# used when installed, runs attention in fp16).
+# do not fit in your GPU memory. FlashAttention-3 is enabled (--use_flash_attn3 True).
 #
 # Adjust the placeholder paths and --nproc_per_node / --n_jobs for your hardware.
 
@@ -2791,10 +2867,12 @@ FILE: scripts/train_v2_reg_stage1.sh
 # (--norm_type layernorm_nobias), whereas the classifier uses LayerNorm with biases.
 #
 # Common: Muon optimizer, cautious weight decay parameter 0.01 (see note below),
-# cosine schedule, AMP, per-micro-batch train/test sizes (--seq_len_per_gp), up to
-# 100 features, 8 attention heads everywhere, graph_scm prior. AMP is always used.
-# v2 uses standard residual init (--zero_init False; v1 zero-initializes residual
-# branches) and enables FlashAttention-3 only in stages 2 & 3 (--use_flash_attn3).
+# cosine schedule, per-micro-batch train/test sizes (--seq_len_per_gp), up to
+# 100 features, 8 attention heads everywhere, graph_scm prior. The default dtype
+# is float32; float16 can be used for speedup (--dtype float16 --amp True) but may lead to
+# training instabilities. v2 uses standard residual init (--zero_init False; v1
+# zero-initializes residual branches) and enables FlashAttention-3 only in stages
+# 2 & 3 (--use_flash_attn3).
 #
 # Adjust the placeholder paths and --nproc_per_node / --n_jobs for your hardware.
 
@@ -2886,8 +2964,8 @@ FILE: scripts/train_v2_reg_stage2.sh
 #
 # Stage 2: 40K steps on datasets with 400-10,240 samples (log-uniform), 79-81% of
 # samples for training, max LR 1e-4, gradient clipping 10. Continues from the Stage 1
-# checkpoint (weights only). FlashAttention-3 is enabled (--use_flash_attn3 True; used
-# when installed, runs attention in fp16) for stages 2 & 3 only.
+# checkpoint (weights only). FlashAttention-3 is enabled (--use_flash_attn3 True)
+# for stages 2 & 3 only.
 #
 # Adjust the placeholder paths and --nproc_per_node / --n_jobs for your hardware.
 
@@ -2989,8 +3067,7 @@ FILE: scripts/train_v2_reg_stage3.sh
 # samples for training, max LR 2e-5, gradient clipping 1. Continues from the Stage 2
 # checkpoint (weights only). Gradient checkpointing is off (--recompute False; the
 # reference run on H200s did not need it) -- set it to True if the largest datasets
-# do not fit in your GPU memory. FlashAttention-3 is enabled (--use_flash_attn3 True;
-# used when installed, runs attention in fp16).
+# do not fit in your GPU memory. FlashAttention-3 is enabled (--use_flash_attn3 True).
 #
 # Adjust the placeholder paths and --nproc_per_node / --n_jobs for your hardware.
 
@@ -3085,7 +3162,7 @@ torchrun --standalone --nproc_per_node=$NUM_GPUS -m tabicl.train \
 ================================================
 FILE: src/tabicl/__about__.py
 ================================================
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 
 
@@ -3496,9 +3573,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
     **Freezing**
 
     freeze_col : bool, default=False
-        Freeze the column-embedding sub-module. Its parameters retain
-        ``requires_grad=False`` and its dropout / batch-norm stay in eval mode
-        across the entire training loop.
+        Freeze the column-embedding sub-module.
 
     freeze_row : bool, default=False
         Freeze the row-interaction sub-module.
@@ -3644,6 +3719,21 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
     @abstractmethod
     def _initial_best_metric(self) -> float: ...
 
+    def _is_best_metric(self, current: float, best: float) -> bool:
+        """Check if current metric is better than best.
+
+        Returns
+        -------
+        bool
+            True if current is finite and either best is NaN (no valid metric yet)
+            or current is an improvement over best.
+        """
+        if np.isnan(current):
+            return False
+        if np.isnan(best):
+            return True
+        return self._metric_improved(current, best)
+
     @property
     @abstractmethod
     def _metric_name(self) -> str: ...
@@ -3727,7 +3817,29 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         from sklearn.utils.validation import check_is_fitted
 
         check_is_fitted(self, "_final_estimator_")
-        return self._final_estimator_.predict(X)
+        return self._final_estimator_.predict(self._transform_X_for_inference(X))
+
+    def _transform_X_for_inference(self, X):
+        """Transform input through the fine-tuning encoder.
+
+        The encoder fitted during fine-tuning is authoritative for the
+        lifetime of this model, ensuring consistent categorical encoding
+        between training and inference.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Input data.
+
+        Returns
+        -------
+        np.ndarray
+            Encoded input ready for the inner estimator.
+        """
+        from sklearn.utils.validation import check_is_fitted
+
+        check_is_fitted(self, "_X_encoder_")
+        return np.asarray(self._X_encoder_.transform(X), dtype=np.float64)
 
     # ---------------- internal helpers ----------------
 
@@ -3769,9 +3881,10 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
     def _apply_freezing(self, model: TabICL) -> bool:
         """Zero ``requires_grad`` on frozen sub-modules.
 
-        Mode (train/eval) is handled separately by :meth:`_set_training_mode`
-        so that calling ``model.train()`` elsewhere doesn't silently re-enable
-        dropout / BN updates on the frozen parts.
+        Frozen modules are kept in train mode alongside unfrozen ones by
+        :meth:`_set_training_mode`. This avoids dtype mismatches at the
+        frozenâ†’unfrozen boundary that would occur if frozen submodules were
+        in eval mode (inference path with autocast).
 
         Returns
         -------
@@ -3785,17 +3898,15 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         return bool(frozen_modules)
 
     def _set_training_mode(self, training: bool) -> None:
-        """Switch ``self.model_`` between train/eval while honoring freezes.
+        """Switch ``self.model_`` between train/eval.
 
-        ``nn.Module.train()`` is recursive, so naively calling
-        ``self.model_.train()`` flips frozen sub-modules (and their dropout /
-        BN) back into training mode. We first toggle the whole model, then
-        snap frozen sub-modules back to ``eval()``.
+        Frozen sub-modules are kept in train mode alongside unfrozen ones.
+        Their parameters already have requires_grad=False so they won't
+        accumulate gradients. Putting them in eval() would route through the
+        inference forward path (InferenceManager with autocast), causing dtype
+        mismatches at the frozenâ†’unfrozen boundary.
         """
         self.model_.train(training)
-        if training:
-            for sub in self._frozen_submodules(self.model_):
-                sub.eval()
 
     def _load_pretrained(self, device: torch.device) -> None:
         """Compose with the sklearn estimator's ``_load_model`` to pull the
@@ -3960,6 +4071,8 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         """
         from sklearn.utils.validation import check_X_y, check_array
 
+        from tabicl._sklearn.preprocessing import TransformToNumerical
+
         # 1. DDP setup
         using_ddp, rank, world_size, local_rank, master, device = _ddp_env(self._resolve_device())
         self._is_master_ = master
@@ -3975,6 +4088,11 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                 _logger = NullLogger()
 
         # 3. Input validation / stash
+        # Preserve the original input container (DataFrame or array) so the
+        # final inner estimator can run its own TransformToNumerical in .fit().
+        X_original = X
+        y_original = y
+
         ensure_numeric_y = self._model_type == "regressor"
         X, y = check_X_y(
             X,
@@ -3983,8 +4101,6 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
             y_numeric=ensure_numeric_y,
             dtype=None,
         )
-        self.X_raw_ = X
-        self.y_raw_ = y  # original labels; the final estimator re-encodes internally
 
         # 3b. Label-encode classification targets. The meta-batch builder uses
         # raw labels as array indices and class counts (see data.py), which
@@ -3997,22 +4113,29 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         else:
             y_fit = y
 
-        # 4. Val split
+        # 4. Val split â€” done BEFORE encoding so the encoder is fit on train
+        # only and validation categories/values don't leak into preprocessing.
         if X_val is not None and y_val is not None:
-            X_train_arr, y_train_arr = X, y_fit
-            X_val_arr = check_array(X_val, ensure_all_finite=False, dtype=None)
+            X_train_orig, X_val_orig = X_original, X_val
+            y_train_arr = y_fit
             y_val_arr = np.asarray(y_val)
             if self._model_type == "classifier":
                 y_val_arr = self._label_encoder_.transform(y_val_arr).astype(np.int64)
         else:
             stratify = y_fit if self._model_type == "classifier" else None
-            X_train_arr, X_val_arr, y_train_arr, y_val_arr = train_test_split(
-                X,
+            X_train_orig, X_val_orig, y_train_arr, y_val_arr = train_test_split(
+                X_original,
                 y_fit,
                 test_size=self.validation_split_ratio,
                 random_state=self.random_state,
                 stratify=stratify,
             )
+
+        # 4b. Encode categorical/string features to numeric. Fit on training
+        # portion only so validation data doesn't leak into the encoder.
+        self._X_encoder_ = TransformToNumerical()
+        X_train_arr = np.asarray(self._X_encoder_.fit_transform(X_train_orig), dtype=np.float64)
+        X_val_arr = np.asarray(self._X_encoder_.transform(X_val_orig), dtype=np.float64)
 
         # 5. Load pretrained model
         self._load_pretrained(device)
@@ -4050,7 +4173,16 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
             best_metric = self._initial_best_metric()
         best_metric = self._broadcast_metric(best_metric, using_ddp, device)
 
+        if self.early_stopping and np.isnan(best_metric):
+            raise ValueError(
+                f"Early stopping enabled but validation metric '{self._metric_name}' is NaN. "
+                f"This usually means the validation set is incompatible with the chosen metric "
+                f"(e.g., single-class validation with ROC-AUC), or validation produced invalid "
+                f"predictions. Fix the validation setup or disable early stopping."
+            )
+
         best_state = {k: v.detach().cpu().clone() for k, v in self.model_.state_dict().items()}
+        has_valid_metric = not np.isnan(best_metric)
 
         # 9. Estimate steps per epoch for scheduler. Under DDP the count is
         # per-rank (drop_last sharding), so ``total_steps`` matches the
@@ -4198,11 +4330,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                 # to avoid printing each epoch's line twice.
                 logger.info(summary)
                 if show_bar:
-                    display_best = (
-                        primary
-                        if not np.isnan(primary) and self._metric_improved(primary, best_metric)
-                        else best_metric
-                    )
+                    display_best = primary if self._is_best_metric(primary, best_metric) else best_metric
                     epoch_iter.set_postfix(
                         {
                             "train_loss": train_loss_str,
@@ -4216,8 +4344,19 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
 
             primary = self._broadcast_metric(primary, using_ddp, device)
 
+            if self.early_stopping and np.isnan(primary):
+                if master:
+                    logger.warning(
+                        "Validation metric '%s' became NaN after epoch %d (possible training "
+                        "instability). Stopping early and restoring best weights from epoch with "
+                        "valid metric.",
+                        self._metric_name,
+                        epoch + 1,
+                    )
+                break
+
             # 10.4  Decide whether to checkpoint (best or interval-aligned).
-            is_best = not np.isnan(primary) and self._metric_improved(primary, best_metric)
+            is_best = self._is_best_metric(primary, best_metric)
             save_this_interval = (
                 output_dir is not None and self.save_interval > 0 and ((epoch + 1) % self.save_interval == 0)
             )
@@ -4233,22 +4372,29 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                 )
 
             # 10.5  Update best-state / patience, maybe early-stop.
-            if self.early_stopping and not np.isnan(primary):
-                if is_best:
-                    best_metric = primary
-                    patience_counter = 0
-                    best_state = {k: v.detach().cpu().clone() for k, v in self.model_.state_dict().items()}
-                else:
+            if is_best:
+                best_metric = primary
+                best_state = {k: v.detach().cpu().clone() for k, v in self.model_.state_dict().items()}
+                has_valid_metric = True
+                patience_counter = 0
+            elif np.isnan(primary):
+                # NaN evaluations before first valid metric don't consume patience
+                if has_valid_metric:
                     patience_counter += 1
-                if patience_counter >= self.patience:
-                    if master:
-                        logger.info(
-                            "Early stopping at epoch %d (best %s=%.4f)",
-                            epoch,
-                            self._metric_name,
-                            best_metric,
-                        )
-                    break
+            else:
+                # Finite but not best - consume patience
+                has_valid_metric = True
+                patience_counter += 1
+
+            if self.early_stopping and patience_counter >= self.patience:
+                if master:
+                    logger.info(
+                        "Early stopping at epoch %d (best %s=%.4f)",
+                        epoch,
+                        self._metric_name,
+                        best_metric,
+                    )
+                break
 
             # 10.6  Wall-clock time-budget check â€” stop if the *next* epoch
             #       would push us past ``self.time_limit``. Decision is made
@@ -4274,9 +4420,22 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                         )
                     break
 
-        # 11. Restore best weights
-        self.model_.load_state_dict(best_state)
-        self._best_metric_ = best_metric
+        # 11. Restore best weights, unless early_stopping=False and no valid metrics
+        if not has_valid_metric:
+            # Keep final trained weights when early stopping is disabled and metric is NaN
+            # (early_stopping=True with NaN would have raised immediately, so we only reach
+            # here when early_stopping=False)
+            if master:
+                logger.warning(
+                    "Validation metric '%s' was NaN for all epochs. "
+                    "Keeping final trained weights (early_stopping=False).",
+                    self._metric_name,
+                )
+            self._best_metric_ = float("nan")
+        else:
+            # Normal case: restore best observed checkpoint
+            self.model_.load_state_dict(best_state)
+            self._best_metric_ = best_metric
 
         # 11b. Always write a final best checkpoint so users have a single file
         # to point TabICLClassifier(model_path=...) at. If no epoch ever
@@ -4301,10 +4460,15 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         # underlying module to eval mode so `_final_estimator_.predict` routes
         # through the inference forward (which emits n_classes-wide logits /
         # proper quantile tensors), not the training forward.
+        # Transform X_original through the fine-tuning encoder to ensure the
+        # inner estimator uses the same categorical encoding that was used
+        # during fine-tuning. This makes _X_encoder_ authoritative for the
+        # lifetime of this fitted model.
         if master:
             self.model_.eval()
             self._final_estimator_ = self._build_inner_estimator(self.model_, self.n_estimators_inference, device)
-            self._final_estimator_.fit(self.X_raw_, self.y_raw_)
+            X_full_encoded = np.asarray(self._X_encoder_.transform(X_original), dtype=np.float64)
+            self._final_estimator_.fit(X_full_encoded, y_original)
             # Make the final estimator self-contained on pickle. Two reasons:
             # (a) ``model_`` holds the fine-tuned weights, which aren't in any
             #     on-disk checkpoint by default â€” the inner's pickle default
@@ -4514,13 +4678,14 @@ class FinetunedTabICLClassifier(ClassifierMixin, FinetunedTabICLBase):
     **Freezing**
 
     freeze_col : bool, default=False
-        Freeze the column-embedding sub-module (weights and dropout/BN).
+        Freeze parameters in the column-embedding sub-module (requires_grad=False).
+        The module remains in train mode to avoid dtype mismatches.
 
     freeze_row : bool, default=False
-        Freeze the row-interaction sub-module.
+        Freeze parameters in the row-interaction sub-module.
 
     freeze_icl : bool, default=False
-        Freeze the in-context-learning predictor.
+        Freeze parameters in the in-context-learning predictor.
 
     **Device & logging**
 
@@ -4791,7 +4956,7 @@ class FinetunedTabICLClassifier(ClassifierMixin, FinetunedTabICLBase):
             given by :attr:`classes_`.
         """
         check_is_fitted(self, "_final_estimator_")
-        return self._final_estimator_.predict_proba(X)
+        return self._final_estimator_.predict_proba(self._transform_X_for_inference(X))
 
     @property
     def classes_(self):
@@ -5402,13 +5567,14 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
     **Freezing**
 
     freeze_col : bool, default=False
-        Freeze the column-embedding sub-module (weights and dropout/BN).
+        Freeze parameters in the column-embedding sub-module (requires_grad=False).
+        The module remains in train mode to avoid dtype mismatches.
 
     freeze_row : bool, default=False
-        Freeze the row-interaction sub-module.
+        Freeze parameters in the row-interaction sub-module.
 
     freeze_icl : bool, default=False
-        Freeze the in-context-learning predictor.
+        Freeze parameters in the in-context-learning predictor.
 
     **Device & logging**
 
@@ -5631,7 +5797,9 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
         ``"quantiles"``, ``"raw_quantiles"``).
         """
         check_is_fitted(self, "_final_estimator_")
-        return self._final_estimator_.predict(X, output_type=output_type, alphas=alphas)
+        return self._final_estimator_.predict(
+            self._transform_X_for_inference(X), output_type=output_type, alphas=alphas
+        )
 
 
 
@@ -5647,6 +5815,298 @@ FILE: src/tabicl/_model/__init__.py
 
 from .tabicl import TabICL
 from .inference_config import InferenceConfig
+
+
+
+================================================
+FILE: src/tabicl/_model/_cgroup_memory.py
+================================================
+"""Cgroup-aware CPU memory headroom for inference offload decisions.
+
+``psutil.virtual_memory().available`` is the host's free RAM. The real cap for a
+container is ``limit - usage`` on this process's cgroup, which is often not
+``/sys/fs/cgroup/memory.max`` (Kubernetes, ``docker run --cgroupns=host``).
+
+Look up the path in ``/proc/self/cgroup``, resolve the controller mount from
+``/proc/self/mountinfo``, walk from there to the mount root, and return the
+smallest ``limit - usage`` among ancestors that have a real limit.
+
+On hybrid hosts the ``0::`` v2 line can coexist with a v1 ``memory:`` line.
+If the v2 walk finds no cap (the memory controller still lives on v1), the
+v1 files are used next.
+
+Never raises: a memory estimate is not worth crashing inference over.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import psutil
+
+_PROC_CGROUP = Path("/proc/self/cgroup")
+_PROC_MOUNTINFO = Path("/proc/self/mountinfo")
+_V2_ROOT = Path("/sys/fs/cgroup")
+_V1_ROOT = Path("/sys/fs/cgroup/memory")
+
+
+def _parse_bytes(raw: str) -> int | None:
+    token = raw.split()[0] if raw.split() else ""
+    if token == "max":
+        return None
+    try:
+        return int(token)
+    except ValueError:
+        return None
+
+
+def _read_bytes(path: Path) -> int | None:
+    try:
+        return _parse_bytes(path.read_text())
+    except OSError:
+        return None
+
+
+def _headroom_at(directory: Path, limit_name: str, usage_name: str, physical: int) -> int | None:
+    limit = _read_bytes(directory / limit_name)
+    if limit is None or limit <= 0 or limit >= physical:
+        return None
+    usage = _read_bytes(directory / usage_name)
+    if usage is None:
+        # Finite cap, unknown usage: do not pretend the cgroup is empty.
+        return 0
+    return max(0, limit - usage)
+
+
+def _min_headroom_along_ancestors(
+    start: Path, stop: Path, limit_name: str, usage_name: str, physical: int
+) -> int | None:
+    """Smallest ``limit - usage`` on ``start`` and its parents up to ``stop``.
+
+    Levels with no file, ``"max"``, a non-positive limit, or a limit at or
+    above ``physical`` are skipped. Returns None if no ancestor has a real cap.
+    The walk stays under ``stop`` and is bounded so a malformed tree cannot
+    loop.
+    """
+    best: int | None = None
+    path = start
+    for _ in range(64):
+        try:
+            path.relative_to(stop)
+        except ValueError:
+            break
+        headroom = _headroom_at(path, limit_name, usage_name, physical)
+        if headroom is not None:
+            best = headroom if best is None else min(best, headroom)
+        if path == stop or path.parent == path:
+            break
+        path = path.parent
+    return best
+
+
+def _process_cgroup_relpath(proc_cgroup: Path, *, v2: bool) -> str | None:
+    """Relative cgroup path for this process, from a ``cgroup`` proc file.
+
+    For v2, that is the suffix of the ``0::/foo`` line. For v1, the path on
+    the ``memory:`` controller line (``4:memory:/foo``). Returns None if the
+    file is unreadable or has no matching line.
+    """
+    try:
+        text = proc_cgroup.read_text()
+    except OSError:
+        return None
+    for line in text.splitlines():
+        if v2:
+            if line.startswith("0::"):
+                return line[3:]
+            continue
+        fields = line.split(":", 2)
+        if len(fields) == 3 and "memory" in fields[1].split(","):
+            return fields[2]
+    return None
+
+
+def _unescape_mountinfo(value: str) -> str:
+    """Decode octal escapes used in mountinfo path fields (space is ``\\040``)."""
+    return (
+        value.replace("\\040", " ")
+        .replace("\\011", "\t")
+        .replace("\\012", "\n")
+        .replace("\\134", "\\")
+    )
+
+
+def _parse_mountinfo(
+    text: str, *, fstype: str, controller: str | None = None
+) -> list[tuple[Path, str]]:
+    """Return ``(mountpoint, hierarchy_root)`` pairs from a mountinfo dump.
+
+    ``hierarchy_root`` is field 4: the path inside the cgroup filesystem that
+    is mounted. Hierarchy-root mounts (field 4 ``/``) come first so a
+    ``/proc/self/cgroup`` path can be joined onto them directly. For cgroup
+    v1, ``controller`` must appear in the super-block options (``memory`` in
+    ``rw,memory`` or ``rw,cpu,memory``).
+    """
+    found: list[tuple[Path, str]] = []
+    for line in text.splitlines():
+        parts = line.split()
+        try:
+            hyphen = parts.index("-")
+        except ValueError:
+            continue
+        if len(parts) < 5 or hyphen + 1 >= len(parts) or parts[hyphen + 1] != fstype:
+            continue
+        if controller is not None:
+            super_opts = parts[hyphen + 3] if hyphen + 3 < len(parts) else ""
+            if controller not in super_opts.split(","):
+                continue
+        found.append((Path(_unescape_mountinfo(parts[4])), _unescape_mountinfo(parts[3])))
+    found.sort(key=lambda item: item[1] != "/")
+    return found
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text()
+    except OSError:
+        return ""
+
+
+def _under_mount(mountpoint: Path, mount_root: str, rel: str) -> Path | None:
+    """Directory for ``rel`` on this mount, or None if ``rel`` is outside it.
+
+    ``mount_root`` is mountinfo field 4. A bind-mount of ``/system.slice`` at
+    ``mountpoint`` maps ``/system.slice/foo`` to ``mountpoint/foo``.
+    """
+    rel_parts = [p for p in rel.split("/") if p and p != "."]
+    root_parts = [p for p in mount_root.split("/") if p and p != "."]
+    # A ".." segment must not walk above the mount. Stay at the mount root.
+    if any(p == ".." for p in rel_parts + root_parts):
+        return mountpoint
+    # Bind-mount of /system.slice cannot serve a process in /user.slice.
+    if rel_parts[: len(root_parts)] != root_parts:
+        return None
+    suffix = rel_parts[len(root_parts) :]
+    return mountpoint.joinpath(*suffix) if suffix else mountpoint
+
+
+def _controller_mounts(
+    explicit: Path | None,
+    mountinfo_text: str,
+    *,
+    fstype: str,
+    default: Path,
+    controller: str | None = None,
+) -> list[tuple[Path, str]]:
+    """Mounts for a controller: explicit test root, else mountinfo, else ``default``."""
+    if explicit is not None:
+        return [(explicit, "/")]
+    return _parse_mountinfo(mountinfo_text, fstype=fstype, controller=controller) or [
+        (default, "/")
+    ]
+
+
+def _headroom_on_mounts(
+    rel: str,
+    mounts: list[tuple[Path, str]],
+    limit_name: str,
+    usage_name: str,
+    physical: int,
+) -> int | None:
+    """Tightest ``limit - usage`` among mounts that contain ``rel``."""
+    min_headroom: int | None = None
+    for mountpoint, mount_root in mounts:
+        start = _under_mount(mountpoint, mount_root, rel)
+        if start is None:
+            continue
+        headroom = _min_headroom_along_ancestors(
+            start, mountpoint, limit_name, usage_name, physical
+        )
+        if headroom is not None:
+            min_headroom = headroom if min_headroom is None else min(min_headroom, headroom)
+    return min_headroom
+
+
+def _cgroup_memory_headroom(
+    *,
+    proc_cgroup: Path = _PROC_CGROUP,
+    proc_mountinfo: Path = _PROC_MOUNTINFO,
+    v2_root: Path | None = None,
+    v1_root: Path | None = None,
+    physical_bytes: int | None = None,
+) -> int | None:
+    """Bytes this process may still allocate under its cgroup, or None if unlimited.
+
+    Reads ``proc_cgroup`` (``/proc/self/cgroup`` by default) and joins the
+    relative path onto the controller mount from ``proc_mountinfo`` (or
+    ``v2_root`` / ``v1_root`` when tests inject a fake sysfs tree). v2 uses
+    ``memory.max`` / ``memory.current``; v1 uses ``memory.limit_in_bytes`` /
+    ``memory.usage_in_bytes``. Parents are walked to the mount and the
+    smallest ``limit - usage`` is returned.
+
+    A ``0::`` v2 line is not proof that the memory controller lives on v2.
+    Hybrid hosts list both hierarchies; if the v2 walk finds no cap, the v1
+    ``memory:`` entry is inspected next.
+
+    ``"max"``, a v1 ~2**63 unlimited sentinel, and any limit at or above
+    physical RAM are treated as no cap at that level. If ``proc_cgroup`` is
+    missing, the v2/v1 root files are tried (Docker's private cgroup namespace).
+
+    Never raises: any error falls through to None so callers can keep using
+    psutil's host figure.
+    """
+    try:
+        physical = physical_bytes if physical_bytes is not None else psutil.virtual_memory().total
+        mountinfo_text = _read_text(proc_mountinfo)
+        rel_v2 = _process_cgroup_relpath(proc_cgroup, v2=True)
+        rel_v1 = _process_cgroup_relpath(proc_cgroup, v2=False)
+
+        if rel_v2 is not None:
+            headroom = _headroom_on_mounts(
+                rel_v2,
+                _controller_mounts(
+                    v2_root, mountinfo_text, fstype="cgroup2", default=_V2_ROOT
+                ),
+                "memory.max",
+                "memory.current",
+                physical,
+            )
+            if headroom is not None:
+                return headroom
+        if rel_v1 is not None:
+            headroom = _headroom_on_mounts(
+                rel_v1,
+                _controller_mounts(
+                    v1_root,
+                    mountinfo_text,
+                    fstype="cgroup",
+                    default=_V1_ROOT,
+                    controller="memory",
+                ),
+                "memory.limit_in_bytes",
+                "memory.usage_in_bytes",
+                physical,
+            )
+            if headroom is not None:
+                return headroom
+        if rel_v2 is not None or rel_v1 is not None:
+            # A hierarchy line existed but published no cap ("max", v1 sentinel).
+            return None
+        # /proc/self/cgroup missing: last try, Docker private-namespace root files.
+        v2 = _controller_mounts(v2_root, mountinfo_text, fstype="cgroup2", default=_V2_ROOT)[0][0]
+        v1 = _controller_mounts(
+            v1_root, mountinfo_text, fstype="cgroup", default=_V1_ROOT, controller="memory"
+        )[0][0]
+        for root, limit_name, usage_name in (
+            (v2, "memory.max", "memory.current"),
+            (v1, "memory.limit_in_bytes", "memory.usage_in_bytes"),
+        ):
+            headroom = _headroom_at(root, limit_name, usage_name, physical)
+            if headroom is not None:
+                return headroom
+        return None
+    except Exception:
+        return None
 
 
 
@@ -7297,7 +7757,8 @@ from torch import Tensor
 
 from .kv_cache import KVCache
 from .attention import flash_attn3_toggle
-from tabicl._torch_devices import resolve_torch_device
+from ._cgroup_memory import _cgroup_memory_headroom
+from .._torch_devices import resolve_torch_device
 
 
 def devices_match(a: torch.device, b: torch.device) -> bool:
@@ -8101,15 +8562,38 @@ class InferenceManager:
         raise ValueError(f"Invalid offload={offload!r}. Expected bool or one of 'auto', 'gpu', 'cpu', 'disk'.")
 
     def get_available_cpu_memory(self) -> float:
-        """Get available CPU memory in MB.
+        """Get available CPU memory in MB, respecting any cgroup limit.
 
         Returns
         -------
         float
             Available CPU memory in megabytes. This is the amount of memory
-            that can be allocated without causing swap.
+            that can be allocated without causing swap -- or, inside a
+            memory-limited container, without being killed.
+
+        Notes
+        -----
+        ``psutil.virtual_memory().available`` reports the **host's** free memory and is
+        blind to cgroup limits, so inside a memory-limited container (Docker, Kubernetes,
+        most GPU clouds) it can substantially overstate what this process may actually
+        allocate. Measured on one such container: psutil reported **450.8 GB available**
+        against a real headroom of **102.4 GB**, an overestimate of 4.4x.
+
+        This value feeds ``_resolve_offload_mode``, which decides whether ``offload="auto"``
+        keeps outputs in CPU memory or escalates to disk. Overestimating it means never
+        escalating, and the resulting failure is unusually hard to diagnose: the cgroup OOM
+        killer sends SIGKILL, so the process dies with **no Python traceback and no CUDA
+        error**, which from the outside is indistinguishable from a clean exit.
+
+        Under the hood, this method intersects the value returned by
+        ``psutil.virtual_memory().available`` with cgroup memory constraints for the current
+        process, if any.
         """
-        return psutil.virtual_memory().available / (1024 * 1024)
+        available = psutil.virtual_memory().available
+        headroom = _cgroup_memory_headroom()
+        if headroom is not None:
+            available = min(available, headroom)
+        return available / (1024 * 1024)
 
     def _get_device_backend_api(self) -> Optional[Any]:
         """Return torch backend module matching the execution device type.
@@ -9405,7 +9889,12 @@ class RowInteraction(nn.Module):
         device = embeddings.device
 
         cls_tokens = self.cls_tokens.expand(B, T, self.num_cls, self.embed_dim)
-        embeddings[:, :, : self.num_cls] = cls_tokens.to(embeddings.device)
+        # When col embedding is frozen (partial freezing, see #128), embeddings is a
+        # no-grad view whose in-place mutation would conflict with autograd. Detach
+        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        if torch.is_grad_enabled() and not embeddings.requires_grad:
+            embeddings = embeddings.detach()
+        embeddings[:, :, : self.num_cls] = cls_tokens.to(device)
 
         # Create mask to prevent from attending to empty features
         if d is None:
@@ -9447,6 +9936,11 @@ class RowInteraction(nn.Module):
 
         B, T = embeddings.shape[:2]
         cls_tokens = self.cls_tokens.expand(B, T, self.num_cls, self.embed_dim)
+        # When col embedding is frozen (partial freezing, see #128), embeddings is a
+        # no-grad view whose in-place mutation would conflict with autograd. Detach
+        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        if torch.is_grad_enabled() and not embeddings.requires_grad:
+            embeddings = embeddings.detach()
         embeddings[:, :, : self.num_cls] = cls_tokens.to(embeddings.device)
         representations = self.inference_mgr(
             self._aggregate_embeddings, inputs=OrderedDict([("embeddings", embeddings)])
@@ -10929,6 +11423,11 @@ class ICLearning(nn.Module):
             Ry_train = self.y_encoder(y_train.float())
         else:  # Regression
             Ry_train = self.y_encoder(y_train.unsqueeze(-1))
+        # When upstream modules are frozen (partial freezing, see #128), R is a
+        # no-grad view whose in-place mutation would conflict with autograd. Detach
+        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        if torch.is_grad_enabled() and not R.requires_grad:
+            R = R.detach()
         R[:, :train_size] = R[:, :train_size] + Ry_train
 
         src = self.tf_icl(R, train_size=train_size)
@@ -15816,34 +16315,11 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
         # Preserve DataFrame structure to retain column names and types for correct feature transformation
         X = validate_data(self, X, reset=False, dtype=None, skip_check_array=True)
 
-        # Detect all-NaN columns (used by SHAP's feature masking approach)
-        if hasattr(X, "columns"):  # check for dataframe without importing pandas
-            feature_mask = X.isna().all(axis=0).to_numpy()
-        else:
-            arr = np.asarray(X)
-            if np.issubdtype(arr.dtype, np.number):
-                feature_mask = np.isnan(arr).all(axis=0)
-            else:
-                # object dtype: v != v is True only for NaN in IEEE 754, safe for strings too
-                feature_mask = np.array([all(v != v for v in arr[:, i]) for i in range(arr.shape[1])])
-
-        if feature_mask is not None and not np.any(feature_mask):
-            feature_mask = None
-
-        # Fill masked columns so that transformers don't choke on NaN
-        if feature_mask is not None:
-            if hasattr(X, "columns"):  # Proxy way to check whether X is a dataframe
-                X.iloc[:, feature_mask] = 0.0
-            else:
-                X[:, feature_mask] = 0.0
-
         X = self.X_encoder_.transform(X)
 
-        # Skip KV cache when features are masked
         has_kv_cache = hasattr(self, "model_kv_cache_") and self.model_kv_cache_ is not None
-        use_cache = has_kv_cache and feature_mask is None
 
-        if use_cache:
+        if has_kv_cache:
             # Cache exists: forward only test data and use the pre-computed cache for training data
             test_data = self.ensemble_generator_.transform(X, mode="test")
             outputs = []
@@ -15852,15 +16328,10 @@ class TabICLClassifier(ClassifierMixin, TabICLBaseEstimator):
                 outputs.append(self._batch_forward_with_cache(Xs_test, kv_cache))
             outputs = np.concatenate(outputs, axis=0)
         else:
-            # No cache or masked features: forward both training and test data
-            data = self.ensemble_generator_.transform(X, mode="both", feature_mask=feature_mask)
+            data = self.ensemble_generator_.transform(X, mode="both")
             outputs = []
             for norm_method, (Xs, ys) in data.items():
-                if feature_mask is None:
-                    feature_shuffles = self.ensemble_generator_.feature_shuffles_[norm_method]
-                else:
-                    feature_shuffles = self.ensemble_generator_.masked_feature_shuffles_[norm_method]
-
+                feature_shuffles = self.ensemble_generator_.feature_shuffles_[norm_method]
                 outputs.append(self._batch_forward(Xs, ys, feature_shuffles))
             outputs = np.concatenate(outputs, axis=0)
 
@@ -16635,6 +17106,8 @@ class PreprocessingPipeline(TransformerMixin, BaseEstimator):
             Returns self.
         """
         X = validate_data(self, X)
+        if hasattr(X, "dtype") and X.dtype == np.float16:
+            X = X.astype(np.float32)
 
         # 1. Apply standard scaling
         self.standard_scaler_ = CustomStandardScaler()
@@ -16689,6 +17162,8 @@ class PreprocessingPipeline(TransformerMixin, BaseEstimator):
         """
         check_is_fitted(self)
         X = validate_data(self, X, reset=False, copy=True)
+        if hasattr(X, "dtype") and X.dtype == np.float16:
+            X = X.astype(np.float32)
         # Standard scaling
         X = self.standard_scaler_.transform(X)
         # Normalization
@@ -17064,7 +17539,7 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
 
         return ensemble_configs, X_shuffle_dict, y_pattern_dict
 
-    def transform(self, X=None, mode="both", feature_mask=None):
+    def transform(self, X=None, mode="both"):
         """Create ensemble data variants for in-context learning.
 
         Parameters
@@ -17086,14 +17561,6 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
               Returns ``OrderedDict`` mapping normalization methods to
               ``(X_test_ensemble[n_variants, n_test, n_features],)``.
 
-        feature_mask : ndarray of shape (n_original_features,) or None, default=None
-            Boolean mask where ``True`` indicates masked (all-NaN) columns in
-            the *original* feature space (before ``UniqueFeatureFilter``).  When
-            provided, masked columns are dropped from both preprocessed training
-            and test data, and feature shuffles are remapped to the reduced
-            ``[0, K)`` space.  A transient ``masked_feature_shuffles_``
-            attribute is stored for the caller to retrieve the remapped shuffles.
-
         Returns
         -------
         OrderedDict
@@ -17103,39 +17570,14 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         check_is_fitted(self, ["ensemble_configs_"])
         assert mode in ("both", "train", "test"), f"Invalid mode: {mode}"
 
-        # Remap feature shuffles if a feature mask is provided to drop masked columns
-        if feature_mask is not None:
-            # Map mask from original feature space to filtered space
-            filtered_mask = feature_mask[self.unique_filter_.features_to_keep_]
-            kept_cols = ~filtered_mask
-            # Build old-index -> new-index mapping for shuffle remapping
-            idx_map = {}
-            new_idx = 0
-            for old_idx in range(len(filtered_mask)):
-                if kept_cols[old_idx]:
-                    idx_map[old_idx] = new_idx
-                    new_idx += 1
-
-            # Pre-compute remapped feature shuffles per norm method
-            self.masked_feature_shuffles_ = OrderedDict()
-            for norm_method, shuffle_configs in self.ensemble_configs_.items():
-                remapped = []
-                for feat_shuffle, _ in shuffle_configs:
-                    remapped.append([idx_map[i] for i in feat_shuffle if i in idx_map])
-                self.masked_feature_shuffles_[norm_method] = remapped
-
         if mode == "train":
             y = self.y_
             data = OrderedDict()
             for norm_method, shuffle_configs in self.ensemble_configs_.items():
                 X_preprocessed = self.preprocessors_[norm_method].X_transformed_
-                if feature_mask is not None:
-                    X_preprocessed = X_preprocessed[:, kept_cols]
                 X_ensemble = []
                 y_ensemble = []
-                for i, (feat_shuffle, y_pattern) in enumerate(shuffle_configs):
-                    if feature_mask is not None:
-                        feat_shuffle = self.masked_feature_shuffles_[norm_method][i]
+                for feat_shuffle, y_pattern in shuffle_configs:
                     X_ensemble.append(X_preprocessed[:, feat_shuffle])
                     if self.classification:
                         y_ensemble.append(np.array(y_pattern)[y.astype(int)])
@@ -17148,21 +17590,12 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
         assert X is not None, "X is required when mode is 'test' or 'both'"
         X = self.unique_filter_.transform(X)
 
-        # Fill masked columns with 0.0 so sklearn transformers don't choke on NaN
-        if feature_mask is not None:
-            X = np.array(X, dtype=np.float64)
-            X[:, filtered_mask] = 0.0
-
         if mode == "test":
             data = OrderedDict()
             for norm_method, shuffle_configs in self.ensemble_configs_.items():
                 X_test_preprocessed = self.preprocessors_[norm_method].transform(X)
-                if feature_mask is not None:
-                    X_test_preprocessed = X_test_preprocessed[:, kept_cols]
                 X_ensemble = []
-                for i, (feat_shuffle, _) in enumerate(shuffle_configs):
-                    if feature_mask is not None:
-                        feat_shuffle = self.masked_feature_shuffles_[norm_method][i]
+                for feat_shuffle, _ in shuffle_configs:
                     X_ensemble.append(X_test_preprocessed[:, feat_shuffle])
                 data[norm_method] = (np.stack(X_ensemble, axis=0),)
             return data
@@ -17174,15 +17607,10 @@ class EnsembleGenerator(TransformerMixin, BaseEstimator):
             preprocessor = self.preprocessors_[norm_method]
             X_train_pp = preprocessor.X_transformed_
             X_test_pp = preprocessor.transform(X)
-            if feature_mask is not None:
-                X_train_pp = X_train_pp[:, kept_cols]
-                X_test_pp = X_test_pp[:, kept_cols]
             X_variant = np.concatenate([X_train_pp, X_test_pp], axis=0)
             X_ensemble = []
             y_ensemble = []
-            for i, (feat_shuffle, y_pattern) in enumerate(shuffle_configs):
-                if feature_mask is not None:
-                    feat_shuffle = self.masked_feature_shuffles_[norm_method][i]
+            for feat_shuffle, y_pattern in shuffle_configs:
                 X_ensemble.append(X_variant[:, feat_shuffle])
 
                 if self.classification:
@@ -17907,36 +18335,13 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
         # Preserve DataFrame structure to retain column names and types for correct feature transformation
         X = validate_data(self, X, reset=False, dtype=None, skip_check_array=True)
 
-        # Detect all-NaN columns (used by SHAP's feature masking approach)
-        if hasattr(X, "columns"):  # check for dataframe without importing pandas
-            feature_mask = X.isna().all(axis=0).to_numpy()
-        else:
-            arr = np.asarray(X)
-            if np.issubdtype(arr.dtype, np.number):
-                feature_mask = np.isnan(arr).all(axis=0)
-            else:
-                # object dtype: v != v is True only for NaN in IEEE 754, safe for strings too
-                feature_mask = np.array([all(v != v for v in arr[:, i]) for i in range(arr.shape[1])])
-
-        if feature_mask is not None and not np.any(feature_mask):
-            feature_mask = None
-
-        # Fill masked columns so that transformers don't choke on NaN
-        if feature_mask is not None:
-            if hasattr(X, "columns"):  # Proxy way to check whether X is a dataframe
-                X.iloc[:, feature_mask] = 0.0
-            else:
-                X[:, feature_mask] = 0.0
-
         X = self.X_encoder_.transform(X)
 
         output_type = [output_type] if isinstance(output_type, str) else list(output_type)
 
-        # Skip KV cache when features are masked
         has_kv_cache = hasattr(self, "model_kv_cache_") and self.model_kv_cache_ is not None
-        use_cache = has_kv_cache and feature_mask is None
 
-        if use_cache:
+        if has_kv_cache:
             # Cache exists: forward only test data and use the pre-computed cache for training data
             test_data = self.ensemble_generator_.transform(X, mode="test")
             results = {key: [] for key in output_type}
@@ -17949,8 +18354,7 @@ class TabICLRegressor(RegressorMixin, TabICLBaseEstimator):
                 else:
                     results[output_type[0]].append(batch_out)
         else:
-            # No cache or masked features: forward both training and test data
-            data = self.ensemble_generator_.transform(X, mode="both", feature_mask=feature_mask)
+            data = self.ensemble_generator_.transform(X, mode="both")
             results = {key: [] for key in output_type}
             for Xs, ys in data.values():
                 batch_out = self._batch_forward(Xs, ys, output_type=output_type, alphas=alphas)
@@ -21821,8 +22225,8 @@ class DatetimeEncoder(TimeTransform):
             "hour_of_day": [24],
             "day_of_week": [7],
             "day_of_month": [30.5],
-            "day_of_year": [365],
-            "week_of_year": [52],
+            "day_of_year": [366],  # 366 to avoid collisions in leap years
+            "week_of_year": [53],  # 53 to avoid collisions in ISO week 53 years
             "month_of_year": [12],
         }
 
@@ -21858,9 +22262,8 @@ class DatetimeEncoder(TimeTransform):
 
             if periods is not None:
                 for p in periods:
-                    adjusted = p - 1  # Adjust for 0-based indexing
-                    df[f"{feature_name}_sin"] = np.sin(2 * np.pi * feature / adjusted)
-                    df[f"{feature_name}_cos"] = np.cos(2 * np.pi * feature / adjusted)
+                    df[f"{feature_name}_sin"] = np.sin(2 * np.pi * feature / p)
+                    df[f"{feature_name}_cos"] = np.cos(2 * np.pi * feature / p)
             else:
                 df[feature_name] = feature
 
@@ -29587,10 +29990,14 @@ FILE: src/tabicl/shap/_shap.py
 ================================================
 """SHAP explanations for TabICL.
 
-TabICL treats NaN columns as absent features. This module exploits that
-by using a single all-NaN row as the SHAP background, so that masked
-features are genuinely removed from the model's perspective rather than
-replaced by some reference value.
+This module uses a single all-NaN row as the SHAP background. NaN values
+are handled by TabICL's normal preprocessing (mean imputation for numeric
+features, missing-category encoding for numerically-encoded categoricals),
+providing a natural missing-value baseline for feature attribution.
+
+Note: String/object categorical features must be numerically encoded before
+calling get_shap_values (e.g., via pandas' get_dummies or sklearn's
+OrdinalEncoder). See tutorials/interpretability.py for an example.
 
 Example::
 
@@ -29635,7 +30042,16 @@ def get_shap_values(estimator: Any, X_test: np.ndarray, attribute_names: list[st
     """
     if hasattr(X_test, "columns") and attribute_names is None:
         attribute_names = list(X_test.columns)
-    X_np = np.asarray(X_test, dtype=np.float64)
+
+    try:
+        X_np = np.asarray(X_test, dtype=np.float64)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(
+            "SHAP values require numeric input. When using categorical features, "
+            "encode them before fitting the estimator and pass data using the same "
+            "numeric representation to get_shap_values. "
+            "See tutorials/interpretability.py for an example."
+        ) from exc
 
     predict_fn = "predict_proba" if hasattr(estimator, "predict_proba") else "predict"
     explainer = get_shap_explainer(estimator, X_np, predict_fn=predict_fn, **kwargs)
@@ -29752,9 +30168,13 @@ FILE: src/tabicl/shap/_shapiq.py
 indices â€” richer than plain SHAP values because they also capture feature
 interactions.
 
-TabICL natively treats NaN columns as absent features, so we provide a
-custom :class:`_NaNImputer` that replaces masked features with NaN instead
-of drawing from the marginal distribution.
+We provide a custom :class:`_NaNImputer` that replaces masked features with
+NaN instead of drawing from the marginal distribution. TabICL's preprocessing
+handles NaN through mean imputation (numeric) or missing-category encoding
+(numerically-encoded categoricals), providing a natural missing-value baseline.
+
+Note: Categorical features must be numerically encoded before computing ShapIQ
+values. See the SHAP module documentation and tutorials/interpretability.py.
 
 Example::
 
@@ -29782,12 +30202,11 @@ from sklearn.base import BaseEstimator
 
 
 class _NaNImputer(MarginalImputer):
-    """Replace absent features with NaN for TabICL's native missing-feature handling.
+    """Replace absent features with NaN for TabICL's missing-value baseline.
 
     When shapiq evaluates a coalition (subset of features), absent features are
-    set to NaN.  TabICL recognises NaN columns as genuinely missing by giving
-    semantically correct "remove-and-recontextualize" explanations without any
-    sampling noise.
+    set to NaN. TabICL's preprocessing handles these through normal imputation,
+    providing a deterministic baseline without sampling noise.
 
     Parameters
     ----------
@@ -29850,8 +30269,8 @@ def get_shapiq_explainer(
         How absent features are handled when evaluating coalitions:
 
         - ``"nan"`` (default) â€” uses :class:`_NaNImputer` so that absent
-          features become NaN, exploiting TabICL's native missing-feature
-          handling.  Deterministic, no sampling noise.
+          features become NaN, handled by TabICL's normal preprocessing
+          (imputation).  Deterministic, no sampling noise.
         - ``"marginal"`` â€” standard marginal-sampling imputation.
         - ``"baseline"`` â€” replace absent features with a fixed baseline
           value (typically the mean of `data`).
@@ -30338,7 +30757,7 @@ from tqdm import tqdm
 import wandb
 
 from tabicl._model.tabicl import TabICL
-from tabicl._model.attention import set_flash_attn3_enabled
+from tabicl._model.attention import HAS_FLASH_ATTN3, set_flash_attn3_enabled
 from tabicl.prior._dataset import PriorDataset
 from tabicl.prior._genload import LoadPriorDataset, seed_worker
 from tabicl.prior.graph_lib._config import PriorConfig
@@ -30513,6 +30932,14 @@ class Trainer:
         # FlashAttention-3 runs attention in fp16; the v2 recipe enables it only for stages 2 & 3.
         set_flash_attn3_enabled(self.config.use_flash_attn3)
 
+        # PyTorch >= 2.4 may route fp16/bf16 attention to the cuDNN SDPA backend,
+        # whose backward is slower than Flash Attention for TabICL's attention
+        # patterns and warns about mismatched grad_output strides. Disabled for
+        # the training forward via sdpa_kernel (see configure_amp).
+        self._disable_cudnn_sdp = (
+            hasattr(torch.backends.cuda, "enable_cudnn_sdp") and "cuda" in self.config.device
+        )
+
         self.model_config = {
             "max_classes": 0 if self.regression else self.config.max_classes,
             "num_quantiles": self.config.num_quantiles,
@@ -30674,16 +31101,45 @@ class Trainer:
     def configure_amp(self):
         """Configure automatic mixed precision (AMP) for training."""
 
+        dtypes = {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}
+        if self.config.dtype not in dtypes:
+            raise ValueError(f"dtype='{self.config.dtype}' is not supported. Use one of {sorted(dtypes)}.")
+        amp_dtype = dtypes[self.config.dtype]
+
         self.amp = self.config.amp and "cuda" in self.config.device
-        self.scaler = torch.GradScaler("cuda", enabled=self.amp)
+
+        # Loss scaling is needed whenever the computation graph contains a differentiable
+        # float16 path, which is not fully described by the autocast dtype:
+        #   - global float16 autocast, and
+        #   - FlashAttention-3, which casts Q/K/V to float16 whenever the incoming dtype is
+        #     neither float16 nor bfloat16 (see _model/attention.py). Its backward then runs
+        #     in float16, and casting the result back to float32 cannot recover gradients
+        #     that already underflowed.
+        # bfloat16 needs no scaling: it has the dynamic range of float32, and FA3 keeps it.
+        model_compute_dtype = amp_dtype if self.amp else torch.float32
+        uses_fp16_autocast = self.amp and amp_dtype == torch.float16
+        uses_fp16_fa3 = (
+            HAS_FLASH_ATTN3
+            and self.config.use_flash_attn3
+            and "cuda" in self.config.device
+            and model_compute_dtype == torch.float32
+        )
+        self.scaler = torch.GradScaler("cuda", enabled=uses_fp16_autocast or uses_fp16_fa3)
+
         if self.amp:
             if self.master_process:
-                print(f"Automatic Mixed Precision is enabled.")
-            self.amp_ctx = torch.autocast(
-                device_type="cuda", dtype=torch.float16 if self.config.dtype == "float16" else torch.float32
-            )
+                print(f"Automatic Mixed Precision is enabled with dtype {self.config.dtype}.")
+            self.amp_ctx = torch.autocast(device_type="cuda", dtype=amp_dtype)
         else:
             self.amp_ctx = nullcontext()
+
+    def _sdpa_ctx(self):
+        """Context manager that disables cuDNN SDPA for the training forward."""
+        if self._disable_cudnn_sdp:
+            from torch.nn.attention import sdpa_kernel, SDPBackend
+
+            return sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION, SDPBackend.MATH])
+        return nullcontext()
 
     def get_latest_checkpoint(self):
         """Returns the latest checkpoint from `checkpoint_dir`
@@ -30983,7 +31439,7 @@ class Trainer:
         # variable-feature priors (e.g. graph_scm).
         model_d = None if self.config.ignore_d else micro_d
 
-        with self.amp_ctx:
+        with self.amp_ctx, self._sdpa_ctx():
             if self.regression:
                 # (B, test_size, num_quantiles) predicted quantiles at levels
                 # linspace(0, 1, num_quantiles + 2)[1:-1] (matches inference / QuantileDistribution)
@@ -31171,7 +31627,12 @@ def build_parser():
     ###########################################################################
     parser.add_argument("--device", default="cuda", type=str, help="Device for training: cpu, cuda, cuda:0")
     parser.add_argument(
-        "--dtype", default="float32", type=str, help="Data type (supported for float16, float32) used for training"
+        "--dtype",
+        default="float32",
+        type=str,
+        help="Autocast data type used for training when --amp is on. 'float16' enables the gradient "
+        "scaler; 'bfloat16' needs no loss scaling; 'float32' makes autocast a no-op. Parameters are "
+        "always kept in float32.",
     )
     parser.add_argument("--np_seed", type=int, default=42, help="Random seed for numpy")
     parser.add_argument("--torch_seed", type=int, default=42, help="Random seed for torch")
@@ -31491,6 +31952,840 @@ FILE: tests/__init__.py
 
 
 ================================================
+FILE: tests/_cgroup_docker_probe.py
+================================================
+#!/usr/bin/env python3
+"""Print JSON cgroup-headroom probe results. Used inside Docker by integration tests.
+
+Loads ``_cgroup_memory.py`` by file path so the container does not need torch.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import pathlib
+import sys
+
+import psutil
+
+
+def _load_cgroup_module():
+    # Repo is mounted at /src (see test_cgroup_memory_docker.py).
+    candidates = [
+        pathlib.Path("/src/src/tabicl/_model/_cgroup_memory.py"),
+        pathlib.Path(__file__).resolve().parents[1] / "src/tabicl/_model/_cgroup_memory.py",
+    ]
+    for path in candidates:
+        if path.is_file():
+            spec = importlib.util.spec_from_file_location("tabicl_cgroup_memory", path)
+            if spec is None or spec.loader is None:
+                continue
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            return module
+    raise FileNotFoundError("could not locate src/tabicl/_model/_cgroup_memory.py")
+
+
+def main() -> None:
+    mod = _load_cgroup_module()
+    vm = psutil.virtual_memory()
+    headroom = mod._cgroup_memory_headroom()
+    available = vm.available
+    if headroom is not None:
+        available = min(available, headroom)
+    payload = {
+        "headroom_bytes": headroom,
+        "psutil_available_bytes": vm.available,
+        "psutil_total_bytes": vm.total,
+        "effective_available_bytes": available,
+        "proc_self_cgroup": pathlib.Path("/proc/self/cgroup").read_text().strip(),
+        "root_memory_max": None,
+        "self_memory_max": None,
+    }
+    root_max = pathlib.Path("/sys/fs/cgroup/memory.max")
+    if root_max.is_file():
+        payload["root_memory_max"] = root_max.read_text().strip()
+    rel = payload["proc_self_cgroup"].split(":")[-1]
+    self_max = pathlib.Path("/sys/fs/cgroup") / rel.lstrip("/") / "memory.max"
+    if self_max.is_file():
+        payload["self_memory_max"] = self_max.read_text().strip()
+    json.dump(payload, sys.stdout)
+    sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: tests/conftest.py
+================================================
+"""Shared test configuration and helpers."""
+
+import os
+import sys
+
+import torch
+import pytest
+
+# Make the tests/ directory importable so test modules can do `from conftest import ...`
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Disable oneDNN/MKLDNN when requested (used on Windows CI to avoid flaky
+# "could not create a primitive" errors from the oneDNN backend).
+if os.environ.get("TABICL_DISABLE_MKLDNN") == "1":
+    torch.backends.mkldnn.enabled = False
+
+_CKPT_DIR = os.environ.get("TABICL_CHECKPOINT_DIR")
+
+_FILENAMES = {
+    "classifier": "tabicl-classifier-v2-20260212.ckpt",
+    "regressor": "tabicl-regressor-v2-20260212.ckpt",
+}
+
+
+def model_path(kind: str) -> dict:
+    """Return a model_path kwarg dict for the given kind ('classifier'/'regressor').
+
+    When TABICL_CHECKPOINT_DIR is unset, returns an empty dict so the estimator
+    uses default auto-download (works on GitHub Actions). When set, points at a
+    local checkpoint file.
+    """
+    if _CKPT_DIR is None:
+        return {}
+    return {"model_path": os.path.join(_CKPT_DIR, _FILENAMES[kind])}
+
+
+
+================================================
+FILE: tests/test_cgroup_memory_docker.py
+================================================
+"""Live Docker checks for cgroup memory detection.
+
+Skipped when ``docker`` is missing or ``docker info`` fails. These cover the
+layouts unit tests can only fake: Docker's default private cgroup namespace
+(limit at ``/sys/fs/cgroup/memory.max``) and ``--cgroupns=host`` (limit on a
+nested path).
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PROBE = "/src/tests/_cgroup_docker_probe.py"
+IMAGE = "tabicl-cgroup-probe:local"
+MEMORY_BYTES = 256 * 1024 * 1024
+
+
+def docker_is_usable() -> bool:
+    if shutil.which("docker") is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["docker", "info"],
+            capture_output=True,
+            timeout=20,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+pytestmark = pytest.mark.skipif(
+    not docker_is_usable(), reason="docker command is not available on this host"
+)
+
+
+@pytest.fixture(scope="module")
+def probe_image() -> str:
+    dockerfile = "FROM python:3.14-slim\nRUN pip install --no-cache-dir psutil\n"
+    with tempfile.TemporaryDirectory() as tmp:
+        build = subprocess.run(
+            ["docker", "build", "-t", IMAGE, "-f", "-", tmp],
+            input=dockerfile,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+    if build.returncode != 0:
+        pytest.skip(f"docker build failed: {build.stderr or build.stdout}")
+    return IMAGE
+
+
+def _run_container(image: str, extra_args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network=none",
+            "-v",
+            f"{REPO_ROOT}:/src:ro",
+            *extra_args,
+            image,
+            "python",
+            PROBE,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+
+def _parse_probe(result: subprocess.CompletedProcess[str]) -> dict:
+    if result.returncode != 0:
+        pytest.fail(
+            f"docker run failed (exit {result.returncode}):\n"
+            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        )
+    try:
+        return json.loads(result.stdout.strip().splitlines()[-1])
+    except json.JSONDecodeError as exc:
+        pytest.fail(f"probe did not print JSON: {result.stdout!r} ({exc})")
+
+
+def _assert_capped_at(payload: dict, cap_bytes: int) -> None:
+    headroom = payload["headroom_bytes"]
+    assert headroom is not None, payload
+    assert 0 < headroom <= cap_bytes, payload
+    # Leave room for the Python runtime inside the cap.
+    assert headroom >= cap_bytes * 0.25, payload
+    psutil_avail = payload["psutil_available_bytes"]
+    # The bug: psutil reports host RAM, far above the container cap.
+    assert psutil_avail > cap_bytes * 2, payload
+    assert payload["effective_available_bytes"] == min(psutil_avail, headroom), payload
+
+
+def test_docker_private_cgroupns_uses_memory_max(probe_image: str):
+    """Default ``docker run --memory`` remounts the cap at ``/sys/fs/cgroup/memory.max``.
+
+    ``psutil`` still reports host RAM; headroom must follow the 256 MiB cgroup
+    limit instead.
+    """
+    payload = _parse_probe(
+        _run_container(
+            probe_image,
+            [
+                "--memory",
+                "256m",
+                "--memory-swap",
+                "256m",
+                "--cgroupns",
+                "private",
+            ],
+        )
+    )
+    _assert_capped_at(payload, MEMORY_BYTES)
+    cgroup = payload["proc_self_cgroup"]
+    assert cgroup.endswith(":/") or cgroup.endswith("::/"), payload
+    root = payload["root_memory_max"]
+    assert root not in (None, "max"), payload
+    assert int(root.split()[0]) == MEMORY_BYTES, payload
+
+
+def test_docker_host_cgroupns_uses_nested_path(probe_image: str):
+    """With ``--cgroupns=host`` the cap is on a nested path, not the cgroup root.
+
+    This is the layout Kubernetes and many GPU clouds expose. Reading only
+    ``/sys/fs/cgroup/memory.max`` would miss the 256 MiB limit.
+    """
+    result = _run_container(
+        probe_image,
+        [
+            "--memory",
+            "256m",
+            "--memory-swap",
+            "256m",
+            "--cgroupns",
+            "host",
+        ],
+    )
+    combined = f"{result.stdout}\n{result.stderr}".lower()
+    if result.returncode != 0 and "cgroupns" in combined:
+        pytest.skip("docker rejected --cgroupns=host")
+    payload = _parse_probe(result)
+    _assert_capped_at(payload, MEMORY_BYTES)
+    rel = payload["proc_self_cgroup"].split(":")[-1]
+    assert rel not in ("", "/"), payload
+    root = payload["root_memory_max"]
+    assert root in (None, "max") or (
+        root is not None and int(root.split()[0]) > MEMORY_BYTES * 2
+    ), payload
+    self_max = payload["self_memory_max"]
+    assert self_max not in (None, "max"), payload
+    assert int(self_max.split()[0]) == MEMORY_BYTES, payload
+
+
+def test_docker_unlimited_is_not_a_cgroup_cap(probe_image: str):
+    """A container without ``--memory`` must not invent a tight cgroup cap.
+
+    Headroom is ``None`` (psutil stands) or, if the host still wraps Docker,
+    far above the 256 MiB fixture used by the other cases.
+    """
+    payload = _parse_probe(_run_container(probe_image, []))
+    if payload["headroom_bytes"] is None:
+        assert payload["effective_available_bytes"] == payload["psutil_available_bytes"], payload
+        return
+    # Some nested hosts still cap the docker daemon. Accept that only if it is
+    # clearly in the host-RAM ballpark, not a 256MiB test limit.
+    assert payload["headroom_bytes"] > MEMORY_BYTES * 2, payload
+
+
+
+================================================
+FILE: tests/test_datetime_encoder.py
+================================================
+"""Tests for DatetimeEncoder sin/cos encoding (GitHub issue #136)."""
+
+import numpy as np
+import pandas as pd
+import pytest
+import statsmodels  # noqa: F401
+
+from tabicl.forecast.transforms._calendar import DatetimeEncoder
+
+
+@pytest.fixture
+def one_week_df():
+    """DataFrame spanning one full week (Mon-Sun)."""
+    dates = pd.date_range("2026-01-05", periods=7, freq="D")  # Mon to Sun
+    idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+    return pd.DataFrame({"value": range(7)}, index=idx)
+
+
+@pytest.fixture
+def one_year_df():
+    """DataFrame spanning one full year of daily data."""
+    dates = pd.date_range("2026-01-01", periods=365, freq="D")
+    idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+    return pd.DataFrame({"value": range(365)}, index=idx)
+
+
+class TestDatetimeEncoderNoDuplicateAngles:
+    """Sin/cos pairs must be distinct for every element within a period."""
+
+    def test_day_of_week_all_distinct(self, one_week_df):
+        enc = DatetimeEncoder(
+            components=[],
+            seasonal_features={"day_of_week": [7]},
+        )
+        result = enc.generate(one_week_df)
+        sin_cos = result[["day_of_week_sin", "day_of_week_cos"]].values
+        # All 7 (sin, cos) pairs must be unique
+        unique_pairs = set(map(tuple, np.round(sin_cos, 10)))
+        assert len(unique_pairs) == 7
+
+    def test_hour_of_day_all_distinct(self):
+        dates = pd.date_range("2026-01-05", periods=24, freq="h")
+        idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+        df = pd.DataFrame({"value": range(24)}, index=idx)
+        enc = DatetimeEncoder(
+            components=[],
+            seasonal_features={"hour_of_day": [24]},
+        )
+        result = enc.generate(df)
+        sin_cos = result[["hour_of_day_sin", "hour_of_day_cos"]].values
+        unique_pairs = set(map(tuple, np.round(sin_cos, 10)))
+        assert len(unique_pairs) == 24
+
+    def test_month_of_year_all_distinct(self):
+        dates = pd.date_range("2026-01-15", periods=12, freq="ME")
+        idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+        df = pd.DataFrame({"value": range(12)}, index=idx)
+        enc = DatetimeEncoder(
+            components=[],
+            seasonal_features={"month_of_year": [12]},
+        )
+        result = enc.generate(df)
+        sin_cos = result[["month_of_year_sin", "month_of_year_cos"]].values
+        unique_pairs = set(map(tuple, np.round(sin_cos, 10)))
+        assert len(unique_pairs) == 12
+
+    def test_first_and_last_day_of_week_differ(self, one_week_df):
+        """Specific regression: Monday and Sunday must NOT collide."""
+        enc = DatetimeEncoder(
+            components=[],
+            seasonal_features={"day_of_week": [7]},
+        )
+        result = enc.generate(one_week_df)
+        monday = result.iloc[0][["day_of_week_sin", "day_of_week_cos"]].values
+        sunday = result.iloc[6][["day_of_week_sin", "day_of_week_cos"]].values
+        assert not np.allclose(monday, sunday), (
+            f"Monday and Sunday have identical encodings: {monday}"
+        )
+
+    def test_encoding_values_correct(self, one_week_df):
+        """Verify the formula: angle = 2*pi*feature/period."""
+        enc = DatetimeEncoder(
+            components=[],
+            seasonal_features={"day_of_week": [7]},
+        )
+        result = enc.generate(one_week_df)
+        for i in range(7):
+            expected_sin = np.sin(2 * np.pi * i / 7)
+            expected_cos = np.cos(2 * np.pi * i / 7)
+            actual_sin = result.iloc[i]["day_of_week_sin"]
+            actual_cos = result.iloc[i]["day_of_week_cos"]
+            assert np.isclose(actual_sin, expected_sin), f"day {i}: sin mismatch"
+            assert np.isclose(actual_cos, expected_cos), f"day {i}: cos mismatch"
+
+    def test_leap_year_day_of_year_no_collision(self):
+        """First and last day of leap year must NOT collide with default encoder.
+
+        Regression test for GitHub issue #136: with day_of_year default of 366,
+        Jan 1 (day 0) and Dec 31 (day 365) in a leap year must have distinct encodings.
+        """
+        # 2024 is a leap year (366 days)
+        dates = pd.to_datetime(["2024-01-01", "2024-12-31"])
+        idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+        df = pd.DataFrame({"value": [0, 365]}, index=idx)
+
+        # Use default DatetimeEncoder to test the default day_of_year=366
+        enc = DatetimeEncoder(components=[])
+        result = enc.generate(df)
+
+        day_1 = result.iloc[0][["day_of_year_sin", "day_of_year_cos"]].values
+        day_366 = result.iloc[1][["day_of_year_sin", "day_of_year_cos"]].values
+        assert not np.allclose(day_1, day_366, atol=1e-10), (
+            f"Day 1 and day 366 have identical encodings: {day_1}"
+        )
+
+    def test_iso_week_53_no_collision(self):
+        """First and last ISO week must NOT collide with default encoder.
+
+        Regression test for GitHub issue #136: with week_of_year default of 53,
+        ISO week 1 (week 0) and week 53 (week 52) in a week-53 year must have distinct encodings.
+        """
+        # 2020 has ISO week 53
+        # 2019-12-30 is Monday of ISO week 1 of 2020
+        # 2020-12-28 is Monday of ISO week 53 of 2020
+        dates = pd.to_datetime(["2019-12-30", "2020-12-28"])
+        idx = pd.MultiIndex.from_arrays([dates], names=["timestamp"])
+        df = pd.DataFrame({"value": range(len(dates))}, index=idx)
+
+        # Use default DatetimeEncoder to test the default week_of_year=53
+        enc = DatetimeEncoder(components=[])
+        result = enc.generate(df)
+
+        week_1 = result.iloc[0][["week_of_year_sin", "week_of_year_cos"]].values
+        week_53 = result.iloc[1][["week_of_year_sin", "week_of_year_cos"]].values
+        assert not np.allclose(week_1, week_53, atol=1e-10), (
+            f"Week 1 and week 53 have identical encodings: {week_1}"
+        )
+
+
+
+================================================
+FILE: tests/test_finetune_early_stopping.py
+================================================
+"""Tests for fine-tuning early stopping behavior with NaN validation metrics."""
+
+import numpy as np
+import pytest
+import transformers  # noqa: F401
+
+from tabicl import TabICLClassifier, FinetunedTabICLClassifier, FinetunedTabICLRegressor
+
+from conftest import model_path
+
+
+def test_early_stopping_false_with_nan_validation_classifier():
+    """Verify early_stopping=False keeps final weights when validation metric is NaN."""
+    rng = np.random.default_rng(42)
+
+    # Create normal multi-class training data
+    X_train = rng.normal(size=(60, 5))
+    y_train = rng.choice([0, 1, 2], size=60)
+
+    # Single-class validation set (ROC-AUC will be NaN)
+    X_val = rng.normal(size=(20, 5))
+    y_val = np.zeros(20, dtype=int)  # All zeros - single class
+
+    # Test data for comparing predictions
+    X_test = rng.normal(size=(30, 5))
+
+    # First, get predictions from a non-finetuned classifier (pretrained weights)
+    clf_pretrained = TabICLClassifier(
+        n_estimators=1,
+        **model_path("classifier"),
+    )
+    clf_pretrained.fit(X_train, y_train)
+    pred_pretrained = clf_pretrained.predict_proba(X_test)
+
+    # Now fit with fine-tuning and NaN validation
+    clf_finetuned = FinetunedTabICLClassifier(
+        early_stopping=False,
+        eval_metric="roc_auc",
+        epochs=2,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_inference=1,
+        amp=False,
+        verbose=True,
+        **model_path("classifier"),
+    )
+
+    # Should not raise despite NaN validation metric
+    clf_finetuned.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+
+    # Verify _best_metric_ is NaN
+    assert np.isnan(clf_finetuned._best_metric_)
+
+    # Get predictions from fine-tuned model
+    pred_finetuned = clf_finetuned.predict_proba(X_test)
+
+    # Verify predictions are different (proving fine-tuning actually changed weights)
+    # If they were identical, it would mean the model reverted to pretrained weights
+    assert not np.allclose(pred_pretrained, pred_finetuned, rtol=1e-5, atol=1e-5), (
+        "Fine-tuned model makes identical predictions to pretrained model, "
+        "indicating it reverted to pretrained weights despite early_stopping=False"
+    )
+
+
+def test_early_stopping_true_with_baseline_nan_raises():
+    """Verify early_stopping=True raises error when baseline validation metric is NaN.
+
+    Note: If a metric becomes NaN mid-training (after some valid epochs), the
+    training loop stops gracefully with a warning instead of raising. This
+    handles training instability (e.g., high learning rate, exploding gradients).
+    Baseline NaN indicates a validation setup issue that must be fixed.
+    """
+    rng = np.random.default_rng(42)
+
+    # Create normal multi-class training data
+    X_train = rng.normal(size=(60, 5))
+    y_train = rng.choice([0, 1, 2], size=60)
+
+    # Single-class validation set (ROC-AUC will be NaN)
+    X_val = rng.normal(size=(20, 5))
+    y_val = np.zeros(20, dtype=int)  # All zeros - single class
+
+    clf = FinetunedTabICLClassifier(
+        early_stopping=True,
+        eval_metric="roc_auc",
+        epochs=2,
+        patience=1,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_inference=1,
+        amp=False,
+        **model_path("classifier"),
+    )
+
+    # Should raise ValueError immediately when baseline metric is NaN
+    with pytest.raises(ValueError, match="Early stopping enabled but validation metric.*is NaN"):
+        clf.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+
+
+def test_early_stopping_false_with_valid_metrics_works():
+    """Verify early_stopping=False works normally when validation metrics are valid."""
+    rng = np.random.default_rng(42)
+
+    # Create normal multi-class training and validation data
+    X_train = rng.normal(size=(60, 5))
+    y_train = rng.choice([0, 1, 2], size=60)
+    X_val = rng.normal(size=(20, 5))
+    y_val = rng.choice([0, 1, 2], size=20)  # Multi-class validation
+
+    clf = FinetunedTabICLClassifier(
+        early_stopping=False,
+        eval_metric="roc_auc",
+        epochs=2,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_inference=1,
+        amp=False,
+        **model_path("classifier"),
+    )
+
+    clf.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+
+    # Verify _best_metric_ is not NaN
+    assert not np.isnan(clf._best_metric_)
+
+    # Verify predictions work
+    predictions = clf.predict(X_val)
+    assert predictions.shape == (20,)
+
+
+
+================================================
+FILE: tests/test_finetune_freezing.py
+================================================
+"""Tests for finetuning with partial module freezing (GitHub issue #128)."""
+
+import numpy as np
+import pytest
+import transformers  # noqa: F401
+
+from tabicl import FinetunedTabICLClassifier, FinetunedTabICLRegressor
+
+from conftest import model_path
+
+
+@pytest.mark.parametrize(
+    "freeze_col,freeze_row,freeze_icl",
+    [
+        (True, False, False),
+        (False, True, False),
+        (False, False, True),
+        (True, True, False),
+        (True, False, True),
+        (False, True, True),
+    ],
+)
+def test_classifier_partial_freezing(freeze_col, freeze_row, freeze_icl):
+    """Partial freezing should not raise autograd errors (issue #128)."""
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(60, 5))
+    y = rng.choice([0, 1], size=60)
+
+    est = FinetunedTabICLClassifier(
+        epochs=1,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_inference=1,
+        early_stopping=False,
+        amp=False,
+        freeze_col=freeze_col,
+        freeze_row=freeze_row,
+        freeze_icl=freeze_icl,
+        **model_path("classifier"),
+    )
+    est.fit(X, y)
+    preds = est.predict(X)
+    assert preds.shape == (60,)
+
+
+@pytest.mark.parametrize(
+    "freeze_col,freeze_row,freeze_icl",
+    [
+        (True, True, False),
+        (True, False, True),
+    ],
+)
+def test_regressor_partial_freezing(freeze_col, freeze_row, freeze_icl):
+    """Partial freezing should not raise autograd errors for regressor."""
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(60, 5))
+    y = rng.normal(size=60)
+
+    est = FinetunedTabICLRegressor(
+        epochs=1,
+        n_estimators_finetune=1,
+        n_estimators_validation=1,
+        n_estimators_inference=1,
+        early_stopping=False,
+        amp=False,
+        freeze_col=freeze_col,
+        freeze_row=freeze_row,
+        freeze_icl=freeze_icl,
+        **model_path("regressor"),
+    )
+    est.fit(X, y)
+    preds = est.predict(X)
+    assert preds.shape == (60,)
+
+
+
+================================================
+FILE: tests/test_finetune_string_input.py
+================================================
+"""Tests for finetuning with string/categorical features (GitHub issue #118)."""
+
+import numpy as np
+import pandas as pd
+import pytest
+import transformers  # noqa: F401
+
+from tabicl import FinetunedTabICLClassifier, FinetunedTabICLRegressor
+
+from conftest import model_path
+
+
+def _make_categorical_dataframe(n=80, rng=None):
+    """Create a DataFrame with mixed numeric and categorical columns."""
+    if rng is None:
+        rng = np.random.RandomState(42)
+    cat_values = rng.choice(["foo", "bar", "baz"], size=n)
+    num1 = rng.randn(n)
+    num2 = rng.randn(n)
+    X = pd.DataFrame(
+        {
+            "num1": num1,
+            "num2": num2,
+            "cat": pd.Series(cat_values, dtype="category"),
+        }
+    )
+    return X
+
+
+@pytest.fixture
+def clf_data():
+    rng = np.random.RandomState(42)
+    X = _make_categorical_dataframe(n=80, rng=rng)
+    y = (X["num1"] > 0).astype(int).values
+    return X, y
+
+
+@pytest.fixture
+def reg_data():
+    rng = np.random.RandomState(42)
+    X = _make_categorical_dataframe(n=80, rng=rng)
+    y = X["num1"].values + rng.randn(80) * 0.1
+    return X, y
+
+
+class TestFinetunedClassifierStringCategoricals:
+    """FinetunedTabICLClassifier should handle string categoricals like TabICLClassifier."""
+
+    def test_fit_predict_with_category_dtype(self, clf_data):
+        X, y = clf_data
+        est = FinetunedTabICLClassifier(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("classifier"),
+        )
+        est.fit(X, y)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_fit_predict_with_object_dtype(self, clf_data):
+        X, y = clf_data
+        X = X.copy()
+        X["cat"] = X["cat"].astype(object)
+        est = FinetunedTabICLClassifier(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("classifier"),
+        )
+        est.fit(X, y)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_fit_predict_with_string_dtype(self, clf_data):
+        X, y = clf_data
+        X = X.copy()
+        X["cat"] = X["cat"].astype("string")
+        est = FinetunedTabICLClassifier(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("classifier"),
+        )
+        est.fit(X, y)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_explicit_validation_set_with_categoricals(self, clf_data):
+        X, y = clf_data
+        X_train, X_val = X.iloc[:60], X.iloc[60:]
+        y_train, y_val = y[:60], y[60:]
+        est = FinetunedTabICLClassifier(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("classifier"),
+        )
+        est.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_unseen_validation_categories(self, clf_data):
+        """Validation set may contain categories not seen during training."""
+        X, y = clf_data
+        X_train = X.iloc[:60].copy()
+        X_val = X.iloc[60:].copy()
+        X_val["cat"] = X_val["cat"].astype(object)
+        X_val.iloc[0, X_val.columns.get_loc("cat")] = "unseen_category"
+        y_train, y_val = y[:60], y[60:]
+        est = FinetunedTabICLClassifier(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("classifier"),
+        )
+        est.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+        preds = est.predict(X_val)
+        assert len(preds) == len(y_val)
+
+
+class TestFinetunedRegressorStringCategoricals:
+    """FinetunedTabICLRegressor should handle string categoricals like TabICLRegressor."""
+
+    def test_fit_predict_with_category_dtype(self, reg_data):
+        X, y = reg_data
+        est = FinetunedTabICLRegressor(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("regressor"),
+        )
+        est.fit(X, y)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_fit_predict_with_object_dtype(self, reg_data):
+        X, y = reg_data
+        X = X.copy()
+        X["cat"] = X["cat"].astype(object)
+        est = FinetunedTabICLRegressor(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("regressor"),
+        )
+        est.fit(X, y)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+    def test_explicit_validation_set_with_categoricals(self, reg_data):
+        X, y = reg_data
+        X_train, X_val = X.iloc[:60], X.iloc[60:]
+        y_train, y_val = y[:60], y[60:]
+        est = FinetunedTabICLRegressor(
+            epochs=1,
+            n_estimators_finetune=1,
+            n_estimators_validation=1,
+            n_estimators_inference=1,
+            early_stopping=False,
+            **model_path("regressor"),
+        )
+        est.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+        preds = est.predict(X)
+        assert len(preds) == len(y)
+
+
+
+================================================
 FILE: tests/test_inference.py
 ================================================
 """Device-agnostic inference plumbing: placement, AMP, auto-batching, async copies.
@@ -31790,6 +33085,295 @@ def test_mps_memory_estimate_uses_recommended_minus_current(monkeypatch):
 
 
 ================================================
+FILE: tests/test_inference_memory.py
+================================================
+"""Available-CPU-memory detection must respect cgroup limits.
+
+``psutil.virtual_memory().available`` reports the host's free memory and is blind to
+cgroup limits, so inside a memory-limited container it overstates what the process may
+allocate. That figure feeds ``_resolve_offload_mode``, so overestimating it means
+``offload="auto"`` never escalates from CPU to disk -- and the resulting cgroup OOM kill
+arrives as SIGKILL, with no Python traceback and no CUDA error.
+
+The process cgroup (from ``/proc/self/cgroup``) is often nested, not
+``/sys/fs/cgroup/memory.max``. Walk ancestors and take the tightest ``limit - usage``.
+"""
+
+from __future__ import annotations
+
+import pathlib
+
+import psutil
+import pytest
+
+from tabicl._model._cgroup_memory import _cgroup_memory_headroom
+from tabicl._model.inference import InferenceManager
+
+PHYSICAL = 32 * 10**9
+LIMIT = 8_000_000_000
+USAGE = 1_000_000_000
+HEADROOM = LIMIT - USAGE
+
+
+def _write(path: pathlib.Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+
+
+def _headroom(root: pathlib.Path, rel: str, *, v2: bool = True) -> int | None:
+    proc = root / "proc_cgroup"
+    if v2:
+        _write(proc, f"0::{rel}\n")
+        return _cgroup_memory_headroom(
+            proc_cgroup=proc, v2_root=root / "cg", physical_bytes=PHYSICAL
+        )
+    _write(proc, f"4:memory:{rel}\n")
+    return _cgroup_memory_headroom(
+        proc_cgroup=proc, v1_root=root / "memory", physical_bytes=PHYSICAL
+    )
+
+
+def test_headroom_is_none_when_there_is_no_cgroup(tmp_path):
+    proc = tmp_path / "cgroup"
+    _write(proc, "")
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, v2_root=tmp_path / "missing", v1_root=tmp_path / "missing"
+        )
+        is None
+    )
+
+
+def test_headroom_is_limit_minus_usage(tmp_path):
+    # Values below PHYSICAL so the limit is not discarded as "unlimited".
+    cg = tmp_path / "cg"
+    _write(cg / "memory.max", str(LIMIT))
+    _write(cg / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/") == HEADROOM
+
+
+def test_cgroup_v2_max_means_unlimited(tmp_path):
+    cg = tmp_path / "cg"
+    _write(cg / "memory.max", "max")
+    _write(cg / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/") is None
+
+
+def test_cgroup_v1_unlimited_sentinel_is_not_a_limit(tmp_path):
+    mem = tmp_path / "memory"
+    _write(mem / "memory.limit_in_bytes", "9223372036854771712")
+    _write(mem / "memory.usage_in_bytes", str(USAGE))
+    assert _headroom(tmp_path, "/", v2=False) is None
+
+
+def test_detection_never_raises(monkeypatch):
+    def boom(self, *a, **k):
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(pathlib.Path, "read_text", boom)
+    assert _cgroup_memory_headroom() is None
+
+
+def test_available_memory_is_the_minimum_of_psutil_and_cgroup(monkeypatch):
+    from tabicl._model import inference
+
+    mgr = InferenceManager.__new__(InferenceManager)
+    monkeypatch.setattr(inference, "_cgroup_memory_headroom", lambda: 1024 ** 3)
+    assert InferenceManager.get_available_cpu_memory(mgr) == pytest.approx(1024.0)
+    monkeypatch.setattr(inference, "_cgroup_memory_headroom", lambda: None)
+    assert InferenceManager.get_available_cpu_memory(mgr) == pytest.approx(
+        psutil.virtual_memory().available / 1024 ** 2, rel=0.2
+    )
+
+
+def test_nested_cgroup_path_is_used(tmp_path):
+    """The limit lives on the process cgroup, not ``/sys/fs/cgroup/memory.max``.
+
+    ``docker run --cgroupns=host`` (and Kubernetes) nest the container under
+    ``docker/<id>`` while the cgroup root stays ``max``. Reading only the root
+    file would report unlimited host RAM.
+    """
+    cg = tmp_path / "cg"
+    nested = cg / "docker" / "abc123"
+    _write(cg / "memory.max", "max")
+    _write(cg / "memory.current", "0")
+    _write(nested / "memory.max", str(LIMIT))
+    _write(nested / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/docker/abc123") == HEADROOM
+
+
+def test_leaf_unlimited_parent_limit_wins(tmp_path):
+    """A child cgroup with ``memory.max = max`` still inherits a parent's cap.
+
+    systemd scopes and in-container helpers often have no limit of their own;
+    the pod or slice above them does.
+    """
+    cg = tmp_path / "cg"
+    leaf = cg / "pod" / "ctr"
+    _write(cg / "memory.max", str(LIMIT))
+    _write(cg / "memory.current", str(USAGE))
+    _write(leaf / "memory.max", "max")
+    _write(leaf / "memory.current", "100")
+    assert _headroom(tmp_path, "/pod/ctr") == HEADROOM
+
+
+def test_tightest_ancestor_headroom_wins(tmp_path):
+    """When several ancestors publish a limit, remaining budget is the minimum.
+
+    A container may look like it has 7 GB free while the pod, shared with
+    sidecars, only has 500 MB left. Using the leaf alone would overstate
+    headroom and skip disk offload.
+    """
+    cg = tmp_path / "cg"
+    leaf = cg / "pod" / "ctr"
+    parent_limit, parent_usage = 4_000_000_000, 3_500_000_000
+    _write(cg / "memory.max", "max")
+    _write(cg / "memory.current", "0")
+    _write(cg / "pod" / "memory.max", str(parent_limit))
+    _write(cg / "pod" / "memory.current", str(parent_usage))
+    _write(leaf / "memory.max", str(LIMIT))
+    _write(leaf / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/pod/ctr") == parent_limit - parent_usage
+
+
+def test_missing_leaf_files_walk_to_parent(tmp_path):
+    """If the leaf has no memory files (controller not delegated), use the parent."""
+    cg = tmp_path / "cg"
+    (cg / "docker" / "abc").mkdir(parents=True)
+    _write(cg / "docker" / "memory.max", str(LIMIT))
+    _write(cg / "docker" / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/docker/abc") == HEADROOM
+
+
+def test_v1_nested_memory_controller(tmp_path):
+    """cgroup v1 uses ``memory:/rel`` in ``/proc/self/cgroup`` and files under
+    ``/sys/fs/cgroup/memory/<rel>``, not the v2 root.
+    """
+    mem = tmp_path / "memory"
+    nested = mem / "docker" / "abc123"
+    _write(mem / "memory.limit_in_bytes", "9223372036854771712")
+    _write(mem / "memory.usage_in_bytes", "0")
+    _write(nested / "memory.limit_in_bytes", str(LIMIT))
+    _write(nested / "memory.usage_in_bytes", str(USAGE))
+    assert _headroom(tmp_path, "/docker/abc123", v2=False) == HEADROOM
+
+
+def test_dotdot_in_cgroup_path_is_ignored(tmp_path):
+    """A ``..`` segment in the cgroup path must not escape the controller root."""
+    cg = tmp_path / "cg"
+    _write(cg / "memory.max", "max")
+    _write(cg / "memory.current", "0")
+    _write(tmp_path / "outside" / "memory.max", str(LIMIT))
+    _write(tmp_path / "outside" / "memory.current", str(USAGE))
+    assert _headroom(tmp_path, "/../../outside") is None
+
+
+def test_hybrid_v2_line_without_memory_controller_uses_v1(tmp_path):
+    """A ``0::`` line does not mean the memory controller lives on v2.
+
+    Hybrid hosts list both a v2 hierarchy and a v1 ``memory:`` controller. If
+    v2 has no ``memory.max`` (controller still on v1), headroom must come from
+    the v1 files rather than falling back to host-wide psutil.
+    """
+    v2 = tmp_path / "unified"
+    v1 = tmp_path / "memory"
+    (v2 / "user.slice").mkdir(parents=True)
+    nested = v1 / "docker" / "abc"
+    _write(nested / "memory.limit_in_bytes", str(LIMIT))
+    _write(nested / "memory.usage_in_bytes", str(USAGE))
+    proc = tmp_path / "proc_cgroup"
+    _write(proc, "0::/user.slice\n4:memory:/docker/abc\n")
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, v2_root=v2, v1_root=v1, physical_bytes=PHYSICAL
+        )
+        == HEADROOM
+    )
+
+
+def test_missing_usage_does_not_assume_empty_cgroup(tmp_path):
+    """A readable limit with unreadable usage must not look like a free cgroup."""
+    cg = tmp_path / "cg"
+    _write(cg / "memory.max", str(LIMIT))
+    assert _headroom(tmp_path, "/") == 0
+
+
+def test_v2_mount_is_read_from_mountinfo(tmp_path):
+    """cgroup v2 is not always at ``/sys/fs/cgroup`` (systemd hybrid uses unified/)."""
+    unified = tmp_path / "sys" / "fs" / "cgroup" / "unified"
+    _write(unified / "memory.max", str(LIMIT))
+    _write(unified / "memory.current", str(USAGE))
+    proc = tmp_path / "cgroup"
+    _write(proc, "0::/\n")
+    mountinfo = tmp_path / "mountinfo"
+    _write(mountinfo, f"36 35 0:0 / {unified} rw - cgroup2 cgroup2 rw,nsdelegate\n")
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, proc_mountinfo=mountinfo, physical_bytes=PHYSICAL
+        )
+        == HEADROOM
+    )
+
+
+def test_v1_memory_mount_is_read_from_mountinfo(tmp_path):
+    """v1 memory may be co-mounted with cpu, not at ``/sys/fs/cgroup/memory``."""
+    comount = tmp_path / "sys" / "fs" / "cgroup" / "cpu,memory"
+    nested = comount / "docker" / "abc"
+    _write(nested / "memory.limit_in_bytes", str(LIMIT))
+    _write(nested / "memory.usage_in_bytes", str(USAGE))
+    proc = tmp_path / "cgroup"
+    _write(proc, "4:cpu,memory:/docker/abc\n")
+    mountinfo = tmp_path / "mountinfo"
+    _write(mountinfo, f"32 26 0:0 / {comount} rw - cgroup cgroup rw,cpu,memory\n")
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, proc_mountinfo=mountinfo, physical_bytes=PHYSICAL
+        )
+        == HEADROOM
+    )
+
+
+def test_mountinfo_bind_mount_strips_hierarchy_root(tmp_path):
+    """A subtree bind-mount's field 4 is not ``/``; strip that prefix from the path."""
+    mount = tmp_path / "sys" / "fs" / "cgroup" / "system.slice"
+    nested = mount / "docker-abc.scope"
+    _write(nested / "memory.max", str(LIMIT))
+    _write(nested / "memory.current", str(USAGE))
+    proc = tmp_path / "cgroup"
+    _write(proc, "0::/system.slice/docker-abc.scope\n")
+    mountinfo = tmp_path / "mountinfo"
+    _write(
+        mountinfo,
+        f"36 35 0:0 /system.slice {mount} rw - cgroup2 cgroup2 rw,nsdelegate\n",
+    )
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, proc_mountinfo=mountinfo, physical_bytes=PHYSICAL
+        )
+        == HEADROOM
+    )
+
+
+def test_mountinfo_octal_escapes_in_mountpoint(tmp_path):
+    """Kernel mountinfo encodes spaces as ``\\040``; decode before joining."""
+    mount = tmp_path / "cgroup dir"
+    _write(mount / "memory.max", str(LIMIT))
+    _write(mount / "memory.current", str(USAGE))
+    proc = tmp_path / "cgroup"
+    _write(proc, "0::/\n")
+    escaped = str(mount).replace(" ", "\\040")
+    mountinfo = tmp_path / "mountinfo"
+    _write(mountinfo, f"36 35 0:0 / {escaped} rw - cgroup2 cgroup2 rw\n")
+    assert (
+        _cgroup_memory_headroom(
+            proc_cgroup=proc, proc_mountinfo=mountinfo, physical_bytes=PHYSICAL
+        )
+        == HEADROOM
+    )
+
+
+
+================================================
 FILE: tests/test_numpy_inputs.py
 ================================================
 import warnings
@@ -31832,6 +33416,8 @@ def _patch_backend_availability(
     monkeypatch.setattr(torch, "xpu", _FakeXPUBackend, raising=False)
     monkeypatch.setattr(torch, "mps", _FakeMPSBackend, raising=False)
     monkeypatch.setattr(torch.cuda, "is_available", lambda: cuda_available)
+
+from conftest import model_path
 
 
 @pytest.mark.parametrize(
@@ -31919,6 +33505,28 @@ def test_tabicl_supports_bool_object_and_string_inputs(estimator, X, device):
     est.fit(X, y)
     y_pred = est.predict(X)
 
+    assert y_pred.shape == y.shape
+
+@pytest.mark.parametrize(
+    "estimator",
+    [
+        TabICLClassifier(random_state=0, **model_path("classifier")),
+        TabICLRegressor(random_state=0, **model_path("regressor")),
+    ],
+)
+def test_tabicl_supports_float16(estimator):
+    """float16 arrays should not crash the Yeo-Johnson normalizer (issue #140)."""
+    rng = np.random.default_rng(42)
+    X = rng.standard_normal((50, 4)).astype(np.float16)
+
+    est = clone(estimator)
+    if is_classifier(est):
+        y = rng.integers(0, 2, size=50)
+    else:
+        y = rng.standard_normal(50)
+
+    est.fit(X, y)
+    y_pred = est.predict(X)
     assert y_pred.shape == y.shape
 
 
@@ -32193,6 +33801,157 @@ def test_tabicl_fits_all_constant_features():
 
     assert np.allclose(y_pred, y_pred[0])
     assert abs(y_pred[0] - y.mean()) < y.std()
+
+
+
+================================================
+FILE: tests/test_predict_allnan_categorical.py
+================================================
+"""Tests for predict_proba with all-NaN categorical columns (GitHub issue #143)."""
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from tabicl import TabICLClassifier, TabICLRegressor
+
+from conftest import model_path
+
+
+class TestPredictAllNanCategorical:
+    """predict_proba/predict should not crash when a categorical column is all-NaN."""
+
+    def test_classifier_predict_proba_allnan_categorical(self):
+        rng = np.random.default_rng(0)
+        n = 100
+        X = pd.DataFrame({
+            "num": rng.normal(size=n),
+            "cat": pd.Categorical(rng.choice(["a", "b", "c"], size=n)),
+        })
+        y = rng.choice([0, 1], size=n)
+
+        clf = TabICLClassifier(n_estimators=1, **model_path("classifier"))
+        clf.fit(X, y)
+
+        X_pred = X.head(20).copy()
+        X_pred["cat"] = pd.Categorical([None] * 20, categories=["a", "b", "c"])
+        proba = clf.predict_proba(X_pred)
+        assert proba.shape == (20, 2)
+        assert np.allclose(proba.sum(axis=1), 1.0)
+
+    def test_classifier_predict_allnan_categorical(self):
+        rng = np.random.default_rng(0)
+        n = 100
+        X = pd.DataFrame({
+            "num": rng.normal(size=n),
+            "cat": pd.Categorical(rng.choice(["a", "b", "c"], size=n)),
+        })
+        y = rng.choice([0, 1], size=n)
+
+        clf = TabICLClassifier(n_estimators=1, **model_path("classifier"))
+        clf.fit(X, y)
+
+        X_pred = X.head(20).copy()
+        X_pred["cat"] = pd.Categorical([None] * 20, categories=["a", "b", "c"])
+        preds = clf.predict(X_pred)
+        assert preds.shape == (20,)
+
+    def test_regressor_predict_allnan_categorical(self):
+        rng = np.random.default_rng(0)
+        n = 100
+        X = pd.DataFrame({
+            "num": rng.normal(size=n),
+            "cat": pd.Categorical(rng.choice(["a", "b", "c"], size=n)),
+        })
+        y = rng.normal(size=n)
+
+        reg = TabICLRegressor(n_estimators=1, **model_path("regressor"))
+        reg.fit(X, y)
+
+        X_pred = X.head(20).copy()
+        X_pred["cat"] = pd.Categorical([None] * 20, categories=["a", "b", "c"])
+        preds = reg.predict(X_pred)
+        assert preds.shape == (20,)
+
+    def test_numpy_allnan_column_predict_proba(self):
+        """Numpy arrays with all-NaN columns should produce valid predictions."""
+        rng = np.random.default_rng(0)
+        n = 50
+        X = rng.normal(size=(n, 4))
+        y = rng.choice([0, 1], size=n)
+
+        clf = TabICLClassifier(n_estimators=1, **model_path("classifier"))
+        clf.fit(X, y)
+
+        X_pred = X[:10].copy()
+        X_pred[:, 2] = np.nan
+        proba = clf.predict_proba(X_pred)
+        assert proba.shape == (10, 2)
+        assert np.allclose(proba.sum(axis=1), 1.0)
+
+    def test_prediction_independent_of_batch_composition(self):
+        """A row's prediction must not change based on other rows' NaN patterns."""
+        rng = np.random.default_rng(0)
+        n = 50
+        X = rng.normal(size=(n, 4))
+        y = rng.choice([0, 1], size=n)
+
+        clf = TabICLClassifier(n_estimators=1, **model_path("classifier"))
+        clf.fit(X, y)
+
+        # Row 0 has a non-NaN value in column 2
+        X_row = X[:1].copy()
+
+        # Predict row 0 alone
+        proba_alone = clf.predict_proba(X_row)
+
+        # Predict row 0 alongside rows where column 2 is all-NaN
+        X_batch = np.vstack([X_row, X[1:5]])
+        X_batch[1:, 2] = np.nan
+        proba_in_batch = clf.predict_proba(X_batch)
+
+        # Row 0's prediction should be the same regardless of batch composition
+        np.testing.assert_allclose(proba_alone[0], proba_in_batch[0], rtol=1e-4, atol=1e-5)
+
+
+
+================================================
+FILE: tests/test_shap_categorical.py
+================================================
+"""Tests for SHAP categorical error handling."""
+
+import numpy as np
+import pandas as pd
+import pytest
+import shap  # noqa: F401
+
+from tabicl import TabICLClassifier
+from tabicl.shap import get_shap_values
+
+from conftest import model_path
+
+
+def test_get_shap_values_gives_clear_error_for_string_categories():
+    """String/object categoricals should give a helpful TypeError.
+
+    This tests the API asymmetry: TabICL accepts categorical DataFrames during
+    fit, but the SHAP helper requires numeric input. The error message guides
+    users to encode before fitting.
+    """
+    X = pd.DataFrame({
+        "cat": ["a", "b", "c"] * 10,
+        "num1": np.random.randn(30),
+        "num2": np.random.randn(30),
+    })
+    y = np.random.choice([0, 1], size=30)
+
+    # Fit on categorical data (TabICL handles this automatically)
+    clf = TabICLClassifier(n_estimators=1, **model_path("classifier"))
+    clf.fit(X, y)  # This works fine
+
+    # Try to explain the same categorical data - this is where SHAP limitation hits
+    with pytest.raises(TypeError, match="require numeric input"):
+        get_shap_values(clf, X)
 
 
 
@@ -32584,7 +34343,7 @@ plt.show()
 ================================================
 FILE: tutorials/finetune_classifier.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 6229: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 6364: character maps to <undefined>
 
 
 ================================================
@@ -32652,7 +34411,7 @@ def _metrics(pred: np.ndarray, y_true: np.ndarray) -> tuple[float, float, float]
 # ---------------------------
 #
 # Expected: draws the sine, smears the spike.
-base = TabICLRegressor(n_estimators=4, random_state=0)
+base = TabICLRegressor(n_estimators=2, random_state=0)
 base.fit(X_train, y_train)
 base_pred = base.predict(X_test)
 base_mse, base_mae, base_r2 = _metrics(base_pred, y_test)
@@ -32697,14 +34456,16 @@ class _HistoryLogger:
         pass
 
 
+# n_estimators and epochs are kept low for fast doc builds;
+# for best results use n_estimators_inference=8, epochs=50+, patience=10.
 reg = FinetunedTabICLRegressor(
-    epochs=60,
+    epochs=30,
     learning_rate=1e-5,
     n_estimators_finetune=2,
     n_estimators_validation=2,
-    n_estimators_inference=4,
+    n_estimators_inference=2,
     early_stopping=True,
-    patience=10,
+    patience=5,
     random_state=0,
     verbose=True,
 )
@@ -32916,7 +34677,7 @@ X, y = make_classification(
     n_samples=300, n_features=10, n_informative=5, random_state=42
 )
 
-clf = TabICLClassifier(n_estimators=4, device="cpu")
+clf = TabICLClassifier(n_estimators=2, device="cpu")  # use n_estimators=8 for best results
 scores = cross_val_score(clf, X, y, cv=5, scoring="accuracy")
 print(f"Classification accuracy: {scores.mean():.3f} (+/- {scores.std():.3f})")
 
@@ -32935,7 +34696,7 @@ X, y = make_regression(
     n_samples=300, n_features=10, n_informative=5, noise=0.5, random_state=42
 )
 
-reg = TabICLRegressor(n_estimators=4, device="cpu")
+reg = TabICLRegressor(n_estimators=2, device="cpu")  # use n_estimators=8 for best results
 scores = cross_val_score(reg, X, y, cv=5, scoring="r2")
 print(f"Regression RÂ² score: {scores.mean():.3f} (+/- {scores.std():.3f})")
 
@@ -32956,7 +34717,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-clf = TabICLClassifier(n_estimators=4, kv_cache=True, device="cpu")
+clf = TabICLClassifier(n_estimators=2, kv_cache=True, device="cpu")  # use n_estimators=8 for best results
 clf.fit(X_train, y_train)
 
 # Subsequent predict calls reuse the cached context
@@ -32992,7 +34753,7 @@ FILE: tutorials/interpretability.py
 ================================================
 """
 Model interpretability with TabICL
-============================
+======================================
 
 TabICL comes with a fast approximations of SHAP values. It is much
 faster than using black-box shape routines on TabICL which is slow.
@@ -33004,9 +34765,11 @@ Here we demo it on dataset on wages
 # The dataset: wages
 # ---------------------
 
+import tempfile
 from sklearn.datasets import fetch_openml
 
-survey = fetch_openml(data_id=534, as_frame=True)
+# Use a fresh data_home to avoid md5 mismatches from stale cached downloads
+survey = fetch_openml(data_id=534, as_frame=True, data_home=tempfile.mkdtemp())
 
 X = survey.data[survey.feature_names]
 
@@ -33038,7 +34801,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y)
 #
 from tabicl import TabICLRegressor
 
-clf = TabICLRegressor(n_estimators=4, device="cpu")
+clf = TabICLRegressor(n_estimators=2, device="cpu")  # use n_estimators=8 for best results
 clf.fit(X_train, y_train)
 
 # %%
@@ -33048,7 +34811,7 @@ clf.fit(X_train, y_train)
 # Use TabICL's fast approximations of shap-like values and plot them
 #
 # This part of the example requires to install the shap extra:
-# pip install 'tabicl[shap]
+# pip install 'tabicl[shap]'
 
 from tabicl.shap import get_shap_values, plot_shap
 
@@ -33203,7 +34966,7 @@ FILE: tutorials/string_handling.py
 ================================================
 """
 Handling strings and dates with skrub
-============================
+======================================
 
 This example demonstrates how skrub can be used to preprocess datasets with strings or dates for TabICL
 to make better predictions.
@@ -33772,10 +35535,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
-          # Install a specific version of uv.
-          version: "0.5.4"
+          version: "0.12.1"
       - name: Install hatch
         run: uv pip install --system hatch
       - name: Show installed package versions
@@ -33784,12 +35546,35 @@ jobs:
           hatch env create "hatch-test.py${{ matrix.python-version }}"
           uv pip list --python "$(hatch env find "hatch-test.py${{ matrix.python-version }}")"
       - name: Run tests
+        env:
+          # Disable oneDNN/MKLDNN on Windows to avoid flaky "could not create
+          # a primitive" errors on some GitHub Actions hosts. Linux still
+          # exercises the optimized MKLDNN path.
+          TABICL_DISABLE_MKLDNN: ${{ runner.os == 'Windows' && '1' || '0' }}
         run: hatch test
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: soda-inria/tabicl
+
+  test-optional-extras:
+    # Run tests that require optional extras (finetune, forecast).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+        with:
+          version: "0.12.1"
+      - name: Install package with all extras
+        run: uv pip install --system -e ".[all]"
+      - name: Run tests
+        run: python -m pytest tests/ -x
 
   test-dev-deps:
     # Only run on scheduled builds or manual triggers to avoid causing random
@@ -33803,9 +35588,9 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
         with:
-          version: "0.5.4"
+          version: "0.12.1"
       - name: Install hatch
         run: uv pip install --system hatch
       - name: Create hatch test environment

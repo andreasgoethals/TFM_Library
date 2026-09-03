@@ -90,7 +90,7 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 21132: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 21186: character maps to <undefined>
 
 
 ================================================
@@ -104,6 +104,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.1] - 2026-09-01
+
+### Added
+
+- `tabpfn_client.hosted` estimators accept `use_kv_cache=True`, which reuses the endpoint's already-fitted model across repeated `predict` calls instead of re-fitting on every one â€” a large speed-up for workloads that predict many times against a single fit, such as SHAP, permutation importance and partial dependence. The endpoint's cache is bounded, so a model can be evicted between calls; that surfaces as an error and the estimator has to be re-fit. ([#372](https://github.com/PriorLabs/tabpfn-client/pull/372))
+
+### Changed
+
+- TabPFN Console URL moved from `ux.priorlabs.ai` to `platform.priorlabs.ai` (the old host continues to redirect). ([#368](https://github.com/PriorLabs/tabpfn-client/pull/368))
+- Now that hosted estimators are recognised as classifiers, scikit-learn's default cross-validation splitter for them is `StratifiedKFold` rather than `KFold`; cross-validation scores and anything derived from them may shift slightly. ([#372](https://github.com/PriorLabs/tabpfn-client/pull/372))
+
+### Fixed
+
+- `TabPFNRegressor.predict(output_type="full")` now matches a local prediction: masked-out bars come back as `-inf` rather than `NaN`, and test sets above the server's full-output row cap are split across calls instead of raising. ([#369](https://github.com/PriorLabs/tabpfn-client/pull/369))
+- Hosted estimators are now recognised by scikit-learn as classifiers and regressors, so tools that dispatch on estimator type â€” partial dependence among them â€” accept them. Datasets holding missing or non-finite values can also be sent as JSON, which previously rejected them and left Parquet as the only option. ([#372](https://github.com/PriorLabs/tabpfn-client/pull/372))
+
 
 ## [0.5.0] - 2026-08-26
 
@@ -341,7 +358,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tabpfn-client"
-version = "0.5.0"
+version = "0.5.1"
 requires-python = ">=3.10"
 
 description = "API access for TabPFN: Foundation model for tabular data"
@@ -4238,7 +4255,7 @@ def init(use_server=True):
     token cached by an earlier `interactive_login()`. If none is available this
     raises, explaining how to obtain one -- it will not prompt.
 
-    Generate a token at https://ux.priorlabs.ai/account/api-keys, or call
+    Generate a token at https://platform.priorlabs.ai/account/api-keys, or call
     `tabpfn_client.interactive_login()` to log in through the browser.
 
     :param use_server: Whether to use the TabPFN cloud service. Currently, only
@@ -4336,7 +4353,7 @@ def set_access_token(access_token: str):
     Use this in non-interactive environments (e.g. CI/CD, notebooks) as an
     alternative to the TABPFN_TOKEN environment variable.
 
-    Generate a token at https://ux.priorlabs.ai/account/api-keys
+    Generate a token at https://platform.priorlabs.ai/account/api-keys
 
     :param access_token: A valid TabPFN access token string.
     """
@@ -4368,7 +4385,7 @@ from pathlib import Path
 CACHE_DIR = Path(__file__).parent.resolve() / ".tabpfn"
 
 URL_TABPFN_CLIENT_GITHUB_ISSUES = "https://github.com/priorlabs/tabpfn-client/issues"
-URL_PRIOR_LABS_API_KEYS = "https://ux.priorlabs.ai/account/api-keys"
+URL_PRIOR_LABS_API_KEYS = "https://platform.priorlabs.ai/account/api-keys"
 URL_PRIOR_LABS_TERMS_AND_CONDITIONS = (
     "https://priorlabs.ai/general-terms-and-conditions"
 )
@@ -4432,6 +4449,7 @@ from tabpfn_client.api_models import ModelVersion
 from tabpfn_client.utils import model_limit_from_version, model_version_from_path
 from tabpfn_client.service_wrapper import InferenceClient
 from tabpfn_client.api_models import (
+    ModelLimit,
     RegressorTabPFNConfig,
     ClassifierTabPFNConfig,
     RegressorPredictParams,
@@ -5197,6 +5215,16 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
             predict_params=predict_params,
         )
 
+        # A full-output response carries one logit per histogram bar for every
+        # test row, so the server caps the rows a single response may cover.
+        # Splitting the call here keeps the returned arrays identical to what
+        # one unrestricted call would have produced.
+        rows_per_call = (
+            _full_output_row_limit(tabpfn_config.model_path)
+            if output_type == "full"
+            else None
+        )
+        chunked = rows_per_call is not None and X.shape[0] > rows_per_call
         validate_test_set(
             X,
             output_type,
@@ -5204,8 +5232,8 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
             train_rows=self._last_train_X.shape[0]
             if self._last_train_X is not None
             else None,
+            split_full_output=chunked,
         )
-        X_clean = _clean_text_features(X)
 
         # NOTE(@trace_id)
         # If this instance reuses a previous fit via a directly-assigned
@@ -5219,34 +5247,58 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator, TabPFNModelSelection):
         ):
             self.client_options.headers["sentry-trace"] = self._last_trace_id
 
-        def predict_task() -> PredictionResult:
-            return InferenceClient.predict(
-                X_clean,
-                fitted_train_set_id=self.model_id_,
-                task_config=task_config,
-                client_options=self.client_options,
+        def predict_rows(X_rows: Any) -> PredictionResult:
+            X_clean = _clean_text_features(X_rows)
+
+            def predict_task() -> PredictionResult:
+                return InferenceClient.predict(
+                    X_clean,
+                    fitted_train_set_id=self.model_id_,
+                    task_config=task_config,
+                    client_options=self.client_options,
+                )
+
+            return run_task(predict_task, "Predicting")
+
+        if chunked:
+            rows_per_call = cast(int, rows_per_call)
+            results = [
+                predict_rows(_row_slice(X, start, start + rows_per_call))
+                for start in range(0, X.shape[0], rows_per_call)
+            ]
+            # Metadata describes the request, and every chunk shares the same
+            # config; the last one stands for the whole prediction.
+            self._last_meta = results[-1].metadata
+            output = _merge_full_outputs(
+                [cast("dict[str, np.ndarray]", r.y_pred) for r in results]
             )
+        else:
+            result = predict_rows(X)
+            # Unpack and store metadata
+            self._last_meta = result.metadata
+            output = result.y_pred
 
-        result = run_task(predict_task, "Predicting")
-        # Unpack and store metadata
-        self._last_meta = result.metadata
-
-        output = result.y_pred
         if output_type == "quantiles" and isinstance(output, np.ndarray):
             return list(output) if output.ndim == 2 else [output]
         if output_type == "full":
+            # `criterion` is a bar distribution rather than an array, so the
+            # full output is looser than the declared `dict[str, np.ndarray]`.
+            full = cast("dict[str, Any]", output)
+            if "logits" in full:
+                full["logits"] = _restore_masked_logits(full["logits"])
             try:
                 from tabpfn.regressor import FullSupportBarDistribution  # type: ignore
                 import torch  # type: ignore
 
-                output["criterion"] = FullSupportBarDistribution(
-                    borders=torch.tensor(output["borders"])
+                full["criterion"] = FullSupportBarDistribution(
+                    borders=torch.tensor(full["borders"])
                 )
             except ImportError:
                 logger.warning(
                     "Optional dependencies 'tabpfn' and 'torch' are required to "
                     "construct the criterion when output_type='full'. Skipping criterion."
                 )
+            return full
 
         return output
 
@@ -5309,23 +5361,39 @@ def validate_train_set(
         )
 
 
+def _limit_for_model_path(model_path: str | None) -> ModelLimit | None:
+    """Return the row/cell caps for `model_path`, or None if unknown."""
+    api_settings = ServiceClient.get_settings()
+    if api_settings is None:
+        return None
+    if not model_path:
+        return api_settings.model_limits[api_settings.default_model_version]
+    model_version = model_version_from_path(model_path)
+    return model_limit_from_version(model_version, api_settings.model_limits)
+
+
+def _full_output_row_limit(model_path: str | None) -> int | None:
+    """Rows a single `output_type="full"` response may cover, None if unknown."""
+    limit = _limit_for_model_path(model_path)
+    return limit.test_set_max_rows_w_full_regression_output if limit else None
+
+
 def validate_test_set(
     X: pd.DataFrame | np.ndarray,
     output_type: str | None,
     model_path: str | None = None,
     train_rows: int | None = None,
+    split_full_output: bool = False,
 ):
-    """Check the integrity of the test data."""
+    """Check the integrity of the test data.
 
-    api_settings = ServiceClient.get_settings()
-    if api_settings is None:
+    `split_full_output` marks that the caller will honour the full-output row
+    cap by splitting the request, so that cap is not enforced here.
+    """
+
+    limit = _limit_for_model_path(model_path)
+    if limit is None:
         return
-
-    if not model_path:
-        limit = api_settings.model_limits[api_settings.default_model_version]
-    else:
-        model_version = model_version_from_path(model_path)
-        limit = model_limit_from_version(model_version, api_settings.model_limits)
 
     max_rows = limit.test_set_max_rows
     if train_rows:
@@ -5347,12 +5415,63 @@ def validate_test_set(
             f"The number of test cells ({n_cells}) exceeds the maximum of {limit.test_set_max_cells}. "
             "Split the test set across multiple calls to reduce the number of cells."
         )
-    if output_type == "full":
+    if output_type == "full" and not split_full_output:
         if X.shape[0] > limit.test_set_max_rows_w_full_regression_output:
             raise ValueError(
                 f"The number of test rows ({X.shape[0]}) exceeds the maximum of {limit.test_set_max_rows_w_full_regression_output} "
                 "for full regression output."
             )
+
+
+def _restore_masked_logits(logits: np.ndarray) -> np.ndarray:
+    """Return `logits` with bars outside a row's support back at -inf.
+
+    The response encoding carries no representation for -inf, so those bars
+    arrive as null and land in the array as NaN.
+    """
+    logits = np.asarray(logits, dtype=float)
+    return np.where(np.isnan(logits), -np.inf, logits)
+
+
+def _row_slice(X: Any, start: int, stop: int) -> Any:
+    """Return rows `[start:stop)` of `X`, keeping its container type."""
+    if isinstance(X, pd.DataFrame):
+        return X.iloc[start:stop]
+    return X[start:stop]
+
+
+# Axis along which each `output_type="full"` array runs over test rows. None
+# marks a row-independent array: `borders` describes the histogram of the
+# fitted target, so every chunk returns the same one.
+_FULL_OUTPUT_ROW_AXIS: dict[str, int | None] = {
+    "mean": 0,
+    "median": 0,
+    "mode": 0,
+    "logits": 0,
+    "quantiles": 1,
+    "borders": None,
+}
+
+
+def _merge_full_outputs(parts: list[dict[str, np.ndarray]]) -> dict[str, np.ndarray]:
+    """Stitch per-chunk full-output predictions back into one result."""
+    unknown = sorted(set(parts[0]) - set(_FULL_OUTPUT_ROW_AXIS))
+    if unknown:
+        raise RuntimeError(
+            f"Cannot combine full regression output across calls: the server "
+            f"returned unrecognised field(s) {unknown}. Upgrade tabpfn-client, "
+            f"or split the test set yourself and merge the results."
+        )
+    merged: dict[str, np.ndarray] = {}
+    for key, axis in _FULL_OUTPUT_ROW_AXIS.items():
+        if key not in parts[0]:
+            continue
+        merged[key] = (
+            parts[0][key]
+            if axis is None
+            else np.concatenate([p[key] for p in parts], axis=axis)
+        )
+    return merged
 
 
 @overload
@@ -6480,7 +6599,7 @@ protocol: "https"
 host: "api.priorlabs.ai"
 port: "443"
 
-gui_url: "https://ux.priorlabs.ai"
+gui_url: "https://platform.priorlabs.ai"
 endpoints:
   root:
     path: "/"
@@ -7647,13 +7766,23 @@ place, set `fit_mode="fit_with_cache"`; the endpoint then returns a
 `model_id=prior.model_id_`. `model_path` is similarly optional and
 only sent when set; some deployments reject overrides.
 
+`use_kv_cache=True` automates that round trip within one estimator: the
+first `predict*` after `fit()` ships the training data as usual, and
+every later one reuses the `model_id` the endpoint returned. Workloads
+that predict many times against a single fit â€” SHAP, permutation
+importance, partial dependence â€” otherwise pay a full re-fit per call.
+The endpoint's cache is bounded, so a `model_id` can be evicted between
+predicts; that surfaces as an error and the estimator has to be re-fit.
+
 `model_id` lives on the constructor (not on `predict`) so the sklearn
 estimator contract stays intact: `predict(X)` / `predict_proba(X)` work
 with `Pipeline`, `GridSearchCV`, `cross_validate`, etc.
 
 `payload_format="parquet"` sends the datasets as multipart Parquet files
 instead of inline JSON. Encoding dominates request time on large tables,
-and Parquet also carries missing values natively, which JSON cannot.
+and Parquet carries missing and non-finite values exactly. The JSON path
+encodes them as the `NaN` / `Infinity` literals Python's `json` accepts
+but the standard does not, so a strict endpoint needs Parquet for those.
 """
 
 from __future__ import annotations
@@ -7721,6 +7850,7 @@ class _HostedBase(BaseEstimator):
         categorical_features_indices: Optional[List[int]] = None,
         timeout_s: float = 300.0,
         payload_format: Literal["json", "parquet"] = "json",
+        use_kv_cache: bool = False,
     ):
         self.endpoint_url = endpoint_url
         self.api_key = api_key
@@ -7740,6 +7870,7 @@ class _HostedBase(BaseEstimator):
         self.categorical_features_indices = categorical_features_indices
         self.timeout_s = timeout_s
         self.payload_format = payload_format
+        self.use_kv_cache = use_kv_cache
 
     def _build_tabpfn_config(self) -> Dict[str, Any]:
         cfg: Dict[str, Any] = {
@@ -7757,8 +7888,14 @@ class _HostedBase(BaseEstimator):
             cfg["categorical_features_indices"] = self.categorical_features_indices
         if self.model_path is not None:
             cfg["model_path"] = self.model_path
-        if self.fit_mode is not None:
-            cfg["fit_mode"] = self.fit_mode
+        # The endpoint hands back a reusable `model_id` only when asked to keep
+        # the cache, so `use_kv_cache` implies that fit_mode; an explicit one
+        # still wins. Resolved here to leave the constructor argument untouched.
+        fit_mode = self.fit_mode
+        if fit_mode is None and self.use_kv_cache:
+            fit_mode = "fit_with_cache"
+        if fit_mode is not None:
+            cfg["fit_mode"] = fit_mode
         if self._TASK == "classification":
             cfg["balance_probabilities"] = self.balance_probabilities
         return cfg
@@ -7805,6 +7942,7 @@ class _HostedBase(BaseEstimator):
         # prior predict; otherwise `predict(X, model_id=self.model_id_)` would
         # keep hitting the old server-side model.
         self.model_id_ = None
+        self._cached_model_id: Optional[str] = None
         if self._TASK == "classification":
             self.classes_ = np.unique(y_arr)
         return self
@@ -7834,7 +7972,14 @@ class _HostedBase(BaseEstimator):
         # id is now stale relative to the new data. Falls back to the cached
         # path only when fit() was never called.
         has_training_data = hasattr(self, "X_train_") and hasattr(self, "y_train_")
-        if has_training_data:
+        # An earlier predict against this fit already left a model on the
+        # endpoint; reuse it rather than re-sending data it still holds.
+        cached_id = (
+            getattr(self, "_cached_model_id", None) if self.use_kv_cache else None
+        )
+        if cached_id is not None:
+            request["context"] = {"model_id": cached_id}
+        elif has_training_data:
             # y_train on the wire is 2D (n_samples, 1).
             y_arr = np.asarray(self.y_train_)
             if y_arr.ndim == 1:
@@ -7854,6 +7999,8 @@ class _HostedBase(BaseEstimator):
         returned_id = payload.get("model_id")
         if returned_id is not None:
             self.model_id_ = returned_id
+            if self.use_kv_cache:
+                self._cached_model_id = returned_id
 
         return payload
 
@@ -7874,14 +8021,16 @@ class _HostedBase(BaseEstimator):
         body = dict(request)
         for name, value in datasets.items():
             body[_JSON_DATASET_KEYS[name]] = _to_jsonable(value)
+        # Not httpx's `json=`, which rejects non-finite floats outright;
+        # `json.dumps` writes the literals Python's own decoder reads back.
         return self._http_client().post(
             self.endpoint_url,
-            json=body,
+            content=json.dumps(body).encode("utf-8"),
             headers=self._headers(),
         )
 
 
-class TabPFNClassifier(_HostedBase, ClassifierMixin):
+class TabPFNClassifier(ClassifierMixin, _HostedBase):
     """TabPFN classifier backed by a self-hosted inference endpoint.
 
     Example:
@@ -7906,7 +8055,7 @@ class TabPFNClassifier(_HostedBase, ClassifierMixin):
         return np.asarray(result["prediction"])
 
 
-class TabPFNRegressor(_HostedBase, RegressorMixin):
+class TabPFNRegressor(RegressorMixin, _HostedBase):
     """TabPFN regressor backed by a self-hosted inference endpoint.
 
     Example:
@@ -10838,15 +10987,17 @@ FILE: tests/unit/test_hosted_estimator.py
 #  Licensed under the Apache License, Version 2.0
 """Unit tests for the self-hosted endpoint estimators.
 
-Cover the wire format: JSON stays the default, and `payload_format="parquet"`
-moves the datasets into multipart file parts.
+Cover the wire format (JSON stays the default, and `payload_format="parquet"`
+moves the datasets into multipart file parts), the `use_kv_cache` fast path,
+and the sklearn estimator contract.
 """
 
 import io
 import json
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
+import pytest
 import numpy as np
 import pandas as pd
 
@@ -10863,25 +11014,39 @@ Y = pd.Series([0, 0, 1, 1])
 class Recorder:
     """Captures the outgoing request and answers with a canned prediction."""
 
-    def __init__(self, prediction: Any = None, model_id: Optional[str] = None):
+    def __init__(
+        self,
+        prediction: Any = None,
+        model_id: Optional[str] = None,
+        statuses: Optional[List[int]] = None,
+    ):
         self.prediction = [[0.4, 0.6]] * 2 if prediction is None else prediction
         self.model_id = model_id
-        self.request: Optional[httpx.Request] = None
+        # Status code per request, in order; anything past the end answers 200.
+        self.statuses = list(statuses or [])
+        self.requests: List[httpx.Request] = []
 
     def install(self, estimator: Any) -> None:
         """Point the estimator's cached client at this recorder."""
         estimator._cached_client = httpx.Client(transport=httpx.MockTransport(self))
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
-        self.request = request
+        self.requests.append(request)
+        status = self.statuses.pop(0) if self.statuses else 200
+        if status != 200:
+            return httpx.Response(status, json={"detail": "unknown model_id"})
         body: Dict[str, Any] = {"prediction": self.prediction}
         if self.model_id is not None:
             body["model_id"] = self.model_id
         return httpx.Response(200, json=body)
 
     def sent(self) -> httpx.Request:
-        assert self.request is not None, "no request was sent"
-        return self.request
+        assert self.requests, "no request was sent"
+        return self.requests[-1]
+
+    def bodies(self) -> List[Dict[str, Any]]:
+        """Every JSON body sent so far, oldest first."""
+        return [json.loads(r.content) for r in self.requests]
 
     def content_type(self) -> str:
         return self.sent().headers["content-type"]
@@ -10992,6 +11157,118 @@ class TestParquetPayload:
 
         _, frames = recorder.multipart()
         assert list(frames["x_train"].columns) == ["0", "1", "2"]
+
+
+class TestKvCache:
+    def test_is_off_by_default(self):
+        """Without the flag, every predict re-sends the training data."""
+        recorder = Recorder(model_id="mid")
+        model = _classifier(recorder)
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        assert all("X_train" in body for body in recorder.bodies())
+        assert not any("context" in body for body in recorder.bodies())
+
+    def test_reuses_the_model_id_after_the_first_predict(self):
+        recorder = Recorder(model_id="mid")
+        model = _classifier(recorder, use_kv_cache=True)
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+        model.predict_proba(X_COMPLETE.iloc[:2])
+        model.predict(X_COMPLETE.iloc[:2])
+
+        first, *rest = recorder.bodies()
+        assert "X_train" in first and "context" not in first
+        for body in rest:
+            assert body["context"] == {"model_id": "mid"}
+            assert "X_train" not in body and "y_train" not in body
+
+    def test_implies_fit_with_cache(self):
+        recorder = Recorder(model_id="mid")
+        model = _classifier(recorder, use_kv_cache=True)
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        assert recorder.bodies()[0]["task_config"]["tabpfn_config"]["fit_mode"] == (
+            "fit_with_cache"
+        )
+
+    def test_explicit_fit_mode_wins(self):
+        recorder = Recorder(model_id="mid")
+        model = _classifier(recorder, use_kv_cache=True, fit_mode="batched")
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        assert (
+            recorder.bodies()[0]["task_config"]["tabpfn_config"]["fit_mode"]
+            == "batched"
+        )
+
+    def test_refit_invalidates_the_cached_id(self):
+        recorder = Recorder(model_id="mid")
+        model = _classifier(recorder, use_kv_cache=True)
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        assert all("X_train" in body for body in recorder.bodies())
+
+    def test_eviction_surfaces_rather_than_refitting(self):
+        """An evicted id is the caller's to handle, as in the other backends."""
+        recorder = Recorder(model_id="mid", statuses=[200, 404])
+        model = _classifier(recorder, use_kv_cache=True)
+        model.fit(X_COMPLETE, Y)
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        with pytest.raises(httpx.HTTPStatusError):
+            model.predict_proba(X_COMPLETE.iloc[:2])
+        assert len(recorder.requests) == 2
+
+    def test_constructor_model_id_still_skips_fit(self):
+        recorder = Recorder()
+        model = _classifier(recorder, model_id="abc")
+        model.predict_proba(X_COMPLETE.iloc[:2])
+
+        body = recorder.bodies()[0]
+        assert body["context"] == {"model_id": "abc"}
+        assert "X_train" not in body
+
+
+class TestNonFiniteJson:
+    def test_missing_and_infinite_values_survive_the_json_path(self):
+        """Explainers mask features with +inf; httpx's `json=` would reject it."""
+        recorder = Recorder()
+        model = _classifier(recorder)
+        model.fit(X, Y)
+        masked = X.iloc[:2].copy()
+        masked["a"] = np.inf
+        model.predict_proba(masked)
+
+        body = recorder.bodies()[0]
+        assert np.isnan(body["X_train"][1][1])
+        assert body["X_test"][0][0] == float("inf")
+
+
+class TestSklearnContract:
+    def test_estimator_type_is_detected(self):
+        from sklearn.base import is_classifier, is_regressor
+
+        assert is_classifier(TabPFNClassifier(endpoint_url=URL))
+        assert is_regressor(TabPFNRegressor(endpoint_url=URL))
+
+    def test_use_kv_cache_is_a_constructor_param(self):
+        """`_cached_model_id` must stay off get_params, so clone() drops it."""
+        from sklearn.base import clone
+
+        model = TabPFNClassifier(endpoint_url=URL, use_kv_cache=True)
+        cloned = clone(model)
+        assert isinstance(cloned, TabPFNClassifier)
+        assert model.get_params()["use_kv_cache"] is True
+        assert "_cached_model_id" not in model.get_params()
+        assert cloned.get_params() == model.get_params()
 
 
 
@@ -11289,7 +11566,7 @@ class TestReviewFindings(unittest.TestCase):
         auth_event = threading.Event()
         received: list = [None]
         httpd, _ = interactive_auth._create_callback_server(
-            "https://ux.priorlabs.ai", auth_event, received
+            "https://platform.priorlabs.ai", auth_event, received
         )
         try:
             self.assertEqual("127.0.0.1", httpd.socket.getsockname()[0])
@@ -11365,7 +11642,9 @@ class TestReviewFindings(unittest.TestCase):
         with patch.object(interactive_auth.webbrowser, "open", return_value=False):
             with patch.object(interactive_auth, "_poll_for_token", return_value="tok"):
                 with patch("sys.stdout", new=io.StringIO()) as fake_out:
-                    interactive_auth._browser_login("https://ux.priorlabs.ai", 1.0)
+                    interactive_auth._browser_login(
+                        "https://platform.priorlabs.ai", 1.0
+                    )
 
         self.assertIn("Could not open a browser", fake_out.getvalue())
 
@@ -13886,6 +14165,135 @@ class TestTabPFNModelSelection(unittest.TestCase):
         tabpfn_false.fit(X, y)
         y_pred_false = tabpfn_false.predict(test_X)
         self.assertIsNotNone(y_pred_false)
+
+
+class TestFullOutputChunking(unittest.TestCase):
+    """`output_type="full"` splits into per-chunk calls above the server cap."""
+
+    FULL_OUTPUT_MAX_ROWS = 4
+    N_BARS = 6
+    N_QUANTILES = 9
+
+    def setUp(self):
+        # skip init
+        config.Config.is_initialized = True
+        payload = _api_settings_payload()
+        for limit in [payload["max_model_limit"], *payload["model_limits"].values()]:
+            limit["test_set_max_rows_w_full_regression_output"] = (
+                self.FULL_OUTPUT_MAX_ROWS
+            )
+        ServiceClient._api_settings = GetSettingsResponse(**payload)
+        ServiceClient._api_settings_ts = time.monotonic()
+
+        self.borders = np.linspace(0.0, 1.0, self.N_BARS + 1)
+        self.regressor = TabPFNRegressor(model_path="v2.5_default")
+        self.regressor.model_id_ = UUID("00000000-0000-0000-0000-000000000000")
+        self.regressor._last_train_X = np.random.randn(5, 2)
+
+    def tearDown(self):
+        ServiceClient._api_settings = None
+        ServiceClient._api_settings_ts = 0.0
+        # undo setUp
+        config.reset()
+
+    def _full_output(self, n_rows: int, offset: int) -> dict[str, np.ndarray]:
+        """A full-output payload whose values encode each row's global index."""
+        rows = np.arange(offset, offset + n_rows, dtype=float)
+        return {
+            "mean": rows,
+            "median": rows + 0.1,
+            "mode": rows + 0.2,
+            "quantiles": rows + np.arange(self.N_QUANTILES)[:, None],
+            "logits": rows[:, None] + np.arange(self.N_BARS)[None, :],
+            "borders": self.borders,
+        }
+
+    def _predict(self, n_test_rows: int):
+        """Predict `n_test_rows` rows, serving each request from its own chunk."""
+        served = []
+
+        def fake_predict(X, **kwargs):
+            offset = sum(len(x) for x in served)
+            served.append(X)
+            return PredictionResult(
+                y_pred=cast(Any, self._full_output(len(X), offset)), metadata={}
+            )
+
+        with patch.object(InferenceClient, "predict", side_effect=fake_predict):
+            output = cast(
+                "dict[str, Any]",
+                self.regressor.predict(
+                    np.random.randn(n_test_rows, 2), output_type="full"
+                ),
+            )
+        return output, served
+
+    def test_stays_a_single_call_at_the_limit(self):
+        _, served = self._predict(self.FULL_OUTPUT_MAX_ROWS)
+        self.assertEqual([len(x) for x in served], [self.FULL_OUTPUT_MAX_ROWS])
+
+    def test_splits_into_chunks_of_at_most_the_limit(self):
+        _, served = self._predict(self.FULL_OUTPUT_MAX_ROWS * 2 + 1)
+        self.assertEqual(
+            [len(x) for x in served],
+            [self.FULL_OUTPUT_MAX_ROWS, self.FULL_OUTPUT_MAX_ROWS, 1],
+        )
+
+    def test_merged_output_matches_a_single_unsplit_call(self):
+        n_rows = self.FULL_OUTPUT_MAX_ROWS * 2 + 1
+        output, _ = self._predict(n_rows)
+        expected = self._full_output(n_rows, 0)
+        for key, value in expected.items():
+            np.testing.assert_allclose(output[key], value, err_msg=key)
+
+    def test_rejects_output_it_cannot_merge(self):
+        def fake_predict(X, **kwargs):
+            payload = self._full_output(len(X), 0)
+            payload["surprise"] = np.zeros(len(X))
+            return PredictionResult(y_pred=cast(Any, payload), metadata={})
+
+        with patch.object(InferenceClient, "predict", side_effect=fake_predict):
+            with self.assertRaisesRegex(RuntimeError, "surprise"):
+                self.regressor.predict(
+                    np.random.randn(self.FULL_OUTPUT_MAX_ROWS + 1, 2),
+                    output_type="full",
+                )
+
+    def test_masked_bars_come_back_as_negative_infinity(self):
+        """Null logits mark bars outside a row's support, i.e. -inf."""
+
+        def fake_predict(X, **kwargs):
+            payload = self._full_output(len(X), 0)
+            payload["logits"] = payload["logits"].copy()
+            payload["logits"][:, -2:] = np.nan
+            return PredictionResult(y_pred=cast(Any, payload), metadata={})
+
+        with patch.object(InferenceClient, "predict", side_effect=fake_predict):
+            output = cast(
+                "dict[str, Any]",
+                self.regressor.predict(
+                    np.random.randn(self.FULL_OUTPUT_MAX_ROWS + 1, 2),
+                    output_type="full",
+                ),
+            )
+
+        logits = output["logits"]
+        self.assertFalse(np.isnan(logits).any())
+        self.assertTrue(np.isneginf(logits[:, -2:]).all())
+        self.assertTrue(np.isfinite(logits[:, :-2]).all())
+
+    def test_other_output_types_keep_the_row_limit(self):
+        """The cap only applies to `full`, so `mean` is never split."""
+        served = []
+
+        def fake_predict(X, **kwargs):
+            served.append(X)
+            return PredictionResult(y_pred=np.zeros(len(X)), metadata={})
+
+        n_rows = self.FULL_OUTPUT_MAX_ROWS * 3
+        with patch.object(InferenceClient, "predict", side_effect=fake_predict):
+            self.regressor.predict(np.random.randn(n_rows, 2), output_type="mean")
+        self.assertEqual([len(x) for x in served], [n_rows])
 
 
 
