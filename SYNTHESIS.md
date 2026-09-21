@@ -90,6 +90,9 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-07 | Luo 2026 (Memory-Efficient TFMs) | Post-hoc INT4 quantization: 7.6× less memory, ~87% lower deployment requirement, negligible accuracy loss — an open alternative to proprietary distillation | TabPFN v2.5/v2.6, TabICL; deployment constraints |
 | 2026-08 | Shaheen 2026 (*Understanding the Surprising Generalization Properties of TFMs*) | Pretraining on a *single* real table transfers across domains; feature count (not row count) predicts transfer; argues TFMs are learned retrieval-and-aggregation, not prior-fitted Bayesian inference | Nagler 2023 localisation; TabDPT procedure; challenges Müller 2021 |
 | 2026-08 | Eo 2026 (*EXAONE Tabular 1.0*) | Removes the row-compression boundary entirely — feature- and item-axis attention interleave at every layer; 20.8M params rank 1st on TabArena classification untuned, and tie 1.64B TabFM | CAST; synthetic-only SCM prior; TabPFN v2 vs TabICL/TabPFN-3 architectures |
+| 2026-09 | Jäger 2026 (*TabPFN-3.5*) | Answers *Beyond IID* on its own benchmark: 1st on **all seven** suites, incl. grouped/temporal/wide/high-cardinality, where TFMs had trailed tuned GBDTs. Fourier cell encodings, doubled width at constant KV cache, prior retuned for those regimes | TabPFN-3; Purucker 2026; TabFM encodings; TabICLv2 prior |
+| 2026-09 | Tao 2026 (*Mitra-v2*) | Architecture held fixed, task distribution widened ~10×: 77M params reach 1.64B TabFM's level; 1st on >10-class tasks never seen in pretraining. Declares its own non-attribution | Mitra-v1; Hybrid SCM; Muon; Apache-2.0 |
+| 2026-09 | Xiaomi Team 2026 (*Xiaomi-TabLDM*) | First **sparse MoE** inside a TFM; dual-stream feature grouping extending TabICLv2; deliberate regression specialist — 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost | TabICLv2 (QASSMax, grouping); TabFM |
 
 
 ## Foundations — Prior-Fitted Networks & Bayesian in-context learning
@@ -185,6 +188,29 @@ The TabPFN line is the concrete instantiation of the Prior-Data Fitted Network i
 
 **TabPFN-3 (Grinsztajn 2026)** is an architectural break, and a notable convergence with the rival TabICL line (Qu 2025), which had already shown that collapsing columns into fixed-width row embeddings *before* ICL cuts complexity from O(m²n + n²m) to O(m²n + n²). v3 adopts exactly this: inducing-point column embeddings → 4 CLS tokens compressing each row to 512-d → a 24-layer row-level ICL transformer with multi-query test→train attention (8× smaller KV cache), enabling 1M rows on a single H100. Classification becomes an attention-based soft-kNN retrieval decoder (class-count-agnostic up to 160); regression keeps the bar-distribution head with CDF-inversion quantiles. The prior — still 100% synthetic, extended with temporal, spatial, many-class, and OOD components over >8T tokens — beats Real-TabPFN-2.5 on TabArena, directly complicating the Real-TabPFN premise: at the frontier, a better synthetic prior beat real-data continued pretraining *on generic benchmarks* (though 2.5 still wins in the many-features/low-n regime). The trade for anyone building on it is stark: v3's architecture shares almost nothing with v2.x, so a continued-pretraining implementation needs architecture-specific loading, preprocessing, and loss handling, and its hyperparameters must be revalidated. Supporting both v2.6 and v3 is possible, but compatibility is not evidence that Garg's v2 recipe transfers unchanged; the v2.5/v3 weights also carry non-commercial licenses with undisclosed priors.
 
+**TabPFN-3.5 (Jäger 2026)** arrives four months later and is best read not as another release but
+as an *answer*. The sharpest criticism this paradigm had received came from
+[Purucker 2026 (*Beyond IID*)](SUMMARIES.md#beyond-iid) — co-authored by Prior Labs — which showed
+that TFMs win on clean i.i.d. benchmarks and then lose to tuned RealMLP and CatBoost on grouped
+and temporal splits, on wide tables, and on high-cardinality categoricals, with the gap widening
+as datasets grow. TabPFN-3.5 goes after exactly those slices: the synthetic prior is retuned to
+generate high-cardinality, wide, and *grouped* data where test rows come from a different group
+than training rows, per-cell encodings gain Fourier features borrowed from TabFM, model width
+doubles while the KV cache stays the same size, and classification and regression merge into one
+jointly trained checkpoint. It then reports **first place on all seven benchmarks it runs**,
+BeyondArena included, at an 83% win rate against TabICLv2 there.
+
+If that holds up, it is the most consequential result since v2, because the complaint it answers
+was the strongest evidence that the paradigm's generality was regime-bound rather than real. Two
+things stop it being decisive. It is self-reported and unreviewed, and the four changes ship
+together with **no ablation**, so the BeyondArena gain cannot be attributed to the retuned prior
+rather than the wider model — the attribution problem
+[O'Prior](SUMMARIES.md#oprior) named, recurring in the paper best resourced to avoid it. And the
+openness trend runs the wrong way: v3.5's weights sit under a bespoke licence and the strongest
+variants (**-Plus**, **-Thinking**) are API-only with "proprietary inference optimisations", so
+the numbers that define the state of the art are now partly unreproducible by anyone outside the
+lab.
+
 Running underneath all four generations is a design principle worth naming, because the line has been discovering it one symmetry at a time. A table is not a matrix of arbitrary numbers; it carries symmetries, and every architectural gain in this section came from respecting one more of them. Müller (2021) dropped positional encodings to make the model permutation-equivariant over **rows**, because a dataset is a set. v2's random per-feature embeddings and TabICL's column encoder extended the same courtesy to **columns**. **EquiTabPFN (Arbel 2025)** identifies the one that was missed — the ordering of **target** dimensions is equally arbitrary, yet permuting class labels changes TabPFN's predictions. The paper formalises the residual as an irreducible *target-equivariance gap*, `L(f) − L(f_equi)`, shows it shrinks only slowly during training (the model spends capacity learning a symmetry it could have been handed), and closes it with equivariant encoders, decoders and bi-attention over the target axis. Two things make this more than a tidy result. It explains an existing workaround rather than adding one: the permutation ensembling every TabPFN generation performs is a Monte-Carlo approximation to the symmetrisation the architecture should have provided. And it removes the class-count ceiling *by construction* — on TabZilla tasks with more classes than were ever seen in pretraining, EquiTabPFN takes the best median relative accuracy while TabPFN v2 falls below a linear model and random forests. Its baseline design deserves imitation too: because v2's prior and training code are closed, the authors also train **TabPFNv2\*** — v2's exact architecture on the *public* prior — so the comparison isolates architecture instead of confounding it with an undisclosed prior, which is precisely the control this synthesis notes is missing elsewhere. The honest limit is that the symmetry is not universal: **ordinal targets genuinely have an order**, and the authors find 5 of 86 surveyed datasets are of that kind, where equivariance is the wrong assumption and the prior itself would need changing — a live caveat for ordinal credit-risk targets such as rating grades.
 
 Finally, **nanoTabPFN (Pfefferle 2025)** distills the v2 architecture to <500 lines — bi-attention, mean-padded target encoder, train/test masking, schedule-free AdamW with ~zero weight decay — trainable in a minute, borrowing TabICL's prior. Its "beats TabPFN" claim is apples-to-oranges (the prior is matched to the tiny eval regime), and it drops regression, categorical handling, and ensembling; but as a mechanistic reference for exactly which components continued pretraining perturbs, it is the best pedagogical artifact the line has produced.
@@ -237,6 +263,45 @@ re-running baselines in a matched environment. What can be said is narrower but 
 substantial: the compression boundary is **not necessary** for state-of-the-art tabular
 prediction, and a model two orders of magnitude smaller than the largest entrant can match it.
 Whether that is CAST or a good SCM prior wearing CAST's clothes is, for now, unattributable.
+
+September 2026 then delivered two more industrial entrants in a single month, and between them
+they sharpen both halves of this axis.
+
+**Mitra-v2 (Tao 2026)** is the prior-side argument in its purest form to date, because it is the
+one release here that *holds the architecture still*. The Tab2D backbone is unchanged — 12 layers,
+width 512, four heads — and the parameter count moves only from 75.7M to 76.7M. Everything else is
+the task distribution: pretraining support rows go from 512 to 5,120, features from 16 to 50, and
+a new **Hybrid SCM** places qualitatively different mechanisms at successive nodes of one causal
+graph, so heterogeneity appears *within* a task rather than only across tasks. The result is 77M
+parameters reaching TabArena Elo 1,775 against the 1.64B TabFM's 1,774 — parity at roughly 5% of
+the size — and first place on TALENT's >10-class tasks despite pretraining having never exceeded
+ten classes. Read against [O'Prior](SUMMARIES.md#oprior), which fixed architecture and moved the
+prior on a small scale, Mitra-v2 is the same experiment at the frontier, and it points the same
+way: the prior is doing more of the work than the parameter count.
+
+Mitra-v2 also does something no other technical report in this collection does, and it deserves
+recording as a norm rather than a footnote. Its limitations section states that the bootstrap
+intervals across the leading group **overlap**, so the top of the board "is best read as a
+statistical tie rather than a strict ordering"; that the headline system uses finetuning and
+eight-fold bagging and therefore "should not be described as zero-shot or Pareto-dominant"; and,
+under *incomplete training provenance*, that context length, feature range, prior mixture,
+optimizer, distributed recipe and checkpoint all changed at once with no ablation isolating any of
+them. Every one of those caveats applies equally to TabPFN-3.5, EXAONE and Xiaomi-TabLDM. Only
+Mitra-v2 writes them down — which, given that these reports are now the field's primary literature,
+is the difference between a leaderboard entry and a scientific claim.
+
+**Xiaomi-TabLDM (Xiaomi Team 2026)** extends the architectural consensus rather than contesting
+it: column embed → row aggregate → ICL, with QASSMax lifted directly from TabICLv2. What is new is
+**conditional** capacity — a sparse **Mixture-of-Experts** replacing the feed-forward sub-layer of
+selected ICL layers, the first in this corpus, so heterogeneous datasets can route to specialised
+experts instead of sharing one uniformly larger network. It also doubles TabICLv2's circular-shift
+feature grouping into two streams, one with fixed dyadic offsets and one whose offsets stretch
+with table width. The evaluation is pointedly **regression-first**: first on OpenML-CTR23 across
+33 datasets, second on TabArena regression while using 82% less training and 68% less prediction
+time than TabFM. That focus matters here, because regression is the neglected half of this
+literature and the half that loss-given-default modelling actually needs. The paper carries no
+limitations section at all, and with four simultaneous changes — MoE, dual-stream grouping,
+Attention Residual, enlarged prior — its novel component is the least evidenced of the three.
 
 The retrieval answer, meanwhile, has been **withdrawn by the lab that introduced it**. LoCalPFN (Thomas 2024) proposed retrieved k-NN contexts and TabDPT shipped FAISS retrieval; TabDPT-Turbo (Hosseinzadeh 2026) removes it, on the grounds that retrieval-style inference runs 100×–1000× slower than full-context inference, and replaces it with **long-context pretraining** — train on long contexts and the model can simply consume them. This matters beyond efficiency for two reasons. First, it is a partial answer to Nagler's (2023) bias analysis: if exposure to long contexts during pretraining substitutes for explicit retrieval, then localisation can be acquired by *training distribution* rather than engineered into the *inference path* — a cheaper fix than the architecture-level one the theory seemed to demand. Second, Turbo deliberately stays **row-based**, declining the column-embed → row-compress → ICL convergence on the grounds that row-based attention is easier to make efficient as context grows. The architectural consensus is therefore narrower than it looks: three labs converged on row compression, and a fourth, with the strongest open row-based model, went the other way.
 
@@ -366,11 +431,11 @@ a later result removes the ground from an earlier one.
 | Fine-tuning a TFM **helps** | Rubachev 2025 (SOTA on academic splits) | **Tanna 2026**: across six TFMs it rarely helps, often hurts accuracy *and* calibration, and the effect is architecture-dependent — SFT collapses TabICL (0.873→0.567) while TabPFN survives intact | **Both right, different scopes.** The disagreement is really about which architecture, measured on which splits |
 | Causal PFNs should assume **ignorability** | Balazadeh 2025 (CausalPFN) | **Robertson 2025 (Do-PFN)** is built precisely to survive its violation; **Ma 2026 (CausalFM)** proves mixing identifiable and non-identifiable SCMs yields non-informative posteriors | **Theory vs empirics.** CausalFM has the theorem and *loses to CausalPFN on ACIC2016* — the theorem's practical bite is unsettled |
 | Column-embed → row-compress → **ICL** is the settled architecture | Qu 2025/2026; Grinsztajn 2026 (v3); Kong & Das 2026 (TabFM) — three independent labs | **Hosseinzadeh 2026 (TabDPT-Turbo)** deliberately stays **row-based**; **Eo 2026 (EXAONE Tabular)** removes the compression boundary altogether and tops TabArena classification at 20.8M parameters | **Consensus is narrower than it looks** — three labs converged, and the two strongest challenges both come from keeping information the compression throws away |
-| Architectural gains are attributable | the whole line, implicitly | **Bouadi 2026 (O'Prior)**: "prior work conflates architectural improvements with prior improvements — TabPFN v2 enriched both simultaneously, making attribution impossible" | **Conceded.** O'Prior fixes everything but the prior and shows the prior alone moves ROC-AUC substantially |
+| Architectural gains are attributable | the whole line, implicitly | **Bouadi 2026 (O'Prior)**: "prior work conflates architectural improvements with prior improvements — TabPFN v2 enriched both simultaneously, making attribution impossible"; **Tao 2026 (Mitra-v2)** concedes it of itself under *incomplete training provenance* | **Conceded, and still being violated.** O'Prior shows the prior alone moves ROC-AUC substantially; Mitra-v2 alone holds the architecture fixed, while TabPFN-3.5, EXAONE and Xiaomi-TabLDM each ship 4+ simultaneous changes unablated |
 | TabPFN respects the symmetries of tabular data | v1 (rows), v2/TabICL (columns) | **Arbel 2025 (EquiTabPFN)**: *target* order was missed; permuting class labels changes predictions, and the permutation ensembling every generation performs is a Monte-Carlo patch for it | **Accepted and fixed** — though EquiTabPFN's own caveat is that ordinal targets are *not* permutation-equivariant, so the symmetry is domain-dependent |
 | Pretraining works by inducing a **Bayesian prior** over data-generating processes, so a task must lie in the prior's support | Müller 2021 (*Transformers Can Do Bayesian Inference*); Hollmann 2023/2025; Müller 2025 (*The Future of Bayesian Prediction Is Prior-Fitted*) | **Shaheen 2026 (*Understanding the Surprising Generalization Properties of TFMs*)**: a model pretrained on *one* table (MNIST) transfers to California Housing — a prior induced by one table cannot cover that task. Proposes learned **retrieval-and-aggregation** instead | **Live challenge to the corpus's founding claim**, and from a team including TabPFN's own senior author. Scope limits — real-data pretraining, row-based attention only — stop it being decisive |
 | Only a very **diverse, massive** pretraining corpus enables out-of-domain generalisation | the scaling line: Qu 2026 (~35M synthetic tables); Grinsztajn 2026 (8T tokens); Kong & Das 2026 (hundreds of millions) | **Shaheen 2026**: one table suffices for non-trivial transfer, and what matters is the number of *tasks* a corpus yields — hence table **width**, not corpus size | **Awkward for the scaling race.** Diversity may be a proxy for task count, which width buys far more cheaply |
-| TFMs are general-purpose tabular predictors | the field's headline framing | **Purucker 2026 (BeyondArena)**, co-authored by Prior Labs: on non-IID splits — temporal and grouped — tuned RealMLP and CatBoost win, and the gap grows with sample size and categorical cardinality | **Qualified, by the developers themselves.** Generality is regime-bound |
+| TFMs are general-purpose tabular predictors | the field's headline framing | **Purucker 2026 (BeyondArena)**, co-authored by Prior Labs: on non-IID splits — temporal and grouped — tuned RealMLP and CatBoost win, and the gap grows with sample size and categorical cardinality | **Qualified, then answered — by the same lab.** **Jäger 2026 (TabPFN-3.5)** retunes the prior for grouped, wide and high-cardinality data and takes 1st on BeyondArena at an 83% win rate. Unreviewed and unablated, so the regime-boundedness is contested rather than settled |
 | Model choice is what a benchmark measures | every leaderboard here | **Tanna 2026 (credit)**: on imbalanced credit data the *context-construction strategy* explained more AUC variance than the choice of TFM — 3–4 points, wider than the spread between models | **Uncomfortable, and largely untested elsewhere.** Every comparison in this synthesis holds context construction fixed |
 
 Two further patterns are worth naming because they are not disagreements

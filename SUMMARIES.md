@@ -75,6 +75,9 @@ this folder and write them there.
 | 2026-07 | Luo et al. | **Memory Efficient Tabular Foundation Models** | Post-hoc **INT4 quantization** cuts TFM memory by up to **7.6×** (~87% lower deployment requirement) with negligible accuracy loss — an open alternative to the proprietary distillation engines. First paper here written from inside a bank. | [pdf](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Pretraining on a *single* real table transfers across domains, which the Bayesian prior-fitting account cannot explain; argues TFMs are learned **retrieval-and-aggregation** procedures instead. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Eo et al. | **EXAONE Tabular 1.0** — Technical Report | Removes the row-compression boundary: feature-axis and item-axis attention interleave at every layer. A 20.8M model ranks first on TabArena classification, untuned. | [pdf](papers/2026/08_Eo_et_al._EXAONE_Tabular_1.0_Technical_Report.pdf) |
+| 2026-09 | Jäger et al. | **TabPFN-3.5** — Technical Report | Answers *Beyond IID* on its own benchmark: first place on **all seven** suites, including the grouped, temporal, wide and high-cardinality regimes where TFMs had been losing to tuned GBDTs. | [pdf](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf) |
+| 2026-09 | Tao et al. | **Mitra-v2** — Technical Report | Architecture held fixed, task distribution widened tenfold: 77M parameters reach the 1.64B TabFM's level. The most candid limitations section in this corpus. | [pdf](papers/2026/09_Tao_et_al._Mitra_v2_Technical_Report.pdf) |
+| 2026-09 | Xiaomi-TabLDM Team | **Xiaomi-TabLDM** — A Tabular Foundation Model | First **sparse Mixture-of-Experts** in a TFM, and a deliberate regression specialist: 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost. | [pdf](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf) |
 
 ---
 
@@ -2260,5 +2263,187 @@ ECOC decomposition whose cost grows with the label space: the same ceiling that
 [APT](#apt) and [EquiTabPFN](#equitabpfn) had each already attacked by different routes, back
 again. And the synthetic-only prior plants it firmly on one side of the question that
 [Real-TabPFN](#real-tabpfn) and [Shaheen et al. 2026, *Understanding the Surprising Generalization Properties of Tabular Foundation Models*](#shaheen-retrieval) keep prying open.
+
+---
+
+<a id="tabpfn-3-5"></a>
+
+## 2026-09 — Jäger et al. — TabPFN-3.5: Technical Report
+
+**arXiv:** [2609.17895](https://arxiv.org/abs/2609.17895) · technical report · **Prior Labs** (47 authors) ·
+code Apache 2.0, weights under a bespoke *TabPFN-3.5 License v1.0* ·
+**PDF:** [open](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf)
+
+**Where it fits.** The successor to [TabPFN-3](#tabpfn-3), six months on — but the more
+interesting relationship is with
+[Purucker et al. 2026, *Beyond IID*](#beyond-iid). That paper, **co-authored by Prior Labs
+itself**, found that TFMs win on clean i.i.d. benchmarks and then lose to tuned RealMLP and
+CatBoost exactly where practitioners live: temporal and grouped splits, wide tables, and
+high-cardinality categoricals. TabPFN-3.5 targets those slices specifically and measures itself
+on that same benchmark. It is the cleanest critique → targeted fix → re-measurement loop in this
+collection, and rare in a literature where critiques usually go unanswered.
+
+**What it contains.** The architecture *keeps* TabPFN-3's overall design and revises four things.
+Per-cell encodings now pass standardised values through **Fourier features** — a bank of learned
+frequencies with sine and cosine — rather than a linear projection only, explicitly borrowed from
+[TabFM](#tabfm); the model **width doubles while the KV-cache size stays unchanged**, which is
+what keeps cached inference deployable; classification and regression collapse into a **single
+jointly trained checkpoint** where v3 had two; and the synthetic prior is retuned toward
+high-cardinality categoricals, wide tables, and *grouped* data where the test set comes from a
+different group than the training set, taking some inspiration from the
+[TabICLv2](#tabiclv2) prior.
+
+The release is a family. **TabPFN-3.5** and **TabPFN-3.5-Fast** are open checkpoints in the
+`tabpfn` package, Fast running up to 6× faster than 3.5 with a small accuracy drop; **-Plus**
+(multimodal text and date handling, plus proprietary inference optimisations) and **-Thinking**
+(inference-time compute scaling, up to 12× faster than TabPFN-3-Thinking) are API-only.
+
+The headline is a clean sweep — first place on all seven benchmarks:
+
+| Benchmark | What it probes | Win rate vs. best other TFM |
+|---|---|---|
+| TabArena | standard i.i.d. tabular | 57% (TabFM) |
+| **BeyondArena** | **grouped / temporal / wide** | 83% (TabICLv2) |
+| STRABLE | string-valued columns | 98% (TabICLv2) |
+| MulTaBench | text and images | 90% (TabICLv2) |
+| RelArena-α | relational data | 57% (RT-PluRel) |
+| TALENT | 300-dataset breadth | 80% (TabICLv2) |
+| ScoringBench | predictive distributions | 78% (EXAONE) |
+
+Mean win rate 78% against the best competing TFM and 89% against the best non-foundation model.
+
+**Strengths.** The evaluation is the broadest in this corpus, and — unusually — most of it runs
+on benchmarks built to *expose* TFM weakness rather than confirm strength. Answering your own
+lab's published critique, on that critique's own benchmark, is the right way to close a loop, and
+it makes the BeyondArena column the most load-bearing number in the report. Doubling width while
+holding the cache fixed is a deployment-minded choice rather than a leaderboard one. Taking the
+Fourier encoding from TabFM and prior ideas from TabICLv2 is also a healthy sign: the frontier
+labs are now reading each other rather than diverging.
+
+**Limitations.** No ablation separates the four changes, so which of encoding, width, joint
+training or prior produced the BeyondArena gain is unknown — the attribution problem
+[O'Prior](#oprior) named, in the paper best placed to have avoided it. The **weights are not
+open**: a bespoke licence governs them, the strongest members are API-only, and **-Plus** folds in
+"proprietary inference optimisations", so several headline numbers cannot be reproduced from
+released artifacts. It is self-reported and unreviewed. And a 78% mean win rate means roughly one
+split in five still goes to another model, with no analysis of which or why.
+
+---
+
+<a id="mitra-v2"></a>
+
+## 2026-09 — Tao et al. — Mitra-v2 Technical Report
+
+**arXiv:** [2609.04540](https://arxiv.org/abs/2609.04540) · technical report · **Amazon** ·
+weights, inference and finetuning code all **Apache-2.0** ·
+**PDF:** [open](papers/2026/09_Tao_et_al._Mitra_v2_Technical_Report.pdf)
+
+**Where it fits.** The successor to [Mitra](#mitra), and a sharper version of its thesis. Mitra-v1
+argued for *mixing* priors; Mitra-v2 argues for *widening the task distribution* — and, unusually,
+it tests that claim by holding almost everything else still. It is therefore the closest thing in
+this corpus to the controlled prior-versus-architecture comparison
+[O'Prior](#oprior) said the field never runs, conducted by a lab on its own model.
+
+**What it contains.** The backbone barely moves: the same 12-layer 2D-attention Tab2D stack,
+hidden width 512, four heads, 75.7M → 76.7M parameters. What changes is what it is trained *on*:
+
+| | Mitra-v1 | Mitra-v2 |
+|---|---|---|
+| Max support rows in pretraining | 512 | **5,120** |
+| Query rows | 128 | 1,280 |
+| Max features | 16 | **50** |
+| Prior mixture | SCM + tree | SCM + **Hybrid SCM** + tree |
+| Optimizer | AdamW | **Muon** |
+| Hardware | 8× A100 40GB | 4 nodes × 8 H200 |
+
+The **Hybrid SCM** is the new ingredient: a prior that can place *qualitatively different*
+mechanisms at successive nodes of a single causal graph, so heterogeneity appears within a task
+rather than only between tasks.
+
+On TabArena it reaches overall Elo 1,775 against TabFM's 1,774, EXAONE's 1,749 and TabPFN-3's
+1,638 — matching a **1.64B**-parameter model with **77M**, about 5% of the size. On TALENT it
+ranks first on classification with **more than ten classes**, despite having been pretrained only
+on tasks with at most ten.
+
+**Strengths.** Changing the task distribution while holding the architecture fixed is the
+experiment this literature keeps calling for, and generalising to class counts never seen in
+pretraining is a genuine result rather than a leaderboard place. The licence matters too: weights
+*and* finetuning code under Apache-2.0, at a moment when
+[TabPFN-3.5](#tabpfn-3-5) ships restricted weights and its best variants behind an API.
+
+But the real distinction is the **Limitations section, which is the most candid in this
+collection** — see below.
+
+**Limitations.** Stated by the authors, in their own words and worth repeating because almost no
+other technical report here does it. The bootstrap intervals across the leading group **overlap**,
+so the top of the board "is best read as a statistical tie rather than a strict ordering", and the
+regression board rests on 13 datasets. The headline system uses finetuning and eight-fold bagging,
+so it "should not be described as zero-shot or Pareto-dominant" — a caveat that quietly undercuts
+the single-forward-pass framing the whole paradigm markets itself on. And under **incomplete
+training provenance** they concede that context length, feature range, prior mixture, optimizer,
+distributed recipe and checkpoint all changed at once with no ablation isolating any of them,
+and that accelerator hours and realised prior-mixture frequencies are not recoverable.
+
+That last admission is the same gap as [EXAONE](#exaone-tabular-1) and
+[TabPFN-3.5](#tabpfn-3-5). The difference is that Mitra-v2 declares it, which makes the paper more
+useful than its competitors even where it is weaker.
+
+---
+
+<a id="xiaomi-tabldm"></a>
+
+## 2026-09 — Team et al. — Xiaomi-TabLDM: A Tabular Foundation Model Technical Report
+
+**arXiv:** [2609.03880](https://arxiv.org/abs/2609.03880) · technical report · **Xiaomi** ·
+weights and code released ·
+**PDF:** [open](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf)
+
+**Where it fits.** A fifth industrial lab, after Prior Labs, Amazon ([Mitra](#mitra)), Google
+([TabFM](#tabfm)) and LG ([EXAONE](#exaone-tabular-1)). Architecturally it sits squarely in the
+row-compression camp — column embed → row aggregate → ICL — and borrows QASSMax directly from
+[TabICLv2](#tabiclv2), so it is confirmation rather than challenge on that axis. What is new is
+**conditional capacity**: it is the first model in this collection to put a **sparse
+Mixture-of-Experts** inside a TFM. It is also a deliberate **regression specialist**, which makes
+it the most directly relevant of the three September releases to loss-given-default work.
+
+**What it contains.** Three stages, each modified.
+
+**Column-wise embedding** uses **dual-stream feature grouping**, extending TabICLv2's
+circular-shift trick. TabICLv2 groups each column with two others at fixed dyadic offsets
+(1, 2, 4); Xiaomi runs that stream *and* a second with width-adaptive offsets
+`(1, ⌊√s⌋, s)` that stretch as wide as the table allows, summing the two embeddings. Grouped
+columns are then encoded by a Set Transformer with inducing-point attention.
+
+**Row-wise aggregation** prepends learnable CLS tokens and replaces the plain additive residual
+with a lightweight **Attention Residual**, adaptively fusing the outputs of preceding blocks.
+
+**ICL prediction** keeps the usual asymmetry — training rows attend to each other, test rows
+attend only to training rows — and replaces the feed-forward sub-layer of *selected* layers with
+a **sparse MoE**, so different experts can specialise across heterogeneous datasets.
+
+**Test-time scaling** is context-adaptive: feature shuffling and subsampling, complementary
+preprocessing views (normalisation schemes, quantile transforms, SVD representations, feature
+interactions, and target transforms for heavy-tailed regression), combined by non-negative least
+squares.
+
+Results are pointedly regression-first: **1st on OpenML-CTR23** across 33 regression datasets
+(average rank 3.03), and 2nd on regression across TALENT, TabArena and BCCO. On TabArena
+regression it takes second place on Elo while using **82% less training time and 68% less
+prediction time** than the top-ranked TabFM.
+
+**Strengths.** Regression is the neglected half of this literature — most models are tuned and
+reported on classification — and a model that leads a 33-dataset regression suite is worth more
+to LGD modelling than another classification win. The MoE is the first serious attempt to give a
+TFM conditional capacity rather than uniformly more of it, which is a different scaling lever from
+anything else here. Framing the result as second place *at a fraction of the cost*, rather than
+straining for first, is the honest presentation. Weights and code are released.
+
+**Limitations.** There is **no limitations section at all**, which is conspicuous beside
+[Mitra-v2](#mitra-v2)'s unusually frank one. No ablation separates the MoE from the dual-stream
+grouping, the Attention Residual, the three-stage schedule or the enlarged prior — so the paper's
+novel component is unevidenced as a *cause* of anything, and with four changes at once the
+attribution problem is worse here than in either sibling release. Classification trails its own
+regression consistently. And like its peers it is a self-reported technical report scored against
+public leaderboards, not a reviewed paper.
 
 ---

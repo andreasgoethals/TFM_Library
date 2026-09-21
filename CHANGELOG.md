@@ -4,6 +4,30 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-09-21
+
+- Added **Jäger et al. 2026-09 — TabPFN-3.5** (arXiv 2609.17895), Prior Labs. Reads as an
+*answer* to Purucker's *Beyond IID* — the critique, co-authored by Prior Labs itself, that TFMs
+lose to tuned RealMLP/CatBoost on grouped and temporal splits, wide tables and high-cardinality
+categoricals. 3.5 retunes the prior for exactly those regimes, adds Fourier per-cell encodings
+(from TabFM), doubles width at constant KV-cache size, and merges classification and regression
+into one checkpoint. Reports **1st on all seven benchmarks**, BeyondArena included. Unreviewed and
+unablated, and the weights are no longer openly licensed — the best variants are API-only.
+- Added **Tao et al. 2026-09 — Mitra-v2** (arXiv 2609.04540), Amazon. The successor to Mitra, and
+the one release here that **holds the architecture fixed** and moves only the task distribution:
+support rows 512→5,120, features 16→50, plus a Hybrid SCM prior. 77M parameters reach TabArena
+parity with the 1.64B TabFM. Apache-2.0 for weights *and* finetuning code. Its limitations section
+is the most candid in the corpus — it states that the top-of-board gaps are a statistical tie, that
+the headline system is not zero-shot, and that its own changes are unattributable.
+- Added **Xiaomi-TabLDM Team 2026-09 — Xiaomi-TabLDM** (arXiv 2609.03880), Xiaomi. First **sparse
+Mixture-of-Experts** inside a TFM, and a deliberate regression specialist: 1st on OpenML-CTR23,
+2nd on TabArena regression at 82%/68% less training/prediction time than TabFM. Relevant to LGD
+work, where regression and not classification is the target. No limitations section, and four
+simultaneous changes leave the MoE unevidenced as a cause.
+- **`Where the papers disagree` updated twice.** "TFMs are general-purpose" moves from *qualified*
+to *qualified, then answered by the same lab*; "architectural gains are attributable" becomes
+*conceded, and still being violated* — Mitra-v2 now concedes it of itself, while three of the
+four newest releases ship four or more simultaneous changes with no ablation.
 ## 2026-08-29
 
 - Added **Eo et al. 2026-08 — EXAONE Tabular 1.0** (arXiv 2608.25774), LG AI Research. Attacks
