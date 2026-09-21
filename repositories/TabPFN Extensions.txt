@@ -24,6 +24,11 @@ Directory structure:
     │   ├── embedding/
     │   │   ├── README.md
     │   │   └── get_embeddings.py
+    │   ├── hurdle/
+    │   │   └── facebook_comments.py
+    │   ├── image/
+    │   │   ├── README.md
+    │   │   └── tabpfn_with_images.py
     │   ├── interpretability/
     │   │   ├── decoder_readout_example.py
     │   │   ├── feature_selection.py
@@ -70,6 +75,15 @@ Directory structure:
     │       ├── embedding/
     │       │   ├── __init__.py
     │       │   └── tabpfn_embedding.py
+    │       ├── hurdle/
+    │       │   ├── __init__.py
+    │       │   └── hurdle.py
+    │       ├── image/
+    │       │   ├── __init__.py
+    │       │   ├── _embeddings.py
+    │       │   ├── _preprocessing.py
+    │       │   ├── image_transformer.py
+    │       │   └── tabpfn_with_images.py
     │       ├── interpretability/
     │       │   ├── README.md
     │       │   ├── __init__.py
@@ -117,8 +131,14 @@ Directory structure:
     │   ├── test_cp_missing_data.py
     │   ├── test_embedding.py
     │   ├── test_examples.py
+    │   ├── test_hurdle.py
+    │   ├── test_hurdle_integration.py
+    │   ├── test_image.py
+    │   ├── test_image_embeddings.py
+    │   ├── test_image_preprocessing.py
     │   ├── test_interpretability_decoder_readout.py
     │   ├── test_interpretability_shapiq.py
+    │   ├── test_kv_cache_warning.py
     │   ├── test_many_class_classifier.py
     │   ├── test_predictive_distribution_example.py
     │   ├── test_pval_crt.py
@@ -127,6 +147,7 @@ Directory structure:
     │   ├── test_unsupervised.py
     │   ├── test_unsupervised_dag.py
     │   ├── test_unsupervised_experiments.py
+    │   ├── test_utils.py
     │   └── utils.py
     └── .github/
         ├── CODEOWNERS
@@ -148,7 +169,7 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 7553: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 7880: character maps to <undefined>
 
 
 ================================================
@@ -162,6 +183,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.3] - 2026-09-21
+
+### Added
+
+- Add AutoHurdleRegressor for zero-inflated regression with configurable estimators and quantile grids, mean, median, and quantile predictions, and a Facebook Comment Volume example. ([#395](https://github.com/PriorLabs/tabpfn-extensions/pull/395))
+- Add an example that fits the Amazon Bestseller task of MulTaBench with `TabPFNWithImages`, on the numeric fields, on the picture and on both. ([#398](https://github.com/PriorLabs/tabpfn-extensions/pull/398))
+- Add the `image` extra: `pip install "tabpfn-extensions[image]"` installs transformers, torchvision and pillow, the dependencies of the image extension. ([#399](https://github.com/PriorLabs/tabpfn-extensions/pull/399))
+- Add the `image` extension: `TabPFNWithImages` and `ImageTransformer` turn declared image columns, file paths, base64 strings, bytes or PIL images, into frozen DINOv3 features before TabPFN sees them. ([#400](https://github.com/PriorLabs/tabpfn-extensions/pull/400))
+- Add the internals of the image extension: PIL decoding of image cells, given as base64, bytes, a file path or a PIL image, `image_to_bytes`, and the frozen DINOv3 encoder with its image processor. ([#401](https://github.com/PriorLabs/tabpfn-extensions/pull/401))
+
+
+## [0.6.2] - 2026-09-03
+
+### Fixed
+
+- Support the KV cache advice for endpoint-backed models: a self-hosted, SageMaker or Foundry estimator is no longer told its backend cannot cache, and is instead pointed at `use_kv_cache=True` when the cache is off. ([#393](https://github.com/PriorLabs/tabpfn-extensions/pull/393))
+
 
 ## [0.6.1] - 2026-09-01
 
@@ -647,7 +686,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabpfn-extensions"
-version = "0.6.1"
+version = "0.6.3"
 dependencies = [
     "torch>=2.1",
     "pandas>=2.2.2",
@@ -727,11 +766,17 @@ bayesian_optimization = [
     # Only needed for the benchmark objective in the example.
     "botorch>=0.12.0",
 ]
+# transformers for DINOv3, torchvision for its preprocessing, pillow for image decoding.
+image = [
+    "transformers>=4.57.1",
+    "torchvision>=0.20",
+    "pillow>=10.4",
+]
 
 # Meta-package that installs all extensions
 all = [
     # scikit-survival not included; install manually if you need SurvivalTabPFN.
-    "tabpfn-extensions[interpretability,survival,bayesian_optimization]",
+    "tabpfn-extensions[interpretability,survival,bayesian_optimization,image]",
 ]
 
 [dependency-groups]
@@ -1314,19 +1359,19 @@ revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version < '3.11'",
@@ -1363,16 +1408,16 @@ wheels = [
 
 [[package]]
 name = "anyio"
-version = "4.13.0"
+version = "4.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/19/14/2c5dd9f512b66549ae92767a9c7b330ae88e1932ca57876909410251fe13/anyio-4.13.0.tar.gz", hash = "sha256:334b70e641fd2221c1505b3890c69882fe4a2df910cba14d97019b90b24439dc", size = 231622, upload-time = "2026-03-24T12:59:09.671Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/42/e921fccf5015463e32a3cf6ee7f980a6ed0f395ceeaa45060b61d86486c2/anyio-4.13.0-py3-none-any.whl", hash = "sha256:08b310f9e24a9594186fd75b4f73f4a4152069e3853f1ed8bfbf58369f4ad708", size = 114353, upload-time = "2026-03-24T12:59:08.246Z" },
+    { url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl", hash = "sha256:9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494", size = 125813, upload-time = "2026-07-12T20:29:05.763Z" },
 ]
 
 [[package]]
@@ -1487,19 +1532,19 @@ version = "0.18.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
 ]
@@ -1828,19 +1873,19 @@ version = "1.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
 ]
@@ -3113,19 +3158,19 @@ version = "3.6.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
 ]
@@ -3311,19 +3356,19 @@ version = "2.3.5"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
 ]
@@ -4216,6 +4261,143 @@ wheels = [
 ]
 
 [[package]]
+name = "regex"
+version = "2026.9.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/c1/6b30b775c7bcc6cf6506a4d4741c2123e8d99cd50f3fe8cbd731f5fef526/regex-2026.9.3.tar.gz", hash = "sha256:aabd43208e335f4c3f0b56de3464b066dd425983a58f6eeb5738bcd7465403db", size = 416720, upload-time = "2026-09-01T00:53:43.821Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/9b/ce31551f7191af763ea8414f58289d0ec18ed1d9a531fdebf12dfb249db4/regex-2026.9.3-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:6d416ed4058ea38f69884f3db523b0414c0094d262dde63694aa254e32a433e6", size = 493961, upload-time = "2026-09-01T00:49:33.851Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/62/fec41d97d45c0ff82b609012d69813500d9682d88577b70332ea36b131af/regex-2026.9.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:107319f437fc382e1e445d0abf8923db07f76e5fb3245ac5b09604e5dc8d4f63", size = 295226, upload-time = "2026-09-01T00:49:35.809Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/b1/a35c61819ddd788bca7dc7a1be48a6bf5456044e3bb681553a15611879a3/regex-2026.9.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:05e9f7d16b42686fb38b1702071a7359469ba89e9d516e2ba5228e077dcac524", size = 290643, upload-time = "2026-09-01T00:49:37.169Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/6e/f105bdb0ec755f6a1e5f563f6afbcc22b34427c4ce11ab7f265d2df216cb/regex-2026.9.3-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:39d8d5490ba4b8f26ef2aef72b775b1e7fc1a5ebaf28d11e637eb27b0b6a3048", size = 785257, upload-time = "2026-09-01T00:49:38.69Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/f0/96e18e5b2a63f7aaf9ede0a1da656e5ebe795fbec035169a54aa021b89af/regex-2026.9.3-cp310-cp310-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:f4381151a29a7b9307842ff444609c4b9a402775fbe9afb3ec3e34ec0396bbae", size = 854330, upload-time = "2026-09-01T00:49:40.509Z" },
+    { url = "https://files.pythonhosted.org/packages/af/5e/d6515ad82fb43e3d740abf33db479dd47ce7928c14feb37281ed762571e6/regex-2026.9.3-cp310-cp310-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:0efb99024ad5ba9198ffa816156b3319c3164b5a8d1e35940d92fdc9158b8d9f", size = 899547, upload-time = "2026-09-01T00:49:41.77Z" },
+    { url = "https://files.pythonhosted.org/packages/99/d8/b4a74d131e33f800bd774b85ec2d269c9fb9bbc3f82a06c698bb7da6a5c9/regex-2026.9.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7ab7ad8b557d1f21e8b4a97a2c1a2ac82cf10c92d6a875c90f038ca9ed85dc5b", size = 793625, upload-time = "2026-09-01T00:49:44.126Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/f3/9d21f325b5ff3a95cd79486e37d810f08b72ae26a2be5a795cbe7be3f70e/regex-2026.9.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:2a36e654181ecb996241bae256d28f26b03d019d6ef65c61dcf44396ab07c548", size = 786296, upload-time = "2026-09-01T00:49:45.78Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/e3/bd865f20ce6ee293dbb4c102fe930f2a46ec09daa25ec0662e5af2c41060/regex-2026.9.3-cp310-cp310-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:d36e9097a1bc6eebe8858216ccd2326f561662de4e50c27533452491c1cf1685", size = 768520, upload-time = "2026-09-01T00:49:47.074Z" },
+    { url = "https://files.pythonhosted.org/packages/41/bf/28c8ab87ac526784173d84a7b83fdaf8192037051660415b96f732bf2515/regex-2026.9.3-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:9c407afee6ea4caa313e815814e76d8447fcd32f81e3331d7937c2d33ab80c1b", size = 774325, upload-time = "2026-09-01T00:49:48.43Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/f3/8c3704dc3a477d3974e4ddac1f8722a9da3847bf45474821ac3e06289b1f/regex-2026.9.3-cp310-cp310-musllinux_1_2_ppc64le.whl", hash = "sha256:82c27460ff2ea683159a204db2f9ce0f9549dec7070aa0809fbc36226bac1816", size = 848352, upload-time = "2026-09-01T00:49:49.872Z" },
+    { url = "https://files.pythonhosted.org/packages/39/c0/83457e7847eeda7d53bb4e8f6e2ceddb96002303d4b670f1cf87310cc029/regex-2026.9.3-cp310-cp310-musllinux_1_2_riscv64.whl", hash = "sha256:5e49096c90364317897b8d9fe97e2f86063dc0fc0bcd352017ea6fdd703ff25d", size = 758565, upload-time = "2026-09-01T00:49:51.241Z" },
+    { url = "https://files.pythonhosted.org/packages/68/48/4b23395c8d9e9cd004e0785f270259c65a3185118a527ab4b97df842261f/regex-2026.9.3-cp310-cp310-musllinux_1_2_s390x.whl", hash = "sha256:11f9b104fa7b23f736b50fe1980a1422eb4641865e82614a25413deabccae575", size = 837119, upload-time = "2026-09-01T00:49:52.821Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/58/0912f7fc2220e69a05ea8f4bfd647d1c4017bf37c6d45f30e107367bdc30/regex-2026.9.3-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:92e06a5ecabd6e8352da58b9201ae241a1e7382c1419defa9d2f64ad4ea6abf2", size = 782371, upload-time = "2026-09-01T00:49:54.687Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/56/194a09928d12c86956996ce87408885588f58a88ada042594b3cb196f5f7/regex-2026.9.3-cp310-cp310-win32.whl", hash = "sha256:6ff5a98456194621f757d6226f88035c00ebbeab0a9095dc9b5a9ec5cc94b50b", size = 266768, upload-time = "2026-09-01T00:49:56.205Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/ac/e59cb72afa57b509346d12e36bf62ecc4322ca5588494cd1b2aee1876247/regex-2026.9.3-cp310-cp310-win_amd64.whl", hash = "sha256:14f8969a92ed847f78e8eed81c6a0384a9e8058a56eb659f83ddb59879c2e4e3", size = 277994, upload-time = "2026-09-01T00:49:57.424Z" },
+    { url = "https://files.pythonhosted.org/packages/85/3a/2d1253c32f2f5059398b943329b920748efa062c25b7bcafa9b9334c5931/regex-2026.9.3-cp310-cp310-win_arm64.whl", hash = "sha256:32a32d2664e602b20e4b9c11234cb32f2e985323e453b2b396ea4ae686d82052", size = 276961, upload-time = "2026-09-01T00:49:58.907Z" },
+    { url = "https://files.pythonhosted.org/packages/db/fc/b4ff5d9550796f9f955b6c2470f37e2b582ec944638f3004499929a69c96/regex-2026.9.3-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:6fe39780de6916ecb1c664eda81802e6310fd9d4a07dccb13a86b63918e00e65", size = 493967, upload-time = "2026-09-01T00:50:00.23Z" },
+    { url = "https://files.pythonhosted.org/packages/49/6b/ab60a24883b810a4b29065540f56e6f72590bb97d704d7e0ee7bcd2ba98c/regex-2026.9.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:3d75065d9f6ed1afb2a41588def408cf442cee65b3651cbd7e86650146127bb4", size = 295227, upload-time = "2026-09-01T00:50:01.804Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/e6/e3bf61522cd82eda85a90dd8f69c839f0ce1da64dc6e87f803bb79267c59/regex-2026.9.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5dd356a646fe549d42b766cb9075b54eccd3f20604d87a3eff25f1430bba5b2e", size = 290639, upload-time = "2026-09-01T00:50:03.244Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/b2/e8492b054c5c9fe09bc0aefdc308b8f845ec2094b1ae779accec8f14dedb/regex-2026.9.3-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:90aa2a7f9cc1cd2e8082db61618a2ed0f4197eef52266a6420e88277f184e328", size = 791712, upload-time = "2026-09-01T00:50:05.539Z" },
+    { url = "https://files.pythonhosted.org/packages/48/03/429ee3479bb438f7b2b41147fa68d63a7ef9c7486fcd3960e04e61133cf3/regex-2026.9.3-cp311-cp311-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:1f975a75dae06e88665e4a709873d936a7e8f9445e3d354b75de0e735d28cf71", size = 861711, upload-time = "2026-09-01T00:50:06.988Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/9e/6ebf3cec538ed49d0a4cf5729129fe39580ddfa80c1c59c4274651762202/regex-2026.9.3-cp311-cp311-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:d1d52739de118acf82bfbaf7046955ead4fb613d24ba4187be565cd91ff9a64e", size = 905894, upload-time = "2026-09-01T00:50:08.437Z" },
+    { url = "https://files.pythonhosted.org/packages/19/e4/a7bb1e4038a170714c824dc7c739f8b911cb1172f87ab950be39e0691f95/regex-2026.9.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:99034ec353c973e2c89555866083491b9a2dbe81f2fbe15fb0f2b68506232f01", size = 801135, upload-time = "2026-09-01T00:50:10.308Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/47/1b318fb249d5fa3dcb0375ad284d34155f0da4a2fe92c8f01edef0cb0258/regex-2026.9.3-cp311-cp311-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:3cc1a82779315f7b2a4642d5028b39057838cd4c0415744d4e53c8b512352141", size = 773578, upload-time = "2026-09-01T00:50:12.125Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/16/63f2644a0a3e92623f83ccadd04873916f5b650e2028bc44ee9df104a839/regex-2026.9.3-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:c0ea77435b1d5a27cccf27f8762f50e73fd2d94e8e412a8e5cdedb650b36d5fc", size = 783915, upload-time = "2026-09-01T00:50:14.081Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/f2/f078963d1dbd3632f6e25f7d972cc9a9332649ed239995bfeb403cf88a3b/regex-2026.9.3-cp311-cp311-musllinux_1_2_ppc64le.whl", hash = "sha256:6c997a1703401089bc02d731e360127428fb4ecdf6524268e8975882ff02528b", size = 854924, upload-time = "2026-09-01T00:50:15.826Z" },
+    { url = "https://files.pythonhosted.org/packages/53/46/457ac94a2a2aaa2ab5c076324dfd7e38e76f36d4d78923c4ddb8c3d93d75/regex-2026.9.3-cp311-cp311-musllinux_1_2_riscv64.whl", hash = "sha256:70082b2a8f099b8bf660b553b22a4b8ffd34fcc09ef154fc6b9c7108518fc124", size = 763172, upload-time = "2026-09-01T00:50:17.682Z" },
+    { url = "https://files.pythonhosted.org/packages/66/1c/db145a6ad935cdc6c694381543d53e6e7d7212287d4f8885f965e91ea4a4/regex-2026.9.3-cp311-cp311-musllinux_1_2_s390x.whl", hash = "sha256:f5e8a0ce681ddabf6a35d7b817d74a94ab237ae7233a5b97118db0b4e524473f", size = 844983, upload-time = "2026-09-01T00:50:19.572Z" },
+    { url = "https://files.pythonhosted.org/packages/76/00/100346c5cc2384a7ce0adfb7dbb11f4a865c76e3a920fe68542042da66ea/regex-2026.9.3-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:3367d5eefae493ac2a1586ec11cc8213c3305528ed3f8e19d5c3871cc01da6ce", size = 789532, upload-time = "2026-09-01T00:50:21.142Z" },
+    { url = "https://files.pythonhosted.org/packages/39/62/d878c1d3eed2768f19e8b6fa4aa81b0a0e6bc23fa34e64173ef48816844a/regex-2026.9.3-cp311-cp311-win32.whl", hash = "sha256:33d3a772ff62c882a5d1402045e17c0199f33b9b173139071c4203e7e0292420", size = 266766, upload-time = "2026-09-01T00:50:22.863Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/da/6a0ac27bacb39aca3452cdd7d1bfc361608ad000cea3e1b0d7dbaa1e2b15/regex-2026.9.3-cp311-cp311-win_amd64.whl", hash = "sha256:8c8a63d55cdf3c716225a2f8741a1df7a52b5fa98ac7530165c9cc9b32feabcc", size = 278007, upload-time = "2026-09-01T00:50:24.597Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/a2/b23997814f48f823bcda615764b4fb00d72a5a06bdbb41cafa895ec62428/regex-2026.9.3-cp311-cp311-win_arm64.whl", hash = "sha256:cb6374a84f11a6b25e63aa69ee2d015286048c1efee93c4a3b5b8df62da79ff8", size = 276960, upload-time = "2026-09-01T00:50:26.101Z" },
+    { url = "https://files.pythonhosted.org/packages/da/cb/cba530bc3b068fc337f8f455c63ef5ee91a4eb4c76ecf5998e5cef5aaa6b/regex-2026.9.3-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:5db80d0b1c8238940b5957dd66b5c818ea40a221f6652fb717c027a562d09c77", size = 496699, upload-time = "2026-09-01T00:50:27.98Z" },
+    { url = "https://files.pythonhosted.org/packages/81/39/f2e9fb6bbbc80f8bf67ad79d7e2e8866f7837d7c24c692f7faf8f1272e7e/regex-2026.9.3-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:35d48ce3dee087b63b15cd0a7a3110d0a76c29edbe1f2ad0520b8c4adb7cb596", size = 297018, upload-time = "2026-09-01T00:50:29.487Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/b6/c16ee58840baf7659def27ef6f62f3d9a9909670d3c1b4b98bb8b8ee47e2/regex-2026.9.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1f22e0d21ae7016c77175c139a7fca465b988efc1280df4816c79752068d9e2e", size = 292008, upload-time = "2026-09-01T00:50:30.929Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/b4/4987bf0f17604669b4ea5aef219886d0a73188c4716ff3a7d275d4d15c15/regex-2026.9.3-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:233662cf8cfdfe3c0e58aa8f7bbefc579b5be0ac34546f123c159804179e8687", size = 796101, upload-time = "2026-09-01T00:50:32.486Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/95/2a9ab02a68c8a61dc0b4882ed643b1a95740d9dc291dc26c77d19af79691/regex-2026.9.3-cp312-cp312-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:7d2eed2e4d231278a2ccab3f4bfa2c1e39855f336475f7756a281d767d2b1753", size = 865435, upload-time = "2026-09-01T00:50:34.171Z" },
+    { url = "https://files.pythonhosted.org/packages/04/92/0570d41559b446c97c1148cb9ebc1df09f2949b03c7c9bfee09976b3465f/regex-2026.9.3-cp312-cp312-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:5e674cecb61cb160be392da07fd8a71509ef927f437fbf3215432692ed385151", size = 911828, upload-time = "2026-09-01T00:50:35.72Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/8b/9cc6d4123033f7cb82df6cd8ce19eb0fc18a964afe060a03c9b26757c9f3/regex-2026.9.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:665207e41bacd435db001099eeab44103197c2c1a729d73ade74688a905ed4ce", size = 801965, upload-time = "2026-09-01T00:50:37.701Z" },
+    { url = "https://files.pythonhosted.org/packages/c9/98/39262e91aa87a67c82cbe90a0df4c3d382c7a44811fe80067904085211b4/regex-2026.9.3-cp312-cp312-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:7a7ddc9a8ca1795166a1ca80364b8ce74187fc210e112d3fb048b711b934f36c", size = 776192, upload-time = "2026-09-01T00:50:39.57Z" },
+    { url = "https://files.pythonhosted.org/packages/24/e9/3bb93fe4ee4b6f8ce7ba69b527c4a63cfa3393fc425ab26486041fe441c8/regex-2026.9.3-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:e3037d02425863ce9501afbaa04ba967162810004bacde39a53ea9a5b740eb32", size = 785053, upload-time = "2026-09-01T00:50:41.156Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/05/31d5bc2553a700c0dfc6b5b6a13c61cdcd1210fde1e304cfa18a33f138b2/regex-2026.9.3-cp312-cp312-musllinux_1_2_ppc64le.whl", hash = "sha256:3de4eab8c763393b75bbb26f81934ab2cc8794f48f79e90622e3ab7ea57f3d14", size = 860546, upload-time = "2026-09-01T00:50:42.746Z" },
+    { url = "https://files.pythonhosted.org/packages/65/a3/2e1e854d80becda0f061093805bbfc037a5849448f46d0a2b71a070d45e2/regex-2026.9.3-cp312-cp312-musllinux_1_2_riscv64.whl", hash = "sha256:98620c9c4c22568ad70f57b80527c780b6f8fd26e36507bf8e2273262a228275", size = 765841, upload-time = "2026-09-01T00:50:44.5Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/d6/43d02948cedde2e8476ac893ea02755ee5ee1b21c531fda92d80e114f0bc/regex-2026.9.3-cp312-cp312-musllinux_1_2_s390x.whl", hash = "sha256:0b1ba3aaaf5776de473ee16625ac60ac195abb0343afb273575a8201d99be089", size = 852147, upload-time = "2026-09-01T00:50:46.474Z" },
+    { url = "https://files.pythonhosted.org/packages/21/ff/adb4e2d08afe8f4c6df004d94604257e1f72af7ba328af7715601585aba4/regex-2026.9.3-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:56d8659c65166641d8f1b5efccc391c62c8a899eff4d528b981cc62b7b402a4b", size = 789761, upload-time = "2026-09-01T00:50:48.749Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/e1/1490d1351758e87f6e702cf2025036bdc7bc59182e2ff5c7bec004b19aed/regex-2026.9.3-cp312-cp312-win32.whl", hash = "sha256:837c1859913798d8bebcd98d4a037e113f8d79e81733009bf590e449769eecb3", size = 267150, upload-time = "2026-09-01T00:50:50.414Z" },
+    { url = "https://files.pythonhosted.org/packages/d5/49/4c40cf722d84d60e807a08ef4c3f579216bf97df60c4a1b10be49655d302/regex-2026.9.3-cp312-cp312-win_amd64.whl", hash = "sha256:1ba1dbbb93c5c5629c1861763aec5bfa9f05ad24ef450694130e25029ce7bc36", size = 277773, upload-time = "2026-09-01T00:50:51.963Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/af/c48b3b2b4244b4b090554c78d3387e9ae7b859f3dbf7148a27d427e9e5b8/regex-2026.9.3-cp312-cp312-win_arm64.whl", hash = "sha256:d7b3a8a4bbd83ad8b29758f5d24bab10a3f2de87970db36f1e3651c733353136", size = 277122, upload-time = "2026-09-01T00:50:53.778Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/d8/1fb6053247efc5b5a1d7b3b7881dcf42861f8ba46bd72a2ff126469d4053/regex-2026.9.3-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:1d9148e47cfa1a067138867996b1d5d825de0132fed8dac3c92eebaaf312d280", size = 496442, upload-time = "2026-09-01T00:50:55.351Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/b7/0b9c1c0385365ad12deba0bdf93a70ad9f97d1a919cc5699c33b449ad662/regex-2026.9.3-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:33c2860b73ea342c0a42bee9ebe3b3a0de3d68c580c4dcb52241cf4b6663731b", size = 296913, upload-time = "2026-09-01T00:50:57.251Z" },
+    { url = "https://files.pythonhosted.org/packages/e6/eb/5750ebabdb010ffb0d31fceae68c7a8f3876c06140c3bd6a7feff6240d6d/regex-2026.9.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e33dfc13c02d9c4e55bcf3f3b2eb448537823a6f6f30bf737b2974b63a530bc9", size = 291783, upload-time = "2026-09-01T00:50:58.892Z" },
+    { url = "https://files.pythonhosted.org/packages/96/12/3ee1542b6428a0955ac5a31562d87966a417c0e0a4c1e5c62ec822fe78de/regex-2026.9.3-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:48e84252a16234ee860206a738f9a5084f830a5d0a1370a418d3af4e917f5e08", size = 796114, upload-time = "2026-09-01T00:51:00.5Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/24/5ad415b80958d79f2da66a1997743ea8c38a1e9e2f63660f7cbf9303eda4/regex-2026.9.3-cp313-cp313-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:3077ace9bf59f8513c8471a817a5af63699987dc024f535c1eac3447a4d70211", size = 865524, upload-time = "2026-09-01T00:51:02.25Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/8a/c298d469f5dd12b11d4e7b8c7714c808b9edace73118eaf753fc327c9429/regex-2026.9.3-cp313-cp313-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:635482cd183a1856da75a39c473a2e222697b7927f1955f586db83fc8a5da17c", size = 911948, upload-time = "2026-09-01T00:51:04.099Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/a6/e9a59b507cdf7a9735df4bab92b4ea9d2ca2e665c6de14c112db7e3c0926/regex-2026.9.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:27f0809798071f56fb1bc536bb93714a95e8ed2ec0dfd869f095deebb30fd11a", size = 801945, upload-time = "2026-09-01T00:51:05.878Z" },
+    { url = "https://files.pythonhosted.org/packages/56/1d/443e5541fd23d97c841ccddf90dbc9a964bd00e0ec9219b45a3eb0cde552/regex-2026.9.3-cp313-cp313-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:d514026ca1c473cc14440e4d7bdf6721c642455b647a74c8143c0f22da358c28", size = 776223, upload-time = "2026-09-01T00:51:07.58Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/ae/78d48b14582f5733facaa2e001499b98707d8b8b1b31ab7559053c18f168/regex-2026.9.3-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:b9190d4901d7786af9ab0ec46172e27cf7d72cdba2b82ee38eb40aadd3239a6e", size = 785072, upload-time = "2026-09-01T00:51:09.648Z" },
+    { url = "https://files.pythonhosted.org/packages/55/42/2f4ac830de12d264c1486f749988003a7f5a0366d7557a75de2418461466/regex-2026.9.3-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:6c0f60b05cc708e6cdf68dbca86b7a36d99695962db0189bb1b3884ca3b28e90", size = 860644, upload-time = "2026-09-01T00:51:11.558Z" },
+    { url = "https://files.pythonhosted.org/packages/47/50/6b44c6cf56f353744e6066a1310177b7b195afb11d33dff4d6cf3ec52720/regex-2026.9.3-cp313-cp313-musllinux_1_2_riscv64.whl", hash = "sha256:b7b7e6be82fd6d5256adabb82253c5c307de981cc20c0ce4cff0cbe6de88529b", size = 765862, upload-time = "2026-09-01T00:51:13.371Z" },
+    { url = "https://files.pythonhosted.org/packages/64/0f/c5a8023dfc988cddd2c614b1afbe547aedab1ffebd5b5d9cd58f6ab28908/regex-2026.9.3-cp313-cp313-musllinux_1_2_s390x.whl", hash = "sha256:b5f85bffdfe17da7dfff78eb32b261c27f3cd64c060033645079493f4cebc8e9", size = 852081, upload-time = "2026-09-01T00:51:15.324Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/f4/ab0ba467ebcaecfddf72ea7b3527a6088863094377c1303a3379284ef621/regex-2026.9.3-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:d10a442c6450ebd35aa89392b8e4b0459ba474df63fc5e6828573d0a31a627ec", size = 789774, upload-time = "2026-09-01T00:51:17.057Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/fa/8e2f3021ff5ee3aafc80eed8f16663be5e16c7b663d72e4bd2c9e71e1433/regex-2026.9.3-cp313-cp313-win32.whl", hash = "sha256:63fa79eab192623acb169de1dfe8e733598c4047d06f7712347d1bb810a5ad20", size = 267125, upload-time = "2026-09-01T00:51:18.837Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/25/6d20a309c2e4b554cc33579dd55b0bb50d0c2ace7ce6f084be2327c330fc/regex-2026.9.3-cp313-cp313-win_amd64.whl", hash = "sha256:185c1ae881856208dda05708b6c908aff76878e59c998c8548d365c1bbcaf1bd", size = 277741, upload-time = "2026-09-01T00:51:20.583Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/b3/0282ae58fc167953809a968850622f89955e0fd70a65df882e5d488138b0/regex-2026.9.3-cp313-cp313-win_arm64.whl", hash = "sha256:db6538d733047f9ce4b74ee29c77643a1f99e4ca36e273495da93fbeedd2f03f", size = 277123, upload-time = "2026-09-01T00:51:22.332Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/a0/322f050f77289a1acf99b5c400fe201780bdcfa8f8876fbe250ae3de37af/regex-2026.9.3-cp314-cp314-macosx_10_15_universal2.whl", hash = "sha256:99896cc18fb421be93e337d6bf2c1686ba330bc2d5c0ef581c842f0639a5e886", size = 496701, upload-time = "2026-09-01T00:51:24.146Z" },
+    { url = "https://files.pythonhosted.org/packages/91/30/85df182aec58aaa34b02a3f0a99068bf34a7c9b3f9bd7ff06d58aa866e1d/regex-2026.9.3-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:0540de6e7917f89acaf9771bdcd6fa7e505c67416d3b283e52ad4ab25399c6d6", size = 297055, upload-time = "2026-09-01T00:51:25.812Z" },
+    { url = "https://files.pythonhosted.org/packages/27/8f/64b8bbd0316baaede047dbdbf2bcc96f10a4eeddec2e9cbf289e855e636f/regex-2026.9.3-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:647983d2609be6155c748249e770ab7e75e15e386cbf15469569f3eaf165bbb7", size = 292008, upload-time = "2026-09-01T00:51:27.415Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/87/224614ef16bc8336269a84b578fb0dbab1433b584aaefc5f0680cacf9227/regex-2026.9.3-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7bb75921a4885d30d9e881d7a595ce50407a8a82933e15451ad7e0d89d1a5944", size = 796341, upload-time = "2026-09-01T00:51:29.344Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/e1/10ad988d3b673db86353666c56cb32e1b6246ca1ab0c81018a58ebec889c/regex-2026.9.3-cp314-cp314-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:f93c60d8c522b4ecea35dd6c58cc42f251ecb12882a5d67d4bd8d12137fbd05b", size = 866311, upload-time = "2026-09-01T00:51:31.592Z" },
+    { url = "https://files.pythonhosted.org/packages/08/16/8d597f97bb6215876512cd7b3c47179c0eb79d1820ab2ed8412d3ba5599a/regex-2026.9.3-cp314-cp314-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:9e61478a8a06e6456ff2e66b9ac18f7f28d76a75fa5fda0c5198a4de07b8dcb8", size = 911869, upload-time = "2026-09-01T00:51:33.926Z" },
+    { url = "https://files.pythonhosted.org/packages/89/e3/f6bcb26472873b9308df329f507d9c6cb526e3f9aed847498f153f2b7539/regex-2026.9.3-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6f64c66b3b13758b4f8f56f17972cd0ce5d0033d19d7332ed32e2dbdbce94dec", size = 801375, upload-time = "2026-09-01T00:51:35.779Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/a5/38c7cd736bfd58b190412dbf5a81aae1c38456c538d5c4987f5980cbfa3d/regex-2026.9.3-cp314-cp314-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:6b5dc780377e35be6b0cf6fec7fb4a45cadb1e834bc0ef2ce596cc015290ef69", size = 776522, upload-time = "2026-09-01T00:51:37.81Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/ac/8ecefa1c9b57b29fcbe963797435e69a3ba6a9773d802b3d4fca4c75ecf6/regex-2026.9.3-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:f02091b425bbcc2d8481913855c744baa4dd73e334814337b201d837e9040ef7", size = 785727, upload-time = "2026-09-01T00:51:39.995Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/4c/af402c5aa95615ab66620d775de07ea09b0fea206cd79e3c8a5716d5fc96/regex-2026.9.3-cp314-cp314-musllinux_1_2_ppc64le.whl", hash = "sha256:ad2027883344e70ddddff02259411f80faf47d5e779eb0e39cb95ee546fa628c", size = 861375, upload-time = "2026-09-01T00:51:41.829Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/7b/b83dd26470fa4cc6d7beee9b3c52ff0e988ba636c1367a04d4b2829d8d95/regex-2026.9.3-cp314-cp314-musllinux_1_2_riscv64.whl", hash = "sha256:0edd12c8201222f58817689dc61fe44893f3f2f2aee530b211dfa92af84df9cc", size = 766221, upload-time = "2026-09-01T00:51:44.7Z" },
+    { url = "https://files.pythonhosted.org/packages/94/5b/3b91b19d8fb11a353738cec56b19440bf181f3f9a0298d91140fb4061778/regex-2026.9.3-cp314-cp314-musllinux_1_2_s390x.whl", hash = "sha256:4a9cd8485a6729387c889c88c24d5eace39dc0c0c9ddb9003f9c81751f654b69", size = 851737, upload-time = "2026-09-01T00:51:46.708Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/be/ea0762fd8a12fa711f1a626283f6d79a3d8a81df4eaada4fbe82009e46f6/regex-2026.9.3-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:994fa00a9b0d14c6e6926ff5ade98d4d83676a5eeab6f87718170e481396d380", size = 789455, upload-time = "2026-09-01T00:51:49.2Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/dd/b9af9d65de78831fb76cb8ef420db4094295b09f93f8abd17c867261c4fb/regex-2026.9.3-cp314-cp314-win32.whl", hash = "sha256:4f39485bb02dae23e14cdbad086ab0e468756775bc5c64bb69e7cb756ebc1dcd", size = 272528, upload-time = "2026-09-01T00:51:51.416Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/fe/ecb15616ae7aa4892299b9ca7c20ef0dd6e5c833643b7ed46e27ff5fcccd/regex-2026.9.3-cp314-cp314-win_amd64.whl", hash = "sha256:445623b1337e971ccc571d3642aeb3f2fec77e60b6ee193dd7688168471d1846", size = 280812, upload-time = "2026-09-01T00:51:53.211Z" },
+    { url = "https://files.pythonhosted.org/packages/18/4f/60efc748152c82b967bd186c356dd1fc21c4f6c225b8026b52547ae60c9f/regex-2026.9.3-cp314-cp314-win_arm64.whl", hash = "sha256:9887e9455398a1517294dec14e23ed9a178c8dd909f2788e971b66623d3f7c16", size = 281095, upload-time = "2026-09-01T00:51:55.052Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/cc/aa269583e8986be9604ef5fb9e2164f33108f6220c896efff2dfb0d4e4c4/regex-2026.9.3-cp314-cp314t-macosx_10_15_universal2.whl", hash = "sha256:c1fa3f84cee5211a3e574ba76ac9596df8c8d16a855f31a25681d23eadcc6c16", size = 501014, upload-time = "2026-09-01T00:51:56.902Z" },
+    { url = "https://files.pythonhosted.org/packages/22/51/bb8a3f3a47beccbf92c3bcda67c2c0336c13c2e10f9744306275f428ebc9/regex-2026.9.3-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:d539a51be176e874ed66029b2df8cb8e1123a3e6420d52a690de6effded4f20d", size = 299376, upload-time = "2026-09-01T00:51:59.121Z" },
+    { url = "https://files.pythonhosted.org/packages/48/ec/c646df2b62c1b1334e28581715ed776814c8ac80c0c9106175f0c61ce12a/regex-2026.9.3-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:5133884ec10c9d6bcf7fed4ceb98fb3a6acbb6c2ba1bab6c4b6700d6c39c7595", size = 294424, upload-time = "2026-09-01T00:52:01.113Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/18/3dd8c49cc4af440a9a1a0ebb2b4a939398398c81fb7fecbc3c7d534924a1/regex-2026.9.3-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5fecba510f6b8f9cf1dfd103d785a61da47221cf09d4cec10946d1950daf1a17", size = 811421, upload-time = "2026-09-01T00:52:03.289Z" },
+    { url = "https://files.pythonhosted.org/packages/71/32/c35f031aec040b9136189e3f403681e3168f1f9862e31d9df92ea599f2c1/regex-2026.9.3-cp314-cp314t-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:72df83ee0eb89b070e28d1260786d13485b98a8b80228c7439d303dd9aac9970", size = 870110, upload-time = "2026-09-01T00:52:05.746Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/7b/931d962f9fbca3326f282a01fa5bed4d6734dab5215d1c20bac0ab85df58/regex-2026.9.3-cp314-cp314t-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:610371fe95c7e8e824ad8762248836cabbb5a4ab8befb982cb7dc8df773075d3", size = 917489, upload-time = "2026-09-01T00:52:07.703Z" },
+    { url = "https://files.pythonhosted.org/packages/46/1a/da0c28f2b1e65d46a24abc1dd33e0dc9ddbcfeeee7c5625103b3e09e548c/regex-2026.9.3-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:af06c9099df15ee44fda3fdfa002bfe37de02901c2b3a5ef350853861ef3b4b5", size = 817470, upload-time = "2026-09-01T00:52:09.686Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/a1/6a540ec40c3b8eeefec445362cf08bbb686b22d4088f97d3c1ea38323434/regex-2026.9.3-cp314-cp314t-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:e27003c0a93a5aa541c260bd8ba8b917a2af4c378eb684daa9f1565f5e363181", size = 784742, upload-time = "2026-09-01T00:52:11.778Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/88/75500ca27ba85256eb46119ebd99ec10ead4c3ffacd47fe7dfe034662960/regex-2026.9.3-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:9ce34fc5a6f6c9b2ba4a8060009d989e4f55630e3f9c3bf5962f42dcc31355ef", size = 800609, upload-time = "2026-09-01T00:52:13.817Z" },
+    { url = "https://files.pythonhosted.org/packages/67/33/18541aaad8b88977e2c3fbbb53c1a75f6f6c999800a82d2f7306581cb6b6/regex-2026.9.3-cp314-cp314t-musllinux_1_2_ppc64le.whl", hash = "sha256:2cbc83154c8b0201ada07bc5d6e37106df6325f2fda60d73228e2e8da7433cae", size = 864798, upload-time = "2026-09-01T00:52:16.137Z" },
+    { url = "https://files.pythonhosted.org/packages/16/62/ffbfbeb5a3f2cca701afb9f8aebbfcbf37a4aae2f1584c96680142aab445/regex-2026.9.3-cp314-cp314t-musllinux_1_2_riscv64.whl", hash = "sha256:f568bdc17b7ebb3a323ee8920468d2ed74af84da911a00d9585ac887bac73b88", size = 772892, upload-time = "2026-09-01T00:52:18.567Z" },
+    { url = "https://files.pythonhosted.org/packages/23/14/04e2db28f490b1fcc684428bd2de21e1ec46f7d8d421b7f2cc74d120affd/regex-2026.9.3-cp314-cp314t-musllinux_1_2_s390x.whl", hash = "sha256:ae9f7055e7357b2873866a3d77d0136a251ca2ae2dde3d8cdb819425d717c177", size = 858065, upload-time = "2026-09-01T00:52:20.674Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/14/c0cac930d1dc0b86c5d8ff10602f15df4fb15fa3f33e04a98be197f33618/regex-2026.9.3-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:d963442186918577ad83e3a8c5564eeeba90e2da233ce59f6eeccbb7b5cf771e", size = 804739, upload-time = "2026-09-01T00:52:22.866Z" },
+    { url = "https://files.pythonhosted.org/packages/01/12/69e6f4d02e11a5cb45033abede6e04b0da3716b1b6c311d4609be14a01a7/regex-2026.9.3-cp314-cp314t-win32.whl", hash = "sha256:bda6af6fb4d5fe9532620e4f72d3c7efcdf7472ead9037b184c0a060f0e7c71f", size = 274514, upload-time = "2026-09-01T00:52:25.224Z" },
+    { url = "https://files.pythonhosted.org/packages/28/64/064b78028b52c0c21b9c0b362b1bdcee7179f009891ddf959d9b6390b30c/regex-2026.9.3-cp314-cp314t-win_amd64.whl", hash = "sha256:2d25e41851e41539898116ac760fcc856e2c1047a843a336b19e2c8e4a43ad16", size = 283797, upload-time = "2026-09-01T00:52:27.358Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/46/fbb41eb6cc92403ba9f896dfd56a1d5d31549c4033dfb7418da7ecd5802a/regex-2026.9.3-cp314-cp314t-win_arm64.whl", hash = "sha256:356fc21b4c313decb3214a4306bb5bd0623dce4a8d03d0d5ada6fb0b6a5b93b5", size = 283444, upload-time = "2026-09-01T00:52:29.632Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/1a/825beb1c803d579d1119723235ede2211949a8d320bcc79e3f6e5dd6090f/regex-2026.9.3-cp315-cp315-macosx_10_15_universal2.whl", hash = "sha256:e337dceb936f333775cf51d49f6badb8cd3d2a6b27e8cb443a6c5861fbf3c1f9", size = 496929, upload-time = "2026-09-01T00:52:31.593Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/54/9b8255521680d54e1d157ed6532e3082998f47925d2ab3861550e0e89455/regex-2026.9.3-cp315-cp315-macosx_10_15_x86_64.whl", hash = "sha256:bb2d4ad7f9bac398a7a19f07bd09fd5b2c1e4eeab316065aa84a305f62fc5361", size = 297050, upload-time = "2026-09-01T00:52:33.459Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/8b/0e4df28fd94304050efc2373dff1803e5d62056cf744a694eaa376df2fe8/regex-2026.9.3-cp315-cp315-macosx_11_0_arm64.whl", hash = "sha256:01bdce6a372efd5ae3d8560cedbc691be259a50206564bbaf04008b2937721ab", size = 292296, upload-time = "2026-09-01T00:52:35.309Z" },
+    { url = "https://files.pythonhosted.org/packages/97/a0/689a8403f309a7a3f3f3e74b3e81b144602481d122c9e4070a601367f8e0/regex-2026.9.3-cp315-cp315-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:55493b5b6cb6c4ec9a3c310d4ef947dbd34326ee4eecd4249e18e00d84f14be5", size = 798376, upload-time = "2026-09-01T00:52:37.235Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/a9/3d22278a38bb8adb254d345e60935316222091caf00a4233aaef388d636e/regex-2026.9.3-cp315-cp315-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:690ab9d06cd689b79aab84afa0984a1bc85ea4b93b0a42b015f3ff5e2f5b08be", size = 866607, upload-time = "2026-09-01T00:52:39.461Z" },
+    { url = "https://files.pythonhosted.org/packages/69/ef/ecf8c5fdcec73ac0526fbd074be3bd1059b11cbda739ac0ab9001f311aed/regex-2026.9.3-cp315-cp315-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:24b4bbb65ff2c4e8c552c93c342bf5ffa0ad162d963d96bac7c1883c20e1b34e", size = 912160, upload-time = "2026-09-01T00:52:41.603Z" },
+    { url = "https://files.pythonhosted.org/packages/68/e8/c07c3d2b44c9154672a33911cfcfba626c78d939d7e31103864d81ad319a/regex-2026.9.3-cp315-cp315-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fbaf76379bf2a72e534bbb1276d45e63a80d8cade17953ed79a350d6426262fb", size = 804589, upload-time = "2026-09-01T00:52:43.658Z" },
+    { url = "https://files.pythonhosted.org/packages/91/16/d42957c78b5934efd03ca5713d99952cbe71e2d0b3b24d9e78256f208587/regex-2026.9.3-cp315-cp315-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:57f405fcb82e2b78df88f04f8aa49ce513ce23bfea073b581597bd52545e9b3f", size = 784446, upload-time = "2026-09-01T00:52:45.866Z" },
+    { url = "https://files.pythonhosted.org/packages/00/1e/4252dff33a1a5afb3271fb3859e992d34c47c040ecfc27bbfe6a7eaf99a8/regex-2026.9.3-cp315-cp315-musllinux_1_2_aarch64.whl", hash = "sha256:a87ab35e92d40b53c5373af36625794e422f83ec56122f0a63871892856d721c", size = 787996, upload-time = "2026-09-01T00:52:48.345Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/19/90d31048bb402fd746a95922d7dfdb9de9f902c39c8d838f2fef05c9c92c/regex-2026.9.3-cp315-cp315-musllinux_1_2_ppc64le.whl", hash = "sha256:14bf4a88833c12a990dbf5cca77eb293401d60878be7d566a2d5096fb0216c27", size = 861752, upload-time = "2026-09-01T00:52:50.597Z" },
+    { url = "https://files.pythonhosted.org/packages/88/77/42ad133550cbd64d8fb33ec5ff55e1f524b06c6328e9f3bf9c3e8652b525/regex-2026.9.3-cp315-cp315-musllinux_1_2_riscv64.whl", hash = "sha256:862c29f7e7927e71391df6700079b1dd7c2aeb75115dc46e37004a092f8f16b7", size = 773488, upload-time = "2026-09-01T00:52:53.142Z" },
+    { url = "https://files.pythonhosted.org/packages/78/8f/0c90e8fa607c36a65c360f6b02980aa7aa5885afa3d737daba4229bef086/regex-2026.9.3-cp315-cp315-musllinux_1_2_s390x.whl", hash = "sha256:61a9da95a836e7d300945891265bbeb6510a860863f6b01ed6397e6239a31253", size = 852603, upload-time = "2026-09-01T00:52:55.471Z" },
+    { url = "https://files.pythonhosted.org/packages/4e/bc/e1be309afb6be94916d8f4f000dbc66040fc0da2008b3f714dc4893259fd/regex-2026.9.3-cp315-cp315-musllinux_1_2_x86_64.whl", hash = "sha256:e7663a6803a47255c32cc7e17ae3ccfe02dba5b0849f87729651c0263a129d20", size = 794635, upload-time = "2026-09-01T00:52:57.611Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/f7/15f6d0ea137316531c992e7468a4c6f6e39159a6780c2c16ec3ab56f2149/regex-2026.9.3-cp315-cp315-win32.whl", hash = "sha256:0ee4721472e00e96b3cceec545c9867f91815f628f6ea304ae6cea93a7e4e7ae", size = 272530, upload-time = "2026-09-01T00:52:59.644Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/8e/739168818790278dd4f1ba60c582fed41323508d7a8e850323851de1aa1f/regex-2026.9.3-cp315-cp315-win_amd64.whl", hash = "sha256:cc5d0f82cf05beb6c0d463398173a09357ed4f4a631f7641cef6f6480a05bc57", size = 280822, upload-time = "2026-09-01T00:53:02.57Z" },
+    { url = "https://files.pythonhosted.org/packages/12/6a/55f5f6e92a8c7d6511e069d3e8a4b45e3506941c1a97dddf5a329b132be4/regex-2026.9.3-cp315-cp315-win_arm64.whl", hash = "sha256:6f198b622a3ccf02eeab00de71f6b2f45b1b50b1979aa56b25178c963e475950", size = 281102, upload-time = "2026-09-01T00:53:04.62Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/6a/adaf9ed10ffdef60684bf8757c257400500342503f1ce5c7cffcdb2e8aaf/regex-2026.9.3-cp315-cp315t-macosx_10_15_universal2.whl", hash = "sha256:294ef8fb58a45f912513692380f366ca191940de5b3b3de5308ce2e8500d8ea4", size = 501333, upload-time = "2026-09-01T00:53:06.681Z" },
+    { url = "https://files.pythonhosted.org/packages/64/dd/2cbc3b253a88fdb0c8ca641367dc2f280541fdf1722f201fc0be62797577/regex-2026.9.3-cp315-cp315t-macosx_10_15_x86_64.whl", hash = "sha256:edfd2b0cad175780f8668fd6f66486354b8770e4057e44038daaa4a066f8ddff", size = 299273, upload-time = "2026-09-01T00:53:09.002Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/29/4818d31ec2555309b3935d3cd006a7f6076e11bb21eec9e72afee3db87b1/regex-2026.9.3-cp315-cp315t-macosx_11_0_arm64.whl", hash = "sha256:cda393bb35828e3993fcaf39c8ede78b16614954eb15fe77336d5d141be40f76", size = 294888, upload-time = "2026-09-01T00:53:11.009Z" },
+    { url = "https://files.pythonhosted.org/packages/94/37/8970a4102a067e0a28e40a232bf536752c373da8a4f932755679f77fa9ac/regex-2026.9.3-cp315-cp315t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:cce8e5243d95068f595155663e3e18b1938b16cf716dce6cf2491ebc08b98d96", size = 813072, upload-time = "2026-09-01T00:53:13.566Z" },
+    { url = "https://files.pythonhosted.org/packages/90/1c/2e52f5e9e92b79e324c9807e977fa6f9ab210b41ab5b7356307d5ffb2f4c/regex-2026.9.3-cp315-cp315t-manylinux2014_ppc64le.manylinux_2_17_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:2a1269856278ae8bc78342bf20191c1f10638d2c22df72364d2fa02d70d49f35", size = 869947, upload-time = "2026-09-01T00:53:15.773Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/42/c676e3f2dcb47ec941fa678019044cbac51db9441e09cec47392e4986013/regex-2026.9.3-cp315-cp315t-manylinux2014_s390x.manylinux_2_17_s390x.manylinux_2_28_s390x.whl", hash = "sha256:4ac52b95a938789fcfcfbf6faf647b45d7be940f0c51f06991c1353db54c67aa", size = 915678, upload-time = "2026-09-01T00:53:18.384Z" },
+    { url = "https://files.pythonhosted.org/packages/01/6a/73c971bcaf1d24e73aa3c8e0f767caccfdc9fcda021e59f28f6dcd12728b/regex-2026.9.3-cp315-cp315t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:490a81770599b17b8594227674872dfb215af05f2be0065a32a7c70175fd9e23", size = 817714, upload-time = "2026-09-01T00:53:20.723Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/7c/0e9bffb6cfa8a00e765eaea0d1e6d207bb98e620d5658c537c8d87df671c/regex-2026.9.3-cp315-cp315t-manylinux_2_31_riscv64.manylinux_2_39_riscv64.whl", hash = "sha256:f584dd93ef6ddb10ba028e247fe1fc0ba52ed70ca4d596bb8d52bf4304c147ec", size = 792411, upload-time = "2026-09-01T00:53:22.925Z" },
+    { url = "https://files.pythonhosted.org/packages/61/d4/b1d226e8a3d0c8aac577a517384ffaea7b9ff98b194ddbd0bef58b9d8738/regex-2026.9.3-cp315-cp315t-musllinux_1_2_aarch64.whl", hash = "sha256:c07eaf30bc072b179acc8ac50519a2a81f03f88a220750c6d83dadbdc33fb1de", size = 802521, upload-time = "2026-09-01T00:53:25.281Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/ad/dc47f94a4ace898561dfafeed6052dd3551915f36aa1971f4387d6daf0d4/regex-2026.9.3-cp315-cp315t-musllinux_1_2_ppc64le.whl", hash = "sha256:9e1c602c55dc8ec05cc7e0a8e31f3ad3d4644dbcb7ac39114105c9bd0384371f", size = 865266, upload-time = "2026-09-01T00:53:27.667Z" },
+    { url = "https://files.pythonhosted.org/packages/41/7b/743565fc25cb36981186b4e9b42b3d093a7226cca328380cfd223c1b5a03/regex-2026.9.3-cp315-cp315t-musllinux_1_2_riscv64.whl", hash = "sha256:2ef9a284ec658d48ec57edfba0944d1582532601472f695b799ba08d37fd6544", size = 780298, upload-time = "2026-09-01T00:53:30.017Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/ad/d62e48324632eb0bae2c336da5810b51a14a9e23ba964f2828cc1ac23011/regex-2026.9.3-cp315-cp315t-musllinux_1_2_s390x.whl", hash = "sha256:c90f34f1b1905d7d6c42b25b6ffb4e5066e6c95c7715169e3332b1760614d092", size = 858045, upload-time = "2026-09-01T00:53:32.397Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/41/8eff42a2516494bb6b36d33b15bcd861764dcc836ad7c0b746e46c513af9/regex-2026.9.3-cp315-cp315t-musllinux_1_2_x86_64.whl", hash = "sha256:307dbd844f678de48ea74cdc909b007729c50e6be7f182bdf6a1df6732374c69", size = 805406, upload-time = "2026-09-01T00:53:34.601Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/1d/98198fd6dc185a172f5de48b8a4c7ca03c0d4285b1c1c32300672e7cf85a/regex-2026.9.3-cp315-cp315t-win32.whl", hash = "sha256:ce6505846d29f860966e0e9cfadaad1041a7d8ce7dc4af39940fcb1877dec29a", size = 274674, upload-time = "2026-09-01T00:53:36.77Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/82/dc0e76842ccddc8756471adff38c140d130c6b601b9ae5724274f1881e7a/regex-2026.9.3-cp315-cp315t-win_amd64.whl", hash = "sha256:2c71da070224baf426850d9eab23ac797d9859b1841dbda43012c01b69697803", size = 283692, upload-time = "2026-09-01T00:53:38.951Z" },
+    { url = "https://files.pythonhosted.org/packages/da/3d/e0677f590f3473a3defb63ef6e3469154382a2a15ebafb364482d7ed3b01/regex-2026.9.3-cp315-cp315t-win_arm64.whl", hash = "sha256:ecc27adda0d1e1bc39793b41fdd562d2f4bc4dcee6ee0e3c733d519c332183b2", size = 283421, upload-time = "2026-09-01T00:53:41.393Z" },
+]
+
+[[package]]
 name = "requests"
 version = "2.33.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4453,19 +4635,19 @@ version = "1.16.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
 ]
@@ -4580,9 +4762,9 @@ source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and sys_platform == 'win32'",
     "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version < '3.11'",
@@ -4635,10 +4817,10 @@ version = "0.52.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
@@ -4711,12 +4893,12 @@ version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version == '3.14.*' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.14.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.14.*' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
@@ -4861,7 +5043,7 @@ wheels = [
 
 [[package]]
 name = "tabpfn-extensions"
-version = "0.6.0"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
@@ -4879,14 +5061,22 @@ all = [
     { name = "botorch", version = "0.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "lightgbm", marker = "python_full_version >= '3.12'" },
     { name = "matplotlib" },
+    { name = "pillow" },
     { name = "seaborn" },
     { name = "shapiq", version = "1.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "shapiq", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "torchvision" },
+    { name = "transformers" },
     { name = "xgboost", marker = "python_full_version >= '3.12'" },
 ]
 bayesian-optimization = [
     { name = "botorch", version = "0.16.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "botorch", version = "0.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+image = [
+    { name = "pillow" },
+    { name = "torchvision" },
+    { name = "transformers" },
 ]
 interpretability = [
     { name = "lightgbm", marker = "python_full_version >= '3.12'" },
@@ -4926,6 +5116,7 @@ requires-dist = [
     { name = "lightgbm", marker = "python_full_version >= '3.12' and extra == 'interpretability'", specifier = ">=4.3.0,<4.8.0" },
     { name = "matplotlib", marker = "extra == 'interpretability'", specifier = ">=3.8.4" },
     { name = "pandas", specifier = ">=2.2.2" },
+    { name = "pillow", marker = "extra == 'image'", specifier = ">=10.4" },
     { name = "scikit-learn", specifier = ">=1.6.0" },
     { name = "scipy", specifier = ">=1.11.1" },
     { name = "seaborn", marker = "extra == 'interpretability'", specifier = ">=0.12.2" },
@@ -4933,11 +5124,13 @@ requires-dist = [
     { name = "shapiq", marker = "python_full_version < '3.12' and extra == 'interpretability'", specifier = ">=1.4.0" },
     { name = "tabpfn", specifier = ">=8.4.0" },
     { name = "tabpfn-common-utils", extras = ["telemetry-interactive"], specifier = ">=0.2.13" },
-    { name = "tabpfn-extensions", extras = ["interpretability", "survival", "bayesian-optimization"], marker = "extra == 'all'" },
+    { name = "tabpfn-extensions", extras = ["interpretability", "survival", "bayesian-optimization", "image"], marker = "extra == 'all'" },
     { name = "torch", specifier = ">=2.1" },
+    { name = "torchvision", marker = "extra == 'image'", specifier = ">=0.20" },
+    { name = "transformers", marker = "extra == 'image'", specifier = ">=4.57.1" },
     { name = "xgboost", marker = "python_full_version >= '3.12' and extra == 'interpretability'", specifier = ">=2.1.0" },
 ]
-provides-extras = ["interpretability", "survival", "many-class", "unsupervised", "bayesian-optimization", "all"]
+provides-extras = ["interpretability", "survival", "many-class", "unsupervised", "bayesian-optimization", "image", "all"]
 
 [package.metadata.requires-dev]
 ci = [
@@ -4968,6 +5161,33 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz", hash = "sha256:8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e", size = 21274, upload-time = "2025-03-13T13:49:23.031Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl", hash = "sha256:43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb", size = 18638, upload-time = "2025-03-13T13:49:21.846Z" },
+]
+
+[[package]]
+name = "tokenizers"
+version = "0.23.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/18/1e/bc6587c5ab643b2e17776cace9070a2ae73549c86bffac9934a600bf3c31/tokenizers-0.23.2.tar.gz", hash = "sha256:7f0f085686b9de0d0079e6f874ae053600db64c5d13049e0bbc0119926d25aac", size = 385745, upload-time = "2026-09-03T08:55:42.89Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/ed/8a443528baa6fac8dfe8c3b75b038c63ac92bb539bcabe311e227c718173/tokenizers-0.23.2-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:85a9a357a3764aecc904ee76bdaf8cf1ad8e5a67a1b929a487c4a39b49ed0e90", size = 3148852, upload-time = "2026-09-03T08:55:30.874Z" },
+    { url = "https://files.pythonhosted.org/packages/67/49/22da045a91732384d3a3771816bf188dc5a1f702c32e635afa7c679c0bef/tokenizers-0.23.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:986670e43691469dcee610ea0f846f91a8f84e91fc6f7a48d4c064414c0ec2bf", size = 3101593, upload-time = "2026-09-03T08:55:28.587Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/4d/8f569ed49372a3ed8e57099bd515055fd48d7c95912c4307cda6973c2168/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a37039b5dfc4af84eb3ef0a92f4307e28936c8f9adccba2629d36f652e9bf7a2", size = 3516830, upload-time = "2026-09-03T08:55:14.741Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/de/e2f14c8919d5bf51874051d00d6c7b7e0e8bde6c6a2dbeddda7f642896ff/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:7b7e37ba198f24150f523e1242e83c4970de4a525480586be5dcc24d9add32c5", size = 3407975, upload-time = "2026-09-03T08:55:16.842Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/bd/93c69152d02ef06ce47aed8b2bf4952dcf733c935a62791873932b2934d9/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:43e4f2071e3cc8d5d86421c874aebc82659bb51a68bcdef5a0da75ee89511ccb", size = 3748165, upload-time = "2026-09-03T08:55:24.769Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/b7/56b84b80bc96942bba8eb23751a9e8a1fce4faaf4390425e7083f721c98c/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:325fee2e0418a9dc6c9ecf736a5f5f0db7875183ace9549ae339da76f7a1fbb7", size = 4024165, upload-time = "2026-09-03T08:55:18.806Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/8a/0175e216f005c2fe08238292663aa41e4c802b216e71047a69a0e9fc6fa3/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:950d7c9426fa72406a0ffeacdbc0bb9985f5db20eb8b263f29c79aaf83105703", size = 3591899, upload-time = "2026-09-03T08:55:22.752Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/ca/ca6b93c7820df123b2662a9469e8facc826ccc94e98fdd0d615f6431e73a/tokenizers-0.23.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:41c2f84d172449b4dadb9cdc508e3e364076613c35b16e76ecfe47a60d1e3305", size = 3386843, upload-time = "2026-09-03T08:55:26.584Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/a4/4f9106d317b14a80aefea9f0e3a8d07ef25f856a7607eb7f5ab894281fcb/tokenizers-0.23.2-cp310-abi3-manylinux_2_31_riscv64.whl", hash = "sha256:12f0835dc2ee694746a76adf7b1567d4346a4a502ebe93fb1f5f80ea49799b78", size = 3577314, upload-time = "2026-09-03T08:55:20.825Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/6a/1552b70fb0d9ab074fd3fc961435d01364e79c9058481822c3af6e8d402c/tokenizers-0.23.2-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:eb2f9c8a24da020ea8c11a01a19c1c2547912d92121ae4a01cfbca46125dee40", size = 9967367, upload-time = "2026-09-03T08:55:33.188Z" },
+    { url = "https://files.pythonhosted.org/packages/06/01/3ccb3a956c7528b2507b8a9714155c4baf86af593039db6ea375dd0c96c3/tokenizers-0.23.2-cp310-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:f486f402f6f9abee5bb032553736813af0c710a86b2e0ca592634c55cea1f835", size = 9811886, upload-time = "2026-09-03T08:55:35.642Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/73/7038e612d48bda1599457f712f6bd3854eae1a9dc9c13aa47f835349db48/tokenizers-0.23.2-cp310-abi3-musllinux_1_2_i686.whl", hash = "sha256:bef235815a067b2648caf6dcc7a71091b0b0fff9ee8057f6451eb9335fae52ef", size = 10146224, upload-time = "2026-09-03T08:55:38.391Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/d8/8e9e4e0b287a338d8f88976729628c9d22e8a54cfaf9777018a7f7cb58a0/tokenizers-0.23.2-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:5c56bda1511921587789163e524d196ed8284174ac23abd7685d5ea8da6c4718", size = 10256304, upload-time = "2026-09-03T08:55:40.977Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/1f/c79a01f671a49728ebb0b61f7ff9ea45663b66cab40bc0858e9859b25c16/tokenizers-0.23.2-cp310-abi3-win32.whl", hash = "sha256:debf978920d93ba9c219bd67cc4bbfaf912c9039e41e7a28b91ec15e3728c95a", size = 2592809, upload-time = "2026-09-03T08:55:48.02Z" },
+    { url = "https://files.pythonhosted.org/packages/db/f7/0a69ac6b82dbccf3f71add938a161c497952749294b8dd6dfe03a819dc40/tokenizers-0.23.2-cp310-abi3-win_amd64.whl", hash = "sha256:2e96f5699d5249c9c64aa8412e044f727aae3a4098cf830f9901ec1afc361cde", size = 2863236, upload-time = "2026-09-03T08:55:46.193Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/b0/dee84cb44175be1b4c35bd2f770727494e78f0bb38e571a623ade94dbebb/tokenizers-0.23.2-cp310-abi3-win_arm64.whl", hash = "sha256:e49c394456dd9985787fec76132438ba3fb8911f857b1bf3d40119f9292d41aa", size = 2729352, upload-time = "2026-09-03T08:55:44.345Z" },
 ]
 
 [[package]]
@@ -5073,6 +5293,43 @@ wheels = [
 ]
 
 [[package]]
+name = "torchvision"
+version = "0.28.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pillow" },
+    { name = "torch" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b4/df/1ba039ad6cfe6e69209c36766b9b6e8c6fe92481c6d4e4ca52296f5f699d/torchvision-0.28.0-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:2a1ef4b6f4bf5828b48cfad97372c8982db906830884b2868ba5c3df937a7d81", size = 1856019, upload-time = "2026-07-08T16:07:59.283Z" },
+    { url = "https://files.pythonhosted.org/packages/88/ea/5c70ecf86f8e95174a85061cea78683a7bb7f422f09c3f3d4f30b7600fa9/torchvision-0.28.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:546fd85345cf8652f6cd099d4f9884b0ca5c2f3fae78689a21dd2f35ea6b622f", size = 7838211, upload-time = "2026-07-08T16:07:27.023Z" },
+    { url = "https://files.pythonhosted.org/packages/46/22/2f7ff1997d793e45d85fafa8374ee25348b7dae9ac521ba8751d7e1c75d5/torchvision-0.28.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:6dfb0f45e2b4ceb4e76f158c3fbb5f44387099f3c466e3423a09ab665a194aba", size = 7669419, upload-time = "2026-07-08T16:07:41.648Z" },
+    { url = "https://files.pythonhosted.org/packages/42/d0/2b3c30834ff23acd3854d0ff59bc580711f4b36d725de40105a852ed3719/torchvision-0.28.0-cp310-cp310-win_amd64.whl", hash = "sha256:7fad44dc9582570c7d92c4487d36ac46998f40cc39b438e8b8f5111a935ce4e8", size = 3500355, upload-time = "2026-07-08T16:07:56.865Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/b2/1e010052079e4c577007b789db336ea7075f1a426e84d17121fbc3745516/torchvision-0.28.0-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:83fe6c020866a85acd7d97deccc45ff11d66daf42916d04396a4309c66c0ccb8", size = 1856017, upload-time = "2026-07-08T16:07:55.533Z" },
+    { url = "https://files.pythonhosted.org/packages/27/be/1b9c5de9c655ca2df4a74100fa671a7b848532ff787e077ccde14a7dea2a/torchvision-0.28.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:5a38bc6da3d72621be003400b66f66a2b4c6d644fde05f680c2cb7ca8cf8dd6c", size = 7841822, upload-time = "2026-07-08T16:07:49.207Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/9b/f1e68e861d4462e3e195a642c2b448e7b7d3fad5f209487162b9a2133d9b/torchvision-0.28.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:7e80f543b22503d9415e126db5f0ff3917036925e38560ee6b9ae38c571a4002", size = 7670718, upload-time = "2026-07-08T16:07:46.525Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/de/1494610ff54cbb154beb55033cc2cd50f3de04dac132fa2dd00e4f2b2556/torchvision-0.28.0-cp311-cp311-win_amd64.whl", hash = "sha256:9a45ea67235d965ef52187130d20002a4de20c54ea3d927a24286961d268dc37", size = 3814319, upload-time = "2026-07-08T16:07:37.153Z" },
+    { url = "https://files.pythonhosted.org/packages/15/49/c1cab1ecbb3ff1a380a3f99283db1dee61b8afe354f6352c643b65937130/torchvision-0.28.0-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:e9f54c30cd52e3ef7fd034cc69b7bb7e0964e1c8f8743e018ab92e95b40f9eee", size = 1856020, upload-time = "2026-07-08T16:07:52.182Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/4c/95233776e2def960e5abb7a07931230a545f43717a56a1e1140162033598/torchvision-0.28.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:5cf78ebc401ce64ae19b8c55de866bb836797d559a4de9c25ccbe74cfa642d3a", size = 7842127, upload-time = "2026-07-08T16:07:53.446Z" },
+    { url = "https://files.pythonhosted.org/packages/93/e4/e9b2495d0d57b9f60d63c57d0a910410a81b4b073bf70917bef815291119/torchvision-0.28.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:028a3d481b37d785605620d7cdad897064c5a55bae2aa1f2658766333e291940", size = 7675040, upload-time = "2026-07-08T16:07:58.017Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/9c/55ed9cb6dfe3ee9c837df5cd0e758372e5829aa38b8dd71343aa632cc4e2/torchvision-0.28.0-cp312-cp312-win_amd64.whl", hash = "sha256:87dc16b2df427c1318ad335f1e2be2b3b15b2cf20f7934c83b0505a48425ee5d", size = 4085785, upload-time = "2026-07-08T16:07:50.928Z" },
+    { url = "https://files.pythonhosted.org/packages/20/55/08a726c14c67b37c8aca04b077766909f1c7ed23f76116884fe63b9bd033/torchvision-0.28.0-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:d483b4aa3f5237569053f749cd1a2b5bb548ca456e40461a5dd087f21149d123", size = 1856021, upload-time = "2026-07-08T16:07:45.386Z" },
+    { url = "https://files.pythonhosted.org/packages/db/8f/40beacd53809194f5259e590d1afaeaa8ad57da15f77c646e6560bcc4616/torchvision-0.28.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:bb6dd6918460ed89cc7644adcc2402991474d6933cf1ce92b390641cb233fddf", size = 7797014, upload-time = "2026-07-08T16:07:43.04Z" },
+    { url = "https://files.pythonhosted.org/packages/32/db/062cdb5a84380a60439775311fff34d89229760d2a50680393dc18699956/torchvision-0.28.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:ad7b3a439265cc3739a4ab5b4c998c0e38ea99c0ee7ca4dea35c5d0b099ec237", size = 7674669, upload-time = "2026-07-08T16:07:38.91Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/a6/b4081e2d04e1541abf82785ac9e5178a494c19330391f551356c8c18b7b3/torchvision-0.28.0-cp313-cp313-win_amd64.whl", hash = "sha256:7e9dd6f60d6e15f8dc27d4f877fdb6002fc70d70272412135f1c2ff9cfa08d3b", size = 4157380, upload-time = "2026-07-08T16:07:40.22Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/b9/da40eca5bbe9596c12ae9899ab7abaf887f5e20f29d08b924b4633714821/torchvision-0.28.0-cp314-cp314-macosx_14_0_arm64.whl", hash = "sha256:3bd9dba55224a9db4a2d77f6feaa5651770d8c8e86d3d0ddb0fa6bec54c8712b", size = 1856014, upload-time = "2026-07-08T16:07:44.282Z" },
+    { url = "https://files.pythonhosted.org/packages/06/d6/313aafd3df4eaf5f330211bd4e75b7598bddbfee4f55580d3b58536e1b20/torchvision-0.28.0-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:89f90e29b0966352811b12589f3a3c61943bf2bb9487b9d7bbec10efb1096bb5", size = 7796873, upload-time = "2026-07-08T16:07:30.907Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/41/31f8e959ab8f942600b6357f8999c21d779d5fd3304b0fd204ff4b518239/torchvision-0.28.0-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:36beb0782976906069ca03d4c9aacaf4b6b838b06ed6c20960ea9c51cce7acdd", size = 7674634, upload-time = "2026-07-08T16:07:29.657Z" },
+    { url = "https://files.pythonhosted.org/packages/15/15/4c5115253fd470672cdac0a1cf139e06b4f3e29d041238a2b255937f63be/torchvision-0.28.0-cp314-cp314-win_amd64.whl", hash = "sha256:3557cc7b539f46dabcda2b6f2b14017ccbeef024de466d4fc5835fc3f287f769", size = 4184005, upload-time = "2026-07-08T16:07:35.805Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/80/822a6163da716f8a78141cf6678d74e26a572285d4ea866ef8aa657bb307/torchvision-0.28.0-cp314-cp314t-macosx_14_0_arm64.whl", hash = "sha256:09ce8f56e81f19b9c378ae7bb109f83f6659fd8bc3cd14241a48e4af46e9ed49", size = 1856011, upload-time = "2026-07-08T16:07:33.404Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/d1/cd3f9463b39a790ec8c0c2f6e6c8061edb1562114d04fcdfa786ed889345/torchvision-0.28.0-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:62c7d110f86a039245b587e4fae60278c649f3bd42ff79cfbc1178eca4e72542", size = 7796742, upload-time = "2026-07-08T16:07:28.339Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/82/3e0a7ad18e99831e2d7f4713d3be717b7159ff5a920862dd5c23c454aa71/torchvision-0.28.0-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:904cf89af220f8c6b2ed0296bb5065b474ce43b77558e48b2bf9de8b0ba17204", size = 7675526, upload-time = "2026-07-08T16:07:34.572Z" },
+    { url = "https://files.pythonhosted.org/packages/18/d4/23aea03b28297bc66a4461f55ae4296368a9d85fa9a454bafcb2a5348bd7/torchvision-0.28.0-cp314-cp314t-win_amd64.whl", hash = "sha256:46f581979c010ad6da6bd85ee602aa707e1ff44312670223b7a0ee517ad06d47", size = 4291452, upload-time = "2026-07-08T16:07:32.236Z" },
+]
+
+[[package]]
 name = "tqdm"
 version = "4.67.3"
 source = { registry = "https://pypi.org/simple" }
@@ -5082,6 +5339,27 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl", hash = "sha256:ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf", size = 78374, upload-time = "2026-02-03T17:35:50.982Z" },
+]
+
+[[package]]
+name = "transformers"
+version = "5.16.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+    { name = "regex" },
+    { name = "safetensors" },
+    { name = "tokenizers" },
+    { name = "tqdm" },
+    { name = "typer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ad/2e/ba418680ab901dae269360bb8642485eae04f1af91ee2ebb8bd6f3607305/transformers-5.16.1.tar.gz", hash = "sha256:17b0eac726ddc55e84ac58946063e0c6d37fd000c456b581f050ea0f4e822869", size = 9650542, upload-time = "2026-08-26T14:48:58.789Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0d/4d/ee3728674c0bbc637bb4af88ccf0be697f92e4e90b55f5dc110c44d61b61/transformers-5.16.1-py3-none-any.whl", hash = "sha256:2f2d5b98a5ad3718713653734298fa620754ed683702a635ebb587df3ed29c7e", size = 12080592, upload-time = "2026-08-26T14:48:55.083Z" },
 ]
 
 [[package]]
@@ -5397,6 +5675,7 @@ This directory contains examples for using TabPFN extensions. Each extension has
 ```
 examples/
 â”œâ”€â”€ embedding/         # Access TabPFN's internal dense sample embeddings
+â”œâ”€â”€ image/             # Pictures as columns: frozen DINOv3 embeddings for TabPFN
 â”œâ”€â”€ interpretability/  # SHAP, partial dependence, feature selection
 â”œâ”€â”€ many_class/        # More classes than the checkpoint supports
 â”œâ”€â”€ multioutput/       # Multi-output regression + multi-label classification (sklearn wrapper)
@@ -5817,6 +6096,202 @@ y_pred = model.predict(test_embeddings[0])
 print(
     "Ridge with TabPFN (K-Fold CV) RÂ² Score: " f"{r2_score(y_test, y_pred):.4f}",
 )
+
+
+
+================================================
+FILE: examples/hurdle/facebook_comments.py
+================================================
+"""Compare mean and median predictions on UCI Facebook Comment Volume.
+
+Data: Singh, K. (2015), https://doi.org/10.24432/C5Q886 (CC BY 4.0).
+The target is the number of comments in the next H hours. Training variant 1
+has 55.1% zero targets. We sample the published train and test sets separately.
+Root mean squared error evaluates means. For an absolute-error objective,
+the example also compares median predictions using mean absolute error.
+Both comparisons include plain TabPFN and a constant training-target baseline.
+Results depend on the sample and model version.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+from urllib.request import urlopen
+from zipfile import ZipFile
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+
+from tabpfn_extensions import AutoHurdleRegressor, TabPFNClassifier, TabPFNRegressor
+
+
+def main(archive: Path, n_train: int, n_test: int, seed: int) -> None:
+    """Download the public data if needed, then fit and compare both models."""
+    if not archive.exists():
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        with urlopen(
+            "https://archive.ics.uci.edu/static/public/363/"
+            "facebook%2Bcomment%2Bvolume%2Bdataset.zip",
+            timeout=60,
+        ) as response:
+            archive.write_bytes(response.read())
+    with ZipFile(archive) as dataset:
+        train = pd.read_csv(
+            dataset.open("Dataset/Training/Features_Variant_1.csv"), header=None
+        ).sample(n=n_train, random_state=seed)
+        test = pd.read_csv(
+            dataset.open("Dataset/Testing/Features_TestSet.csv"), header=None
+        ).sample(n=n_test, random_state=seed)
+    X_train, y_train = train.iloc[:, :-1], train.iloc[:, -1]
+    X_test, y_test = test.iloc[:, :-1], test.iloc[:, -1]
+    print(f"Rows: {len(train)} train, {len(test)} test")
+    print(
+        f"Zero targets: {(y_train == 0).mean():.1%} train, {(y_test == 0).mean():.1%} test"
+    )
+    baseline = TabPFNRegressor(n_estimators=1, random_state=seed)
+    hurdle = AutoHurdleRegressor(
+        classifier=TabPFNClassifier(n_estimators=1, random_state=seed),
+        regressor=baseline,
+    ).fit(X_train, y_train)
+    baseline.fit(X_train, y_train)
+    print(f"Hurdle enabled: {hurdle.hurdle_}")
+    mean_predictions = {
+        "Constant mean": np.full(len(test), np.mean(y_train)),
+        "TabPFN mean": baseline.predict(X_test, output_type="mean"),
+        "Hurdle mean": hurdle.predict(X_test, output_type="mean"),
+    }
+    for label, prediction in mean_predictions.items():
+        print(f"{label:20s} RMSE: {root_mean_squared_error(y_test, prediction):.4f}")
+    median_predictions = {
+        "Constant median": np.full(len(test), np.median(y_train)),
+        "TabPFN median": baseline.predict(X_test, output_type="median"),
+        "Hurdle median": hurdle.predict(X_test, output_type="median"),
+    }
+    for label, prediction in median_predictions.items():
+        print(f"{label:20s} MAE: {mean_absolute_error(y_test, prediction):.4f}")
+
+
+if __name__ == "__main__":
+    fast = os.environ.get("FAST_TEST_MODE") == "1"
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--archive", type=Path, default=Path("downloads/facebook_comments.zip")
+    )
+    parser.add_argument("--n-train", type=int, default=100 if fast else 1000)
+    parser.add_argument("--n-test", type=int, default=50 if fast else 1000)
+    parser.add_argument("--seed", type=int, default=0)
+    args = parser.parse_args()
+    main(args.archive, args.n_train, args.n_test, args.seed)
+
+
+
+================================================
+FILE: examples/image/README.md
+================================================
+# Pictures as TabPFN columns
+
+`TabPFNWithImages` lets a TabPFN estimator take pictures alongside tabular fields. Each cell of a declared image column holds one image, as the path of the image file, absolute or relative to the working directory, as a base64 string (a `data:image/...;base64,` prefix is fine), as the file's bytes or as a PIL image. At `fit` the column is replaced by `n_components` numeric features, 30 by default: the CLS embedding of a frozen [DINOv3 ViT-S/16](https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m), standardised and reduced by a PCA fit on the training rows. At `predict` the same encoder and PCA are applied. The wrapped estimator only ever sees numbers, so the local `tabpfn` package and the TabPFN client both work. `ImageTransformer` is the same step as a standalone scikit-learn transformer, for pipelines of your own.
+
+## Setup
+
+```bash
+pip install "tabpfn-extensions[image]"
+```
+
+The encoder's weights are gated on the Hugging Face Hub: accept the license once on the model page, then run `hf auth login` or set `HF_TOKEN`.
+
+## Usage
+
+```python
+from tabpfn_extensions import TabPFNClassifier
+from tabpfn_extensions.image import TabPFNWithImages
+
+model = TabPFNWithImages(
+    TabPFNClassifier(categorical_features_indices=[1]),
+    image_features_indices=[3],  # positions in X, like categorical_features_indices
+)
+model.fit(X_train, y_train)  # X is a DataFrame; column 3 holds paths, base64, bytes or PIL images
+proba = model.predict_proba(X_test)
+```
+
+Positions in `image_features_indices` and in the estimator's `categorical_features_indices` both refer to the frame you pass in; the wrapper moves the categorical positions to the expanded frame itself. A path is read only when its batch is embedded, so a column of paths costs no more memory than the paths; a table that holds file names next to a folder becomes one in a line, `X["photo"] = [str(folder / name) for name in X["photo"]]`. A cell that is missing or cannot be decoded as an image is refused by row rather than guessed at, at fit and at predict alike. The encoder is downloaded on first use and cached for the process; it is not stored on the fitted model, which pickles without it.
+
+## Example
+
+`tabpfn_with_images.py` fits the Amazon Bestseller task of [MulTaBench](https://arxiv.org/abs/2605.10616): the log price of a best-selling product from its photo, rank, page and ratings. It prints the RMSE of three regressors, on the numeric fields alone, on the picture alone and on both. The archive is fetched with `kagglehub` (`pip install kagglehub`, no Kaggle account needed). Under `FAST_TEST_MODE=1` the script runs on a 300-row sample.
+
+
+
+================================================
+FILE: examples/image/tabpfn_with_images.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""Predict from a picture and a few tabular fields, together.
+
+An image goes into TabPFN as the path of its file in a DataFrame cell, in a column
+declared through `image_features_indices`. `TabPFNWithImages` replaces each such
+column by the PCA-reduced CLS embedding of a frozen DINOv3 ViT-S/16 before the
+tabular model sees it, and moves any declared categorical positions to match. The
+script fits three regressors, on the numeric fields alone, on the picture alone and
+on both, and prints each RMSE.
+
+The data is the Amazon Bestseller task of MulTaBench (https://arxiv.org/abs/2605.10616):
+the log price of a best-selling product from its photo, rank, page and ratings,
+3488 rows. The archive downloads through kagglehub without a Kaggle account. The
+encoder's weights are gated: accept the license once at
+https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m and log in with
+`hf auth login` or `HF_TOKEN`. A GPU is recommended for the full set; TabPFN's CPU
+sample guard applies to the tabular model as it always does.
+
+    pip install "tabpfn-extensions[image]" kagglehub
+    python tabpfn_with_images.py
+"""
+
+import os
+from pathlib import Path
+
+import kagglehub
+import pandas as pd
+from sklearn.metrics import root_mean_squared_error
+from sklearn.model_selection import train_test_split
+
+from tabpfn_extensions import TabPFNRegressor
+from tabpfn_extensions.image import TabPFNWithImages
+
+# FAST_TEST_MODE=1, set by the CI example tests, runs on a small sample.
+FAST_TEST_MODE = os.environ.get("FAST_TEST_MODE") == "1"
+
+root = Path(kagglehub.dataset_download("chico89/multabench-amazon-bestseller"))
+data = pd.read_csv(root / "data.csv")
+if FAST_TEST_MODE:
+    data = data.sample(n=300, random_state=0).reset_index(drop=True)
+y = data.pop("price")
+# Each cell of the image column is the path of the picture file, read only when
+# its batch is embedded.
+data["image"] = [str(root / path) for path in data.pop("photo_url")]
+X_train, X_test, y_train, y_test = train_test_split(
+    data, y, test_size=0.25, random_state=0
+)
+
+numeric = [column for column in data.columns if column != "image"]
+for name, columns, image_indices in [
+    ("numeric only", numeric, None),
+    ("picture only", ["image"], [0]),
+    ("numeric + picture", [*numeric, "image"], [len(numeric)]),
+]:
+    regressor = TabPFNRegressor()
+    model = (
+        regressor
+        if image_indices is None
+        else TabPFNWithImages(regressor, image_features_indices=image_indices)
+    )
+    model.fit(X_train[columns], y_train)
+    rmse = root_mean_squared_error(y_test, model.predict(X_test[columns]))
+    print(f"RMSE, {name}: {rmse:.3f}")
 
 
 
@@ -8169,6 +8644,8 @@ except PackageNotFoundError:
 from tabpfn_common_utils.telemetry.interactive import opt_in
 
 from .embedding import TabPFNEmbedding
+from .hurdle import AutoHurdleRegressor
+from .image import ImageTransformer, TabPFNWithImages
 from .many_class import ManyClassClassifier
 from .unsupervised import TabPFNUnsupervisedModel
 
@@ -8176,10 +8653,13 @@ from .unsupervised import TabPFNUnsupervisedModel
 from .utils import TabPFNClassifier, TabPFNRegressor, is_tabpfn
 
 __all__ = [
+    "AutoHurdleRegressor",
     "TabPFNClassifier",
     "TabPFNRegressor",
     "is_tabpfn",
     "TabPFNEmbedding",
+    "ImageTransformer",
+    "TabPFNWithImages",
     "ManyClassClassifier",
     "TabPFNUnsupervisedModel",
 ]
@@ -8232,7 +8712,9 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
     set runs on every predict and these extensions can be 10-100x slower
     than necessary.
 
-    Two conditions need to hold for the cache fast path:
+    What has to hold depends on the backend. An endpoint-backed estimator
+    (self-hosted container, SageMaker, Foundry) needs ``use_kv_cache=True``,
+    which is the only condition. A local model needs both:
         1. ``model`` was constructed with ``fit_mode="fit_with_cache"``
            (a constructor argument, must be set BEFORE ``.fit()``).
         2. ``model.executor_.keep_cache_on_device`` is ``True`` (set AFTER
@@ -8248,12 +8730,28 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
             SHAP"``, ``"Sequential feature selection"``). Defaults to a
             generic ``"This operation"``.
     """
-    # tabpfn-client doesn't expose fit_mode and doesn't (yet) support the KV
-    # cache â€” recommend switching to the local tabpfn package instead of
-    # firing the generic "set fit_mode='fit_with_cache'" message that would
-    # TypeError on the client. Walk the MRO because tabpfn-extensions wraps
-    # the client base classes in tabpfn_extensions.utils, so the *immediate*
-    # class' __module__ is "tabpfn_extensions.utils" and won't match.
+    # The endpoint-backed backends (self-hosted container, SageMaker, Foundry)
+    # do support the cache, through a `use_kv_cache` constructor flag. Their
+    # classes live under tabpfn_client, so this has to be checked before the
+    # MRO test below, which would otherwise call them unsupported.
+    if hasattr(model, "use_kv_cache"):
+        if not model.use_kv_cache:
+            warnings.warn(
+                f"{context} issues many predictions against a single fit, but "
+                "this estimator was built without `use_kv_cache=True`, so the "
+                "endpoint re-fits on every call. Pass `use_kv_cache=True` to "
+                "reuse the fitted model between predictions.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return
+
+    # The managed API backend has no endpoint-side cache to reuse, and doesn't
+    # expose fit_mode â€” recommend the local package rather than firing the
+    # generic "set fit_mode='fit_with_cache'" message, which would TypeError on
+    # it. Walk the MRO because tabpfn-extensions wraps the client base classes
+    # in tabpfn_extensions.utils, so the *immediate* class' __module__ is
+    # "tabpfn_extensions.utils" and won't match.
     mro_modules = (getattr(cls, "__module__", "") for cls in type(model).__mro__)
     if any("tabpfn_client" in m for m in mro_modules):
         warnings.warn(
@@ -8328,7 +8826,24 @@ class FakeTorchDevice:
     type: str
 
 
+def _tabpfn_device(device: Any) -> torch.device:
+    """TabPFN's own reading of its `device` argument; needs the local package."""
+    try:
+        # tabpfn < 2.1.4
+        from tabpfn.utils import infer_device_and_type
+
+        return infer_device_and_type(device)
+    except ImportError:
+        pass
+
+    # tabpfn >= 2.1.4
+    from tabpfn.utils import infer_devices
+
+    return infer_devices(device)[0]
+
+
 def infer_device(device: DeviceSpecification) -> torch.device | FakeTorchDevice:
+    """Where TabPFN itself runs: a CPU stand-in when the client serves the model."""
     if importlib.util.find_spec("tabpfn") is None:
         # If tabpfn is not installed then prediction will use the API client, thus we
         # just return "cpu". We use a fake device because PyTorch may also not be
@@ -8343,18 +8858,34 @@ def infer_device(device: DeviceSpecification) -> torch.device | FakeTorchDevice:
             )
         return FakeTorchDevice(type="cpu")
 
-    try:
-        # tabpfn < 2.1.4
-        from tabpfn.utils import infer_device_and_type
+    return _tabpfn_device(device)
 
-        return infer_device_and_type(device)
-    except ImportError:
-        pass
 
-    # tabpfn >= 2.1.4
-    from tabpfn.utils import infer_devices
+def infer_torch_device(device: Any) -> torch.device:
+    """Where torch work of this process runs, with or without the local `tabpfn`.
 
-    return infer_devices(device)[0]
+    With `tabpfn` installed this is TabPFN's own reading of `device`. Without it,
+    the same rule on torch directly: for `"auto"`, CUDA, else MPS, else the CPU,
+    minus what `TABPFN_EXCLUDE_DEVICES` names; anything else is parsed as a torch
+    device, the first of several.
+    """
+    if importlib.util.find_spec("tabpfn") is not None:
+        return _tabpfn_device(device)
+
+    import torch
+
+    if isinstance(device, str) and device == "auto":
+        excluded = {
+            d.strip() for d in os.getenv("TABPFN_EXCLUDE_DEVICES", "").split(",")
+        }
+        if "cuda" not in excluded and torch.cuda.is_available():
+            return torch.device("cuda")
+        if "mps" not in excluded and torch.backends.mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+    if isinstance(device, list | tuple):
+        device = device[0]
+    return torch.device(device)
 
 
 USE_TABPFN_LOCAL = os.getenv("USE_TABPFN_LOCAL", "true").lower() == "true"
@@ -9593,6 +10124,864 @@ class TabPFNEmbedding(TransformerMixin, BaseEstimator):
 
 
 __all__ = ["TabPFNEmbedding"]
+
+
+
+================================================
+FILE: src/tabpfn_extensions/hurdle/__init__.py
+================================================
+from tabpfn_extensions.hurdle.hurdle import AutoHurdleRegressor
+
+__all__ = ["AutoHurdleRegressor"]
+
+
+
+================================================
+FILE: src/tabpfn_extensions/hurdle/hurdle.py
+================================================
+from __future__ import annotations
+
+from typing import Any, Literal
+
+import numpy as np
+from sklearn.base import BaseEstimator, RegressorMixin, clone
+from sklearn.utils import _safe_indexing
+from sklearn.utils.validation import check_is_fitted
+
+from tabpfn_extensions.misc.sklearn_compat import validate_data
+from tabpfn_extensions.utils import TabPFNClassifier, TabPFNRegressor
+
+_QUANTILE_GRID = (
+    0.01,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    0.99,
+)
+
+
+class AutoHurdleRegressor(RegressorMixin, BaseEstimator):
+    """Two-stage regression for non-negative targets with a point mass at zero.
+
+    Args:
+        classifier: Cloneable classifier with predict_proba. Defaults to TabPFN.
+        regressor: Cloneable regressor with TabPFN's output_type and quantiles
+            prediction arguments. Defaults to TabPFN.
+        hurdle: Whether to split zero and positive targets. "auto" enables the
+            split for non-negative targets whose zero rate exceeds zero_threshold.
+            Otherwise, all rows go to the regressor.
+        zero_threshold: Training zero-rate threshold for automatic selection.
+            Defaults to 0.25, a heuristic rather than a tuned optimum. This controls
+            whether to fit two stages, independently of the prediction statistic.
+        quantile_grid: Strictly increasing positive-stage quantile levels between
+            0 and 1, with at least two entries. None uses the 21-point grid from
+            0.01 to 0.99. Required levels outside the grid clamp to its endpoints.
+
+    predict defaults to the mixture median, suitable for absolute error. With
+    positive probability p, it is zero for p <= 0.5 and otherwise the positive
+    distribution's (p - 0.5) / p quantile. Quantiles use linear interpolation on
+    the supplied grid, clamping levels outside that grid. Negative
+    positive-stage predictions are clipped to zero. Mean predictions multiply
+    the clipped positive-stage mean by p.
+
+    Fitted attributes include hurdle_, zero_rate_, classifier_, and regressor_.
+    classifier_ is None when the hurdle is inactive. Both estimators are None
+    for an all-zero target with the hurdle enabled.
+    """
+
+    def __init__(
+        self,
+        classifier: Any = None,
+        regressor: Any = None,
+        *,
+        hurdle: Literal["auto"] | bool = "auto",
+        zero_threshold: float = 0.25,
+        quantile_grid: list[float] | tuple[float, ...] | np.ndarray | None = None,
+    ) -> None:
+        self.classifier = classifier
+        self.regressor = regressor
+        self.hurdle = hurdle
+        self.zero_threshold = zero_threshold
+        self.quantile_grid = quantile_grid
+
+    def fit(self, X: Any, y: Any) -> AutoHurdleRegressor:
+        """Fit cloned estimators, preserving DataFrame columns and dtypes."""
+        self.__dict__.pop("is_fitted_", None)
+        if self.hurdle not in ("auto", True, False):
+            raise ValueError("hurdle must be 'auto', True, or False.")
+        if not 0 <= self.zero_threshold <= 1:
+            raise ValueError("zero_threshold must be between 0 and 1.")
+        grid = np.array(
+            _QUANTILE_GRID if self.quantile_grid is None else self.quantile_grid,
+            dtype=float,
+            copy=True,
+        )
+        if (
+            grid.ndim != 1
+            or grid.size < 2
+            or not np.isfinite(grid).all()
+            or np.any((grid <= 0) | (grid >= 1))
+            or np.any(np.diff(grid) <= 0)
+        ):
+            raise ValueError(
+                "quantile_grid must contain at least two finite, strictly increasing "
+                "levels strictly between 0 and 1."
+            )
+        self.quantile_grid_ = grid
+        _, y = validate_data(
+            self, X, y, dtype=None, ensure_all_finite=False, y_numeric=True
+        )
+        y = np.asarray(y, dtype=float)
+        if not np.isfinite(y).all():
+            raise ValueError("Targets must be finite.")
+        self.zero_rate_ = float(np.mean(y == 0))
+        self.hurdle_ = (
+            bool(np.all(y >= 0) and self.zero_rate_ > self.zero_threshold)
+            if self.hurdle == "auto"
+            else bool(self.hurdle)
+        )
+        if self.hurdle_ and np.any(y < 0):
+            raise ValueError("Hurdle modelling requires non-negative targets.")
+        positive = y > 0
+        if self.hurdle_ and positive.all():
+            raise ValueError("Hurdle modelling requires zero and positive targets.")
+
+        classifier = None
+        regressor = None
+        if not self.hurdle_ or positive.any():
+            regressor = clone(
+                self.regressor if self.regressor is not None else TabPFNRegressor()
+            )
+            if self.hurdle_:
+                classifier = clone(
+                    self.classifier
+                    if self.classifier is not None
+                    else TabPFNClassifier()
+                )
+                classifier.fit(X, positive.astype(int))
+                regressor.fit(_safe_indexing(X, positive), y[positive])
+            else:
+                regressor.fit(X, y)
+        self.classifier_ = classifier
+        self.regressor_ = regressor
+        self.is_fitted_ = True
+        return self
+
+    def predict(
+        self,
+        X: Any,
+        *,
+        output_type: Literal["mean", "median", "quantiles"] = "median",
+        quantiles: list[float] | None = None,
+    ) -> np.ndarray | list[np.ndarray]:
+        """Predict a mean, median, or list of quantile arrays in target units."""
+        check_is_fitted(self, "is_fitted_")
+        validate_data(self, X, reset=False, dtype=None, ensure_all_finite=False)
+        if output_type not in ("mean", "median", "quantiles"):
+            raise ValueError("output_type must be 'mean', 'median', or 'quantiles'.")
+        if quantiles is None:
+            quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        if not quantiles or any(not 0 < q < 1 for q in quantiles):
+            raise ValueError("quantiles must be nonempty and strictly between 0 and 1.")
+        if not self.hurdle_:
+            return self.regressor_.predict(
+                X, output_type=output_type, quantiles=quantiles
+            )
+        if self.regressor_ is None:
+            zeros = np.zeros(len(X))
+            return (
+                [zeros.copy() for _ in quantiles]
+                if output_type == "quantiles"
+                else zeros
+            )
+
+        positive_class = np.flatnonzero(self.classifier_.classes_ == 1).item()
+        p = np.clip(
+            np.asarray(
+                self.classifier_.predict_proba(X)[:, positive_class], dtype=float
+            ),
+            0.0,
+            1.0,
+        )
+        if output_type == "mean":
+            return p * np.maximum(self.regressor_.predict(X, output_type="mean"), 0.0)
+        grid = np.asarray(
+            self.regressor_.predict(
+                X, output_type="quantiles", quantiles=self.quantile_grid_.tolist()
+            ),
+            dtype=float,
+        )
+        levels = quantiles if output_type == "quantiles" else [0.5]
+        predictions = []
+        for q in levels:
+            prediction = np.zeros(len(p))
+            active = p > 1 - q
+            for row in np.flatnonzero(active):
+                level = (p[row] - (1 - q)) / p[row]
+                prediction[row] = np.interp(level, self.quantile_grid_, grid[:, row])
+            predictions.append(np.maximum(prediction, 0.0))
+        return predictions if output_type == "quantiles" else predictions[0]
+
+
+
+================================================
+FILE: src/tabpfn_extensions/image/__init__.py
+================================================
+"""Image module for tabpfn_extensions package."""
+
+from ._embeddings import GatedEncoderError
+from ._preprocessing import image_to_bytes
+from .image_transformer import ImageTransformer
+from .tabpfn_with_images import TabPFNWithImages
+
+__all__ = [
+    "GatedEncoderError",
+    "ImageTransformer",
+    "TabPFNWithImages",
+    "image_to_bytes",
+]
+
+
+
+================================================
+FILE: src/tabpfn_extensions/image/_embeddings.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""The frozen DINOv3 encoder and its image processor: loaded once, run in batches."""
+
+from __future__ import annotations
+
+import functools
+from collections.abc import Sequence
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, NamedTuple
+
+import numpy as np
+import torch
+
+from tabpfn_extensions.image._preprocessing import open_images
+from tabpfn_extensions.utils import infer_torch_device
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
+    from transformers import DINOv3ViTImageProcessor, DINOv3ViTModel
+
+IMAGE_ENCODER_MODEL = "facebook/dinov3-vits16-pretrain-lvd1689m"
+"""The one encoder: a DINOv3 ViT-S/16; its CLS token is an image's embedding."""
+DEFAULT_BATCH_SIZE = 64
+
+
+class DinoEncoder(NamedTuple):
+    """The frozen encoder and the image processor that prepares its input."""
+
+    model: DINOv3ViTModel
+    processor: DINOv3ViTImageProcessor
+
+
+class GatedEncoderError(OSError):
+    """The encoder's weights are gated on the Hub and this process may not read them."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            f"The weights of `{IMAGE_ENCODER_MODEL}` are gated on the Hugging Face "
+            f"Hub. Accept the license once at https://huggingface.co/"
+            f"{IMAGE_ENCODER_MODEL}, then log in with `hf auth login` or set "
+            "`HF_TOKEN`."
+        )
+
+
+def _raise_if_no_encoder_dependencies() -> None:
+    """Name the extra that brings transformers and torchvision when one is missing."""
+    try:
+        import torchvision  # noqa: F401
+        import transformers  # noqa: F401
+    except ImportError as e:
+        raise ImportError(
+            "Image columns need the optional image dependencies (transformers, "
+            'torchvision, pillow): pip install "tabpfn-extensions[image]".'
+        ) from e
+
+
+@functools.cache
+def _load_encoder() -> DinoEncoder:
+    """The encoder and its image processor, fetched once per process.
+
+    Cached here, not on a transformer, so fitted transformers pickle without the
+    weights. A failed load is not cached, so a retry once the extra is installed or
+    the license accepted goes through.
+
+    Raises:
+        GatedEncoderError: When the license has not been accepted, or no token is
+            available.
+    """
+    _raise_if_no_encoder_dependencies()
+    from transformers import AutoImageProcessor, AutoModel
+
+    try:
+        model = AutoModel.from_pretrained(IMAGE_ENCODER_MODEL).eval()
+        processor = AutoImageProcessor.from_pretrained(IMAGE_ENCODER_MODEL)
+    except OSError as e:
+        # transformers folds the Hub's `GatedRepoError` into an `OSError`.
+        if "gated" in str(e).lower():
+            raise GatedEncoderError from e
+        raise
+    return DinoEncoder(model, processor)
+
+
+def get_dino_encoder(device: torch.device) -> DinoEncoder:
+    """The encoder moved to `device`, and its image processor."""
+    encoder = _load_encoder()
+    return DinoEncoder(encoder.model.to(device), encoder.processor)
+
+
+def encode_images(
+    sources: Sequence[bytes | Path | Image],
+    *,
+    device: Any,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+) -> np.ndarray:
+    """The CLS embedding of every image, as `(len(sources), hidden_size)` float32.
+
+    Args:
+        sources: One image per row, as an image file's bytes or path, or a PIL image.
+        device: Where the encoder runs, as TabPFN's `device` argument; `None`
+            means `"auto"`. The encoder runs in this process even when TabPFN
+            itself runs through the client.
+        batch_size: Images per forward pass.
+
+    Raises:
+        ValueError: When `batch_size` is not positive, or naming the row whose
+            bytes are not an image.
+    """
+    if batch_size < 1:
+        raise ValueError(f"`batch_size` must be positive, got {batch_size}.")
+    torch_device = infer_torch_device("auto" if device is None else device)
+    model, processor = get_dino_encoder(torch_device)
+    chunks = []
+    for start in range(0, len(sources), batch_size):
+        # Decoded one batch at a time, so a long column never holds every image.
+        images = open_images(sources[start : start + batch_size], first_row=start)
+        inputs = processor(images=images, return_tensors="pt")
+        with torch.no_grad():
+            hidden = model(**inputs.to(torch_device)).last_hidden_state
+        chunks.append(hidden[:, 0, :].float().cpu().numpy())
+    if not chunks:
+        return np.empty((0, model.config.hidden_size), dtype=np.float32)
+    return np.concatenate(chunks, axis=0)
+
+
+
+================================================
+FILE: src/tabpfn_extensions/image/_preprocessing.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""From a DataFrame cell to a PIL image the encoder's processor can take, and back."""
+
+from __future__ import annotations
+
+import base64
+import binascii
+import io
+import os
+from collections.abc import Sequence
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import pandas as pd
+
+if TYPE_CHECKING:
+    from PIL.Image import Image
+
+MAX_IMAGE_SIDE = 512
+"""Longest side an image is shrunk to before the encoder's processor resizes it to
+its own input size: a cap on memory for high-resolution inputs, with no effect on
+the embedding."""
+
+
+def cell_to_image_source(cell: object) -> bytes | Path | Image | None:
+    """What one cell holds: an image file's bytes or path, a PIL image, or `None`
+    if missing.
+
+    A `str` naming an existing file is its path; any other `str` is base64,
+    optionally behind a `data:...;base64,` prefix and with whitespace removed. A
+    `pathlib.Path` is a path, `bytes` are the image file itself, and a PIL image is
+    taken as is. A path is read as given, absolute or relative to the working
+    directory, and only once the images are decoded, so a column of paths costs no
+    more memory than the paths.
+
+    Raises:
+        ValueError: On a value that is none of these, a path that is not a file,
+            or a string that is neither a file's path nor base64.
+    """
+    if isinstance(cell, bytes | bytearray | memoryview):
+        return bytes(cell)
+    if isinstance(cell, os.PathLike):
+        path = Path(cell)
+        if not path.is_file():
+            raise ValueError(f"no such file: {path}")
+        return path
+    if isinstance(cell, str):
+        return _text_to_image_source(cell.strip())
+    if cell is None or (pd.api.types.is_scalar(cell) and pd.isna(cell)):
+        return None
+    if _is_pil_image(cell):
+        return cell
+    raise ValueError(f"unsupported cell type {type(cell).__name__}")
+
+
+def _text_to_image_source(text: str) -> bytes | Path | None:
+    """The path a string names, else the bytes it encodes; `None` when empty."""
+    if not text:
+        return None
+    if text.startswith("data:"):
+        text = text.split(",", 1)[-1]
+    # Not `Path.is_file`: before Python 3.13 it raises on a name longer than the
+    # OS allows, and base64 of an image is thousands of characters long.
+    elif os.path.isfile(text):  # noqa: PTH113
+        return Path(text)
+    try:
+        return base64.b64decode("".join(text.split()), validate=True)
+    except (binascii.Error, ValueError) as e:
+        raise ValueError(f"neither an existing file nor base64: {e}") from e
+
+
+def _is_pil_image(cell: object) -> bool:
+    try:
+        import PIL.Image
+    except ImportError:
+        return False
+    return isinstance(cell, PIL.Image.Image)
+
+
+def image_to_bytes(image: Image, format: str = "PNG") -> bytes:
+    """A PIL image encoded as an image file, the form a DataFrame cell takes."""
+    buffer = io.BytesIO()
+    image.save(buffer, format=format)
+    return buffer.getvalue()
+
+
+def _raise_if_no_pil() -> None:
+    """Name the extra that brings pillow when it is missing."""
+    try:
+        import PIL  # noqa: F401
+    except ImportError as e:
+        raise ImportError(
+            "Image columns need the optional image dependencies: "
+            'pip install "tabpfn-extensions[image]".'
+        ) from e
+
+
+def open_images(
+    sources: Sequence[bytes | Path | Image], *, first_row: int = 0
+) -> list[Image]:
+    """Each source as an RGB PIL image no larger than `MAX_IMAGE_SIDE`.
+
+    Bytes are decoded, a path is read, and a PIL image is copied, so the caller's
+    is left untouched. A palette image goes through RGBA so its transparency
+    survives; any other mode, grayscale included, converts to RGB directly.
+
+    Args:
+        sources: The images, one per row.
+        first_row: The row the first source sits at, when the sources are one
+            batch of a column.
+
+    Raises:
+        ValueError: Naming the row whose bytes or file PIL cannot read as an image.
+    """
+    _raise_if_no_pil()
+    import PIL.Image
+
+    images = []
+    for row, source in enumerate(sources):
+        if isinstance(source, PIL.Image.Image):
+            image = source
+        else:
+            try:
+                file = source if isinstance(source, Path) else io.BytesIO(source)
+                image = PIL.Image.open(file)
+                image.load()
+            except (
+                OSError,
+                ValueError,
+                SyntaxError,
+                PIL.Image.DecompressionBombError,
+            ) as e:
+                raise ValueError(f"row {first_row + row}: {e}") from e
+        if image.mode == "P":
+            image = image.convert("RGBA")
+        image = image.convert("RGB")
+        if max(image.size) > MAX_IMAGE_SIDE:
+            image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), PIL.Image.LANCZOS)
+        images.append(image)
+    return images
+
+
+
+================================================
+FILE: src/tabpfn_extensions/image/image_transformer.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""Replace the declared image columns of a DataFrame by DINOv3 features.
+
+Each cell of a declared column holds one image, as a base64 string, as the image
+file's path or bytes, or as a PIL image. `fit` embeds the column with a frozen DINOv3
+ViT-S/16 and fits a StandardScaler and a PCA on the training rows; `transform`
+applies them, so an unseen image lands where its training neighbours are. The
+column is dropped and its `n_components` features are appended after the kept
+columns. A missing or undecodable cell is refused. Columns are handled by position.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils.validation import check_is_fitted
+from tabpfn_common_utils.telemetry import set_extension
+
+from tabpfn_extensions.image._embeddings import DEFAULT_BATCH_SIZE, encode_images
+from tabpfn_extensions.image._preprocessing import cell_to_image_source
+
+__all__ = ["DEFAULT_N_COMPONENTS", "ImageTransformer"]
+
+DEFAULT_N_COMPONENTS = 30
+
+
+@set_extension("image")
+class ImageTransformer(TransformerMixin, BaseEstimator):
+    """Replaces each declared image column of a DataFrame by numeric features.
+
+    Args:
+        image_features_indices: Positions of the image columns in `X`. Such a
+            column holds one image per cell, as a base64 string, the image file's
+            path or bytes, or a PIL image, so its dtype is object or string.
+        n_components: Features an image column is expanded into.
+        device: Where the encoder runs, as TabPFN's `device` argument.
+        batch_size: Images per encoder forward pass.
+
+    Attributes:
+        reducers_: Input position -> the column's fitted scaler and PCA.
+        feature_names_in_: Labels of the frame `fit` saw, as strings.
+    """
+
+    reducers_: dict[int, Pipeline]
+    feature_names_in_: np.ndarray
+
+    def __init__(
+        self,
+        image_features_indices: Sequence[int],
+        *,
+        n_components: int = DEFAULT_N_COMPONENTS,
+        device: Any = "auto",
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        self.image_features_indices = image_features_indices
+        self.n_components = n_components
+        self.device = device
+        self.batch_size = batch_size
+
+    def fit(self, X: pd.DataFrame, y: Any = None) -> ImageTransformer:
+        """Fit one scaler and PCA per declared column; `y` is ignored."""
+        self.fit_transform(X)
+        return self
+
+    def fit_transform(
+        self, X: pd.DataFrame, y: Any = None, **fit_params: Any
+    ) -> pd.DataFrame:
+        """Fit every declared column and return the expanded frame."""
+        del y, fit_params
+        _check_frame(X)
+        positions = self._declared_positions(X.shape[1])
+        reducers: dict[int, Pipeline] = {}
+        blocks: dict[int, np.ndarray] = {}
+        for position in positions:
+            embeddings = self._embed(X, position)
+            if len(embeddings) < self.n_components:
+                raise ValueError(
+                    f"Column {position} has {len(embeddings)} rows, fewer than the "
+                    f"{self.n_components} components it is expanded into."
+                )
+            # Seeded on its own: the features depend on the data, not on any seed.
+            pca = PCA(self.n_components, random_state=0)
+            reducers[position] = make_pipeline(StandardScaler(), pca).fit(embeddings)
+            blocks[position] = reducers[position].transform(embeddings)
+        # Assigned together at the end, so a failed fit leaves no half-fitted state.
+        self.reducers_ = reducers
+        self.feature_names_in_ = np.asarray([str(c) for c in X.columns], dtype=object)
+        return self._assemble(X, blocks)
+
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Replace the declared columns of `X` by the features fit at training."""
+        check_is_fitted(self)
+        _check_frame(X)
+        if X.shape[1] != len(self.feature_names_in_):
+            raise ValueError(
+                f"X has {X.shape[1]} columns, fitted on {len(self.feature_names_in_)}."
+            )
+        blocks = {i: r.transform(self._embed(X, i)) for i, r in self.reducers_.items()}
+        return self._assemble(X, blocks)
+
+    def get_feature_names_out(self, input_features: Any = None) -> np.ndarray:
+        """The kept columns' labels, then the image features', as an object array."""
+        del input_features
+        check_is_fitted(self)
+        names = self.feature_names_in_
+        kept = [name for i, name in enumerate(names) if i not in self.reducers_]
+        image = self._image_feature_names(list(names), self.reducers_)
+        return np.asarray([*kept, *image], dtype=object)
+
+    def output_indices(
+        self, indices: Sequence[int] | None, *, n_columns: int
+    ) -> list[int] | None:
+        """Where the input positions `indices` sit once the image columns moved.
+
+        Args:
+            indices: Positions in a frame of `n_columns` columns; `None` stays `None`.
+            n_columns: The width of that frame.
+
+        Raises:
+            ValueError: If one of them is a declared image column.
+        """
+        if indices is None:
+            return None
+        declared = self._declared_positions(n_columns)
+        if clash := sorted(set(indices) & set(declared)):
+            raise ValueError(
+                f"Positions {clash} are declared image columns; they cannot also be "
+                "categorical features."
+            )
+        return [i - sum(j < i for j in declared) for i in indices]
+
+    def _declared_positions(self, n_columns: int) -> list[int]:
+        """The declared positions, sorted and unique, all within `n_columns`."""
+        if self.image_features_indices is None:
+            raise ValueError("`image_features_indices` is required.")
+        positions = sorted({int(i) for i in self.image_features_indices})
+        if not positions or positions[0] < 0 or positions[-1] >= n_columns:
+            raise ValueError(
+                f"`image_features_indices` must name columns of X, which has "
+                f"{n_columns}; got {list(self.image_features_indices)}."
+            )
+        return positions
+
+    def _embed(self, X: pd.DataFrame, position: int) -> np.ndarray:
+        """The encoder's embedding of every cell of the column."""
+        sources = []
+        for row, cell in enumerate(X.iloc[:, position]):
+            try:
+                source = cell_to_image_source(cell)
+            except ValueError as e:
+                raise ValueError(f"Column {position}, row {row}: {e}") from e
+            if source is None:
+                raise ValueError(f"Column {position}, row {row}: no image.")
+            sources.append(source)
+        return encode_images(sources, device=self.device, batch_size=self.batch_size)
+
+    def _image_feature_names(
+        self, labels: Sequence[str], positions: Iterable[int]
+    ) -> list[str]:
+        """`<label>_img_<k>` per declared column and component, in position order.
+
+        A name a kept column or an earlier feature already bears, because a column
+        is called `photo_img_0` or two declared columns share a label, gets `_0`,
+        `_1`, ... appended until it is free.
+        """
+        positions = list(positions)
+        taken = {label for i, label in enumerate(labels) if i not in positions}
+        names = []
+        for i in positions:
+            for k in range(self.n_components):
+                name = base = f"{labels[i]}_img_{k}"
+                n = 0
+                while name in taken:
+                    name = f"{base}_{n}"
+                    n += 1
+                taken.add(name)
+                names.append(name)
+        return names
+
+    def _assemble(self, X: pd.DataFrame, blocks: dict[int, np.ndarray]) -> pd.DataFrame:
+        """Drop the image columns, append their features, keep the caller's index.
+
+        The kept columns keep their own labels, as strings, so a frame whose columns
+        differ from the fitted ones reaches the estimator as it is and TabPFN's own
+        feature-name check sees it.
+        """
+        kept = X.iloc[:, [i for i in range(X.shape[1]) if i not in blocks]]
+        features = [pd.DataFrame(block, dtype=np.float32) for block in blocks.values()]
+        # Left out when every column is an image: concat deprecates empty parts.
+        parts = [kept.reset_index(drop=True)] if kept.shape[1] else []
+        out = pd.concat([*parts, *features], axis=1)
+        image = self._image_feature_names(list(self.feature_names_in_), blocks)
+        names = [*map(str, kept.columns), *image]
+        return out.set_axis(names, axis=1).set_axis(X.index, axis=0)
+
+
+def _check_frame(X: object) -> None:
+    if not isinstance(X, pd.DataFrame):
+        raise TypeError(f"Image columns need a DataFrame, got {type(X).__name__}.")
+
+
+
+================================================
+FILE: src/tabpfn_extensions/image/tabpfn_with_images.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""TabPFN on a frame that mixes tabular columns with pictures.
+
+`TabPFNWithImages` wraps an estimator and an `ImageTransformer`. `fit` expands the
+declared image columns into DINOv3 features, moves the estimator's
+`categorical_features_indices` to where those columns now sit, and fits a clone of
+the estimator on the expanded frame; `predict` expands the same columns and
+delegates. The estimator only ever sees numbers, so the TabPFN client backend
+works as well as the local package.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any
+
+from sklearn.base import BaseEstimator, clone
+from sklearn.utils.metaestimators import available_if
+from sklearn.utils.validation import check_is_fitted
+from tabpfn_common_utils.telemetry import set_extension
+
+from tabpfn_extensions.image._embeddings import DEFAULT_BATCH_SIZE
+from tabpfn_extensions.image.image_transformer import (
+    DEFAULT_N_COMPONENTS,
+    ImageTransformer,
+)
+from tabpfn_extensions.misc.sklearn_compat import get_tags
+
+if TYPE_CHECKING:
+    import pandas as pd
+
+__all__ = ["TabPFNWithImages"]
+
+
+def _estimator_has(attr: str) -> Callable[[TabPFNWithImages], bool]:
+    """A check for `available_if`: the wrapped estimator has `attr`."""
+
+    def check(self: TabPFNWithImages) -> bool:
+        # Raises the original AttributeError when the estimator lacks it.
+        getattr(self.estimator, attr)
+        return True
+
+    return check
+
+
+@set_extension("image")
+class TabPFNWithImages(BaseEstimator):
+    """Fits an estimator on a frame whose declared image columns become features.
+
+    Args:
+        estimator: Typically a `TabPFNClassifier` or `TabPFNRegressor`; cloned at
+            `fit`. Its `categorical_features_indices`, when set, are positions in
+            the caller's frame and are moved to the expanded frame. Its `device`,
+            when it has one, is where the image encoder runs.
+        image_features_indices: Positions in `X` whose cells hold images, each as
+            a base64 string, as the image file's path or bytes, or as a PIL image.
+        n_components: Features an image column is expanded into.
+        batch_size: Images per encoder forward pass.
+
+    Attributes:
+        estimator_: The fitted clone of `estimator`.
+        image_transformer_: The fitted `ImageTransformer`.
+    """
+
+    estimator_: Any
+    image_transformer_: ImageTransformer
+
+    def __init__(
+        self,
+        estimator: BaseEstimator,
+        *,
+        image_features_indices: Sequence[int],
+        n_components: int = DEFAULT_N_COMPONENTS,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        self.estimator = estimator
+        self.image_features_indices = image_features_indices
+        self.n_components = n_components
+        self.batch_size = batch_size
+
+    def fit(self, X: pd.DataFrame, y: Any, **fit_params: Any) -> TabPFNWithImages:
+        """Expand the image columns of `X`, then fit a clone of the estimator."""
+        images = ImageTransformer(
+            self.image_features_indices,
+            n_components=self.n_components,
+            device=getattr(self.estimator, "device", "auto"),
+            batch_size=self.batch_size,
+        )
+        estimator = clone(self.estimator)
+        categorical = getattr(estimator, "categorical_features_indices", None)
+        if categorical is not None:
+            estimator.categorical_features_indices = images.output_indices(
+                categorical, n_columns=X.shape[1]
+            )
+        X = images.fit_transform(X)
+        estimator.fit(X, y, **fit_params)
+        self.image_transformer_, self.estimator_ = images, estimator
+        return self
+
+    def predict(self, X: pd.DataFrame, **predict_params: Any) -> Any:
+        """The fitted estimator's `predict` on the expanded `X`."""
+        X = self._transform(X)
+        return self.estimator_.predict(X, **predict_params)
+
+    @available_if(_estimator_has("predict_proba"))
+    def predict_proba(self, X: pd.DataFrame) -> Any:
+        """The fitted estimator's `predict_proba` on the expanded `X`."""
+        X = self._transform(X)
+        return self.estimator_.predict_proba(X)
+
+    def score(self, X: pd.DataFrame, y: Any) -> Any:
+        """The fitted estimator's `score` on the expanded `X`."""
+        X = self._transform(X)
+        return self.estimator_.score(X, y)
+
+    @property
+    def classes_(self) -> Any:
+        """The fitted estimator's classes; a classifier's attribute only."""
+        return self.estimator_.classes_
+
+    def _transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        check_is_fitted(self)
+        return self.image_transformer_.transform(X)
+
+    def __sklearn_tags__(self) -> Any:
+        # So `is_classifier`, and with it stratified cross-validation, follow the
+        # wrapped estimator.
+        tags = super().__sklearn_tags__()
+        tags.estimator_type = get_tags(self.estimator).estimator_type
+        return tags
 
 
 
@@ -18690,12 +20079,14 @@ REQUIRES_TABPFN_FILES = {
 }
 
 # Examples needing a module that is intentionally never installed, so they skip
-# (rather than fail) when it is absent. Reserved for the GPL-excluded case:
-# scikit-survival is in no extra or group, so survival_example always skips unless
-# the user installs it manually. (Other example deps -- shapiq, shap, hyperopt, ... --
-# are installed via --all-extras / the "examples" group and are expected to be present.)
+# (rather than fail) when it is absent: scikit-survival is GPL and in no extra or
+# group; kagglehub fetches the image example's archive, and that example's encoder
+# is gated on the Hugging Face Hub too, so it runs only where both are set up by
+# hand. (Other example deps -- shapiq, shap, hyperopt, ... -- are installed via
+# --all-extras / the "examples" group and are expected to be present.)
 REQUIRES_MODULE = {
     "survival_example.py": "sksurv",
+    "tabpfn_with_images.py": "kagglehub",
 }
 
 # Examples that exceed TabPFN's CPU sample guard and only run on a GPU.
@@ -18854,6 +20245,1204 @@ def test_example(request, example_file):
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+
+================================================
+FILE: tests/test_hurdle.py
+================================================
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import pytest
+from pytest_mock import MockerFixture
+from sklearn.base import clone
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.exceptions import NotFittedError
+
+from tabpfn_extensions.hurdle import AutoHurdleRegressor
+
+
+@pytest.fixture
+def model() -> AutoHurdleRegressor:
+    return AutoHurdleRegressor(DummyClassifier(), DummyRegressor())
+
+
+def test_fit_clones_and_preserves_frame(
+    model: AutoHurdleRegressor, mocker: MockerFixture
+) -> None:
+    fit = mocker.spy(DummyRegressor, "fit")
+    X = pd.DataFrame({"value": [1, 2, 3, 4], "kind": ["a", "b", "a", "b"]})
+    X.index = [7, 4, 9, 2]
+    y = pd.Series([0, 0, 0, 4], index=X.index)
+    model.fit(X, y)
+    assert model.hurdle_
+    assert model.zero_rate_ == 0.75
+    np.testing.assert_array_equal(model.classifier_.class_prior_, [0.75, 0.25])
+    assert model.regressor_.constant_.item() == 4
+    pd.testing.assert_frame_equal(fit.call_args.args[1], X.iloc[[3]])
+    assert not hasattr(model.regressor, "constant_")
+    assert not hasattr(model.classifier, "classes_")
+    assert model.n_features_in_ == 2
+    np.testing.assert_array_equal(model.feature_names_in_, X.columns)
+    assert clone(model).get_params()["zero_threshold"] == 0.25
+    with pytest.raises(ValueError, match="feature names"):
+        model.predict(X[["kind", "value"]])
+
+
+@pytest.mark.parametrize(
+    ("y", "hurdle", "threshold", "expected"),
+    [
+        ([0, 0, 1, 2], "auto", 0.5, False),
+        ([0, 0, 0, 2], "auto", 0.5, True),
+        ([0, 0, 0, -2], "auto", 0.5, False),
+        ([1, 2, 3, 4], "auto", 0.5, False),
+        ([0, 1, 2, 3], "auto", 0.1, True),
+        ([0, 0, 0, 2], False, 0.5, False),
+        ([0, 1, 2, 3], True, 0.5, True),
+    ],
+)
+def test_auto_gate(
+    model: AutoHurdleRegressor,
+    y: list[float],
+    hurdle: Any,
+    threshold: float,
+    expected: bool,
+) -> None:
+    model.set_params(hurdle=hurdle, zero_threshold=threshold).fit(np.ones((4, 2)), y)
+    assert model.hurdle_ == expected
+    if not expected:
+        assert model.regressor_.constant_.item() == np.mean(y)
+
+
+@pytest.mark.parametrize(("n_zeros", "expected"), [(4, False), (5, False), (6, True)])
+def test_default_zero_threshold(
+    model: AutoHurdleRegressor, n_zeros: int, expected: bool
+) -> None:
+    y = np.ones(20)
+    y[:n_zeros] = 0
+    model.fit(np.ones((20, 2)), y)
+    assert model.hurdle_ == expected
+
+
+def test_mixture_predictions(
+    model: AutoHurdleRegressor, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    X = np.ones((8, 2))
+    model.fit(X, [0, 0, 0, 0, 0, 1, 2, 3])
+    p = np.array([0, 0.1, 0.5, 0.5001, 0.8, 1, -0.1, 1.1])
+    # Reverse class order to check that probabilities follow the positive label.
+    model.classifier_.classes_ = np.array([1, 0])
+    monkeypatch.setattr(
+        model.classifier_, "predict_proba", lambda _X: np.column_stack([p, 1 - p])
+    )
+
+    def uniform_predict(
+        X: Any, *, output_type: str, quantiles: list[float] | None = None
+    ) -> Any:
+        if output_type == "mean":
+            return np.full(len(X), 15.0)
+        return [np.full(len(X), 10 + 10 * q) for q in quantiles]
+
+    monkeypatch.setattr(model.regressor_, "predict", uniform_predict)
+    np.testing.assert_allclose(model.predict(X), [0, 0, 0, 10.1, 13.75, 15, 0, 15])
+    np.testing.assert_allclose(
+        model.predict(X, output_type="mean"), np.clip(p, 0, 1) * 15
+    )
+    lower, median, upper = model.predict(
+        X, output_type="quantiles", quantiles=[0.1, 0.5, 0.9]
+    )
+    np.testing.assert_allclose(median, model.predict(X))
+    assert np.all(lower <= median)
+    assert np.all(median <= upper)
+    assert upper[4] == pytest.approx(18.75)
+
+    monkeypatch.setattr(
+        model.regressor_, "predict", lambda X, **_kw: -np.ones((21, len(X)))
+    )
+    np.testing.assert_array_equal(model.predict(X), 0)
+
+
+def test_prediction_validation(model: AutoHurdleRegressor) -> None:
+    X = np.ones((4, 2))
+    with pytest.raises(NotFittedError):
+        model.predict(X)
+    model.fit(X, np.zeros(4))
+    with pytest.raises(ValueError, match="output_type"):
+        model.predict(X, output_type="mode")
+    with pytest.raises(ValueError, match="features"):
+        model.predict(np.ones((4, 3)))
+
+
+def test_refit_and_all_zero(model: AutoHurdleRegressor) -> None:
+    X = np.ones((4, 2))
+    model.fit(X, [0, 0, 0, 1])
+    model.fit(X, [0, 0, 0, 0])
+    assert model.classifier_ is None
+    assert model.regressor_ is None
+    np.testing.assert_array_equal(model.predict(X), np.zeros(4))
+    np.testing.assert_array_equal(model.predict(X, output_type="mean"), np.zeros(4))
+    np.testing.assert_array_equal(
+        model.predict(X, output_type="quantiles", quantiles=[0.1, 0.9]),
+        np.zeros((2, 4)),
+    )
+    model.fit(X, [1, 2, 3, 4])
+    assert not model.hurdle_
+    assert model.classifier_ is None
+    with pytest.raises(ValueError):
+        model.fit(X, [0, 0, np.nan, 1])
+    with pytest.raises(NotFittedError):
+        model.predict(X)
+
+
+@pytest.mark.parametrize("y", [[0, -1, 2], [1, 2, 3], [0, np.inf, 1]])
+def test_invalid_forced_targets(model: AutoHurdleRegressor, y: list[float]) -> None:
+    with pytest.raises(ValueError):
+        model.set_params(hurdle=True).fit(np.ones((3, 2)), y)
+
+
+@pytest.mark.parametrize("params", [{"hurdle": "yes"}, {"zero_threshold": -1}])
+def test_invalid_parameters(model: AutoHurdleRegressor, params: dict[str, Any]) -> None:
+    with pytest.raises(ValueError):
+        model.set_params(**params).fit(np.ones((4, 2)), [0, 0, 0, 1])
+
+
+@pytest.mark.parametrize("quantiles", [[], [0], [1], [np.nan], [-0.1]])
+def test_invalid_quantiles(model: AutoHurdleRegressor, quantiles: list[float]) -> None:
+    X = np.ones((4, 2))
+    model.fit(X, [0, 0, 0, 0])
+    with pytest.raises(ValueError, match="quantiles"):
+        model.predict(X, output_type="quantiles", quantiles=quantiles)
+
+
+def test_custom_grid(model: AutoHurdleRegressor, mocker: MockerFixture) -> None:
+    grid = [0.2, 0.4, 0.6]
+    model.set_params(quantile_grid=grid).fit(np.ones((4, 2)), [0, 0, 0, 1])
+    assert clone(model).quantile_grid == grid
+    grid[0] = 0.1
+    mocker.patch.object(
+        model.classifier_, "predict_proba", return_value=np.array([[0.2, 0.8]])
+    )
+    predict = mocker.patch.object(
+        model.regressor_,
+        "predict",
+        return_value=[np.array([2]), np.array([4]), np.array([6])],
+    )
+    X = np.ones((1, 2))
+    np.testing.assert_allclose(model.predict(X), [3.75])
+    predict.assert_called_once_with(
+        X, output_type="quantiles", quantiles=[0.2, 0.4, 0.6]
+    )
+    np.testing.assert_allclose(
+        model.predict(X, output_type="quantiles", quantiles=[0.25, 0.9]), [[2], [6]]
+    )
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [
+        [],
+        [0.5],
+        [[0.1, 0.9]],
+        [0, 0.5],
+        [0.5, 1],
+        [0.5, np.nan],
+        [0.5, np.inf],
+        [0.5, 0.5],
+        [0.9, 0.1],
+    ],
+)
+def test_invalid_grid(model: AutoHurdleRegressor, grid: Any) -> None:
+    with pytest.raises(ValueError, match="quantile_grid"):
+        model.set_params(quantile_grid=grid).fit(np.ones((4, 2)), [0, 0, 0, 1])
+
+
+
+================================================
+FILE: tests/test_hurdle_integration.py
+================================================
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pytest
+
+from tabpfn_extensions import AutoHurdleRegressor
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_tabpfn_integration(tabpfn_classifier: Any, tabpfn_regressor: Any) -> None:
+    rng = np.random.default_rng(7)
+    X = rng.normal(size=(24, 3))
+    y = np.where(X[:, 0] > 0.5, 1 + np.abs(X[:, 1]), 0)
+    model = AutoHurdleRegressor(tabpfn_classifier, tabpfn_regressor).fit(X, y)
+    prediction = model.predict(X[:4])
+    assert prediction.shape == (4,)
+    assert np.isfinite(prediction).all()
+    assert (prediction >= 0).all()
+    model.set_params(hurdle=False).fit(X, y)
+    np.testing.assert_allclose(
+        model.predict(X[:4]), model.regressor_.predict(X[:4], output_type="median")
+    )
+
+
+
+================================================
+FILE: tests/test_image.py
+================================================
+"""Tests for `ImageTransformer` and `TabPFNWithImages`.
+
+A stub replaces the encoder so no test downloads weights; one slow test runs the
+real one when its dependencies and the Hub license are in place. The decoding and
+the encoder have their own test files.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import io
+import pickle
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import pytest
+import torch
+from sklearn.base import clone, is_classifier, is_regressor
+from sklearn.exceptions import NotFittedError
+
+from conftest import DEFAULT_TEST_SIZE, FAST_TEST_MODE, SMALL_TEST_SIZE
+from tabpfn_extensions.image import (
+    GatedEncoderError,
+    ImageTransformer,
+    TabPFNWithImages,
+    image_transformer as images_module,
+)
+from tabpfn_extensions.image.image_transformer import DEFAULT_N_COMPONENTS
+
+#: The default width an image column is expanded to.
+N_COMPONENTS = DEFAULT_N_COMPONENTS
+
+#: The width of the default encoder's embedding, which the stub reproduces.
+EMBEDDING_DIM = 384
+
+
+def _stub_encoder(payloads: list[bytes], **kwargs: Any) -> np.ndarray:
+    """A deterministic vector per payload: its sha256 digest, repeated to width.
+
+    Stands in for the real encoder so no test downloads weights, and so the
+    bytes in a cell can be anything: the stub never opens them as an image.
+    """
+    del kwargs
+    rows = [
+        np.frombuffer(hashlib.sha256(_raw(payload)).digest() * 12, dtype=np.uint8)
+        for payload in payloads
+    ]
+    if not rows:
+        return np.empty((0, EMBEDDING_DIM), dtype=np.float32)
+    return np.stack(rows)[:, :EMBEDDING_DIM].astype(np.float32)
+
+
+def _raw(source: Any) -> bytes:
+    """The bytes the stub hashes: a PIL image's pixels, or the bytes themselves."""
+    return source if isinstance(source, bytes) else source.tobytes()
+
+
+@pytest.fixture
+def stub_encoder(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(images_module, "encode_images", _stub_encoder)
+
+
+def _never_called(*_args: object, **_kwargs: object) -> np.ndarray:
+    raise AssertionError("the encoder must not run here")
+
+
+def _b64(i: int) -> str:
+    """A base64 cell; the stub encoder never opens the bytes, so any will do."""
+    return base64.b64encode(f"image-{i}".encode()).decode("ascii")
+
+
+def _png_bytes(
+    colour: tuple[int, ...] | int = (255, 0, 0),
+    size: tuple[int, int] = (8, 8),
+    mode: str = "RGB",
+) -> bytes:
+    Image = pytest.importorskip("PIL.Image")
+    buffer = io.BytesIO()
+    Image.new(mode, size, colour).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _frame(n: int = 40, cells: list | None = None) -> pd.DataFrame:
+    """A numeric column beside `photo`: base64 cells unless `cells` says otherwise."""
+    photo = [_b64(i) for i in range(n)] if cells is None else cells
+    return pd.DataFrame({"num": np.arange(len(photo), dtype=float), "photo": photo})
+
+
+def _expander(**kwargs: Any) -> ImageTransformer:
+    return ImageTransformer([1], **kwargs)
+
+
+def _estimator_data(*, regression: bool) -> tuple[pd.DataFrame, np.ndarray]:
+    """A numeric column beside `photo`, plus a `y` matching the task."""
+    # At least the default component count, which every image column needs.
+    n = max(N_COMPONENTS + 2, SMALL_TEST_SIZE if FAST_TEST_MODE else DEFAULT_TEST_SIZE)
+    rng = np.random.default_rng(seed=42)
+    X = pd.DataFrame(
+        {"num": rng.normal(size=n), "photo": [_b64(i % 11) for i in range(n)]}
+    )
+    y = rng.normal(size=n) if regression else np.arange(n) % 2
+    return X, y
+
+
+class TestDeclaration:
+    """Which columns are expanded: the declared ones, and only when valid."""
+
+    def test__no_declared_columns__is_refused(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(images_module, "encode_images", _never_called)
+
+        with pytest.raises(ValueError, match="must name columns"):
+            ImageTransformer([]).fit(_frame())
+        with pytest.raises(ValueError, match="is required"):
+            ImageTransformer(None).fit(_frame())
+
+    @pytest.mark.usefixtures("stub_encoder")
+    def test__declared_column__is_expanded_to_n_components(self) -> None:
+        transformer = _expander()
+        out = transformer.fit_transform(_frame())
+
+        assert out.shape == (40, 1 + N_COMPONENTS)
+        assert list(out.columns) == [
+            "num",
+            *[f"photo_img_{i}" for i in range(N_COMPONENTS)],
+        ]
+        assert list(transformer.get_feature_names_out()) == list(out.columns)
+        assert out.notna().all().all()
+        assert all(pd.api.types.is_float_dtype(dtype) for dtype in out.dtypes)
+
+    def test__numpy_index_arrays__are_accepted(self) -> None:
+        assert ImageTransformer(np.array([1]))._declared_positions(2) == [1]
+        assert ImageTransformer(np.array([0]))._declared_positions(2) == [0]
+        assert ImageTransformer(np.array([1, 0]))._declared_positions(2) == [0, 1]
+
+    def test__index_out_of_range__is_refused(self) -> None:
+        with pytest.raises(ValueError, match=r"which has 2; got \[5\]"):
+            ImageTransformer([5]).fit(_frame())
+
+    def test__negative_index__is_refused(self) -> None:
+        with pytest.raises(ValueError, match="must name columns"):
+            ImageTransformer([-1]).fit(_frame())
+
+    def test__array_input__is_refused(self) -> None:
+        with pytest.raises(TypeError, match="DataFrame"):
+            _expander().fit(np.zeros((3, 2)))
+        with pytest.raises(TypeError, match="DataFrame"):
+            ImageTransformer([0]).fit(np.zeros((3, 2)))
+
+
+@pytest.mark.usefixtures("stub_encoder")
+class TestExpansion:
+    """How a declared column is read and what it turns into."""
+
+    def test__data_uri_prefix__is_stripped(self) -> None:
+        plain = _expander().fit_transform(_frame())
+        prefixed = _expander().fit_transform(
+            _frame(cells=[f"data:image/png;base64,{_b64(i)}" for i in range(40)])
+        )
+
+        pd.testing.assert_frame_equal(prefixed, plain)
+
+    def test__bytes_cells__are_accepted(self) -> None:
+        plain = _expander().fit_transform(_frame())
+        raw = _expander().fit_transform(
+            _frame(cells=[f"image-{i}".encode() for i in range(40)])
+        )
+
+        pd.testing.assert_frame_equal(raw, plain)
+
+    def test__whitespace_in_base64__is_tolerated(self) -> None:
+        plain = _expander().fit_transform(_frame())
+        wrapped = _expander().fit_transform(
+            _frame(cells=[f" {_b64(i)[:4]}\n{_b64(i)[4:]} " for i in range(40)])
+        )
+
+        pd.testing.assert_frame_equal(wrapped, plain)
+
+    def test__missing_cells__are_refused_naming_rows(self) -> None:
+        cells: list[str | None] = [_b64(i) for i in range(40)]
+        cells[3] = None
+        cells[5] = ""
+
+        with pytest.raises(ValueError, match="row 3: no image"):
+            _expander().fit(_frame(cells=cells))
+
+    def test__non_base64_strings__are_refused_naming_rows(self) -> None:
+        cells = [_b64(i) for i in range(40)]
+        cells[2] = "not base64!!"
+
+        with pytest.raises(
+            ValueError, match=r"row 2: neither an existing file nor base64"
+        ):
+            _expander().fit(_frame(cells=cells))
+
+    def test__fewer_rows_than_components__is_refused(self) -> None:
+        with pytest.raises(ValueError, match="10 rows, fewer than the 30"):
+            _expander().fit(_frame(n=10))
+
+    def test__duplicate_column_labels__are_handled_positionally(self) -> None:
+        X = _frame().set_axis(["a", "a"], axis=1)
+
+        out = _expander().fit_transform(X)
+
+        assert out.shape == (40, 1 + N_COMPONENTS)
+        assert out.columns[0] == "a"
+
+    def test__feature_label_a_kept_column_bears__gets_a_free_suffix(self) -> None:
+        X = _frame().assign(photo_img_0=1.0, photo_img_0_0=2.0)
+        transformer = _expander(n_components=2)
+
+        out = transformer.fit_transform(X)
+
+        expected = [
+            "num",
+            "photo_img_0",
+            "photo_img_0_0",
+            "photo_img_0_1",
+            "photo_img_1",
+        ]
+        assert list(out.columns) == expected
+        assert list(transformer.get_feature_names_out()) == expected
+        assert list(transformer.transform(X).columns) == expected
+
+    def test__two_declared_columns_with_one_label__get_distinct_features(
+        self,
+    ) -> None:
+        rows = [[_b64(i), _b64(100 + i)] for i in range(5)]
+        X = pd.DataFrame(rows, columns=["pic", "pic"])
+
+        out = ImageTransformer([0, 1], n_components=2).fit_transform(X)
+
+        assert list(out.columns) == [
+            "pic_img_0",
+            "pic_img_1",
+            "pic_img_0_0",
+            "pic_img_1_0",
+        ]
+
+    def test__two_declared_columns__are_both_expanded_in_order(self) -> None:
+        X = pd.DataFrame(
+            {
+                "front": [_b64(i) for i in range(12)],
+                "num": np.arange(12, dtype=float),
+                "back": [_b64(100 + i) for i in range(12)],
+            }
+        )
+
+        transformer = ImageTransformer([2, 0], n_components=3)
+        out = transformer.fit_transform(X)
+
+        assert list(transformer.reducers_) == [0, 2]
+        assert list(out.columns) == [
+            "num",
+            *[f"front_img_{i}" for i in range(3)],
+            *[f"back_img_{i}" for i in range(3)],
+        ]
+
+    def test__pil_image_cells__are_accepted_and_left_untouched(self) -> None:
+        Image = pytest.importorskip("PIL.Image")
+        cells = [Image.new("RGB", (8, 8), (i, 0, 0)) for i in range(40)]
+
+        out = _expander().fit_transform(_frame(cells=cells))
+
+        assert out.shape == (40, 1 + N_COMPONENTS)
+        assert all(image.size == (8, 8) for image in cells)
+
+    def test__caller_s_frame__is_left_untouched(self) -> None:
+        X = _frame()
+        before = X.copy()
+
+        _expander().fit_transform(X)
+
+        pd.testing.assert_frame_equal(X, before)
+
+    def test__refit__replaces_the_last_fit(self) -> None:
+        transformer = _expander(n_components=5)
+        transformer.fit(_frame(n=40))
+
+        out = transformer.fit_transform(_frame(n=10).set_axis(["num", "pic"], axis=1))
+
+        assert list(out.columns) == ["num", *[f"pic_img_{i}" for i in range(5)]]
+        assert out.shape == (10, 6)
+
+
+class TestOutputIndices:
+    """Translating caller positions to the expanded frame, no fit needed."""
+
+    def test__positions_after_an_image_column__shift_down(self) -> None:
+        transformer = ImageTransformer([1, 3])
+
+        assert transformer.output_indices([0, 2, 4], n_columns=5) == [0, 1, 2]
+        assert transformer.output_indices([], n_columns=5) == []
+        assert transformer.output_indices(None, n_columns=5) is None
+
+    def test__a_declared_image_position__is_refused(self) -> None:
+        with pytest.raises(ValueError, match=r"Positions \[1\] are declared image"):
+            ImageTransformer([1]).output_indices([0, 1], n_columns=2)
+
+    def test__a_declared_position_outside_the_frame__is_refused(self) -> None:
+        with pytest.raises(ValueError, match=r"which has 3; got \[1, 3\]"):
+            ImageTransformer([1, 3]).output_indices([0], n_columns=3)
+
+
+@pytest.mark.usefixtures("stub_encoder")
+class TestTransform:
+    """`transform` reapplies the fit and refuses what it cannot embed."""
+
+    def test__row_index__is_kept_even_with_duplicate_labels(self) -> None:
+        X = _frame(n=6).set_axis([5, 5, 7, 8, 9, 9], axis=0)
+        transformer = _expander(n_components=3)
+
+        fitted = transformer.fit_transform(X)
+        again = transformer.transform(X)
+
+        assert fitted.index.tolist() == [5, 5, 7, 8, 9, 9]
+        assert again.index.tolist() == [5, 5, 7, 8, 9, 9]
+
+    def test__integer_column_labels__come_back_as_the_feature_names_out(self) -> None:
+        X = _frame().set_axis([0, 1], axis=1)
+        transformer = _expander()
+
+        out = transformer.fit_transform(X)
+
+        assert list(out.columns) == list(transformer.get_feature_names_out())
+        assert list(transformer.transform(X).columns) == list(out.columns)
+        assert out.columns[0] == "0"
+
+    def test__same_data__reproduces_the_fitted_columns(self) -> None:
+        X = _frame()
+        transformer = _expander()
+        fitted = transformer.fit_transform(X)
+
+        pd.testing.assert_frame_equal(transformer.transform(X), fitted)
+
+    def test__unseen_images__keep_the_fitted_width(self) -> None:
+        transformer = _expander()
+        fitted = transformer.fit_transform(_frame())
+
+        out = transformer.transform(_frame(cells=[_b64(1000 + i) for i in range(7)]))
+
+        assert list(out.columns) == list(fitted.columns)
+        assert out.shape[0] == 7
+        assert out.notna().all().all()
+
+    def test__missing_cell__is_refused_naming_the_row(self) -> None:
+        transformer = _expander().fit(_frame())
+        cells: list[str | None] = [_b64(i) for i in range(5)]
+        cells[4] = None
+
+        with pytest.raises(ValueError, match="row 4: no image"):
+            transformer.transform(_frame(cells=cells))
+
+    def test__undecodable_cell__is_refused(self) -> None:
+        transformer = _expander().fit(_frame())
+
+        with pytest.raises(ValueError, match="neither an existing file nor base64"):
+            transformer.transform(_frame(cells=["???"]))
+
+    def test__other_column_count__is_refused(self) -> None:
+        transformer = _expander().fit(_frame())
+        X = _frame(n=3)
+        X["extra"] = 1.0
+
+        with pytest.raises(ValueError, match="3 columns.*fitted on 2"):
+            transformer.transform(X)
+
+    def test__array_input__is_refused(self) -> None:
+        transformer = _expander().fit(_frame())
+
+        with pytest.raises(TypeError, match="DataFrame"):
+            transformer.transform(np.zeros((3, 2)))
+
+    def test__device_and_batch_size__are_handed_to_the_encoder(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[tuple[torch.device, int]] = []
+
+        def recording(payloads: list[bytes], **kwargs: Any) -> np.ndarray:
+            seen.append((kwargs["device"], kwargs["batch_size"]))
+            return _stub_encoder(payloads)
+
+        monkeypatch.setattr(images_module, "encode_images", recording)
+        transformer = _expander(device="cpu", batch_size=7).fit(_frame())
+        transformer.transform(_frame(n=3))
+
+        assert seen == [("cpu", 7)] * 2
+
+
+class TestSklearnInterface:
+    """What scikit-learn expects of a transformer."""
+
+    @pytest.mark.usefixtures("stub_encoder")
+    def test__fit__returns_itself_and_transform_matches_fit_transform(self) -> None:
+        X = _frame()
+
+        transformer = _expander().fit(X)
+
+        assert isinstance(transformer, ImageTransformer)
+        pd.testing.assert_frame_equal(
+            transformer.transform(X), _expander().fit_transform(X)
+        )
+
+    @pytest.mark.usefixtures("stub_encoder")
+    def test__failed_fit__leaves_no_half_fitted_state(self) -> None:
+        cells = [_b64(i) for i in range(40)]
+        cells[3] = "not base64!!"
+        transformer = _expander()
+
+        with pytest.raises(
+            ValueError, match="row 3: neither an existing file nor base64"
+        ):
+            transformer.fit(_frame(cells=cells))
+        with pytest.raises(NotFittedError):
+            transformer.transform(_frame())
+
+        transformer.fit(_frame())
+        with pytest.raises(
+            ValueError, match="row 3: neither an existing file nor base64"
+        ):
+            transformer.fit(_frame(cells=cells))
+        assert transformer.transform(_frame()).shape == (40, 1 + N_COMPONENTS)
+
+    def test__transform_before_fit__raises(self) -> None:
+        with pytest.raises(NotFittedError):
+            _expander().transform(_frame())
+        with pytest.raises(NotFittedError):
+            _expander().get_feature_names_out()
+
+    def test__clone__keeps_the_parameters(self) -> None:
+        transformer = _expander(n_components=5, batch_size=3)
+
+        cloned = clone(transformer)
+
+        assert cloned.get_params() == transformer.get_params()
+        assert cloned.image_features_indices == [1]
+
+    @pytest.mark.usefixtures("stub_encoder")
+    def test__fitted_transformer__pickles_and_transforms_alike(self) -> None:
+        X = _frame()
+        transformer = _expander().fit(X)
+
+        restored = pickle.loads(pickle.dumps(transformer))  # noqa: S301
+
+        pd.testing.assert_frame_equal(restored.transform(X), transformer.transform(X))
+
+
+@pytest.mark.usefixtures("stub_encoder")
+class TestTabPFNWithImages:
+    """The wrapper: expand, remap categoricals, delegate to a fitted clone."""
+
+    @pytest.mark.client_compatible
+    @pytest.mark.local_compatible
+    def test__classifier__fits_on_the_expanded_frame_and_predicts(
+        self, tabpfn_classifier: Any
+    ) -> None:
+        X, y = _estimator_data(regression=False)
+
+        model = TabPFNWithImages(tabpfn_classifier, image_features_indices=[1])
+        model.fit(X, y)
+
+        assert len(model.image_transformer_.get_feature_names_out()) == 1 + N_COMPONENTS
+        assert list(model.classes_) == [0, 1]
+        assert model.predict(X).shape == (len(X),)
+        assert model.predict_proba(X).shape == (len(X), 2)
+        assert 0.0 <= model.score(X, y) <= 1.0
+        assert is_classifier(model)
+        assert not is_regressor(model)
+
+    @pytest.mark.client_compatible
+    @pytest.mark.local_compatible
+    def test__regressor__fits_and_predicts_without_predict_proba(
+        self, tabpfn_regressor: Any
+    ) -> None:
+        X, y = _estimator_data(regression=True)
+
+        model = TabPFNWithImages(tabpfn_regressor, image_features_indices=[1])
+        model.fit(X, y)
+
+        assert model.predict(X).shape == (len(X),)
+        assert not hasattr(model, "predict_proba")
+        assert not hasattr(model, "classes_")
+        assert is_regressor(model)
+        assert not is_classifier(model)
+
+    @pytest.mark.local_compatible
+    def test__categorical_positions__move_to_the_expanded_frame(
+        self, tabpfn_classifier: Any
+    ) -> None:
+        X, y = _estimator_data(regression=False)
+        X = X[["photo", "num"]]
+        X["cat"] = np.where(np.arange(len(X)) % 3 == 0, "a", "b")
+        tabpfn_classifier.categorical_features_indices = [2]
+
+        model = TabPFNWithImages(tabpfn_classifier, image_features_indices=[0])
+        model.fit(X, y)
+
+        assert model.estimator_.categorical_features_indices == [1]
+        assert tabpfn_classifier.categorical_features_indices == [2]
+        assert model.predict(X).shape == (len(X),)
+
+    @pytest.mark.local_compatible
+    def test__image_position_also_categorical__is_refused_before_encoding(
+        self, tabpfn_classifier: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(images_module, "encode_images", _never_called)
+        X, y = _estimator_data(regression=False)
+        tabpfn_classifier.categorical_features_indices = [1]
+
+        model = TabPFNWithImages(tabpfn_classifier, image_features_indices=[1])
+
+        with pytest.raises(ValueError, match="declared image columns"):
+            model.fit(X, y)
+
+    @pytest.mark.client_compatible
+    @pytest.mark.local_compatible
+    def test__no_declared_columns__is_refused_at_fit(
+        self, tabpfn_classifier: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(images_module, "encode_images", _never_called)
+        X, y = _estimator_data(regression=False)
+
+        with pytest.raises(ValueError, match="must name columns"):
+            TabPFNWithImages(tabpfn_classifier, image_features_indices=[]).fit(X, y)
+
+    @pytest.mark.local_compatible
+    def test__encoder__runs_on_the_estimator_s_device(
+        self, tabpfn_classifier: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        seen: list[Any] = []
+
+        def recording(payloads: list[bytes], **kwargs: Any) -> np.ndarray:
+            seen.append(kwargs["device"])
+            return _stub_encoder(payloads)
+
+        monkeypatch.setattr(images_module, "encode_images", recording)
+        X, y = _estimator_data(regression=False)
+        tabpfn_classifier.device = "cpu"
+
+        TabPFNWithImages(tabpfn_classifier, image_features_indices=[1]).fit(X, y)
+
+        assert seen == ["cpu"]
+
+    @pytest.mark.local_compatible
+    def test__tabpfn__refuses_columns_in_another_order(
+        self, tabpfn_classifier: Any
+    ) -> None:
+        """The premise of the next test: TabPFN itself checks the feature names."""
+        X, y = _estimator_data(regression=False)
+        X = pd.DataFrame({"num": X["num"], "more": X["num"] * 2})
+
+        tabpfn_classifier.fit(X, y)
+
+        with pytest.raises(ValueError, match="feature names should match"):
+            tabpfn_classifier.predict(X[["more", "num"]])
+
+    @pytest.mark.local_compatible
+    def test__columns_in_another_order__are_refused_by_tabpfn(
+        self, tabpfn_classifier: Any
+    ) -> None:
+        """The kept columns keep their labels, so the swap reaches TabPFN's check."""
+        from tabpfn.errors import TabPFNValidationError
+
+        X, y = _estimator_data(regression=False)
+        X["more"] = X["num"] * 2
+        model = TabPFNWithImages(tabpfn_classifier, image_features_indices=[1])
+        model.fit(X, y)
+
+        with pytest.raises(TabPFNValidationError, match="feature names should match"):
+            model.predict(X[["more", "photo", "num"]])
+
+    def test__predict_before_fit__raises(self, tabpfn_classifier: Any) -> None:
+        X, _ = _estimator_data(regression=False)
+
+        with pytest.raises(NotFittedError):
+            TabPFNWithImages(tabpfn_classifier, image_features_indices=[1]).predict(X)
+
+    @pytest.mark.client_compatible
+    @pytest.mark.local_compatible
+    def test__clone__keeps_the_parameters_and_the_unfitted_estimator(
+        self, tabpfn_classifier: Any
+    ) -> None:
+        model = TabPFNWithImages(
+            tabpfn_classifier, image_features_indices=[1], n_components=4
+        )
+
+        cloned = clone(model)
+
+        assert cloned.image_features_indices == [1]
+        assert cloned.n_components == 4
+        assert type(cloned.estimator) is type(tabpfn_classifier)
+        assert cloned.estimator is not tabpfn_classifier
+
+
+@pytest.mark.slow
+def test__real_encoder__separates_two_colours() -> None:
+    """The default DINOv3 encoder, on the CPU, when its dependencies and license are
+    in place: same-colour squares embed alike, different colours apart.
+    """
+    pytest.importorskip("transformers")
+    red = base64.b64encode(_png_bytes((255, 0, 0), size=(32, 32))).decode()
+    blue = base64.b64encode(_png_bytes((0, 0, 255), size=(32, 32))).decode()
+    X = pd.DataFrame({"num": range(6), "photo": [red, blue] * 3})
+
+    try:
+        out = ImageTransformer([1], n_components=2, device="cpu").fit_transform(X)
+    except GatedEncoderError as e:
+        pytest.skip(str(e))
+
+    assert out.shape == (6, 3)
+    features = out.iloc[:, 1:].to_numpy()
+    np.testing.assert_allclose(features[0], features[2], atol=1e-4)
+    assert np.abs(features[0] - features[1]).max() > 1e-2
+
+
+
+================================================
+FILE: tests/test_image_embeddings.py
+================================================
+"""Tests for the DINOv3 encoder: loading it and the embeddings."""
+
+from __future__ import annotations
+
+import io
+import sys
+import types
+from collections.abc import Iterator
+from typing import Any
+
+import numpy as np
+import pytest
+import torch
+
+from tabpfn_extensions.image import GatedEncoderError, _embeddings
+from tabpfn_extensions.image._embeddings import IMAGE_ENCODER_MODEL
+
+#: The width of the encoder's CLS embedding.
+EMBEDDING_DIM = 384
+
+
+def _png_bytes(colour: tuple[int, int, int], size: tuple[int, int] = (32, 32)) -> bytes:
+    Image = pytest.importorskip("PIL.Image")
+    buffer = io.BytesIO()
+    Image.new("RGB", size, colour).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+@pytest.fixture(autouse=True)
+def _fresh_encoder_cache() -> Iterator[None]:
+    """Each test loads its own encoder and leaves none behind for the next."""
+    _embeddings._load_encoder.cache_clear()
+    yield
+    _embeddings._load_encoder.cache_clear()
+
+
+def _stub_encoder_dependencies(monkeypatch: pytest.MonkeyPatch, auto: type) -> None:
+    """Stand in for transformers and torchvision, so no test needs the image extra."""
+    monkeypatch.setitem(
+        sys.modules,
+        "transformers",
+        types.SimpleNamespace(AutoModel=auto, AutoImageProcessor=auto),
+    )
+    monkeypatch.setitem(sys.modules, "torchvision", types.SimpleNamespace())
+
+
+class TestEncoderLoading:
+    """Importing the optional dependencies and fetching the weights."""
+
+    @pytest.mark.parametrize("module", ["transformers", "torchvision"])
+    def test__missing_optional_dependency__names_the_extra(
+        self, monkeypatch: pytest.MonkeyPatch, module: str
+    ) -> None:
+        monkeypatch.setitem(sys.modules, module, None)
+
+        with pytest.raises(ImportError, match=r"tabpfn-extensions\[image\]"):
+            _embeddings.get_dino_encoder(torch.device("cpu"))
+
+    def test__gated_repo__is_reported_with_license_instructions(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class GatedAuto:
+            @staticmethod
+            def from_pretrained(name: str, **kwargs: Any) -> None:
+                del kwargs
+                raise OSError(f"You are trying to access a gated repo. {name}")
+
+        _stub_encoder_dependencies(monkeypatch, GatedAuto)
+
+        with pytest.raises(GatedEncoderError, match="huggingface.co/facebook/dinov3"):
+            _embeddings.get_dino_encoder(torch.device("cpu"))
+
+    def test__encoder__is_loaded_once_per_process(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        loaded: list[str] = []
+
+        class FakeModel:
+            def eval(self) -> FakeModel:
+                return self
+
+            def to(self, device: torch.device) -> FakeModel:
+                del device
+                return self
+
+        class FakeAuto:
+            @staticmethod
+            def from_pretrained(name: str, **kwargs: Any) -> FakeModel:
+                del kwargs
+                loaded.append(name)
+                return FakeModel()
+
+        _stub_encoder_dependencies(monkeypatch, FakeAuto)
+
+        first_model, first_processor = _embeddings.get_dino_encoder(torch.device("cpu"))
+        model, processor = _embeddings.get_dino_encoder(torch.device("cpu"))
+
+        assert model is first_model
+        assert processor is first_processor
+        assert loaded == [IMAGE_ENCODER_MODEL, IMAGE_ENCODER_MODEL]
+
+
+@pytest.mark.parametrize("batch_size", [0, -1])
+def test__encode_images__rejects_a_batch_size_that_is_not_positive(
+    batch_size: int,
+) -> None:
+    with pytest.raises(ValueError, match="positive"):
+        _embeddings.encode_images(
+            [b"never decoded"], device="cpu", batch_size=batch_size
+        )
+
+
+class _Batch(dict):
+    """What the processor hands the model: a mapping that moves to a device."""
+
+    def to(self, device: torch.device) -> _Batch:
+        del device
+        return self
+
+
+def _fake_encoder(device: torch.device) -> _embeddings.DinoEncoder:
+    """A processor that numbers the images of its batch, and a model whose CLS
+    token is that number, so the output tells which batch a row came from.
+    """
+    del device
+
+    class Processor:
+        def __call__(self, images: list[Any], return_tensors: str) -> _Batch:
+            del return_tensors
+            return _Batch(pixel_values=torch.arange(len(images), dtype=torch.float32))
+
+    class Model:
+        config = types.SimpleNamespace(hidden_size=3)
+
+        def __call__(self, pixel_values: torch.Tensor) -> Any:
+            hidden = pixel_values[:, None, None].expand(-1, 2, 3)
+            return types.SimpleNamespace(last_hidden_state=hidden)
+
+    return _embeddings.DinoEncoder(Model(), Processor())  # type: ignore[arg-type]
+
+
+def test__encode_images__decodes_one_batch_at_a_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each batch is decoded right before its forward pass, its rows numbered
+    within the column, and the batches' embeddings come back in row order.
+    """
+    decoded: list[tuple[int, int]] = []
+
+    def open_images(sources: list[Any], *, first_row: int = 0) -> list[Any]:
+        decoded.append((first_row, len(sources)))
+        return list(sources)
+
+    monkeypatch.setattr(_embeddings, "open_images", open_images)
+    monkeypatch.setattr(_embeddings, "get_dino_encoder", _fake_encoder)
+
+    out = _embeddings.encode_images([b"image"] * 5, device="cpu", batch_size=3)
+
+    assert decoded == [(0, 3), (3, 2)]
+    assert (out.shape, out.dtype) == ((5, 3), np.float32)
+    np.testing.assert_array_equal(out[:, 0], [0, 1, 2, 0, 1])
+    assert _embeddings.encode_images([], device="cpu").shape == (0, 3)
+
+
+def test__encode_images__names_the_row_of_a_bad_image_within_the_column(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_embeddings, "get_dino_encoder", _fake_encoder)
+    sources = [_png_bytes((0, 0, 0)), _png_bytes((0, 0, 0)), b"not an image"]
+
+    with pytest.raises(ValueError, match="row 2"):
+        _embeddings.encode_images(sources, device="cpu", batch_size=2)
+
+
+@pytest.mark.slow
+def test__encode_images__separates_two_colours() -> None:
+    """The real encoder on the CPU, when its dependencies and license are in place:
+    same-colour squares embed alike, as bytes or as a PIL image, different colours
+    apart.
+    """
+    pytest.importorskip("transformers")
+    Image = pytest.importorskip("PIL.Image")
+    red, blue = _png_bytes((255, 0, 0)), _png_bytes((0, 0, 255))
+    red_image = Image.open(io.BytesIO(red))
+
+    try:
+        out = _embeddings.encode_images([red, blue, red_image], device="cpu")
+    except GatedEncoderError as e:
+        pytest.skip(str(e))
+
+    assert out.shape == (3, EMBEDDING_DIM)
+    assert out.dtype == np.float32
+    np.testing.assert_allclose(out[0], out[2], atol=1e-4)
+    assert np.abs(out[0] - out[1]).max() > 1e-2
+
+
+
+================================================
+FILE: tests/test_image_preprocessing.py
+================================================
+"""Tests for turning an image column's cells into PIL images, and back."""
+
+from __future__ import annotations
+
+import base64
+import io
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from tabpfn_extensions.image import _preprocessing
+
+
+def _png_bytes(
+    colour: tuple[int, ...] | int = (255, 0, 0),
+    size: tuple[int, int] = (8, 8),
+    mode: str = "RGB",
+) -> bytes:
+    Image = pytest.importorskip("PIL.Image")
+    buffer = io.BytesIO()
+    Image.new(mode, size, colour).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def test__cell_to_image_source__reads_each_kind_of_cell() -> None:
+    Image = pytest.importorskip("PIL.Image")
+    payload = b"image-0"
+    encoded = base64.b64encode(payload).decode("ascii")
+
+    assert _preprocessing.cell_to_image_source(encoded) == payload
+    assert (
+        _preprocessing.cell_to_image_source(f"data:image/png;base64,{encoded}")
+        == payload
+    )
+    assert (
+        _preprocessing.cell_to_image_source(f" {encoded[:3]}\n{encoded[3:]}") == payload
+    )
+    assert _preprocessing.cell_to_image_source(payload) == payload
+    assert _preprocessing.cell_to_image_source(bytearray(payload)) == payload
+    for missing in (None, "", "  ", float("nan"), pd.NA):
+        assert _preprocessing.cell_to_image_source(missing) is None
+    with pytest.raises(ValueError, match="neither an existing file nor base64"):
+        _preprocessing.cell_to_image_source("not base64!!")
+    image = Image.new("RGB", (2, 2))
+    assert _preprocessing.cell_to_image_source(image) is image
+    with pytest.raises(ValueError, match="unsupported cell type int"):
+        _preprocessing.cell_to_image_source(5)
+
+
+def test__cell_to_image_source__reads_a_path_as_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A string naming a file, absolute or relative to the working directory, and a
+    `Path` are the file's path; the file is not read here.
+    """
+    file = tmp_path / "cat.png"
+    file.write_bytes(b"not read yet")
+    monkeypatch.chdir(tmp_path)
+
+    assert _preprocessing.cell_to_image_source(str(file)) == file
+    assert _preprocessing.cell_to_image_source(f" {file} ") == file
+    assert _preprocessing.cell_to_image_source("cat.png") == Path("cat.png")
+    assert _preprocessing.cell_to_image_source(file) == file
+    with pytest.raises(ValueError, match="no such file"):
+        _preprocessing.cell_to_image_source(tmp_path / "dog.png")
+    with pytest.raises(ValueError, match="neither an existing file nor base64"):
+        _preprocessing.cell_to_image_source(str(tmp_path / "dog.png"))
+
+
+def test__open_images__converts_every_mode_to_rgb_and_caps_the_size() -> None:
+    payloads = [
+        _png_bytes(),
+        _png_bytes(colour=7, mode="L"),
+        _png_bytes(colour=3, mode="P"),
+        _png_bytes(size=(1000, 600)),
+    ]
+
+    images = _preprocessing.open_images(payloads)
+
+    assert [image.mode for image in images] == ["RGB"] * 4
+    assert [image.size for image in images][:3] == [(8, 8)] * 3
+    assert max(images[3].size) == _preprocessing.MAX_IMAGE_SIDE
+
+
+def test__open_images__reads_a_file_from_its_path(tmp_path: Path) -> None:
+    file = tmp_path / "cat.png"
+    file.write_bytes(_png_bytes(colour=(10, 20, 30)))
+    (tmp_path / "notes.txt").write_text("not an image")
+
+    image = _preprocessing.open_images([file])[0]
+
+    assert image.size == (8, 8)
+    assert image.getpixel((0, 0)) == (10, 20, 30)
+    with pytest.raises(ValueError, match="row 1"):
+        _preprocessing.open_images([file, tmp_path / "notes.txt"])
+    with pytest.raises(ValueError, match="row 0"):
+        _preprocessing.open_images([tmp_path / "dog.png"])
+
+
+def test__open_images__takes_pil_images_and_leaves_them_untouched() -> None:
+    Image = pytest.importorskip("PIL.Image")
+    image = Image.new("L", (600, 8), 7)
+
+    out = _preprocessing.open_images([image])[0]
+
+    assert out.mode == "RGB"
+    assert max(out.size) == _preprocessing.MAX_IMAGE_SIDE
+    assert (image.mode, image.size) == ("L", (600, 8))
+
+
+def test__open_images__refuses_bytes_that_are_not_an_image() -> None:
+    with pytest.raises(ValueError, match="row 1"):
+        _preprocessing.open_images([_png_bytes(), b"not an image"])
+
+
+def test__image_to_bytes__round_trips_through_open_images() -> None:
+    Image = pytest.importorskip("PIL.Image")
+    image = Image.new("RGB", (5, 7), (10, 20, 30))
+
+    payload = _preprocessing.image_to_bytes(image)
+    restored = _preprocessing.open_images([payload])[0]
+
+    assert isinstance(payload, bytes)
+    assert restored.size == (5, 7)
+    assert restored.getpixel((0, 0)) == (10, 20, 30)
 
 
 
@@ -19092,6 +21681,95 @@ class TestInfPassthroughDetection:
 
         assert tpe_shapiq._model_has_inf_passthrough(_Local(resolved=True))
         assert not tpe_shapiq._model_has_inf_passthrough(_Local(resolved=False))
+
+
+
+================================================
+FILE: tests/test_kv_cache_warning.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""Tests for `warn_if_no_kv_cache` across the backends.
+
+The endpoint-backed estimators (self-hosted container, SageMaker, Foundry)
+reuse a fitted model when built with `use_kv_cache=True`; the managed API
+backend has no endpoint-side cache. Stubs stand in for the client estimators,
+which are not a test dependency here.
+"""
+
+from __future__ import annotations
+
+import warnings
+
+import pytest
+
+from tabpfn_extensions.utils import warn_if_no_kv_cache
+
+
+def _warnings_from(model) -> list[str]:
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        warn_if_no_kv_cache(model, context="SHAP")
+    return [str(w.message) for w in caught]
+
+
+class _Endpoint:
+    """Shaped like the endpoint-backed tabpfn-client estimators."""
+
+    __module__ = "tabpfn_client.hosted.estimator"
+
+    def __init__(self, *, use_kv_cache: bool):
+        self.use_kv_cache = use_kv_cache
+
+
+class _Managed:
+    """Shaped like the managed tabpfn-client estimator: no endpoint cache."""
+
+    __module__ = "tabpfn_client.estimator"
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_endpoint_backend_with_the_cache_is_silent():
+    assert _warnings_from(_Endpoint(use_kv_cache=True)) == []
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_endpoint_backend_without_the_cache_points_at_the_flag():
+    (message,) = _warnings_from(_Endpoint(use_kv_cache=False))
+    assert "use_kv_cache=True" in message
+    # The old advice was to abandon the endpoint for a local install.
+    assert "pip install tabpfn" not in message
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_managed_backend_still_recommends_the_local_package():
+    (message,) = _warnings_from(_Managed())
+    assert "pip install tabpfn" in message
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_local_model_paths_are_unchanged():
+    class _Local:
+        fit_mode = "fit_preprocessors"
+
+    (message,) = _warnings_from(_Local())
+    assert "fit_with_cache" in message
+
+    class _Cached:
+        fit_mode = "fit_with_cache"
+        executor_ = type("E", (), {"keep_cache_on_device": True})()
+
+    assert _warnings_from(_Cached()) == []
+
+
+@pytest.mark.local_compatible
+@pytest.mark.client_compatible
+def test_unknown_estimator_is_left_alone():
+    assert _warnings_from(object()) == []
 
 
 
@@ -20713,6 +23391,67 @@ def test_generate_synthetic_experiment_keeps_numerical_features_numerical(monkey
     ]
     numerical = synthetic["numerical"].to_numpy()
     assert not np.allclose(numerical, np.round(numerical))
+
+
+
+================================================
+FILE: tests/test_utils.py
+================================================
+"""Tests for the device helpers of the extension package."""
+
+from __future__ import annotations
+
+import importlib.util
+from typing import Any
+
+import pytest
+import torch
+
+from tabpfn_extensions import utils
+
+
+def _hide_tabpfn(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Make the local tabpfn package look absent, as with the client backend."""
+    find_spec = importlib.util.find_spec
+
+    def hidden(name: str, *args: Any) -> Any:
+        return None if name == "tabpfn" else find_spec(name, *args)
+
+    monkeypatch.setattr(importlib.util, "find_spec", hidden)
+
+
+class TestInferTorchDevice:
+    def test__with_tabpfn__is_tabpfns_own_reading(self) -> None:
+        pytest.importorskip("tabpfn")
+        from tabpfn.utils import infer_devices
+
+        assert utils.infer_torch_device("cpu") == torch.device("cpu")
+        assert utils.infer_torch_device("auto") == infer_devices("auto")[0]
+
+    def test__without_tabpfn__reads_torch_directly(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _hide_tabpfn(monkeypatch)
+        monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+        monkeypatch.delenv("TABPFN_EXCLUDE_DEVICES", raising=False)
+
+        assert utils.infer_torch_device("auto") == torch.device("cuda")
+        assert utils.infer_torch_device("cpu") == torch.device("cpu")
+        assert utils.infer_torch_device(torch.device("cpu")) == torch.device("cpu")
+        assert utils.infer_torch_device(["cpu", "cpu"]) == torch.device("cpu")
+
+        monkeypatch.setenv("TABPFN_EXCLUDE_DEVICES", "cuda, mps")
+        assert utils.infer_torch_device("auto") == torch.device("cpu")
+
+
+def test__infer_device__without_tabpfn__is_the_cpu_stand_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _hide_tabpfn(monkeypatch)
+
+    assert utils.infer_device("auto") == utils.FakeTorchDevice(type="cpu")
+    with pytest.warns(UserWarning, match="does not support GPU"):
+        assert utils.infer_device("cuda") == utils.FakeTorchDevice(type="cpu")
 
 
 

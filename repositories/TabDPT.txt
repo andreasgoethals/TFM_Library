@@ -6,12 +6,14 @@ Directory structure:
     ├── pyproject.toml
     ├── examples/
     │   ├── cls_example.py
-    │   └── reg_example.py
+    │   ├── reg_example.py
+    │   └── reg_probabilistic_example.py
     ├── notebooks/
     │   └── analysis.ipynb
     ├── src/
     │   └── tabdpt/
     │       ├── __init__.py
+    │       ├── bar_distribution.py
     │       ├── classifier.py
     │       ├── estimator.py
     │       ├── model.py
@@ -49,7 +51,13 @@ FILE: README.md
 
 This repository provides lightweight interface code to generate predictions on new tabular datasets. Full training code is available [here](https://github.com/layer6ai-labs/TabDPT-training/).
 
-## TabDPT v1.2
+## News
+
+### September 8, 2026: TabDPT v1.3
+
+After minor architectural tweaks and improvements to our training recipe, we're releasing TabDPT v1.3, which is similar to v1.2 but with improved predictive performance. We've also added an option for full probabilistic regression outputs, with helper functions for calculating quantiles and other statistics of the output distributions. See the [release notes](https://github.com/layer6ai-labs/TabDPT-inference/releases/tag/v1.3.0) for full details.
+
+### June 17, 2026: TabDPT v1.2
 
 We're pleased to announce TabDPT v1.2, or TabDPT-Turbo! This release accelerates TabDPT fitting and inference by multiple orders of magnitude (~120x on average on TabArena) while improving predictive performance. In our experiments, TabDPT-Turbo is the fastest model overall among leading foundation models.
 
@@ -63,6 +71,8 @@ pip install tabdpt
 ```
 
 Model weights are available on [Hugging Face](https://huggingface.co/Layer6/TabDPT). They will be automatically downloaded on first use.
+
+We currently update the minor version number when a new model version is released, while the patch version number is used for library changes that don't involve changes to the underlying model. To install a previous model version, use `pip install tabdpt==x.y.*` where `x.y` is the model version, e.g., `pip install tabdpt==1.1.*`.
 
 ### Installation From Source
 
@@ -99,7 +109,11 @@ For better runtime performance, adjust `context_size` or `n_ensembles` to trade 
 
 ### Working Examples
 
-See `examples/cls_example.py` and `examples/reg_example.py` for examples of how to use TabDPT once installed.
+See the scripts in `examples/` for how to use TabDPT once installed:
+
+- `examples/cls_example.py` â€” classification with a point prediction and accuracy
+- `examples/reg_example.py` â€” regression with a point prediction and RÂ²
+- `examples/reg_probabilistic_example.py` â€” regression with full distributional outputs (logits, quantiles, intervals, calibration)
 
 ### Unit Tests
 
@@ -132,14 +146,28 @@ TabDPT uses retrieval and self-supervised learning to remove constraints on data
 	</thead>
 	<tbody>
 		<tr class="odd">
-			<td style="text-align: center;"><strong>TabDPT v1.1 (Ours)</strong></td>
-			<td><strong>0.976 <sub><sup>[0.974, 0.978]</sup></sub></strong></td>
-			<td><strong>0.928 <sub><sup>[0.926, 0.931]</sup></sub></strong></td>
-			<td><strong>0.920 <sub><sup>[0.918, 0.922]</sup></sub></strong></td>
-			<td><strong>0.847 <sub><sup>[0.843, 0.851]</sup></sub></strong></td>
+			<td style="text-align: center;"><strong>TabDPT v1.3</strong></td>
+			<td><strong>0.980 <sub><sup>[0.978, 0.982]</sup></sub></strong></td>
+			<td><strong>0.934 <sub><sup>[0.931, 0.937]</sup></sub></strong></td>
+			<td><strong>0.926 <sub><sup>[0.922, 0.930]</sup></sub></strong></td>
+			<td><strong>0.860 <sub><sup>[0.853, 0.866]</sup></sub></strong></td>
 		</tr>
 		<tr class="even">
-			<td style="text-align: center;">TabDPT v1.0 (Ours)</td>
+			<td style="text-align: center;">TabDPT v1.2</td>
+			<td>0.978 <sub><sup>[0.976, 0.980]</sup></sub></td>
+			<td>0.930 <sub><sup>[0.926, 0.933]</sup></sub></td>
+			<td>0.924 <sub><sup>[0.918, 0.928]</sup></sub></td>
+			<td>0.855 <sub><sup>[0.846, 0.863]</sup></sub></td>
+		</tr>
+		<tr class="odd">
+			<td style="text-align: center;">TabDPT v1.1</td>
+			<td>0.976 <sub><sup>[0.974, 0.978]</sup></sub></td>
+			<td>0.928 <sub><sup>[0.926, 0.931]</sup></sub></td>
+			<td>0.920 <sub><sup>[0.918, 0.922]</sup></sub></td>
+			<td>0.847 <sub><sup>[0.843, 0.851]</sup></sub></td>
+		</tr>
+		<tr class="even">
+			<td style="text-align: center;">TabDPT v1.0</td>
 			<td>0.972 <sub><sup>[0.971, 0.973]</sup></sub></td>
 			<td>0.917 <sub><sup>[0.915, 0.919]</sup></sub></td>
 			<td>0.911 <sub><sup>[0.908, 0.913]</sup></sub></td>
@@ -535,7 +563,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--model-weight-path", type=str, default=None,
-        help="Path to model weights. Defaults to the estimator's default (v1.2).",
+        help="Path to model weights. Defaults to the estimator's default.",
     )
     args = parser.parse_args()
 
@@ -705,9 +733,9 @@ if __name__ == "__main__":
         except TypeError:
             return None
 
-    weights_used = args.model_weight_path or "<estimator default (v1.2)>"
+    weights_used = args.model_weight_path or "<estimator default>"
     lines = [
-        f"TabDPT v1.2 paper evaluation",
+        f"TabDPT paper evaluation",
         f"weights: {weights_used}",
         f"fold={args.fold}  N={args.n_ensembles}  T={args.temperature}  context={args.context_size}  seed={args.seed}",
         f"csv: {csv_name}",
@@ -746,7 +774,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabdpt"
-version = "1.2.0"
+version = "1.3.0"
 description = "TabDPT: Scaling Tabular Foundation Models on Real Data"
 readme = "README.md"
 license = "Apache-2.0"
@@ -856,6 +884,72 @@ print(r2_score(y_test, y_pred))
 
 
 ================================================
+FILE: examples/reg_probabilistic_example.py
+================================================
+import numpy as np
+import torch
+from sklearn.datasets import fetch_california_housing
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+
+from tabdpt import (
+    TabDPTRegressor,
+    distribution_mean,
+    distribution_median,
+    distribution_mode,
+    distribution_quantiles,
+)
+
+X, y = fetch_california_housing(return_X_y=True)
+X, y = X[:4096], y[:4096]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+model = TabDPTRegressor()
+model.fit(X_train, y_train)
+
+predict_kwargs = dict(n_ensembles=2, seed=42)
+
+# Default: expected value of the binned predictive distribution
+y_mean = model.predict(X_test, **predict_kwargs)
+print("mean R2:", r2_score(y_test, y_mean))
+
+# Full distributional output: logits and bin borders over the target
+full = model.predict(X_test, output_type="full", **predict_kwargs)
+logits, borders = full["logits"], full["borders"]
+print("logits shape:", tuple(logits.shape))
+print("num bins:", borders.numel() - 1)
+
+# Derive other point estimates and quantiles from the same distribution
+print("mean R2 (helper):", r2_score(y_test, distribution_mean(full)))
+print("median R2:", r2_score(y_test, distribution_median(full)))
+print("mode R2:", r2_score(y_test, distribution_mode(full)))
+
+quantiles = [0.1, 0.5, 0.9]
+quantile_preds = distribution_quantiles(full, quantiles)
+print("quantile shapes:", [q.shape for q in quantile_preds])
+
+# Interval calibration and sharpness from the predictive histogram
+probas = torch.softmax(logits, dim=-1).cpu().numpy()
+edges = borders.cpu().numpy()
+mids = (edges[:-1] + edges[1:]) / 2
+cdf, y = np.cumsum(probas, axis=-1), np.asarray(y_test, float)
+
+for level in (90, 95):
+    alpha = 1 - level / 100
+    ql, qu = alpha / 2, 1 - alpha / 2
+    il = np.clip((cdf >= ql).argmax(1), 0, len(edges) - 1)
+    iu = np.clip((cdf >= qu).argmax(1) + 1, 0, len(edges) - 1)
+    lo, hi = edges[il], edges[iu]
+    print(f"coverage_{level}:", np.mean((y >= lo) & (y <= hi)))
+    iscore = (hi - lo) + (2 / alpha) * np.clip(lo - y, 0, None) + (2 / alpha) * np.clip(y - hi, 0, None)
+    print(f"interval_score_{level}:", iscore.mean())
+
+mu = (probas * mids).sum(1)
+print("sharpness:", np.sqrt(np.clip((probas * mids**2).sum(1) - mu**2, 0, None)).mean())
+
+
+
+================================================
 FILE: notebooks/analysis.ipynb
 ================================================
 # Jupyter notebook converted to Python script.
@@ -892,7 +986,8 @@ df['ctr'] = df['r2'].notna().astype(int)
 
 # Pivot table construction
 def get_scores_ci(metric, suite, data):
-    data_suite = data[data['cc18'] == 1] if suite == 'cc18' else data[data['ctr'] == 1]
+    data_suite = data[data['suite'] == suite]
+    data_suite = data_suite[~data_suite[metric].isna()]
 
     algorithm_metric_dict = {}
     for alg_name, group in data_suite.groupby('alg_name'):
@@ -934,8 +1029,12 @@ best_is_higher = {
 metric_suite_pairs = [
     ('auc',  'cc18'),  
     ('acc',  'cc18'),  
-    ('corr', 'ctr'), 
-    ('r2',   'ctr'),  
+    ('corr', 'ctr23'), 
+    ('r2',   'ctr23'),  
+    ('auc',  'tabarena'),  
+    ('acc',  'tabarena'),  
+    ('corr', 'tabarena'), 
+    ('r2',   'tabarena'),
 ]
 # add _rank to the metrics
 # you can uncomment this to compute ranks instead of raw scores but you need more than one alg_name
@@ -965,10 +1064,178 @@ all_cis
 ================================================
 FILE: src/tabdpt/__init__.py
 ================================================
+from .bar_distribution import (
+    FullPrediction,
+    distribution_mean,
+    distribution_median,
+    distribution_mode,
+    distribution_quantiles,
+    distribution_sample,
+)
 from .classifier import TabDPTClassifier
-from .regressor import TabDPTRegressor
+from .regressor import OutputType, TabDPTRegressor
 
-__all__ = ["TabDPTClassifier", "TabDPTRegressor"]
+__all__ = [
+    "TabDPTClassifier",
+    "TabDPTRegressor",
+    "FullPrediction",
+    "OutputType",
+    "distribution_mean",
+    "distribution_median",
+    "distribution_mode",
+    "distribution_quantiles",
+    "distribution_sample",
+]
+
+
+
+================================================
+FILE: src/tabdpt/bar_distribution.py
+================================================
+"""Helpers for piecewise-uniform distributions over binned continuous targets."""
+
+from __future__ import annotations
+
+from typing import TypedDict
+
+import numpy as np
+import torch
+
+_DEFAULT_QUANTILES = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+
+class FullPrediction(TypedDict):
+    """Full distributional output of `TabDPTRegressor.predict`.
+
+    A piecewise-uniform histogram: model logits over bins, with bin edges in `borders`.
+    Softmax turns logits into bin probabilities; within each bin the density is uniform,
+    so the support is `[borders[0], borders[-1]]`.
+
+    Attributes:
+        logits: Unnormalized log-probabilities of shape `(n_test, num_bars)`.
+        borders: Strictly increasing bin edges of shape `(num_bars + 1,)`, in raw target space.
+    """
+
+    logits: torch.Tensor
+    borders: torch.Tensor
+
+
+def _to_numpy(values: torch.Tensor) -> np.ndarray:
+    return values.detach().cpu().numpy()
+
+
+def _bucket_widths(borders: torch.Tensor) -> torch.Tensor:
+    return borders[1:] - borders[:-1]
+
+
+def _mean(logits: torch.Tensor, borders: torch.Tensor) -> torch.Tensor:
+    bucket_means = borders[:-1] + _bucket_widths(borders) / 2
+    probs = torch.softmax(logits, dim=-1)
+    return probs @ bucket_means
+
+
+def _icdf(logits: torch.Tensor, borders: torch.Tensor, left_prob: float | torch.Tensor) -> torch.Tensor:
+    probs = logits.softmax(dim=-1)
+    cumprobs = torch.cumsum(probs, dim=-1)
+
+    # Normalize left_prob to shape (*leading,) then (*leading, 1) for searchsorted.
+    # Avoid `tensor(N,) * ones(N, 1)`, which broadcasts to (N, N) in PyTorch.
+    if not torch.is_tensor(left_prob):
+        left_prob = torch.full(
+            cumprobs.shape[:-1], float(left_prob), device=logits.device, dtype=cumprobs.dtype,
+        )
+    else:
+        left_prob = left_prob.to(device=logits.device, dtype=cumprobs.dtype)
+        left_prob = torch.broadcast_to(left_prob, cumprobs.shape[:-1])
+
+    idx = torch.searchsorted(cumprobs, left_prob.unsqueeze(-1)).squeeze(-1).clamp(0, cumprobs.shape[-1] - 1)
+    cumprobs = torch.cat(
+        [torch.zeros(*cumprobs.shape[:-1], 1, device=logits.device, dtype=cumprobs.dtype), cumprobs],
+        dim=-1,
+    )
+
+    rest_prob = left_prob - cumprobs.gather(-1, idx.unsqueeze(-1)).squeeze(-1)
+    left_border = borders[idx]
+    right_border = borders[idx + 1]
+    return left_border + (right_border - left_border) * rest_prob / probs.gather(-1, idx.unsqueeze(-1)).squeeze(-1)
+
+
+def _mode(logits: torch.Tensor, borders: torch.Tensor) -> torch.Tensor:
+    density = logits.softmax(dim=-1) / _bucket_widths(borders)
+    # argmax returns the lowest-index bin when several share the max density.
+    mode_inds = density.argmax(dim=-1)
+    bucket_means = borders[:-1] + _bucket_widths(borders) / 2
+    return bucket_means[mode_inds]
+
+
+def _sample(logits: torch.Tensor, borders: torch.Tensor) -> torch.Tensor:
+    u = torch.rand(*logits.shape[:-1], device=logits.device)
+    return _icdf(logits, borders, u)
+
+
+def distribution_mean(pred: FullPrediction) -> np.ndarray:
+    """Expected value of each predictive distribution, as a NumPy array.
+
+    Args:
+        pred: Full distributional output from `TabDPTRegressor.predict`.
+
+    Returns:
+        Expected target values of shape `(n_test,)`.
+    """
+    return _to_numpy(_mean(pred["logits"], pred["borders"]))
+
+
+def distribution_median(pred: FullPrediction) -> np.ndarray:
+    """Median (50th percentile) of each predictive distribution, as a NumPy array.
+
+    Args:
+        pred: Full distributional output from `TabDPTRegressor.predict`.
+
+    Returns:
+        Median target values of shape `(n_test,)`.
+    """
+    return _to_numpy(_icdf(pred["logits"], pred["borders"], 0.5))
+
+
+def distribution_mode(pred: FullPrediction) -> np.ndarray:
+    """Mode of each predictive distribution, as a NumPy array.
+
+    Args:
+        pred: Full distributional output from `TabDPTRegressor.predict`.
+
+    Returns:
+        Midpoint of the highest-density bin for each distribution, shape `(n_test,)`.
+    """
+    return _to_numpy(_mode(pred["logits"], pred["borders"]))
+
+
+def distribution_quantiles(pred: FullPrediction, quantiles: list[float] | None = None) -> list[np.ndarray]:
+    """Quantile values for each predictive distribution.
+
+    Args:
+        pred: Full distributional output from `TabDPTRegressor.predict`.
+        quantiles: Probability levels in `[0, 1]`. Defaults to `[0.1, 0.2, ..., 0.9]`.
+
+    Returns:
+        One NumPy array per quantile level, each of shape `(n_test,)`.
+    """
+    quantiles = _DEFAULT_QUANTILES if quantiles is None else quantiles
+    if not all((0 <= q <= 1) and isinstance(q, float) for q in quantiles):
+        raise ValueError("All quantiles must be between 0 and 1 and floats.")
+    logits, borders = pred["logits"], pred["borders"]
+    return [_to_numpy(_icdf(logits, borders, q)) for q in quantiles]
+
+
+def distribution_sample(pred: FullPrediction) -> np.ndarray:
+    """Draw one sample from each predictive distribution, as a NumPy array.
+
+    Args:
+        pred: Full distributional output from `TabDPTRegressor.predict`.
+
+    Returns:
+        Sampled target values of shape `(n_test,)`.
+    """
+    return _to_numpy(_sample(pred["logits"], pred["borders"]))
 
 
 
@@ -1034,7 +1301,7 @@ class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
             forward_out = self.model(
                 x_src=torch.cat([X_context, X_eval], dim=1),
                 y_src=y_digit,
-                num_features=num_features,
+                is_cls=True
             )
             chunk = forward_out[-n_eval:, :, : self.max_num_classes].float().detach()
             digit_log_probs.append(torch.nn.functional.log_softmax(chunk, dim=-1))
@@ -1106,7 +1373,7 @@ class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
                     pred = self.model(
                         x_src=torch.cat([X_ctx, X_test[:, start:end]], dim=1),
                         y_src=y_ctx,
-                        num_features=num_features,
+                        is_cls=True
                     )
                     pred = torch.nn.functional.log_softmax(pred[..., : self.num_classes].float(), dim=-1)
                 else:
@@ -1138,7 +1405,7 @@ class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
                     pred = self.model(
                         x_src=torch.cat([X_nni, X_eval], dim=1),
                         y_src=y_nni,
-                        num_features=num_features,
+                        is_cls=True
                     )
                     pred = torch.nn.functional.log_softmax(pred[..., : self.num_classes].float(), dim=-1)
                 else:
@@ -1290,7 +1557,7 @@ from .model import TabDPTModel
 from .utils import convert_to_torch_tensor, Log1pScaler, generate_random_permutation, pad_x
 
 # Constants for model caching and download
-_VERSION = "1_2"
+_VERSION = "1_3"
 _MODEL_NAME = f"tabdpt{_VERSION}.safetensors"
 _HF_REPO_ID = "Layer6/TabDPT"
 
@@ -1423,7 +1690,7 @@ class TabDPTEstimator(BaseEstimator):
                     '["standard", "minmax", "robust", "power", "quantile-uniform", "quantile-normal", "log1p", None]'
                 )
 
-        self.V = None
+        self.projection = None
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         assert isinstance(X, np.ndarray), "X must be a numpy array"
@@ -1450,7 +1717,7 @@ class TabDPTEstimator(BaseEstimator):
         self.y_train = y
         if self.n_features > self.max_features and self.feature_reduction == "pca":
             train_x = convert_to_torch_tensor(self.X_train).to(self.device).float()
-            _, _, self.V = torch.pca_lowrank(train_x, q=min(train_x.shape[0], self.max_features))
+            _, _, self.projection = torch.pca_lowrank(train_x, q=min(train_x.shape[0], self.max_features))
 
         # Reset in case the model was previously fit, this will be lazily initialized
         self.faiss_knn = None
@@ -1463,8 +1730,8 @@ class TabDPTEstimator(BaseEstimator):
         self.device = device
         self.model.to(device)
 
-        if self.V is not None:
-            self.V = self.V.to(device)
+        if self.projection is not None:
+            self.projection = self.projection.to(device)
 
     def _get_faiss_knn_indices(self, X_test: np.ndarray, context_size: int, seed: int | None = None):
         if self.faiss_knn is None:  # Lazily perform initialization
@@ -1563,8 +1830,8 @@ class TabDPTEstimator(BaseEstimator):
         # Apply PCA/subsampling to reduce the number of features if necessary
         if self.n_features > self.max_features:
             if self.feature_reduction == "pca":
-                train_x = train_x @ self.V
-                test_x = test_x @ self.V
+                train_x = train_x @ self.projection
+                test_x = test_x @ self.projection
             elif self.feature_reduction == "subsample":
                 feat_perm = generate_random_permutation(train_x.shape[1], seed)
                 train_x = train_x[:, feat_perm][:, :self.max_features]
@@ -1652,15 +1919,16 @@ class TabDPTModel(nn.Module):
         self.encoder = nn.Linear(num_features, ninp)
         self.enc_norm = nn.LayerNorm(ninp, elementwise_affine=False)
         self.dropout = nn.Dropout(p=dropout)
-        self.y_encoders = nn.ModuleList(
+        self.cls_y_encoders = nn.ModuleList([nn.Embedding(n_out, y_encoder_dim) for _ in range(nlayers)])
+        self.reg_y_encoders = nn.ModuleList(
             [
                 nn.Sequential(
-                    nn.Linear(1, 2 * y_encoder_dim),
+                    nn.Linear(1, y_encoder_dim),
                     nn.GELU(),
-                    nn.Linear(2 * y_encoder_dim, y_encoder_dim),
+                    nn.Linear(y_encoder_dim, y_encoder_dim),
                     nn.LayerNorm(y_encoder_dim, elementwise_affine=False),
                 )
-                for _ in range(nlayers)
+               for _ in range(nlayers)
             ]
         )
         self.head = nn.Sequential(nn.Linear(ninp, nhid), nn.GELU(), nn.Linear(nhid, n_out + regression_bin_count))
@@ -1675,7 +1943,7 @@ class TabDPTModel(nn.Module):
         self,
         x_src: torch.Tensor,
         y_src: torch.Tensor,
-        num_features: torch.Tensor,
+        is_cls: bool
     ) -> torch.Tensor:
         """Forward pass of the TabDPTModel.
 
@@ -1686,7 +1954,7 @@ class TabDPTModel(nn.Module):
                 `(1, n_ctx + n_eval, n_features)`.
             y_src: Target values with dimensions (B, T). The shape is `(n_batch, n_ctx)` when ordinary batching is used and
                 `(1, n_ctx)` when TabPFN-style batching is used.
-            num_features: Number of features - no longer used and will be removed in a future update.
+            is_cls: True for classification, False for regression
 
         Returns:
             torch.Tensor: Predicted values with dimensions (T, B, O). The T and B dimensions match `x_src` but with the
@@ -1712,7 +1980,11 @@ class TabDPTModel(nn.Module):
             src = torch.cat([self.thinking_embed.unsqueeze(1).expand(n_think, B, -1), src], dim=0)
 
         for l, layer in enumerate(self.transformer_encoder):
-            y_emb = self.y_encoders[l](y_src.unsqueeze(-1))
+            if is_cls:
+                y_cls = y_src.long().clamp(min=0, max=self.n_out - 1)
+                y_emb = self.cls_y_encoders[l](y_cls)
+            else:
+                y_emb = self.reg_y_encoders[l](y_src.unsqueeze(-1))
             if n_think > 0:
                 B = y_emb.shape[1]
                 y_emb = torch.cat([y_emb.new_zeros(n_think, B, y_emb.shape[-1]), y_emb], dim=0)
@@ -1891,14 +2163,17 @@ class TransformerEncoderLayer(nn.Module):
 FILE: src/tabdpt/regressor.py
 ================================================
 import math
-from typing import Literal
+from typing import Literal, overload
 
 import numpy as np
 import torch
 from sklearn.base import RegressorMixin
 
+from .bar_distribution import FullPrediction
 from .estimator import TabDPTEstimator
 from .utils import generate_random_permutation, pad_x, normalize_data
+
+OutputType = Literal["mean", "full"]
 
 
 class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
@@ -1944,13 +2219,24 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
         weights = torch.softmax(reg_logits.float(), dim=-1)
         return (weights * bin_centres).sum(dim=-1)
 
+    def _borders_from_norm_stats(self, mean_y: torch.Tensor, std_y: torch.Tensor) -> torch.Tensor:
+        borders = torch.linspace(
+            self.model.regression_bin_min,
+            self.model.regression_bin_max,
+            self.model.regression_bin_count + 1,
+            device=mean_y.device,
+            dtype=mean_y.dtype,
+        )
+        return borders * std_y + mean_y
+
     @torch.inference_mode()
     def _predict(
         self,
         X: np.ndarray,
         context_size: int | None = None,
         batch_size: int | None = None,
-        seed: int | None = None
+        seed: int | None = None,
+        return_logits: bool = False,
     ):
         train_x, train_y, test_x = self._prepare_prediction(X, seed=seed)
         num_features = torch.tensor([train_x.shape[-1]], dtype=torch.long, device=train_x.device)
@@ -1983,12 +2269,14 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
                 pred = self.model(
                     x_src=torch.cat([X_ctx, X_test[:, start:end]], dim=1),
                     y_src=y_ctx,
-                    num_features=num_features,
+                    is_cls=False
                 )
-                y_hat = self._expectation_from_regression_logits(
-                    pred.squeeze(1)[:, self.max_num_classes:].float()
-                )
-                pred_list.append(y_hat * std_y + mean_y)
+                logits = pred.squeeze(1)[:, self.max_num_classes:].float()
+                if return_logits:
+                    pred_list.append(logits)
+                else:
+                    y_hat = self._expectation_from_regression_logits(logits)
+                    pred_list.append(y_hat * std_y + mean_y)
         else:
             for b in range(math.ceil(len(self.X_test) / batch_size)):
                 start = b * batch_size
@@ -2009,12 +2297,19 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
                 pred = self.model(
                     x_src=torch.cat([X_nni, X_eval], dim=1),
                     y_src=y_nni,
-                    num_features=num_features,
+                    is_cls=False
                 )
-                y_hat = self._expectation_from_regression_logits(pred.squeeze(0)[:, self.max_num_classes:].float())
-                pred_list.append(y_hat * std_y + mean_y)
+                logits = pred.squeeze(0)[:, self.max_num_classes:].float()
+                if return_logits:
+                    pred_list.append(logits)
+                else:
+                    y_hat = self._expectation_from_regression_logits(logits)
+                    pred_list.append(y_hat * std_y + mean_y)
 
-        return torch.cat(pred_list).detach().cpu().numpy()
+        preds = torch.cat(pred_list, dim=0)
+        if return_logits:
+            return preds, mean_y, std_y
+        return preds.detach().cpu().numpy()
 
     def _ensemble_predict(
             self,
@@ -2023,13 +2318,49 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
             context_size: int | None = None,
             batch_size: int | None = None,
             seed: int | None = None,
+            return_logits: bool = False,
         ):
         prediction_cumsum = 0
+        mean_y = std_y = None
         for inner_seed in self._get_ensemble_iterator(n_ensembles, seed):
             inner_seed = int(inner_seed)
-            prediction_cumsum += self._predict(X, context_size=context_size, batch_size=batch_size, seed=inner_seed)
+            if return_logits:
+                logits, mean_y, std_y = self._predict(
+                    X, context_size=context_size, batch_size=batch_size, seed=inner_seed, return_logits=True
+                )
+                prediction_cumsum += logits
+            else:
+                prediction_cumsum += self._predict(
+                    X, context_size=context_size, batch_size=batch_size, seed=inner_seed
+                )
 
+        if return_logits:
+            return prediction_cumsum / n_ensembles, mean_y, std_y
         return prediction_cumsum / n_ensembles
+
+    @overload
+    def predict(
+            self,
+            X: np.ndarray,
+            n_ensembles: int = 8,
+            context_size: int | None = None,
+            batch_size: int | None = None,
+            seed: int | None = None,
+            *,
+            output_type: Literal["mean"] = "mean",
+        ) -> np.ndarray: ...
+
+    @overload
+    def predict(
+            self,
+            X: np.ndarray,
+            n_ensembles: int = 8,
+            context_size: int | None = None,
+            batch_size: int | None = None,
+            seed: int | None = None,
+            *,
+            output_type: Literal["full"],
+        ) -> FullPrediction: ...
 
     def predict(
             self,
@@ -2038,8 +2369,14 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
             context_size: int | None = None,
             batch_size: int | None = None,
             seed: int | None = None,
-        ) -> np.ndarray:
-        """Predict regression output, returning a point prediction
+            *,
+            output_type: OutputType = "mean",
+        ) -> np.ndarray | FullPrediction:
+        """Predict regression targets, or the full predictive distribution.
+
+        Default `output_type="mean"` matches the original point-prediction path.
+        `output_type="full"` returns ensembled logits and bin borders in raw target space
+        (for median/mode/quantiles/samples).
 
         Args:
             X: Input inference instances, `n_instances` x `n_features`.
@@ -2050,10 +2387,35 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
                 GPU. Can be increased for faster inference, or decreased to prevent OOMs.
             seed: Seed used for permuting feature order during ensembling. If `n_ensembles` is 1, then feature
                 permutation will only be done if this is set to a non-`None` value.
+            output_type: `"mean"` returns a point prediction. `"full"` returns a `FullPrediction` with logits and
+                bin borders in raw target space.
 
         Returns:
-            A point prediction vector of length n_instances.
+            If `output_type="mean"`, a point prediction vector of length `n_instances`.
+            If `output_type="full"`, a `FullPrediction` dict with `logits` and `borders`.
         """
+        if output_type not in ("mean", "full"):
+            raise ValueError(f"Invalid output type: {output_type}")
+
+        if output_type == "full":
+            if n_ensembles == 1:
+                logits, mean_y, std_y = self._predict(
+                    X, context_size=context_size, batch_size=batch_size, seed=seed, return_logits=True
+                )
+            else:
+                logits, mean_y, std_y = self._ensemble_predict(
+                    X,
+                    n_ensembles=n_ensembles,
+                    context_size=context_size,
+                    batch_size=batch_size,
+                    seed=seed,
+                    return_logits=True,
+                )
+            return FullPrediction(
+                logits=logits,
+                borders=self._borders_from_norm_stats(mean_y, std_y),
+            )
+
         if n_ensembles == 1:
             return self._predict(X, context_size=context_size, batch_size=batch_size, seed=seed)
         else:
@@ -2138,8 +2500,7 @@ def convert_to_torch_tensor(input):
         return torch.from_numpy(input)
     elif torch.is_tensor(input):
         return input
-    else:
-        raise TypeError("Input must be a NumPy array or a PyTorch tensor.")
+    raise TypeError("Input must be a NumPy array or a PyTorch tensor.")
 
 
 def pad_x(X: torch.Tensor, num_features: int = 100):
@@ -3330,7 +3691,7 @@ def pick_device(min_free_gb: float = 2.0) -> str:
 ================================================
 FILE: tests/test_cls.py
 ================================================
-"""Classification: the v1.2 model (now the default) must match or beat the recorded v1.1 result."""
+"""Classification: the current model must match or beat the recorded v1.1 result."""
 import unittest
 
 from sklearn.datasets import load_digits
@@ -3351,7 +3712,7 @@ class TestClassification(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Setup dataset and the v1.2 model, then gather predictions."""
+        """Setup dataset and the model, then gather predictions."""
         seed_everything(42)
         X, y = load_digits(return_X_y=True)
         cls.X_train, cls.X_test, cls.y_train, cls.y_test = train_test_split(X, y, test_size=0.33, random_state=42)
@@ -3361,10 +3722,10 @@ class TestClassification(unittest.TestCase):
         cls.y_test_pred = cls.base_model.predict(cls.X_test, seed=42)
 
     def test_accuracy(self):
-        """Train prediction should be perfect; v1.2 test accuracy should be at least v1.1's."""
+        """Train prediction should be perfect; test accuracy should be at least v1.1's."""
         train_acc = accuracy_score(self.y_train, self.y_train_pred)
         test_acc = accuracy_score(self.y_test, self.y_test_pred)
-        print(f"\n[cls] v1.2 test acc {test_acc:.4f} vs v1.1 {V1_CLS_ACC:.4f} (delta {test_acc - V1_CLS_ACC:+.4f})")
+        print(f"\n[cls] test acc {test_acc:.4f} vs v1.1 {V1_CLS_ACC:.4f} (delta {test_acc - V1_CLS_ACC:+.4f})")
 
         self.assertAlmostEqual(
             train_acc, 1.,
@@ -3372,7 +3733,7 @@ class TestClassification(unittest.TestCase):
         )
         self.assertGreaterEqual(
             test_acc, V1_CLS_ACC - TOLERANCE,
-            msg=f"v1.2 accuracy {test_acc:.4f} regressed >{TOLERANCE} below v1.1 {V1_CLS_ACC}",
+            msg=f"accuracy {test_acc:.4f} regressed >{TOLERANCE} below v1.1 {V1_CLS_ACC}",
         )
 
     def test_shape_and_targets(self):
@@ -3383,7 +3744,7 @@ class TestClassification(unittest.TestCase):
 ================================================
 FILE: tests/test_estimator.py
 ================================================
-"""TabDPTEstimator init and weight loading, exercised against the real in-repo v1.2 checkpoint."""
+"""TabDPTEstimator init and weight loading, exercised against the real in-repo checkpoint."""
 import pytest
 import torch
 from sklearn.preprocessing import (
@@ -3403,8 +3764,8 @@ from device_utils import pick_device
 
 DEVICE = pick_device()
 
-V12_MAX_FEATURES = 128
-V12_MAX_NUM_CLASSES = 16
+MAX_FEATURES = 128
+MAX_NUM_CLASSES = 16
 
 
 def build(**kwargs):
@@ -3414,11 +3775,11 @@ def build(**kwargs):
 
 # --- Real weight loading + init ---
 
-def test_real_v12_load_and_init():
-    """The v1.2 checkpoint loads, exposes the right dims, and populates real tensors."""
+def test_real_load_and_init():
+    """The checkpoint loads, exposes the right dims, and populates real tensors."""
     model = TabDPTClassifier(device=DEVICE)
-    assert model.max_features == V12_MAX_FEATURES
-    assert model.max_num_classes == V12_MAX_NUM_CLASSES
+    assert model.max_features == MAX_FEATURES
+    assert model.max_num_classes == MAX_NUM_CLASSES
     assert isinstance(model.scaler, StandardScaler)  # default normalizer
 
     thinking = model.model.thinking_embed
@@ -3485,7 +3846,7 @@ from device_utils import pick_device, seed_everything
 DEVICE = pick_device()
 N_TRAIN = 60
 N_CLASSES = 3
-
+MAX_NUM_CLASSES = 16
 
 class TestClassifier(unittest.TestCase):
     @classmethod
@@ -3544,7 +3905,7 @@ class TestLargeClass(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         seed_everything(1)
-        n_classes = 18  # > max_num_classes (16) for the v1.2 weights
+        n_classes = MAX_NUM_CLASSES + 2
         n_rows = n_classes * 10
         cls.n_classes = n_classes
         cls.X = np.random.normal(size=(n_rows, 5)).astype(np.float32)
@@ -3595,7 +3956,7 @@ class TestEstimatorConfig(unittest.TestCase):
         X, y = self._cls_data(n_features=140)  # > max_features (128) -> PCA reduction
         model = TabDPTClassifier(device=DEVICE, feature_reduction="pca", verbose=False)
         model.fit(X, y)
-        self.assertIsNotNone(model.V)
+        self.assertIsNotNone(model.projection)
         model.to("cpu")  # exercises the V.to(device) branch
         p = model.predict_proba(X, context_size=2048)
         self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))

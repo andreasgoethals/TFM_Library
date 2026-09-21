@@ -218,7 +218,7 @@ dependencies = [
   "skrub",
   "torch>=2.6.0",
   "tqdm",
-  "transformers>=4.49.0"
+  "transformers>=4.49.0,<5"
 ]
 requires-python = ">=3.10"
 
@@ -855,7 +855,7 @@ E5_SMALL_LOCAL_PATH = os.getenv("E5_SMALL_LOCAL_PATH")
 ================================================
 FILE: src/tabstar/tabstar_datasets.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8d in position 17208: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8d in position 17523: character maps to <undefined>
 
 
 ================================================
@@ -2456,11 +2456,11 @@ def concat_predictions(y_pred: List[Tensor]) -> np.ndarray:
     return np.concatenate([p.cpu().detach().numpy() for p in y_pred])
 
 
-def download_tabstar():
+def download_tabstar(repo_id: str = TABSTAR_REPO_ID):
     try:
-        snapshot_download(repo_id=TABSTAR_REPO_ID, local_files_only=True)
+        snapshot_download(repo_id=repo_id, local_files_only=True)
     except LocalEntryNotFoundError:
-        snapshot_download(repo_id=TABSTAR_REPO_ID)
+        snapshot_download(repo_id=repo_id)
 
 
 ================================================

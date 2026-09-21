@@ -61,10 +61,13 @@ Directory structure:
     │   │   ├── managing_disk_usage.rst
     │   │   ├── messed_up_keys.rst
     │   │   ├── mfa_login.rst
+    │   │   ├── mfa_login_firewall.rst
+    │   │   ├── mfa_login_smallstep.rst
     │   │   ├── pageant.rst
     │   │   ├── scientific_domains.rst
     │   │   ├── ssh_agent.rst
     │   │   ├── ssh_agent_mobaxterm.rst
+    │   │   ├── ssh_agent_windows.rst
     │   │   ├── vo-storage.rst
     │   │   ├── vo.rst
     │   │   ├── vsc_account.rst
@@ -224,7 +227,8 @@ Directory structure:
     │   │   │   │   ├── R.rst
     │   │   │   │   ├── r_command_line_arguments_in_scripts.rst
     │   │   │   │   ├── r_integrating_c_functions.rst
-    │   │   │   │   └── software_specific_guidelines.rst
+    │   │   │   │   ├── software_specific_guidelines.rst
+    │   │   │   │   └── VASP.rst
     │   │   │   └── using_software/
     │   │   │       ├── cluster_modules.rst
     │   │   │       ├── module_system_basics.rst
@@ -2118,6 +2122,7 @@ rst_prolog += """
 .. _Open OnDemand: https://openondemand.org/
 .. _OpenSHMEM: http://www.openshmem.org/site/
 .. _OpenSSH: https://www.openssh.com/
+.. _OpenSSH Authentication Agent: https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement
 .. _Open WebUI: https://openwebui.com
 .. _Paraview tutorial: https://vtk.org/Wiki/images/8/88/ParaViewTutorial38.pdf
 .. _Paraview website: https://www.paraview.org/
@@ -2137,6 +2142,7 @@ rst_prolog += """
 .. _Secure Shell: https://en.wikipedia.org/wiki/Secure_Shell
 .. _sftp manual page: http://man.openbsd.org/sftp
 .. _sbatch manual page: https://slurm.schedmd.com/sbatch.html
+.. _Smallstep installation: https://smallstep.com/docs/step-ca/installation/
 .. _ssh manual page: http://man.openbsd.org/ssh
 .. _ssh-keygen manual page: http://man.openbsd.org/ssh-keygen
 .. _ssh_config manual page: http://man.openbsd.org/ssh_config
@@ -3364,6 +3370,11 @@ nav.bd-links li > a:hover,
     text-decoration-skip-ink: auto;
 }
 
+/* draw line under main sections */
+.bd-content section > h2 {
+    border-bottom: dotted 1px var(--pst-color-text-muted);
+}
+
 /* fix styling of local icons to match other icons on navbar*/
 html[data-theme="light"] a.nav-link img.icon-link-image {
     filter: brightness(0) saturate(100%) invert(31%) sepia(45%) saturate(301%) hue-rotate(176deg) brightness(91%) contrast(85%);
@@ -3913,6 +3924,7 @@ them.
    SSH Agent: Pageant <pageant>
    SSH Agent: MobaXterm <ssh_agent_mobaxterm>
    SSH Agent: OpenSSH <ssh_agent>
+   SSH Agent: Windows OpenSSH <ssh_agent_windows>
 
 .. grid:: 3
     :gutter: 4
@@ -4323,36 +4335,14 @@ pair (make sure to generate a 4096-bit key):
 This will ask you for a file name to store the private and public key, 
 and a passphrase to protect your private key.
 
-.. _ssh agent windows:
-
 Add key to SSH agent
 ====================
 
-|Optional| The system will ask you for your passphrase every time you want to 
-use the private key, that is, every time you want to access the cluster or 
+|Optional| The system will ask you for your passphrase every time you want to
+use the private key, that is, every time you want to access the cluster or
 transfer your files. You can use an :ref:`SSH agent<SSH agent>` to hold your
 unlocked keys and avoid being asked for the passphrase on each connection.
-
-The following commands will enable and automatically start the SSH Agent
-service on your system. You only need to do this once:
-
-.. code-block:: PowerShell
-
-    # The ssh-agent service is disabled by default. Configure it to start automatically. 
-    # Run the following command as an administrator.
-   $ Set-Service -Name ssh-agent -StartupType Automatic
-
-    # Start the ssh-agent service
-   $ Start-Service ssh-agent  
-    # The following command should return a status of Running
-   $ Get-Service ssh-agent
-
-    # Add your private key. Fill in the path to your private key correctly.
-   $ ssh-add C:\Users\<user>/.ssh/id_rsa_vsc
-
-.. note::
-   You need to run PowerShell as Administrator to be able to use
-   the ``Set-Service`` command.
+See :ref:`ssh agent windows` for how to enable, start and use it.
 
 Create or edit SSH config
 =========================
@@ -4754,23 +4744,150 @@ are made available to any other client program needing to use that same connecti
 Getting an SSH certificate involves MFA but this only needs to be performed
 once since a certificate can be used multiple times as long as it remains valid.
 
-You can acquire such an SSH certificate as follows:
+There are two ways to acquire such an SSH certificate:
 
-* Start up your SSH agent
-  
-  * Windows: we recommend to use :ref:`Pageant`
-  * macOS: use the default :ref:`OpenSSH agent`
-  * Linux: use the default :ref:`OpenSSH agent`
+.. toctree::
+   :hidden:
 
-.. tab-set::
-   :sync-group: vsc-sites
+   Firewall-based certificate <mfa_login_firewall>
+   Smallstep certificate <mfa_login_smallstep>
 
-   .. tab-item:: KU Leuven/UHasselt
-      :sync: kuluh
+.. grid:: 2
+   :gutter: 4
 
-      * Connect to either the cluster's login node or to ``firewall.vscentrum.be``
-        with your terminal application of choice and with agent forwarding enabled.
-        With e.g. OpenSSH you can do:
+   .. grid-item-card:: Firewall-based certificate
+      :columns: 12 12 6 6
+      :link: mfa_login_firewall
+      :link-type: doc
+
+      Works with any SSH client, including PuTTY and MobaXterm.
+
+   .. grid-item-card:: Smallstep certificate
+      :columns: 12 12 6 6
+      :link: mfa_login_smallstep
+      :link-type: doc
+
+      Uses the ``step`` CLI. On Windows, only works from PowerShell or the
+      Command Prompt, not from GUI clients such as PuTTY and MobaXterm.
+
+VSC clusters that accept these certificates:
+
+.. grid:: 3
+    :gutter: 4
+
+    .. grid-item-card:: |KUL|
+       :columns: 12 4 4 4
+
+       * Tier-2 :ref:`Genius <genius hardware>`
+       * Tier-2 :ref:`wICE <wice hardware>`
+       * Tier-2 :ref:`Mindwell <mindwell hardware>`
+
+    .. grid-item-card:: |VUB|
+       :columns: 12 4 4 4
+
+       * Tier-2 :ref:`Anansi <Anansi cluster>`
+       * Tier-2 :ref:`Hydra <Hydra cluster>`
+
+       |sofia|
+
+       * Tier-1 :ref:`sofia <sofia cluster>`
+
+
+Once you have a certificate loaded into your agent, it can be used as long
+as the agent remains alive and the certificate itself has not expired (they
+have a lifetime of 16 hours). Do not forget to set up your client so that
+it contacts your SSH agent when opening new connections (thereby making use
+of the certificates). For a few common clients the corresponding
+documentation pages are listed below.
+
+====================================== ==================== =====================
+SSH Client name                        Purpose              Operating System
+====================================== ==================== =====================
+:ref:`OpenSSH <OpenSSH access>`        text-based terminal  Linux, macOS
+:ref:`OpenSSH <windows_client>`        text-based terminal  Windows
+:ref:`PuTTY <terminal putty>`          text-based terminal  Windows
+:ref:`MobaXterm <terminal mobaxterm>`  text-based terminal  Windows
+:ref:`FileZilla <FileZilla>`           file transfer        Windows, Linux, macOS
+====================================== ==================== =====================
+
+.. _mfa quick start:
+
+Connecting without an SSH agent
+-------------------------------
+
+Most clients (such as PuTTY or MobaXterm) can also be made to work *without*
+an :ref:`ssh agent`. Keep in mind, however, that this approach tends to be
+less convenient since each new connection will require multi-factor
+authentication.
+
+Certain clients (such as :ref:`FileZilla <FileZilla>` or ``sshfs``)
+furthermore do not show you the firewall
+link needed for the MFA and hence can only function in combination with an SSH
+agent holding an SSH certificate.
+
+This being said, the agentless procedure runs as follows:
+
+* Connect to a :ref:`Tier-2 login node <tier2_login_nodes>`
+  using your chosen client application (e.g. MobaXterm).
+
+* The application is then supposed to show the link to complete the MFA procedure
+  (similar to the previous section).
+
+* After passing the MFA challenge, you should now be connected to a login node.
+  In plain SSH connections a successful login is rewarded with a welcome message:
+
+  .. _login_node:
+  .. figure:: mfa_login/login_node.PNG
+     :alt: login_node
+
+
+
+
+
+================================================
+FILE: source/accounts/mfa_login_firewall.rst
+================================================
+.. _firewall-based-certificate:
+
+##########################
+Firewall-based certificate
+##########################
+
+This is one of the two ways to obtain an SSH certificate described in
+:ref:`Connecting with an SSH agent <mfa-with-ssh-agent>`.
+
+* Start up your SSH agent.
+
+  .. tab-set::
+     :sync-group: operating-system
+
+     .. tab-item:: Windows
+        :sync: win
+
+        We recommend using the
+        :ref:`Windows OpenSSH agent <ssh agent windows>` for PowerShell
+        or Command Prompt users, and :ref:`Pageant` otherwise.
+
+     .. tab-item:: macOS
+        :sync: mac
+
+        Use the default :ref:`OpenSSH agent`.
+
+     .. tab-item:: Linux
+        :sync: lin
+
+        Use the default :ref:`OpenSSH agent`.
+
+* Add the certificate to your agent: 
+
+  .. tab-set::
+     :sync-group: vsc-sites
+
+     .. tab-item:: KU Leuven/UHasselt
+        :sync: kuluh
+
+        Connect to either the cluster's login node or to
+        ``firewall.vscentrum.be``. With e.g. OpenSSH you can do:
 
         .. code-block:: bash
 
@@ -4778,20 +4895,20 @@ You can acquire such an SSH certificate as follows:
            # or
            ssh -A vsc98765@firewall.vscentrum.be
 
-   .. tab-item:: Tier-1 sofia
-      :sync: sofia
+     .. tab-item:: Tier-1 sofia
+        :sync: sofia
 
-      * Connect to ``firewall.vscentrum.be`` with your terminal application of
-        choice and with agent forwarding enabled. With e.g. OpenSSH you can do:
+        Connect to ``firewall.vscentrum.be``. With e.g. OpenSSH you can
+        do:
 
         .. code-block:: bash
 
            ssh -A vsc98765@firewall.vscentrum.be
 
-PuTTY users can find the agent forwarding option under the
-'Connection -> SSH -> Auth' tab.
-OpenSSH users may also automatically
-enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
+  PuTTY users can find the agent forwarding option under the
+  'Connection -> SSH -> Auth' tab.
+  OpenSSH users may also automatically
+  enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
 
 * You will then be shown a URL which you will need to open in a browser:
 
@@ -4834,9 +4951,9 @@ enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
   then you might not be required to log in again depending on your browser
   session settings (e.g., accepted cookies).
 
-* Once you are successfully authenticated, you end up on a page telling you that your VSC 
+* Once you are successfully authenticated, you end up on a page telling you that your VSC
   identity is confirmed.
-  If you have already performed the previous login in that browser session, you will 
+  If you have already performed the previous login in that browser session, you will
   immediately end up on this page:
 
   .. _firewall_confirmed:
@@ -4847,54 +4964,116 @@ enable agent forwarding in their :ref:`SSH config file <ssh_config>`.
 
 That's it! You can continue doing your HPC work as usual.
 
-The certificate can be used as long as the agent remains alive and the
-certificate itself has not expired (they have a lifetime of 16 hours).
-Do not forget to set up your client so that it contacts your SSH agent
-when opening new connections (thereby making use of the certificates).
-For a few common clients the corresponding documentation pages are listed
-below.
-
-====================================== ==================== =====================
-SSH Client name                        Purpose              Operating System
-====================================== ==================== =====================
-:ref:`OpenSSH <OpenSSH access>`        text-based terminal  Linux, macOS
-:ref:`PuTTY <terminal putty>`          text-based terminal  Windows
-:ref:`MobaXterm <terminal mobaxterm>`  text-based terminal  Windows
-:ref:`FileZilla <FileZilla>`           file transfer        Windows, Linux, macOS
-====================================== ==================== =====================
 
 
-.. _mfa quick start:
+================================================
+FILE: source/accounts/mfa_login_smallstep.rst
+================================================
+.. _smallstep-certificate:
 
-Connecting without an SSH agent
--------------------------------
+#####################
+Smallstep certificate
+#####################
 
-Most clients (such as PuTTY or MobaXterm) can also be made to work *without*
-an :ref:`ssh agent`. Keep in mind, however, that this approach tends to be
-less convenient since each new connection will require multi-factor
-authentication.
+This is one of the two ways to obtain an SSH certificate described in
+:ref:`Connecting with an SSH agent <mfa-with-ssh-agent>`.
 
-Certain clients (such as :ref:`FileZilla <FileZilla>` or ``sshfs``)
-furthermore do not show you the firewall
-link needed for the MFA and hence can only function in combination with an SSH
-agent holding an SSH certificate.
+.. note::
 
-This being said, the agentless procedure runs as follows:
+   On Windows, this method only works when connecting to the cluster from
+   Windows PowerShell or the Command Prompt. PuTTy or MobaXterm users need
+   to obtain a :ref:`Firewall-based certificate <firewall-based-certificate>`
+   using Pageant instead.
 
-* Connect to a :ref:`Tier-2 login node <tier2_login_nodes>`
-  using your chosen client application (e.g. MobaXterm).
+#. Only once: install the ``step`` CLI. See the `Smallstep
+   installation`_ documentation for more information.
 
-* The application is then supposed to show the link to complete the MFA procedure
-  (similar to the previous section).
+   .. tab-set::
+      :sync-group: operating-system
 
-* After passing the MFA challenge, you should now be connected to a login node.
-  In plain SSH connections a successful login is rewarded with a welcome message:
+      .. tab-item:: Windows
+         :sync: win
 
-  .. _login_node:
-  .. figure:: mfa_login/login_node.PNG
-     :alt: login_node
+         Install ``step-ca.exe`` and ``step.exe`` using Winget.
+         Using Windows PowerShell or Command Prompt:
 
+         .. code-block:: PowerShell
 
+            winget install Smallstep.step-ca
+
+      .. tab-item:: macOS
+         :sync: mac
+
+         Install ``step-ca`` and ``step`` using homebrew.
+         In the terminal:
+
+         .. code-block:: bash
+
+            brew install step
+
+      .. tab-item:: Linux
+         :sync: lin
+
+         Install the ``step-cli`` and ``step-ca`` packages. Instructions
+         for specific Linux distributions can be found on the `Smallstep
+         installation`_ documentation page.
+
+#. Only once: set up (bootstrap) the environment. This creates the
+   ``~/.step`` directory.
+
+   .. code-block:: bash
+
+      step ca bootstrap --context VSC --team VSC --team-url=https://hpc.vub.be/_static/VSC-CA.json
+
+#. Start up your SSH agent.
+
+   .. tab-set::
+      :sync-group: operating-system
+
+      .. tab-item:: Windows
+         :sync: win
+
+         Use the built-in :ref:`Windows OpenSSH agent <ssh agent windows>`.
+
+      .. tab-item:: macOS
+         :sync: mac
+
+         Use the default :ref:`OpenSSH agent`.
+
+      .. tab-item:: Linux
+         :sync: lin
+
+         Use the default :ref:`OpenSSH agent`.
+
+#. Obtain a certificate. It has a lifetime of 16 hours.
+
+   .. code-block:: bash
+
+      step ssh login --context VSC
+
+.. note::
+
+   You can automatically obtain a certificate when connecting with SSH as a
+   specific user (in this example ``vsc98765``) by adding the following to
+   your :ref:`SSH config file <ssh_config>`:
+
+   .. code-block:: text
+
+      # Use Smallstep to handle the SSH connection and automatically renew/login when the certificate expires
+      Match User vsc98765
+          ProxyCommand step ssh proxycommand %r %h %p --context VSC
+
+.. note::
+
+   Smallstep can also issue a certificate without using an agent:
+
+   .. code-block:: bash
+
+      step ssh certificate <email> ~/.ssh/smallstep --context VSC --no-agent
+
+   This creates a private key and certificate in your ``~/.ssh`` folder.
+   You will need to pass ``-i ~/.ssh/smallstep`` to ``ssh``, or configure it
+   in your :ref:`SSH config file <ssh_config>`, to use it. This key is also valid for 16 hours.
 
 
 
@@ -5023,7 +5202,8 @@ authenticate you as a recognized user.
    .. tab-item:: KU Leuven/UHasselt
       :sync: kuluh
 
-      Follow the steps in :ref:`Connecting with an SSH agent <mfa-with-ssh-agent>`
+      Follow the steps to obtain a
+      :ref:`Firewall-based certificate <firewall-based-certificate>`
       to get an SSH certificate into your agent.
       At this point, a new certificate will be stored in Pageant that holds your
       identity for a limited period of time.
@@ -5929,6 +6109,115 @@ application. You can install MobaXterm on your computer following
    will stay saved for all following sessions. Double clicking on a shortcuts
    for a cluster should open the corresponding connection directly.
 
+
+
+
+================================================
+FILE: source/accounts/ssh_agent_windows.rst
+================================================
+.. _ssh agent windows:
+
+##############################
+SSH Agent with Windows OpenSSH
+##############################
+
+Recent versions of Windows include a built-in `OpenSSH Authentication
+Agent`_ service, commonly referred to as ``ssh-agent``. It holds your
+private keys and SSH certificates in memory so that native Windows OpenSSH
+commands (e.g. ``ssh``, ``scp`` and ``sftp``), and command line tools that
+speak the standard OpenSSH agent protocol, such as ``step`` when obtaining
+a :ref:`Smallstep certificate <smallstep-certificate>`, do not need your
+passphrase or :ref:`Multi Factor Authentication <mfa_login>` on every
+connection.
+
+.. note::
+
+   This is not the only SSH agent available on Windows, e.g. :ref:`Pageant`
+   is another one. Separate agents do not share keys or certificates:
+   loading one into this agent does not make it available in another.
+   This agent should not be used for clients such as
+   :ref:`PuTTY <terminal putty>`, :ref:`MobaXterm <terminal mobaxterm>` or
+   :ref:`FileZilla <FileZilla>`; we recommend using another documented SSH
+   agent for those instead.
+
+Prerequisites
+=============
+
+.. tab-set::
+   :sync-group: vsc-sites
+
+   .. tab-item:: KU Leuven/UHasselt
+      :sync: kuluh
+
+      To access KU Leuven clusters, only an approved
+      :ref:`VSC account <access>` is needed as a prerequisite.
+
+   .. tab-item:: UAntwerpen
+      :sync: ua
+
+      Before you start ``ssh-agent``, you need a private key in OpenSSH
+      format. See :ref:`generating keys windows` to find out how to
+      generate and use one.
+
+   .. tab-item:: UGent
+      :sync: ug
+
+      Before you start ``ssh-agent``, you need a private key in OpenSSH
+      format. See :ref:`generating keys windows` to find out how to
+      generate and use one.
+
+   .. tab-item:: VUB
+      :sync: vub
+
+      Before you start ``ssh-agent``, you need a private key in OpenSSH
+      format, or a certificate obtained via
+      :ref:`Multi Factor Authentication <mfa_login>`. See
+      :ref:`generating keys windows` to find out how to generate a key.
+
+Starting the agent
+==================
+
+The following commands will enable and automatically start the SSH Agent
+service on your system. You only need to do this once, from an
+**elevated** (Run as Administrator) PowerShell or Command Prompt:
+
+.. code-block:: PowerShell
+
+   # The ssh-agent service is disabled by default. Configure it to start
+   # automatically, then start it.
+   $ Set-Service -Name ssh-agent -StartupType Automatic
+   $ Start-Service ssh-agent
+
+   # The following command should return a status of Running
+   $ Get-Service ssh-agent
+
+Managing keys with SSH agent
+============================
+
+.. code-block:: PowerShell
+
+   # Add your private key. Fill in the path to your private key correctly.
+   $ ssh-add C:\Users\<user>\.ssh\id_rsa_vsc
+
+You will then be asked to enter your passphrase.
+
+To list the keys and certificates that the agent is managing:
+
+.. code-block:: PowerShell
+
+   $ ssh-add -l
+
+You can now use native Windows OpenSSH commands (e.g. ``ssh``, ``scp`` and
+``sftp``) without having to enter your passphrase again.
+
+Besides keys, the agent can also hold SSH certificates. To obtain a VSC
+certificate, see :ref:`Multi Factor Authentication <mfa_login>`; the
+requesting tool loads it into the agent for you.
+
+.. seealso::
+
+   `Microsoft documentation on the OpenSSH Authentication Agent
+   <https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement>`__
 
 
 
@@ -8501,10 +8790,16 @@ Storage
 =======
 
 The Tier-1 cluster **sofia** has 4.3 PiB of very fast storage. This shared
-storage is available on all login and compute nodes of the cluster. It is used to
-provide scratch storage for jobs (*i.e.* `project directories <https://portal.sofia.vub.be/pun/sys/dashboard/files/fs/sofia/projects>`__),
-as well as usersâ€™ home directories and it also holds the installations of scientific
-software.
+storage is available on all login and compute nodes of the cluster. It is used
+to provide scratch storage for jobs (*i.e.* `project directories
+<https://portal.sofia.vub.be/pun/sys/dashboard/files/fs/sofia/projects>`__), as
+well as usersâ€™ home directories and it also holds the installations of
+scientific software.
+
+.. warning::
+
+   There are currently no backups available for **sofia** scratch. Deleted data
+   cannot be recovered.
 
 .. _sofia_globus:
 
@@ -8739,6 +9034,8 @@ Tier-1 sofia changelog
 ================================================
 FILE: source/brussel/tier2_hardware.rst
 ================================================
+.. _vub_tier2:
+
 ###################
 VUB Tier-2 Clusters
 ###################
@@ -17012,7 +17309,7 @@ Who can use MATLAB
    .. tab-item:: KU Leuven/UHasselt
       :sync: kuluh
 
-      Only vsc3* users (affiliated with KU Leuven) who are members of the
+      Only VSC users with Leuven / Hasselt as institute who are members of the
       ``lli_matlab`` group have rights to use the MATLAB module (hence the
       MATLAB app). If you are not already member of the group, contact the
       :ref:`KU Leuven supprt team<user support VSC>` for an invitation, or
@@ -26491,6 +26788,17 @@ Software-specific guidelines
 
    matlab
    R
+   VASP
+
+
+
+================================================
+FILE: source/compute/software/software_specific_guidelines/VASP.rst
+================================================
+VASP
+~~~~
+
+Guidelines on parallelization in VASP can be found in `this repository <https://github.com/hpcuantwerpen/vasp_parallel_guide>`_.
 
 
 
@@ -33722,7 +34030,7 @@ More general information about SSH login is available in the
 :ref:`terminal
 interface` section.
 
-There are 2 login nodes for Hortense: ``login57`` and ``login58``, both having Red Hat Enterprise Linux release 9.4 as operating system.
+There are 2 login nodes for Hortense: ``login57`` and ``login58``, both having Red Hat Enterprise Linux release 9.8 as operating system.
 When logging in using SSH, you will be assigned to either of these login nodes,
 based on the IP address of the host you are connecting from.
 
@@ -33732,10 +34040,17 @@ or use "``ssh login57``" to jump to ``login57`` from ``login58``.
 
 .. note::
   The available resources on the Hortense login nodes are very limited:
-  there are only 8 cores and ~60GB of RAM memory available on each login node,
-  and these resources are shared by everyone that is logged in there.
+  there are only 8 cores and ~60GB of RAM memory available on each login node.
+
+  Since mid-september 2026, per-user resource limits are in place on the Hortense login nodes, 
+  which can be consulted by running the ``ulimit -a`` command.
+  Each user is limited to 2 GB of virtual memory, 496 running processes/threads, and 2 hours of CPU time per process.
+  Processes that exceed any of these limits may be terminated by the operating system or fail to start successfully.
 
   **Please only use the Hortense login nodes as an access portal!**
+
+  We also provide a debug/interactive partition, which is specifically intended for testing, 
+  debugging, and other interactive work that exceeds the login node limits (see also :ref:`hortense_interactive_debug`).
 
   For resource-intensive interactive tasks, like software compilation, testing software or job scripts, etc.,
   please use an interactive job, either via ``qsub -I`` (see also :ref:`hortense_resource_manager`)
@@ -34052,7 +34367,7 @@ Software
 Operating system
 ****************
 
-Both login nodes and workernodes in Hortense use *Red Hat Enterprise Linux 9 (RHEL9)* as operating system.
+Both login nodes and workernodes in Hortense use *Red Hat Enterprise Linux 9.8 (RHEL9.8)* as operating system.
 
 .. _hortense_resource_manager:
 
@@ -34444,12 +34759,17 @@ HPC-UGent Tier-2 Clusters
 #########################
 
 The Stevin computing infrastructure consists of several Tier2 clusters which are hosted in the S10 datacenter of Ghent University.
-This infrastructure is co-financed by FWO and Department of Economy, Science and Innovation (EWI).
+This infrastructure is co-financed by FWO and the Flemish Government.
 
 Login nodes
 ===========
 
 Log in to the HPC-UGent Tier-2 infrastructure via https://login.hpc.ugent.be or using SSH via ``login.hpc.ugent.be``.
+
+On the login nodes, strict limits are in place per user:
+  * max. 2 GB of virtual memory
+  * max. 496 running processes/threads
+  * max. 2 hours of CPU time per process
 
 Compute clusters
 ================
@@ -34463,14 +34783,14 @@ The HPC-UGent Tier-2 infrastructure currently included several standard CPU-only
 
 For basic information on using these clusters, see our `documentation <https://docs.hpc.ugent.be/Linux/running_batch_jobs/>`__.
 
-=============== ========== =========================================================== ===================== =========================== ======================= ===================
-cluster name    # nodes    Processor architecture                                      Usable memory/node    Local diskspace/node        Interconnect            Operating system
-=============== ========== =========================================================== ===================== =========================== ======================= ===================
-doduo (default) 128        2 x 48-core AMD EPYC 7552 (Rome @ 2.2 GHz)                  250 GiB               180 GB SSD                  HDR-100 InfiniBand      RHEL 9
-gallade         16         2 x 64-core AMD EPYC 7773X (Milan-X @ 2.2 GHz)              940 GiB               1.5 TB NVME                 HDR-100 InfiniBand      RHEL 9
-shinx           48         2 x 96-core AMD EPYC 9654 (Genoa @ 2.4 GHz)                 370 GiB               500GB NVME                  NDR-200 InfiniBand      RHEL 9
-skiddo          28         2 x 128-core AMD EPYC 9755 (Turin @ 2.7 GHz)                720 GiB               900 GB NVME                 NDR-200 InfiniBand      RHEL 9
-=============== ========== =========================================================== ===================== =========================== ======================= ===================
+================ ========== =========================================================== ===================== =========================== ======================= ===================
+cluster name     # nodes    Processor architecture                                      Usable memory/node    Local diskspace/node        Interconnect            Operating system
+================ ========== =========================================================== ===================== =========================== ======================= ===================
+doduo            64         2 x 48-core AMD EPYC 7552 (Rome @ 2.2 GHz)                  250 GiB               180 GB SSD                  HDR-100 InfiniBand      RHEL 9
+gallade          16         2 x 64-core AMD EPYC 7773X (Milan-X @ 2.2 GHz)              940 GiB               1.5 TB NVME                 HDR-100 InfiniBand      RHEL 9
+shinx            48         2 x 96-core AMD EPYC 9654 (Genoa @ 2.4 GHz)                 370 GiB               500GB NVME                  NDR-200 InfiniBand      RHEL 9
+skiddo (default) 28         2 x 128-core AMD EPYC 9755 (Turin @ 2.7 GHz)                720 GiB               900 GB NVME                 NDR-200 InfiniBand      RHEL 9
+================ ========== =========================================================== ===================== =========================== ======================= ===================
 
 Interactive debug cluster
 -------------------------
@@ -36032,7 +36352,7 @@ Submitting a batch job can then look as follows::
 
    $ sbatch --account=lp_my_project run-job.slurm
    or
-   $ sbatch --account=intro_vsc3xxxx run-job.slurm
+   $ sbatch --account=intro_vscxxxxx run-job.slurm
 
 If the account to be charged, i.e., ``lp_my_project``, has insufficient credits for the
 job, the user receives a warning at this point, and the job will not start until the account
@@ -37882,7 +38202,8 @@ Lustre and IBM Storage Scale (GPFS) parallel filesystems for scratch storage.
 
    We use environment variables to point at your different storage locations, as
    demonstrated in the tables below. These paths are constructed based on the 5 digits
-   in your VSC ID. As mentioned in :ref:`data location`, you should always (try to)
+   in your VSC ID, which are represented by "x" characters below. As mentioned in
+   :ref:`data location`, you should always (try to)
    use the environment variables rather than the paths shown in the tables.
 
 VSC home and data storage
@@ -37895,9 +38216,9 @@ of files that are not accessed at high frequency by compute jobs.
 +-----------------------+----------------------------------+--------+------------------+-------+---------------+
 | Variable              | Path                             | Type   | Access           |Backup | Default quota |
 +=======================+==================================+========+==================+=======+===============+
-| ``$VSC_HOME``         | ``/user/leuven/3../vsc3....``    | NFS    | All VSC clusters | Yes   | 3 GiB         |
+| ``$VSC_HOME``         | ``/user/leuven/xxx/vscxxxxx``    | NFS    | All VSC clusters | Yes   | 3 GiB         |
 +-----------------------+----------------------------------+--------+------------------+-------+---------------+
-| ``$VSC_DATA``         | ``/data/leuven/3../vsc3....``    | NFS    | All VSC clusters | Yes   | 75 GiB        |
+| ``$VSC_DATA``         | ``/data/leuven/xxx/vscxxxxx``    | NFS    | All VSC clusters | Yes   | 75 GiB        |
 +-----------------------+----------------------------------+--------+------------------+-------+---------------+
 
 Note that for ``$VSC_HOME`` and ``$VSC_DATA``:
@@ -37906,8 +38227,9 @@ Note that for ``$VSC_HOME`` and ``$VSC_DATA``:
   :ref:`recover data <restoring_snapshot>` that was accidentally deleted
   or modified,
 
-- quota for non-``vsc3*`` users are determined by the policy of the user's
-  home institution.
+- quota for VSC accounts that do *not* have Leuven / Hasselt as home institute are
+  determined by the policy of the user's home institute. Note that you can
+  check the institute of your VSC account on the `VSC account page`_.
 
 .. _leuven_scratch:
 
@@ -37925,7 +38247,7 @@ with its own (GPFS based) scratch storage:
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
 | Variable              | Path                             | Type   | Access        |Backup | Default quota |
 +=======================+==================================+========+===============+=======+===============+
-|``$VSC_SCRATCH``       | ``/scratch/leuven/3../vsc3....`` | Lustre | Genius, wICE  | No    | 500 GiB       |
+|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | Genius, wICE  | No    | 500 GiB       |
 |                       |                                  +--------+---------------+-------+---------------+
 |                       |                                  | GPFS   | Mindwell      | No    | 500 GiB       |
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
@@ -37946,7 +38268,8 @@ Lustre scratch on the nodes of Genius and wICE).
 
 .. note::
 
-   Non-``vsc3*`` users need to `contact the servicedesk <mailto:hpcinfo@kuleuven.be>`_
+   VSC accounts whose home institute is not Leuven / Hasselt need to
+   `contact the servicedesk <mailto:hpcinfo@kuleuven.be>`_
    to receive scratch storage, as it is not set up by default.
 
 .. _leuven_lustre_gpfs_transfer:
@@ -38035,11 +38358,11 @@ FILE: source/leuven/tier2_hardware/kuleuven_storage_quota_table.rst
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
 |Variable               | Path                             | Type   | Access        |Backup | Default quota |
 +=======================+==================================+========+===============+=======+===============+
-|``$VSC_HOME``          | ``/user/leuven/3../vsc3....``    | NFS    | VSC           |Yes    | 3 GiB         |
+|``$VSC_HOME``          | ``/user/leuven/xxx/vscxxxxx``    | NFS    | VSC           |Yes    | 3 GiB         |
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|``$VSC_DATA``          | ``/data/leuven/3../vsc3....``    | NFS    | VSC           |Yes    | 75 GiB        |
+|``$VSC_DATA``          | ``/data/leuven/xxx/vscxxxxx``    | NFS    | VSC           |Yes    | 75 GiB        |
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|``$VSC_SCRATCH``       | ``/scratch/leuven/3../vsc3....`` | Lustre | Genius, wICE  | No    | 500 GiB       |
+|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | Genius, wICE  | No    | 500 GiB       |
 |                       |                                  +--------+---------------+-------+---------------+
 |                       |                                  | GPFS   | Mindwell      | No    | 500 GiB       |
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
