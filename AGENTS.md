@@ -54,9 +54,10 @@ of what belongs in `papers/` — one PDF here per item there, and nothing
 else. Three rules follow:
 
 - **Seeing a source in Zotero is not a reason to add it here.** If the
-  owner keeps a paper in `10. Causal ML — Foundations` or `16. Credit Risk Modelling`
+  owner keeps a paper in `Causal ML — Foundations` or `Credit Risk Modelling`
   and not in the TFM collection, that is a deliberate judgement that it
-  is out of scope. Do not "helpfully" pull it in.
+  is out of scope. Do not "helpfully" pull it in. (Those names are written
+  without their numeric prefixes on purpose — see the third rule below.)
 - **A divergence is a report, not a repair.** Run the check, say what
   differs, let the owner decide which side is wrong. Never add or delete
   a paper to make the numbers agree.

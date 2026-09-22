@@ -4,6 +4,28 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-09-22
+
+Zotero-side only — no papers added, nothing in `papers/` changed.
+
+- **New collection `09. Time Series & Forecasting`.** Deliberately inserted at 09 so that
+`08. Tabular Foundation Models` does **not** move: only 09-18 shifted up by one, and every
+reference in this repository stayed correct. Holds Caljon et al. 2025 plus the two Hoo
+TabPFN-time-series papers, which keep their TFM membership as well.
+- **`05. LLMs & Agentic AI` renamed `05. Agentic AI`**, and LoRA and *Muon is Scalable* moved out
+of it. Nine of its eleven items were about multi-agent systems; the two that were not are an
+adaptation method and an optimizer, both already in `02. ML Fundamentals`, which is where they
+belong. The collection was conflating a model class with an application paradigm.
+- **Three mis-filings corrected.** *Approximations of the critical region of the fbietkan
+statistic* (Iman & Davenport 1980) left Causal ML — its "treatment effect" is Friedman-test
+experimental-design vocabulary, not a causal estimand. *Statistical Comparisons of Classifiers*
+(Demšar 2006) left Tabular Data for Benchmarks — it is a statistics methodology paper with
+nothing tabular-specific about it. *Estimation and Inference of Heterogeneous Treatment Effects*
+(Wager & Athey) left ML Fundamentals, where it had matched on "random forest".
+- `AGENTS.md` now names example collections **without** their numeric prefixes, so its own
+"match by name substring, never by number" rule applies to its own prose. That line had gone
+stale in this renumbering.
+
 ## 2026-09-21
 
 - Added **Jäger et al. 2026-09 — TabPFN-3.5** (arXiv 2609.17895), Prior Labs. Reads as an
