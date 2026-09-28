@@ -7,7 +7,9 @@ fairness, causal inference, time series, many classes, scalability) → TabPFN-2
 *default* checkpoint is the real-data continued-pretrained variant) / 2.6 (back to a
 synthetic-only default) → TabPFN-3 (May 2026; new three-stage architecture, scales to 1M rows,
 test-time-compute "Thinking" mode) → and, from June 2026, the first big-tech entrant shipping
-the paradigm as a product (Google's TabFM, wired into BigQuery).
+the paradigm as a product (Google's TabFM, wired into BigQuery). The September releases
+extend the comparison to TabPFN-3.5, Mitra-v2, Xiaomi-TabLDM, LimiX-2's masked conditional
+modelling, and Causilo's refinement-before-compression design.
 
 For every paper:
 
@@ -39,6 +41,7 @@ this folder and write them there.
 | 2024-12 | Feuer et al. | **TuneTables** — Context Optimization for Scalable Prior-Data Fitted Networks | Compresses a large dataset into a small *learned* context (prompt tuning for PFNs), lifting TabPFN v1's ~1000-row ceiling; best average rank over 19 algorithms on 98 datasets while tuning <5% of parameters. | [pdf](papers/2024/12_Feuer_et_al._TuneTables_Context_Optimization_for_Scalable_Prior_Data_Fitted_Networks.pdf) |
 | 2025-01 | Hollmann et al. | Accurate predictions on small data with a tabular foundation model | The TabPFNv2 paper (Nature). Production-grade architecture with alternating-attention, NaN handling, ensemble preprocessing. | [pdf](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf) |
 | 2025-02 | Liu and Ye | TabPFN Unleashed — A Scalable and Effective Solution to Tabular Classification Problems | Inference-time tricks (stratified context, bootstrap, query subsampling) that push v2 past its 10k-row limit. | [pdf](papers/2025/02_Liu_and_Ye_TabPFN_Unleashed_A_Scalable_and_Effective_Solution_to_Tabular_Classification_Problems.pdf) |
+| 2025-02 | McCarter | **What exactly has TabPFN learned to do?** | Black-box probes expose duplication, periodicity and ensembling failures in v1; the v2 appendix combines rougher toy decision surfaces with strong parity learning. | [pdf](papers/2025/02_McCarter_What_exactly_has_TabPFN_learned_to_do.pdf) |
 | 2025-05 | Müller et al. | Position — The Future of Bayesian Prediction Is Prior-Fitted | Position paper: PFNs as a unifying framework for approximate Bayesian inference. | [pdf](papers/2025/05_Muller_et_al._Position_The_Future_of_Bayesian_Prediction_Is_Prior_Fitted.pdf) |
 | 2025-05 | Qu et al. | TabICL — A Tabular Foundation Model for In-Context Learning on Large Data | Hierarchical attention TabPFN-competitor scaling to 500 k-row tables. | [pdf](papers/2025/05_Qu_et_al._TabICL_A_Tabular_Foundation_Model_for_In_Context_Learning_on_Large_Data.pdf) |
 | 2025-06 | Robertson et al. | FairPFN — A Tabular Foundation Model for Causal Fairness | PFN with explicit protected-attribute structure for counterfactual fairness audits. | [pdf](papers/2025/06_Robertson_et_al._FairPFN_A_Tabular_Foundation_Model_for_Causal_Fairness.pdf) |
@@ -70,14 +73,18 @@ this folder and write them there.
 | 2026-05 | Tanna et al. | **Data Presentation Over Architecture** — Resampling Strategies for Credit Risk Prediction with TFMs | On Home Credit and Lending Club, **how the context window is built explains more AUC variance than which TFM you pick**: balanced/hybrid sampling adds 3–4 AUC points over uniform, exceeding the spread between TFM families. | [pdf](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf) |
 | 2026-05 | Hosseinzadeh et al. | **TabDPT-Turbo** — Efficient In-Context Learning for Tabular Prediction | The retrieval branch recants: drops TabDPT's retrieval for **long-context pretraining**, stays row-based, scales the real corpus to 1,445 OpenML tables — matching TabDPT v1.1 quality orders of magnitude faster. Shipped as TabDPT v1.2. | [pdf](papers/2026/05_Hosseinzadeh_et_al._TabDPT_Turbo_Efficient_In_Context_Learning_for_Tabular_Prediction.pdf) |
 | 2026-05 | Bouadi et al. | **O'Prior** — Shaping the Prior: How Synthetic Task Distributions Determine TFM Quality | **The first controlled study of prior design as the sole variable**: architecture, optimizer and compute held fixed, only the synthetic task distribution varied. Structural mechanism diversity is the strongest driver of transfer; realism and shift-stress add complementary gains. | [pdf](papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf) |
+| 2026-05 | Schambach et al. | **Benchmarking Attention for Tabular Foundation Models** | H100 microbenchmarks show that attention across features and across samples need different backends; tensor-copy overhead makes FlashAttention-3 especially effective across samples. | [pdf](papers/2026/05_Schambach_et_al._Benchmarking_Attention_for_Tabular_Foundation_Models.pdf) |
 | 2026-06 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets, IID + temporal + grouped splits): TFM ICL wins tiny/small IID data but **loses to tuned RealMLP/GBDTs under temporal & grouped splits**, with the gap growing with sample size and high-cardinality categoricals. Fine-tuning explicitly untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-06 | Kong and Das (Google) | **TabFM** — Introducing TabFM: A zero-shot foundation model for tabular data | *Blog post, not a paper.* Google's TabPFN+TabICL **hybrid** (alternating row/column attention → row compression → ICL over row embeddings), trained on hundreds of millions of synthetic SCM datasets; TabArena Elo vs tuned GBDTs; shipping into **BigQuery `AI.PREDICT`**. | [pdf](papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf) |
 | 2026-07 | Luo et al. | **Memory Efficient Tabular Foundation Models** | Post-hoc **INT4 quantization** cuts TFM memory by up to **7.6×** (~87% lower deployment requirement) with negligible accuracy loss — an open alternative to the proprietary distillation engines. First paper here written from inside a bank. | [pdf](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf) |
+| 2026-07 | Baesens et al. | **Foundation Models for Credit Risk Prediction: A Game Changer?** | Untuned TFMs compete strongly on 14 PD and 7 LGD datasets, especially with little data; discrimination and probability quality select different winners, and no LGD pair survives Holm correction. | [pdf](papers/2026/07_Baesens_et_al._Foundation_Models_for_Credit_Risk_Prediction_A_Game_Changer.pdf) |
 | 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Pretraining on a *single* real table transfers across domains, which the Bayesian prior-fitting account cannot explain; argues TFMs are learned **retrieval-and-aggregation** procedures instead. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Eo et al. | **EXAONE Tabular 1.0** — Technical Report | Removes the row-compression boundary: feature-axis and item-axis attention interleave at every layer. A 20.8M model ranks first on TabArena classification, untuned. | [pdf](papers/2026/08_Eo_et_al._EXAONE_Tabular_1.0_Technical_Report.pdf) |
 | 2026-09 | Jäger et al. | **TabPFN-3.5** — Technical Report | Answers *Beyond IID* on its own benchmark: first place on **all seven** suites, including the grouped, temporal, wide and high-cardinality regimes where TFMs had been losing to tuned GBDTs. | [pdf](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf) |
 | 2026-09 | Tao et al. | **Mitra-v2** — Technical Report | Architecture held fixed, task distribution widened tenfold: 77M parameters reach the 1.64B TabFM's level. The most candid limitations section in this corpus. | [pdf](papers/2026/09_Tao_et_al._Mitra_v2_Technical_Report.pdf) |
 | 2026-09 | Xiaomi-TabLDM Team | **Xiaomi-TabLDM** — A Tabular Foundation Model | First **sparse Mixture-of-Experts** in a TFM, and a deliberate regression specialist: 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost. | [pdf](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf) |
+| 2026-09 | Zhang et al. | **LimiX-2** — A Contextual Mechanism Network Towards General Structured-Data Intelligence | Retains cells and jointly trains target prediction and masked-feature reconstruction; strong three-benchmark results and attention-based causal-skeleton recovery, which does not establish causal-effect identification. | [pdf](papers/2026/09_Zhang_et_al._LimiX_2_A_Contextual_Mechanism_Network_Towards_General_Structured_Data_Intelligence.pdf) |
+| 2026-09 | Cho et al. | **Causilo** — Technical Report | Refines cells across both axes before row compression; fixed summary tokens make feature-side attention linear, reaching 1785 TabArena Elo at 0.1043 s per 1K queries in the reported snapshot. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
 
 ---
 
@@ -518,6 +525,53 @@ lightweight.
 **Limitations.** Classification only on TabPFN v1, assumes IID (no drift handling), keeps a
 fixed 1000-row context, and the encoder can overfit on very small datasets while discarding
 raw-feature alignment with the prior.
+
+---
+
+<a id="mccarter-tabpfn"></a>
+
+## 2025-02 — McCarter — What exactly has TabPFN learned to do?
+
+**Venue:** ICLR 2024 Blogposts Track; filed as the expanded **13 February 2025 arXiv v1**,
+including the TabPFN-v2 appendix · **arXiv:** [2502.08978v1](https://arxiv.org/abs/2502.08978v1) ·
+**PDF:** [open](papers/2025/02_McCarter_What_exactly_has_TabPFN_learned_to_do.pdf)
+
+**Citation key:** `2025.MCCARTER.whatexactlyhastabpfnlearned`.
+
+**Where it fits.** A behavioural counterpart to Nagler 2023
+(*Statistical Foundations of Prior-Data Fitted Networks*, [summary](#nagler-theory)):
+inspect the predictor produced by a context rather than infer its behaviour from the
+pretraining objective. It anticipates the symmetry concerns formalised by Arbel 2025
+(*EquiTabPFN*, [summary](#equitabpfn)) and the retrieval interpretation in Shaheen 2026
+(*Understanding the Surprising Generalization Properties of Tabular Foundation Models*,
+[summary](#shaheen-retrieval)).
+
+**What it contains.** One-dimensional classification probes vary duplicated features,
+duplicated rows, class balance and periodic patterns; two-dimensional multiclass probes
+compare decision regions with Voronoi partitions. In v1, duplicating all rows leaves the
+predictions essentially unchanged, repeating features increases confidence, and ensembling
+turns irregular multiclass regions into something resembling nearest-neighbour classification.
+The tested periodic patterns are not recovered. Real-data probes include a 57-sample,
+22,283-feature gene-expression dataset with both random and held-out-batch splits, plus
+MNIST and CIFAR-10 treated as tables. Transfer is possible outside the intended tabular
+regime, but logistic regression or SVC can still win.
+
+The v2 appendix is essential: its default fingerprint features can distinguish repeated
+rows but produce bumpier toy probability surfaces; cell embeddings make the widest experiments
+impractical on the author's setup. Conversely, ensembled v2 exceeds **99% accuracy on
+10-bit parity using 127 training examples**, about 12% of the truth table. Better benchmark
+performance and more complex pattern recognition do not imply uniformly better behaviour
+on simple probes.
+
+**Strengths.** Transparent, reproducible stress tests expose specific inductive biases
+that average benchmark ranks obscure. The expanded version tests both v1 and v2 and
+includes positive as well as negative results.
+
+**Limitations.** Exploratory blogpost and small case studies, not a comprehensive benchmark
+or a mechanistic proof. The nearest-neighbour analogy is behavioural; it does not identify
+the learned algorithm. V1's duplication result cannot be carried unchanged to v2, whose
+fingerprinting changes the setup. No calibration or robustness guarantee follows from the
+parity experiment, and the findings do not establish how later checkpoints behave.
 
 ---
 
@@ -1923,6 +1977,51 @@ still win), and a license barring commercial/production use.
 
 ---
 
+<a id="attention-benchmark"></a>
+
+## 2026-05 — Schambach et al. — Benchmarking Attention for Tabular Foundation Models
+
+**Venue:** Proceedings of the 2nd ICML Workshop on Foundation Models for Structured Data,
+2026 · **SAP SE** · [OpenReview](https://openreview.net/forum?id=rwtcugrpDq) ·
+**PDF:** [open](papers/2026/05_Schambach_et_al._Benchmarking_Attention_for_Tabular_Foundation_Models.pdf)
+
+**Citation key:** `2026.SCHAMBACH.benchmarkingattentiontabularfoundationmodels`.
+
+**Where it fits.** Measures the implementation cost beneath the architectural scaling
+arguments in Hollmann 2025 (*Accurate predictions on small data with a tabular foundation
+model*, [summary](#tabpfn-v2-nature)). It complements Hosseinzadeh 2026 (*TabDPT-Turbo*,
+[summary](#tabdpt-turbo)): a model can become faster through a better attention backend
+and memory layout as well as through a different architecture. The paper explicitly notes
+that its alternating-attention pattern does not directly describe TabICL's staged design.
+
+**What it contains.** Forward/backward microbenchmarks of PyTorch SDPA's efficient and
+cuDNN backends and FlashAttention-2/3/4 on an H100 NVL, using bfloat16 and non-causal
+attention. The main setting has batch size 1, 12 heads and head dimension 64. Attention
+across features varies 16–2,048 columns at 1,024 rows; attention across samples varies
+32–16,384 rows at 64 columns. Each timing uses warmup and 50 repetitions, with wrappers
+checked against PyTorch's mathematical attention implementation.
+
+In this paper's terminology, **column attention attends across features**, and **row
+attention across samples**. Very short sequences favour efficient SDPA; cuDNN is strong
+for the moderate feature-axis lengths, while FlashAttention-3 dominates most sample-axis
+settings, reaching up to **3.5×** the efficient-SDPA baseline. Its layout accepts strided
+views and avoids copies required by the benchmark's SDPA wrappers. FlashAttention-4 cannot
+run the main head-dimension-64 setting on Hopper. The implication is to benchmark each
+axis with the actual strides, dimensions and hardware.
+
+**Strengths.** Separates kernel throughput from tensor-layout overhead, measures backward
+as well as forward execution, and publishes code and supplementary shape sweeps. Explains
+why a backend optimised for long language-model sequences need not win on tabular shapes.
+
+**Limitations.** Hardware- and software-version-specific microbenchmarks, not whole-model
+training or serving measurements. The main batch-size-1 SDPA wrapper deliberately retains
+copies for a layout that also supports larger batches; the authors acknowledge those copies
+are not strictly required at batch size 1. Reported speedups therefore compare complete
+wrappers, not kernels alone. No evidence here establishes the same ranking on A100/B200,
+with causal masks, or for every TFM architecture.
+
+---
+
 <a id="beyond-iid"></a>
 
 ## 2026-06 — Purucker et al. — Beyond IID: How General Are Tabular Foundation Models, Really?
@@ -2105,6 +2204,53 @@ large table sizes — quantization shrinks the weights, not the in-context activ
 complementary to, not a substitute for, the architectural work in TabDPT-Turbo and the
 row-compression line. No calibration analysis is reported, which matters because quantization
 can plausibly perturb predicted probabilities more than it perturbs accuracy.
+
+---
+
+<a id="credit-risk-benchmark"></a>
+
+## 2026-07 — Baesens et al. — Foundation Models for Credit Risk Prediction: A Game Changer?
+
+**arXiv:** [2605.18147v2](https://arxiv.org/abs/2605.18147v2), **15 July 2026** · preprint;
+no publication venue recorded in Zotero · **KU Leuven-led multi-institution collaboration** ·
+**PDF:** [open](papers/2026/07_Baesens_et_al._Foundation_Models_for_Credit_Risk_Prediction_A_Game_Changer.pdf)
+
+**Citation key:** `2026.BAESENS.foundationmodelscreditriskpredictiongamechangera`.
+
+**Where it fits.** Tests whether general-purpose TFMs transfer to both default prediction
+and loss severity without domain-specific adaptation. It complements Tanna 2026
+(*Data Presentation Over Architecture*) on context construction, and qualifies any broad
+reading of Purucker 2026 (*Beyond IID: How General Are Tabular Foundation Models, Really?*,
+[summary](#beyond-iid)): strong credit-domain cross-validation results do not answer the
+separate question of temporal or grouped generalisation.
+
+**What it contains.** **14 PD and 7 LGD datasets**, public and proprietary, evaluated against
+29 classification and 22 regression methods. TFMs use their default configurations while
+competitors receive up to 20 Optuna trials within each training fold. Five-fold evaluation
+uses a 20% validation subset of each training fold; preprocessing is fitted within the fold,
+classification thresholds maximise validation F1, and LGD predictions are clipped to [0,1].
+The study reports discrimination, proper probability scores, threshold-based metrics and
+regression errors, alongside Friedman and Holm-corrected Wilcoxon comparisons.
+
+TabICL has the highest mean PD AUC (**0.7517**, versus CatBoost's **0.7494**) and wins
+18/70 PD folds; TFMs together win 44.3%. TabPFNv2 is the **only LGD TFM** and wins 16/35
+folds, with mean R² **0.4455** versus CatBoost's **0.4401**. Probability quality changes
+the PD ordering: TabPFNv2's Brier score/log loss are **0.1320/0.4119**, versus TabICL's
+**0.1619/0.5081**. Learning curves show the largest TFM advantage with little data;
+XGBoost overtakes v2 beyond roughly 8,000 rows in the reported LGD experiment.
+
+**Strengths.** Includes regression on bounded, often bimodal losses rather than treating
+credit risk as classification alone. Reports probability scores, respects fold boundaries
+in preprocessing and tuning, and distinguishes average performance from pairwise evidence.
+
+**Limitations.** **None of the 231 LGD pairwise comparisons is significant after Holm
+correction**; the results establish competitiveness and promising small-data behaviour,
+not universal superiority. The protocol provides no temporal/grouped holdout result;
+distribution shift, reject inference, fairness and low-default-specific testing are future
+work. Only one regression TFM is evaluated, proprietary data restrict reproducibility,
+and beta/two-part LGD baselines are left for future work. Brier/log loss assess probability
+quality but do not isolate calibration, and clipped point-error metrics do not validate
+the full LGD predictive distribution. This benchmark does not test continued pretraining.
 
 ---
 
@@ -2445,5 +2591,104 @@ novel component is unevidenced as a *cause* of anything, and with four changes a
 attribution problem is worse here than in either sibling release. Classification trails its own
 regression consistently. And like its peers it is a self-reported technical report scored against
 public leaderboards, not a reviewed paper.
+
+---
+
+<a id="limix-2"></a>
+
+## 2026-09 — Zhang et al. — LimiX-2: A Contextual Mechanism Network Towards General Structured-Data Intelligence
+
+**arXiv:** [2609.17488v1](https://arxiv.org/abs/2609.17488v1), 15 September 2026 · technical
+report · **LimiX Team, Stable AI & Tsinghua University** ·
+**PDF:** [open](papers/2026/09_Zhang_et_al._LimiX_2_A_Contextual_Mechanism_Network_Towards_General_Structured_Data_Intelligence.pdf)
+
+**Citation key:** `2026.ZHANG.limix2contextualmechanismnetworkgeneralstructureddataintelligence`.
+
+**Where it fits.** Extends the case for retaining cell representations made by Eo 2026
+(*EXAONE Tabular 1.0*, [summary](#exaone-tabular-1)), while broadening the training
+objective beyond a designated target. Its Contextual Mechanism Network (CMN) framing
+seeks the conditional joint structure of a table through target prediction and masked
+feature reconstruction. This is a different causal claim from Robertson 2025 (*Do-PFN*)
+or Ma 2026 (*Foundation Models for Causal Inference via Prior-Data Fitted Networks*):
+the new empirical test is graph-skeleton recovery, not treatment-effect estimation.
+
+**What it contains.** Synthetic-SCM pretraining with **Context-Conditional Masked Modeling
+(CCMM)** over entry, column and block masks. Dual-axis attention retains separate cell
+representations, with separate feature/task pathways and four task embeddings. A query
+can attend to context but not other queries, and context representations cannot absorb
+queries. The same conditional interface supports classification, regression and feature
+reconstruction. Capacity is scaled from **12.5M to 406.2M parameters** under a fixed
+data-generation, optimisation and inference recipe.
+
+The report evaluates 51 TabArena datasets, 288 TALENT datasets (12 tasks with more than
+10 classes excluded), and 156 BCCO datasets. It reports aggregate Elo **1935, 1506 and
+1432**, respectively, with bootstrap intervals; TALENT/BCCO use 15 seeds. On six causal
+discovery datasets, thresholded feature-attention scores recover undirected skeletons
+with mean F1 **0.7972**, compared with **0.6591** for EXAONE. These are the report's own
+benchmark snapshots, not scores directly comparable with Elo from another comparison set.
+
+**Strengths.** Makes feature reconstruction an explicit pretraining task and evaluates
+more than label prediction. The controlled capacity sweep is stronger evidence for
+parameter scaling than comparing unrelated models, and the report supplies detailed
+prediction protocols and causal-skeleton baselines.
+
+**Limitations.** Unreviewed technical report; scaling fits extrapolated to 2B parameters
+are projections, not measurements. The reported conditional-prediction objective does
+not by itself prove a globally consistent joint distribution or identify interventions.
+Skeleton recovery neither orients edges nor estimates causal effects; distributing each
+group's attention uniformly across its features disadvantages compressed/grouped models
+in that probe. No controlled CCMM-versus-target-only ablation isolates the objective's
+contribution from architecture and prior changes. The main prediction benchmarks do not
+establish temporal/grouped robustness or predictive calibration.
+
+---
+
+<a id="causilo"></a>
+
+## 2026-09 — Cho et al. — Causilo Technical Report
+
+**arXiv:** [2609.22866v1](https://arxiv.org/abs/2609.22866v1), 19 September 2026 · technical
+report · **Nums AI** ·
+**PDF:** [open](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf)
+
+**Citation key:** `2026.CHO.causilotechnicalreport`.
+
+**Where it fits.** A compromise between Qu 2026 (*TabICLv2*, [summary](#tabiclv2)) and
+the persistent-cell route of Eo 2026 (*EXAONE Tabular 1.0*, [summary](#exaone-tabular-1))
+and Zhang 2026 (*LimiX-2*, [summary](#limix-2)). It retains row compression for efficient
+ICL, but first gives cells another exchange across both features and context rows.
+Despite the name, the report concerns predictive tabular modelling rather than causal
+effect estimation.
+
+**What it contains.** **Column encoding → row refinement → column refinement → row
+compression → ICL**. The row-refinement stage exchanges information through persistent
+summary tokens; the second column stage lets enriched cells revisit the context before
+compression. Both row modules use a fixed number of summary tokens, making feature-side
+attention linear rather than quadratic in feature count. Inducing tokens bound the
+column stages, while the final ICL stage still has quadratic context attention. Bounded
+QASSMax and normalisation/feature/class-permutation ensembles complete the recipe.
+
+Classification/regression models have **36.08M/37.08M parameters**, trained on roughly
+**36M synthetic tables**. In its September 2026 TabArena snapshot, Causilo reports
+**1785.4 Elo at 0.1043 seconds per 1K test samples**, occupying a faster, lower-Elo point
+than TabPFN-3.5 or LimiX-2. BeyondArena results lead the evaluated set at combined Elo
+**1359**, but that comparison adds Causilo to published baselines only through TabPFN-3.
+ScoringBench additionally reports **CRPS** alongside point-error metrics: Causilo lies
+on the reported performance/latency frontier, while full TabPFN-3.5 remains more accurate
+at greater latency.
+
+**Strengths.** Gives an explicit feature-scaling argument and a targeted timing probe,
+reports serving cost alongside accuracy, and includes non-IID and distributional-regression
+evaluation. Supplies a concrete design between immediate row compression and retaining
+cells throughout the model.
+
+**Limitations.** Unreviewed report without an ablation isolating refinement, bounded
+QASSMax, prior and ensembling. Linear feature-side attention does **not** imply linear
+scaling in context rows; the microbenchmark times selected modules, not whole-model
+scaling. The BeyondArena result does not compare against TabPFN-3.5 or LimiX-2, and Elo
+depends on the benchmark snapshot and comparator set. CRPS is a proper distributional
+score, not a standalone calibration guarantee. The report distinguishes Apache-2.0 code
+from separately licensed weights restricted to non-commercial research, with commercial
+or hosted use requiring a separate licence.
 
 ---

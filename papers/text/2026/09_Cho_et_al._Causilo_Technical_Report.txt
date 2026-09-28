@@ -1,0 +1,849 @@
+Causilo Technical Report
+(see Appendix A for the list of contributors)
+Abstract.We introduce Causilo, a tabular foundation model (TFM) that combines frontier
+predictive performance with exceptionally fast inference. On TabArena, Causilo achieves 1785.4
+Elo, at a median inference time of 0.10 seconds per 1K test samples. It outperforms TabPFN-
+3.5-Fast with 31.6% less inference time, placing it on the performance–efficiency Pareto frontier.
+Causilo follows TabICL’s column-then-row architecture but introduces another row-refinement
+module before row compression. This module exchanges information among cell representations
+within each row after column encoding. The refined cells then visit the context set again through
+an additional column stage before being compressed into row embeddings. For inference efficiency,
+both row stages use cross-attention through a fixed number of summary tokens, keeping their
+attention cost linear in the number of features. Pretrained on approximately 36M synthetic tables,
+Causilo delivers strong benchmark results across TabArena, BeyondArena, and ScoringBench,
+achieving frontier-level performance with substantially faster inference.
+Date18 Sep 2026
+Modelhttps://huggingface.co/nums-ai/causilo
+Codehttps://github.com/nums-ai/causilo
+10−2 10−1 100 101 102
+Median inference time per 1K samples (s)
+1000
+1250
+1500
+1750
+2000Elo
+Optimal
+Foundation models Supervised methods Systems
+T uned T uned + Ens. Imputed Pareto frontier
+Figure 1. T abArena performance–efficiency frontier.The horizontal axis shows median inference time
+per 1K test samples on a logarithmic scale. Causilo achieves 1785 Elo at 0.1043 seconds, placing it on the Pareto
+frontier. Its classification and regression models contain 36.08M and 37.08M parameters, roughly one-sixth as
+many as TabPFN-3.5 (218.98M) and one-eleventh as many as LimiX-2 (406.2M), which also lie on the frontier.
+1
+arXiv:2609.22866v1  [cs.LG]  19 Sep 2026
+
+Causilo Technical Report
+1 Introduction
+We introduce Causilo, a tabular foundation model (TFM) that combines strong predictive performance
+with outstandingly fast inference. Its classification and regression models contain 36.08M and 37.08M
+parameters, respectively. On TabArena [ 1], Causilo surpasses the previous state-of-the-art TabFM [ 2]
+in Elo while running faster than TabICLv2 [3], previously the fastest TFM on the Pareto frontier.
+TFMs are pretrained on diverse synthetic tasks to learn a reusable prediction procedure that transfers
+across datasets. At inference, they condition on labeledcontextexamples to predict the targets ofquery
+examples without updating their parameters. TabPFN [ 4] and TabPFN-2 [5] established this paradigm
+as a leading approach to tabular prediction. Modern TFMs largely use Transformer architectures [ 6],
+but differ in how they organize computation across features and samples. 1
+One line of work maintains cell representations throughout the network. TabPFN-2.5 [ 7] and LimiX [ 8],
+for example, alternate attention across features and samples. Cell tokens exchange information within
+each row and then incorporate information from context rows within each column. This preserves rich
+representations but incurs quadratic attention costs in both the number of features and the number
+of samples. Recent models such as EXAONE-Tabular [ 9] retain this design, repeatedly updating cell
+tokens through attention along both the feature and sample axes.
+A second line of work compresses each row into a fixed-width embedding, then uses an in-context
+learning (ICL) Transformer to predict query targets from labeled context rows. TabICL [ 10] was the
+first to introduce this column-then-row architecture. It first updates cell tokens across samples within
+each column, then compresses the resulting representations into a fixed-width embedding for each row.
+A separate ICL Transformer processes these row embeddings, so its attention cost no longer depends on
+the number of features. TabICLv2 [ 3] and TabPFN-3 [ 11] follow the same general design. This makes
+cross-row processing more efficient, but subsequent layers can no longer update individual cell tokens.
+These architectural choices result in a clear performance–efficiency trade-off. On TabArena, column-
+then-row models provide low inference latency, while models that retain cross-axes attention achieve
+stronger Elo at greater inference cost. Dataset-specific fine-tuning, as used by Mitra-v2 [ 12], offers
+another route to stronger predictions, but requires additional optimization for every new dataset.
+Therefore, the resulting frontier leaves an important architectural question:can a TFM retain richer
+cell representations while preserving the efficiency of in-context learning over row embeddings?
+Causilo addresses this trade-off by introducing an additional refinement module before row compression.
+The model first performs target-aware column encoding to construct cell representations informed
+by the context set. A row-refinement module then exchanges information among cell tokens within
+each row through a small set of summaries that persist across its layers. Rather than immediately
+compressing the refined cell tokens into a row embedding, Causilo sends them through a second column
+stage. Therefore, each cell token gets to revisit the context set after incorporating information from
+other features in the same row. Only afterward does a separate readout compress the cell tokens into
+fixed-width row embeddings for in-context prediction. This design preserves an additional round of
+within-row and cross-row interaction while retaining an efficient ICL backbone.
+Moreover, Causilo accelerates inference by making within-row attention linear in the number of features.
+While existing column-then-row architectures use full self-attention among cell tokens to form row
+embeddings, Causilo uses cross-attention through a fixed number of summary tokens in both row
+refinement and compression. This replaces quadratic interactions among cell tokens with linear cost.
+1We usefeaturesandcolumns, as well assamplesandrows, interchangeably throughout the paper. We usecell tokens
+orcell representationsfor the vectors processed before row compression, androw embeddingsorrow representationsfor
+the vectors produced by compression.
+2
+
+Causilo Technical Report
+Pretrained entirely on approximately 36-million synthetic tables with varying sizes and causalities,
+Causilo demonstrates strong performance across three complementary benchmarks:
+• T abArena [1]. Causilo achieves 1785 Elo at a median inference time of 0.1043 seconds per 1K test
+samples. It exceeds TabFM in Elo with 63.8 times faster inference. It lies on the empirical Pareto
+frontier in both classification and regression.
+• BeyondArena [13].Across a broader collection of datasets, Causilo ranks first among the evaluated
+models in both classification and regression, with Elo ratings of 1346 and 1394. Its combined Elo of
+1359 leads both foundation models and conventional supervised methods.
+• ScoringBench [14]. Causilo achieves Pareto-optimal performance across RMSE, R2, MAE, and
+CRPS with a median inference time of approximately 0.3 seconds per fold. It outperforms TabPFN-
+3.5-Fast on all four metrics while requiring only 40% of the inference time of TabPFN-3.5.
+We release the model and inference code to support reproducible comparisons and practical use.
+2 Causilo
+2.1 Refine First, Compress Later
+A central architectural choice in Causilo is to refine cell representations before compressing them into
+row embeddings. As illustrated in Figure 2, the row- and column-refinement modules retain individual
+cell tokens. The row-refinement module first exchanges information among cell tokens within each row.
+The column-refinement module then revisits the context set using these enriched representations.
+ColumnencodingRowrefinementColumnrefinementRowcompressionIn-contextpredictionContextContextQueryInducingtokens
+ContextContextQueryInducingtokens
+……………
+……………Within-row exchange
+ContextContext
+QueryRow embeddings
+ContextContext
+Query𝑓Predictions
+1 2 3 4 5
+Row refinementRow compression…Temporary summariesCell tokens1 Broadcast
+2 GatherDiscardRepeat; finish with a feature update
+…Carrying summariesRefined cell tokens
+Cross-attentionreadoutConcatenate; yields row embedding
+Feature tokens retained
+Context labels Context labels
+Figure 2. Architecture of Causilo.For a single input view, column encoding, row refinement, and
+column refinement update cell tokens while retaining the table’s row and feature-group axes. Row compression
+then produces a fixed-width representation for each row, followed by dataset-level in-context prediction. The
+lower panels expose the architectural separation at the center of Causilo: temporary summaries mediate cell
+representation refinement, whereas an independent set of summaries performs the final readout.
+F rom scalar cells to representations. Causilo receives labeled context rows and unlabeled query
+rows. Retained features are partitioned into non-overlapping groups of three adjacent features, with
+zero padding for the final incomplete group. Inspired by TabFM [ 2], we encode observed scalars using
+sine and cosine features at 16 learned frequencies, followed by a shared linear projection to Rd with
+d = 128. Missing values use learned embeddings. Both the frequencies and missing-value embeddings
+3
+
+Causilo Technical Report
+depend on the within-group position. The three cell representations in each group are summed and
+scaled to form a single cell token. Thus, each cell token represents one feature group in one row. For
+context rows, a target embedding is added to every cell token.
+Column encoding.The column encoder updates cell tokens by exchanging information across
+rows within each column. 2 It uses the inducing-token attention pattern of Set Transformer [ 15]. Let
+H:j ∈R N×d denote the cell tokens in column j across N rows, and let HCj contain only the context
+rows. At each layer, M learned inducing tokens firstgatherinformation from the context cell tokens.
+Cell tokens in both context and query rows then read from the resulting summaries through abroadcast:
+Sj =A(U, HCj , HCj )| {z }
+Gather
+, H ′
+:j =A(H :j, Sj, Sj)| {z }
+Broadcast
+. (1)
+Here, U∈R M×d denotes the learned inducing tokens, Sj ∈R M×d the resulting column summaries, and
+A(Q, K, V) an attention update. This enables context-to-context and context-to-query information
+exchange within each column. Note that query cell tokens do not contribute to the shared summaries.
+Row refinement.The column encoder updates cell tokens across rows, but processes each column
+independently. Causilo therefore introduces within-row interactions before compression. For row i, let
+Hi ∈R G×d denote its G cell tokens and Si ∈R K×d a set of K = 4 temporary summary tokens. Each
+refinement round alternates abroadcastfrom the summaries to the cell tokens and agatherof the
+updated cell representations back into the summaries:
+H ′
+i =A(H i, Si, Si)| {z }
+Broadcast
+, S ′
+i =A
+
+Si, H′
+i, H′
+i
+
+| {z }
+Gather
+. (2)
+The summary tokens carry information across refinement layers, collecting information from cell tokens
+and redistributing it within the row. After the final broadcast, the summaries are discarded and the
+refined cell tokens pass to the next stage.
+Column refinement.After row refinement, each cell token carries information about other features
+in the same row. Causilo applies a second column stage so that these enriched representations can
+revisit the context set before compression. Using the row-refined cell tokens ¯H, the model again
+performs a context-onlygatherfollowed by an all-rowbroadcast:
+¯Sj = ¯A
+ ¯U ,¯HCj , ¯HCj
+
+| {z }
+Gather
+, H ⋆
+:j = ¯A
+ ¯H:j, ¯Sj, ¯Sj
+
+| {z }
+Broadcast
+. (3)
+This stage follows the same attention pattern as the first column encoder but uses independent
+parameters. Because its input cell tokens already contain within-row information, the second column
+stage can use cross-feature evidence when updating representations across rows.
+Row compression.After refinement, Causilo compresses each row using a separate set of K = 4
+learned summary tokens. Let P (ℓ)
+i denote the summary tokens at layer ℓ and H ⋆
+i the refined cell tokens
+for rowi. The attention update is
+P (ℓ+1)
+i =A
+
+P (ℓ)
+i ,[H ⋆
+i ;P (ℓ)
+i ],[H ⋆
+i ;P (ℓ)
+i ]
+
+,(4)
+where [ ·; ·] denotes concatenation along the token dimension. Unlike row refinement, this module
+updates only the summary tokens; the cell tokens remain fixed. The final summaries are individually
+RMS-normalized [16] and concatenated into aKd= 512-dimensional row embedding.
+2After feature grouping, each column of the token grid corresponds to a group of adjacent input features. We refer to
+these grouped positions as columns for convenience.
+4
+
+Causilo Technical Report
+T able 1.Attention complexity per row and per head for G cell tokens and K summary tokens. With fixed K,
+all three operations in Causilo scale linearly withG.
+Operation Complexity
+Full self-attention over cell and summary tokensO((G+K) 2)
+Causilo: one refinement roundO(K(G+K))
+Causilo: final row-refinement broadcastO(GK)
+Causilo: one compression layerO(K(G+K))
+In-context prediction.A separate Transformer [ 6] processes the row embeddings to predict query
+targets from the labeled context. Context targets are embedded again and added to their corresponding
+row embeddings. Let U (ℓ)
+C and U (ℓ)
+Q denote the context and query row representations at layer ℓ. At
+each layer, context representations attend to one another, while query representations attend only to
+the context:
+U (ℓ+1)
+C =A
+
+U (ℓ)
+C , U(ℓ)
+C , U(ℓ)
+C
+
+, U (ℓ+1)
+Q =A
+
+U (ℓ)
+Q , U(ℓ)
+C , U(ℓ)
+C
+
+.(5)
+After L = 12 Transformer layers, a two-layer head with GELU [17] maps each query row representation to
+class logits or regression outputs. Across the architecture, attention blocks use pre-RMS normalization,
+residual connections, and SwiGLU [18] feedforward layers.
+2.2 Linear F eature Scaling by Construction
+24 26 28 210 212 214 216
+Number of input features
+100
+101
+102
+103
+Relative GPU forward time (16 features = 1×) ↓
+ T abICLv2  β=1.97
+EXAONE-T abular  β=1.99
+Mitra-v2  β=1.97
+T abFM  β=1.90
+T abPFN-3.5  β=1.95
+Causilo
+β=1.23
+Figure 3. Feature-wise forward-time scaling of tabular
+foundation models.Markers show the median of 50 runs, nor-
+malized by the measured time at 16 features. Lines show fits of
+T (F ) = c + aF β, normalized by the fitted time at 16 features; the
+annotated β values are estimated over the displayed feature range.
+Cross-attention throughout both
+row stages.Existing frontier TFMs
+retain feature-side self-attention while
+individual cell representations remain
+explicit. Causilo instead routes within-
+row communication through a fixed
+set of summaries throughout both row
+modules. Refinement exchanges infor-
+mation in both directions between cell
+tokens and summary tokens; compres-
+sion updates only the summaries. This
+asymmetry eliminates quadratic atten-
+tion within rows.
+Cost as the feature count grows.
+Table 1 summarizes the attention cost
+per row and per head for G cell to-
+kens and K summary tokens. With
+fixed K, attention in both row modules
+scales linearly with G, whereas full self-
+attention scales quadratically. Both col-
+umn stages use a fixed number of inducing tokens, keeping their attention cost linear in the number of
+rows and feature. Full attention across context rows appears only in the ICL Transformer. ForNs context
+rows and Nq query rows, the attention cost of a forward pass is thereforeO((Ns +N q)G+N s(Ns +N q)),
+with widths, depths, and summary counts held fixed. The first term covers cell-level column and row
+processing, whereas second term covers the attention in the ICL Transformer.
+5
+
+Causilo Technical Report
+Scaling in practice.We use a targeted GPU microbenchmark to examine whether feature-interaction
+time grows linearly or quadratically with feature-axis input size. For each pretrained model— Causilo,
+TabFM [2], Mitra-v2 [ 12], TabPFN-3.5 [ 19], TabICLv2 [ 3], and EXAONE-Tabular [ 9]—we fix the
+input at 16 rows and vary the feature-size parameter F from 24 to 216. We time the first row-mixing
+block of Causilo, the attention submodules of TabFM’s first row-interaction stage, and the feature-
+attention submodules across all layers of Mitra-v2 and EXAONE-Tabular. For TabICLv2, we time
+the embedding-aggregation routine within the row-interaction module; for TabPFN-3.5, we time the
+complete column-aggregation module. All these operations mix feature tokens within each row. After
+model setup, we run the selected operation 20 times for warm-up and record 50 CUDA-event timings.
+Markers in Figure 3 show median timings normalized by each model’s measured median at F = 16. We
+fit the unnormalized medians to T (F ) = c + aF β, where c≥ 0 captures approximately fixed overhead,
+a sets the runtime scale, and β describes feature-dependent growth. Exponents of β = 1 and β = 2
+correspond to linear and quadratic growth, respectively. The fitted curves are then normalized by their
+values at F = 16, with exponents estimated over the full displayed range. Causilo yields β = 1.23,
+close to linear scaling, whereas the other models yield β = 1.90–1.99, close to quadratic scaling. This
+agrees with the expected benefit of replacing full self-attention among cell tokens within each row with
+cross-attention through a fixed number of summary tokens.
+2.3 Bounded QASSMax
+In attention over tabular data, keys can represent context rows within a column or cell tokens within a
+row, so context length varies with dataset size and table width. As the context grows, softmax can
+spread probability mass across more entries and dilute attention to relevant ones. Scalable-Softmax
+(SSMax) [20] addresses this effect with length-dependent scaling. TabICLv2 [ 3] introduces query-aware
+scalable softmax (QASSMax), which also adapts the scale to query content. Causilo retains this
+adaptivity while explicitly bounding the scaling factors.
+The unbounded formulation.Let qh denote the query vector for head h, i a coordinate within
+that head, andnthe number of keys. TabICLv2 rescales each query coordinate as
+eqTabICLv2
+hi =q hi fhi(logn)| {z }
+length-dependent scale
+
+1 + tanh(gi(qh))
+
+| {z }
+query modulation
+.(6)
+The network f produces a length-dependent scale for each head and coordinate, while g modulates it for
+the current query. Although the query-dependent factor lies in (0 , 2), the output of f is unconstrained.
+The resulting multiplier can therefore be negative or arbitrarily large.
+Positive and bounded scaling. Causilo retains the length-dependent network f and query-
+dependent network g, but bounds their outputs before applying them to the query. For an output z
+from either network, we use
+BoundL(z) = exp
+
+(logL) tanh
+ z
+logL
+
+, L >1.(7)
+This produces a positive multiplier between 1 /L and L, with zero mapped to one. We set L = 8 for f
+and L = 2 for g. To accommodate context lengths that may differ from those seen during pretraining,
+Causilo also introduces a smaller length-dependent network m. It provides a bounded correction to
+the scale produced byf, independently of query content. The complete update is
+eqhi =q hi Bound8(fhi(logn))| {z }
+primary length scale
+Bound2(mhi(logn))| {z }
+length correction
+Bound2(gi(qh))| {z }
+query modulation
+.(8)
+6
+
+Causilo Technical Report
+The correction can increase or decrease the primary scale by up to a factor of two. The total multiplier
+remains between 1 /32 and 32, preserving the sign of each query coordinate and preventing unbounded
+rescaling. The networks f and g are two-layer MLPs with 64 hidden units and GELU activations. The
+correction networkmuses 16 hidden units and a tanh activation.
+2.4 Inference-Time Ensembling
+Inference-time ensembling is widely used in TFMs [ 9, 11, 2]. Causilo constructs ensemble members by
+varying feature normalization, feature order, and, for classification, class labels. All members use the
+same weights, and their predictions are combined after restoring the original class order or target scale.
+Normalization schemes.Ensemble members cycle through four normalization schemes: standard-
+ization, rank-to-Gaussian transformation, robust scaling, and power transformation. Each scheme
+is fitted on the context set and followed by smooth tail compression, which reduces the magnitude
+of extreme values while leaving values within context-derived bounds unchanged. The same fitted
+transformation is applied to query rows without re-estimating its parameters.
+Feature permutations. Causilo combines three adjacent features into a single token, therefore
+feature order determines which features are encoded together. We vary this order across ensemble
+members to provide different feature groupings. The first member preserves the original feature order.
+For the remaining members, we randomly arrange the features on a shared random ring, then generate
+permutations by varying the traversal stride and starting position. Candidate strides are coprime to
+the feature count so that each traversal visits every feature exactly once. Among these candidates,
+we favor strides with less frequently used one- and two-step circular distances to discourage repeated
+feature combinations.
+Prediction aggregation.For classification, we permute class labels across ensemble members using
+cyclic shifts of a random class ordering. Over each complete cycle of C members, each of the C classes
+occupies every class index once. We restore each member’s logits to the original class order, average
+them across members, and apply softmax. For regression, we average the output channels of each
+member to obtain a point prediction. We then transform these predictions back to the original target
+scale and average them across members.
+3 Evaluation
+We evaluate Causilo on three complementary benchmarks of real-world tabular prediction. TabArena [1]
+assesses classification and regression performance against strong foundation and supervised models.
+BeyondArena [13] extends this comparison to diverse data regimes, while ScoringBench [ 14] evaluates
+both point predictions and predictive distributions for regression. We also examine inference latency
+on TabArena and ScoringBench to assess where Causilo lies on the performance–efficiency frontier.
+3.1 T abArena
+TabArena is a continuously maintained benchmark for supervised tabular learning, comprising 51
+real-world datasets—38 for classification and 13 for regression. Its standardized evaluation pipeline
+uses shared data splits to compare tree ensembles, neural networks, and foundation models, with
+support for default configurations, hyperparameter tuning, and ensembling. Predictive performance is
+measured by ROC–AUC for binary classification, log loss for multiclass classification, and RMSE for
+regression. Elo ratings summarize pairwise comparisons across datasets, with higher ratings indicating
+stronger aggregate performance. We use the latest public results as of 18 September 2026 and Elo
+ratings are computed over the full leaderboard, including system submissions such as AutoGluon [ 21]
+7
+
+Causilo Technical Report
+10−1 100 101 102
+Median inference time per 1K samples (s)
+1000
+1250
+1500
+1750
+2000Elo
+Optimal
+Foundation models Supervised methods Systems
+Tuned Tuned + Ens. Imputed Pareto frontier
+Figure 4. TabArena classification performance–efficiency frontier.Higher Elo and lower median
+inference time per 1K test samples are better; the time axis is logarithmic. The dashed line traces the Pareto
+frontier among the plotted configurations. Causilo achieves 1766.3 Elo at 0.1096 seconds per 1K test samples.
+and TabFM+. A configuration lies on the Pareto frontier when no other configuration achieves both at
+least as high an Elo and at least as low an inference time, with a strict improvement in one dimension.
+Classification. Causilo achieves 1766 Elo at 0.1096 seconds per 1K test samples (Figure 4). It
+essentially matches TabFM’s 1766 Elo with a 62.1-fold speedup over its 6.8094-second inference time.
+Relative to TabICLv2, it gains 198 Elo while requiring 22.8% less inference time. It also exceeds
+EXAONE-Tabular and Mitra-v2 in Elo with 4.49-fold and 9.71-fold speedups, respectively. These results
+place Causilo on the Pareto frontier, delivering competitive predictive performance at approximately
+one-tenth of a second per 1K test samples.
+Higher-Elo configurations extend the frontier at increasing inference cost. TabPFN-3.5 reaches 1841 Elo
+at 0.5178 seconds, while LimiX-2 [ 22] leads with 1919 Elo but requires 10.0810 seconds, approximately
+92 times Causilo’s inference time. System submissions do not improve this frontier: TabFM+ reaches
+1803 Elo at 7.7865 seconds and is dominated by TabPFN-3.5.
+Regression. Causilo reaches 2019 Elo at 0.0930 seconds per 1K test samples (Figure 5). Its advantage
+over TabFM is larger than in classification, as it gains 47 Elo while running 67.6 times faster. It also
+exceeds Mitra-v2 by 60 Elo with 6.41 times faster inference. Against TabICLv2, Causilo gains 350 Elo
+and reduces inference time by 20.1%. Thus, its low latency is accompanied by a clear improvement in
+aggregate predictive performance over these baselines.
+Unlike in classification, Causilo dominates TabPFN-3.5-Fast, gaining 106 Elo with 22.2% less inference
+time. The high-Elo frontier therefore connects Causilo directly to TabPFN-3.5, which reaches 2099 Elo
+at 0.3765 seconds, and then to LimiX-2, which reaches 2204 Elo at 1.7817 seconds. These models require
+4.05 and 19.1 times Causilo’s inference time, respectively. TabFM+ and AutoGluon 1.6 noncommercial
+score above Causilo, but both are dominated by TabPFN-3.5.
+Combined.Figure 1 summarizes the combined comparison. Causilo achieves 1785 Elo at 0.1043
+seconds per 1K test samples and occupies the low-latency end of the high-performance frontier.
+TabPFN-3.5 raises Elo to 1861 at 0.4727 seconds and LimiX-2 attains the highest combined Elo of 1943
+at 9.0278 seconds, requiring 86.6 times Causilo’s inference time. Therefore, Causilo is a compelling
+choice when both predictive accuracy and fast inference are essential.
+8
+
+Causilo Technical Report
+10−2 10−1 100 101 102
+Median inference time per 1K samples (s)
+1000
+1500
+2000Elo
+Optimal
+Foundation models Supervised methods Systems
+Tuned Tuned + Ens. Imputed Pareto frontier
+Figure 5. T abArena regression performance–efficiency frontier.Higher Elo and lower median inference
+time per 1K test samples are better; the time axis is logarithmic. The dashed line traces the Pareto frontier
+among the plotted configurations. Causilo achieves 2019.3 Elo at 0.0930 seconds per 1K test samples.
+3.2 BeyondArena
+BeyondArena [13] tests whether strong tabular prediction extends beyond standard IID settings. Its
+142 curated datasets span IID, temporal, and grouped splits, a wide range of sample sizes and feature
+counts, and tables with text or high-cardinality categorical features. These settings test generalization
+under changes that random train–test splits can overlook. The benchmark therefore complements
+TabArena by covering data regimes in which conventional supervised models remain competitive. The
+latest public BeyondArena release includes models up to TabPFN-3. We therefore use its published
+baseline results and add only Causilo, which we evaluate locally.
+Classification. Causilo leads the classification comparison with 1346 Elo (Figure 6a), ahead of
+TabPFN-3 at 1263 and RealMLP [ 23] at 1243 by 83 and 103 points, respectively. TabM [ 24], TabPFN-
+2.6 [25], TabICLv2, and CatBoost [ 26] achieve similar ratings of 1205, 1197, 1194, and 1193. Conven-
+tional supervised models remain competitive: RealMLP outperforms all evaluated TFMs except Causilo
+and TabPFN-3, while TabM surpasses TabPFN-2.6 and TabICLv2. Causilo leads both foundation
+models and conventional supervised methods across this broader collection of classification tasks.
+Regression. Causilo also ranks first in regression with 1394 Elo (Figure 6b). Here, RealMLP is the
+closest competitor at 1357, narrowing the lead to 37 points. TabPFN-3 follows at 1294 and TabPFN-2.6
+at 1265, trailing Causilo by 100 and 129 points. Causilo retains the highest aggregate rating despite
+the change in its closest competitor between classification and regression.
+Combined.Across both tasks, Causilo achieves the highest combined Elo of 1359 (Table 2). RealMLP
+and TabPFN-3 are nearly tied at 1274 and 1270, leaving margins of 85 and 89 points. Causilo also
+attains the lowest improvability (6.4%) and average rank (6.2), together with the highest aggregated
+win count (47.3). Together with the task-specific rankings, these results show that Causilo’s aggregate
+advantage extends beyond TabArena setting and holds against both foundation and supervised models.
+Classification subgroups. Causilo leads both binary and multiclass classification with 1323 and
+1424 Elo, respectively (Figure 7). TabPFN-3 is the nearest competitor in both, trailing by 84 and 83
+points. The nearly identical margins show that the classification advantage holds across both target
+types. TabPFN-3 is also the closest competitor on IID and numerical datasets, where Causilo leads by
+93 points (1434 versus 1341) and 105 points (1408 versus 1303).
+9
+
+Causilo Technical Report
+CausiloT abPFN-3RealMLP
+T abM
+T abPFN-2.6
+T abICLv2CatBoostLightGBMXGBoost T abDPT
+ExtraTrees
+RandomForest
+Foundation models Supervised methods
+(a)Classification.
+CausiloRealMLPT abPFN-3
+T abPFN-2.6
+CatBoost
+T abM
+LightGBMT abICLv2XGBoost T abDPT
+ExtraTrees
+RandomForest
+Foundation models Supervised methods
+947 (b)Regression.
+Figure 6.BeyondArena Elo of the top 12 models for classification and regression, excluding system submissions
+and retaining only the highest-rated variant from each model family within each comparison. Higher is better.
+Black denotes Causilo, gold denotes other foundation models, and blue denotes supervised methods.
+T able 2.Combined BeyondArena results for 29 evaluated configurations, sorted by Elo. D denotes default, T
+denotes tuned, and T+E denotes tuned and ensembled configurations. Elo subscripts give the reported lower
+and upper confidence deviations. Wins are aggregated first-place counts and may be fractional. Best values are
+bold, and the Causilo row is shaded.
+Model
+Elo
+↑
+Improv-
+ability↓
+Avg.
+rank↓
+#wins
+↑ Model
+Elo
+↑
+Improv-
+ability↓
+Avg.
+rank↓
+#wins
+↑
+Causilo 1359−40,+45 6.4% 6.2 47.3 TabM (D) 1100 −27,+26 15.5% 14.4 1.8
+RealMLP (T+E) 1274 −26,+30 11.9% 8.5 7.1 RealMLP (D) 1053 −27,+22 17.4% 16.1 3.0
+TabPFN-3 (D) 1270 −41,+43 10.0% 8.6 12.5 TabDPT (D) 1047 −47,+37 19.0% 16.3 5.5
+TabPFN-2.6 (D) 1216 −37,+40 12.4% 10.4 9.4 ExtraTrees (T+E) 1011 −30,+22 19.6% 17.5 1.0
+TabM (T+E) 1211 −27,+29 13.2% 10.5 3.2 XGBoost (D) 1000 −26,+31 19.0% 17.9 1.0
+CatBoost (T+E) 1205 −22,+27 13.6% 10.7 4.8 LightGBM (D) 988 −21,+26 19.1% 18.3 0.8
+RealMLP (T) 1202 −24,+31 13.4% 10.8 6.6 ExtraTrees (T) 977 −34,+28 20.3% 18.7 0.5
+TabICLv2 (D) 1198 −41,+42 11.9% 10.9 8.2 RandomForest (T+E) 961 −29,+24 20.7% 19.3 0.9
+CatBoost (T) 1189 −24,+26 13.8% 11.2 5.6 RandomForest (T) 938 −32,+25 21.3% 20.0 0.7
+LightGBM (T+E) 1182−23,+28 14.4% 11.5 3.4 LinearModel (T+E) 880 −39,+30 27.5% 21.7 2.8
+TabM (T) 1171 −28,+27 13.9% 11.9 3.8 RandomForest (D) 874 −35,+31 23.4% 21.9 0.8
+LightGBM (T) 1144 −23,+28 14.9% 12.8 1.7 ExtraTrees (D) 865 −42,+38 24.1% 22.2 1.2
+XGBoost (T+E) 1139 −25,+32 16.0% 13.0 1.8 LinearModel (T) 850 −45,+33 28.3% 22.6 2.3
+CatBoost (D) 1132 −21,+31 15.4% 13.2 1.1 LinearModel (D) 796 −52,+40 30.7% 23.9 0.5
+XGBoost (T) 1117 −25,+29 16.2% 13.8 2.7
+The competing models change as the feature composition changes. On low-dimensional tables, with at
+most 100 features after preprocessing, Causilo leads TabPFN-3 by 71 points (1403 versus 1332). On
+high-dimensional tables, RealMLP becomes the nearest competitor, narrowing the margin to 31 points
+(1248 versus 1217); TabM and CatBoost also rank above TabPFN-3. Grouped classification presents a
+different ordering. Across 11 datasets, Causilo is the highest-ranked TFM at 1225 Elo, behind TabM
+at 1283, RealMLP at 1282, and LightGBM [27] at 1228, but ahead of CatBoost at 1216.
+Regression subgroups. Causilo leads on IID, numerical, and text-containing datasets, exceeding
+the strongest baseline in each by 147, 98, and 188 Elo, respectively (Figure 8). Its advantage is smaller
+across dimensionality subsets; i.e., it leads TabPFN-3 by 31 Elo on low-dimensional tables.
+Grouped regression is more challenging. Across seven datasets, Causilo remains the strongest TFM at
+1238 Elo but trails RealMLP by 130 points and also ranks below TabM, LightGBM, and CatBoost.
+These results show broad strength across data regimes, while identifying grouped generalization as a
+remaining gap relative to conventional supervised methods.
+10
+
+Causilo Technical Report
+Binary
+73 datasets
+Causilo 1323
+T abPFN-3 1239
+RealMLP 1216
+CatBoost 1180
+T abM 1179
+Multiclass
+25 datasets
+Causilo 1424
+T abPFN-3 1341
+RealMLP 1331
+T abICLv2 1326
+T abM 1287
+Text
+9 datasets
+Causilo 1353
+RealMLP 1296
+CatBoost 1225
+T abPFN-3 1205
+T abM 1187
+Numerical
+38 datasets
+Causilo 1408
+T abPFN-3 1303
+T abPFN-2.6 1275
+RealMLP 1273
+T abM 1238
+Iid
+77 datasets
+Causilo 1434
+T abPFN-3 1341
+T abICLv2 1271
+T abPFN-2.6 1260
+RealMLP 1252
+Grouped
+11 datasets
+T abM 1283
+RealMLP 1282
+LightGBM 1228
+Causilo 1225
+CatBoost 1216
+Low Dim
+66 datasets
+Causilo 1403
+T abPFN-3 1332
+T abICLv2 1308
+T abPFN-2.6 1262
+RealMLP 1261
+High Dim
+32 datasets
+Causilo 1248
+RealMLP 1217
+T abM 1187
+CatBoost 1145
+T abPFN-3 1139
+Figure 7.BeyondArena classification Elo by subgroup. Each panel shows the top five model families, retaining
+the highest-rated variant within each family. Dataset counts appear below the subgroup names. Black denotes
+Causilo, gold other TFMs, and blue conventional supervised models. Higher Elo is better.
+Binary
+0 datasets
+No Result
+Multiclass
+0 datasets
+No Result
+Text
+7 datasets
+Causilo 1660
+T abPFN-2.6 1472
+RealMLP 1431
+T abICLv2 1365
+T abPFN-3 1274
+Numerical
+15 datasets
+Causilo 1612
+T abPFN-3 1514
+T abPFN-2.6 1441
+T abICLv2 1401
+RealMLP 1400
+Iid
+26 datasets
+Causilo 1673
+T abPFN-3 1526
+T abICLv2 1450
+T abPFN-2.6 1450
+RealMLP 1426
+Grouped
+7 datasets
+RealMLP 1368
+T abM 1350
+LightGBM 1325
+CatBoost 1281
+Causilo 1238
+Low Dim
+25 datasets
+Causilo 1421
+T abPFN-3 1390
+RealMLP 1384
+T abICLv2 1342
+T abPFN-2.6 1336
+High Dim
+19 datasets
+Causilo 1394
+RealMLP 1355
+LightGBM 1271
+CatBoost 1212
+T abPFN-2.6 1192
+Figure 8.BeyondArena regression Elo by subgroup, using the same model-family selection and colors as
+Figure 7. Causilo leads five of the six displayed subgroups and is the highest-ranked TFM on grouped regression.
+Higher Elo is better.
+3.3 ScoringBench
+ScoringBench [14] evaluates both point predictions and predictive distributions on a heterogeneous
+collection of real-world regression datasets. Figure 9 compares metric-specific Elo ratings for RMSE, R2,
+11
+
+Causilo Technical Report
+0.25 0.50 0.75 1.00
+1200
+1280
+1360
+1440
+1520RMSE Elo
+Optimal
+73.3 241.8
+Median inference time per test fold (s)
+(a)RMSE.
+0.25 0.50 0.75 1.00
+1200
+1280
+1360
+1440
+1520R² Elo
+Optimal
+73.3 241.8
+Median inference time per test fold (s) (b)R 2.
+0.25 0.50 0.75 1.00
+1120
+1200
+1280
+1360
+1440MAE Elo
+Optimal
+73.3 241.8
+Median inference time per test fold (s)
+(c)MAE.
+0.25 0.50 0.75 1.00
+1300
+1400
+1500
+1600
+1700CRPS Elo
+Optimal
+73.3 241.8
+Median inference time per test fold (s) (d)CRPS.
+Figure 9.ScoringBench performance–efficiency frontiers for point prediction (RMSE, R2, and MAE) and
+distributional prediction (CRPS). Each panel plots metric-specific Elo against median inference time per test
+fold in seconds. Dashed lines trace the empirical Pareto frontier; breaks in the time axis separate the much
+slower Mitra-v2 configurations. Causilo lies on the frontier in all four panels.
+MAE, and CRPS against median inference time per test fold. Higher Elo indicates stronger predictive
+performance for every metric, while lower inference time is better. The broken time axis accommodates
+the substantially longer runtimes of the Mitra-v2 configurations.
+Point prediction.The three point-prediction metrics yield similar performance–efficiency frontiers.
+Causilo achieves higher Elo than TabPFN-3.5-Fast with a modest increase in inference time, while
+TabPFN-3.5 provides the highest Elo at a higher latency. Causilo also outperforms fine-tuned Mitra-v2
+12
+
+Causilo Technical Report
+on all three point metrics at substantially lower inference cost. In the MAE panel, it additionally
+improves on TabLDM at lower latency, extending its advantage beyond squared-error metrics. It
+therefore occupies an intermediate point on the frontier between TabPFN-3.5-Fast and TabPFN-3.5,
+improving point-prediction quality without requiring the latency of the latter.
+Distributional prediction.CRPS evaluates the full predictive distribution by integrating the
+squared difference between its cumulative distribution function and the step function at the observed
+target. It rewards accurate distributions that are concentrated without being overconfident. Lower raw
+CRPS is better, corresponding to higher CRPS Elo in the figure.
+Causilo remains on the CRPS frontier, outperforming TabPFN-3.5-Fast while requiring only modestly
+more inference time. TabPFN-3.5 again attains a higher Elo at a higher latency. Fine-tuned Mitra-v2
+slightly exceeds Causilo in CRPS Elo, but requires a median 241.8 seconds per test fold, compared with
+approximately 0.3 seconds for Causilo. Across all four metrics, Causilo combines sub-second inference
+with competitive point and distributional prediction quality.
+4 License
+The Causilo code is released under the Apache License 2.0. The pretrained model weights are distributed
+separately under the Causilo License v1.0, which permits non-commercial research, testing, evaluation,
+experimentation, and modification.
+Commercial or production use of the model, its derivatives, or its outputs requires a separate license
+from Nums AI Inc. and any other relevant rights holders. Providing the model or its derivatives through
+hosted, managed, API, or SaaS services also requires a license, whether the service is paid or free.
+Scholarly publication and the sharing of research results, including outputs generated in compliance with
+the license, are permitted. Independently authored papers and outputs need not adopt the model license;
+any included model components remain subject to its redistribution requirements. The full license
+texts govern all use and distribution. Licensing inquiries may be directed tocontact@nums.world.
+5 Conclusion
+We introduced Causilo, a tabular foundation model that combines strong predictive performance with
+fast inference. By introducing an additional refinement stage before row compression, Causilo preserves
+richer feature-level interactions while keeping computation efficient. Across TabArena, BeyondArena,
+and ScoringBench, Causilo establishes a strong position on the performance–efficiency frontier.
+13
+
+Causilo Technical Report
+References
+[1] Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzm¨ uller, Prateek Desai, David
+Salinas, and Frank Hutter. Tabarena: A living benchmark for machine learning on tabular data.
+Advances in Neural Information Processing Systems, 38, 2026.
+[2] Weihao Kong and Abhimanyu Das. Introducing TabFM: A zero-shot foundation model for
+tabular data. Google Research, 2026. Official release and implementation. https://research
+.google/blog/introducing-tabfm-a-zero-shot-foundation-model-for-tabular-data/ ;
+https://github.com/google-research/tabfm.
+[3] Jingang Qu, David Holzm¨ uller, Ga¨ el Varoquaux, and Marine Le Morvan. Tabiclv2: A better,
+faster, scalable, and open tabular foundation model.arXiv preprint arXiv:2602.11139, 2026.
+[4] Noah Hollmann, Samuel M¨ uller, Katharina Eggensperger, and Frank Hutter. Tabpfn: A transformer
+that solves small tabular classification problems in a second.arXiv preprint arXiv:2207.01848,
+2022.
+[5] Noah Hollmann, Samuel M¨ uller, Lennart Purucker, Arjun Krishnakumar, Max K¨ orfer, Shi Bin
+Hoo, Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data with a
+tabular foundation model.Nature, 637(8045):319–326, 2025.
+[6] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez,
+ Lukasz Kaiser, and Illia Polosukhin. Attention is all you need.Advances in neural information
+processing systems, 30, 2017.
+[7] L´ eo Grinsztajn, Klemens Fl¨ oge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Benjamin
+J¨ ager, Dominik Safaric, Simone Alessi, Adrian Hayler, et al. Tabpfn-2.5: Advancing the state of
+the art in tabular foundation models.arXiv preprint arXiv:2511.08667, 2025.
+[8] Xingxuan Zhang, Gang Ren, Han Yu, Hao Yuan, Hui Wang, Jiansheng Li, Jiayun Wu, Lang
+Mo, Li Mao, Mingchao Hao, et al. Limix: Unleashing structured-data modeling capability for
+generalist intelligence.arXiv preprint arXiv:2509.03505, 2025.
+[9] Moonjung Eo, Min-Kook Suh, Hye-Seung Cho, Jiwon Kim, Seoyoon Kim, Sangjun Nam, and
+Soonyoung Lee. Exaone tabular 1.0: Technical report.arXiv preprint arXiv:2608.25774, 2026.
+[10] Jingang Qu, David Holzm¨ uller, Ga¨ el Varoquaux, and Marine Le Morvan. Tabicl: A tabular
+foundation model for in-context learning on large data.arXiv preprint arXiv:2502.05564, 2025.
+[11] L´ eo Grinsztajn, Klemens Fl¨ oge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Mihir
+Manium, Shi Bin Hoo, Magnus B¨ uhler, Anurag Garg, et al. Tabpfn-3: Technical report.arXiv
+preprint arXiv:2605.13986, 2026.
+[12] Yefan Tao, Xiyuan Zhang, Xinyi Liu, Boran Han, Danielle Maddix, Haoyang Fang, Zhen Han,
+Jiading Gai, Xuanqing Liu, Michael Bohlke-Schneider, et al. Mitra-v2 technical report.arXiv
+preprint arXiv:2609.04540, 2026.
+[13] Lennart Purucker, Andrej Tschalzev, Nick Erickson, Gioia Blayer, David Holzm¨ uller, Alan Arazi,
+Alexander Pfefferle, Mustafa Tajjar, Ga¨ el Varoquaux, Frank Hutter, et al. Beyond iid: How
+general are tabular foundation models, really?arXiv preprint arXiv:2606.30410, 2026.
+[14] Jonas Landsgesell, Pascal Knoll, and Tizian Wenzel. Scoringbench: A benchmark for evaluating
+tabular foundation models with proper scoring rules.arXiv preprint arXiv:2603.29928, 2026.
+14
+
+Causilo Technical Report
+[15] Juho Lee, Yoonho Lee, Jungtaek Kim, Adam Kosiorek, Seungjin Choi, and Yee Whye Teh.
+Set transformer: A framework for attention-based permutation-invariant neural networks. In
+International conference on machine learning, pages 3744–3753. PMLR, 2019.
+[16] Biao Zhang and Rico Sennrich. Root mean square layer normalization. InAdvances in Neural
+Information Processing Systems, volume 32, 2019.https://arxiv.org/abs/1910.07467.
+[17] Dan Hendrycks and Kevin Gimpel. Gaussian error linear units (gelus).arXiv preprint
+arXiv:1606.08415, 2016.
+[18] Noam Shazeer. Glu variants improve transformer.arXiv preprint arXiv:2002.05202, 2020.
+[19] Prior Labs Team. TabPFN-3.5: Technical report, 2026. September 14, 2026. https://storage.
+googleapis.com/prior-labs-tabpfn-public/reports/tabpfn-v3.5-report.pdf.
+[20] Ken M Nakanishi. Scalable-softmax is superior for attention.arXiv preprint arXiv:2501.19399,
+2025.
+[21] Nick Erickson, Jonas Mueller, Alexander Shirkov, Hang Zhang, Pedro Larroy, Mu Li, and Alexander
+Smola. Autogluon-tabular: Robust and accurate automl for structured data.arXiv preprint
+arXiv:2003.06505, 2020.
+[22] Xingxuan Zhang, Gang Ren, Hao Yuan, Hao Zou, Hongze Tan, Hui Wang, Jianhao Song, Jiansheng
+Li, Jiayao Zhang, Jinghan Zhang, Kaifang Li, Lang Mo, Li Mao, Mingchao Hao, Nuo Xu, Rui Ding,
+Ruiji Zhang, Shuyang Li, Siyu Mei, Tianyang Zhang, Weiyang Mu, Yancheng Dong, Yongxian Wei,
+Yuan Xue, Yuanrui Wang, Yue He, Zijia Yang, Ziyun Li, Dongzhe Li, Fuqiang Wang, Jiandong
+Liu, Jiawei Chen, Jiaxin Du, Kaijie Cheng, Kehan Li, Lei Sun, Linjun Zhou, Ningbo Dai, Qi Wang,
+Renzhe Xu, Shaoxing Du, Shumeng Yang, Wang Lu, Wenjing Chu, Xiannan Huang, Xiaoyu Lin,
+Xing Ai, Xinyan Han, Xuanyue Li, Xuanyue Su, Xukun Zhang, Yan Lu, Yaxin Zhang, Yi Qin,
+Yifei Huang, Yihan Xu, Yongle Lv, Yuanyuan Jiang, Yushan Han, and Peng Cui. Limix-2: A
+contextual mechanism network towards general structured-data intelligence, 2026.
+[23] David Holzm¨ uller, L´ eo Grinsztajn, and Ingo Steinwart. Better by default: Strong pre-tuned mlps
+and boosted trees on tabular data. InNeural Information Processing Systems, 2024.
+[24] Yury Gorishniy, Akim Kotelnikov, and Artem Babenko. Tabm: Advancing tabular deep learning
+with parameter-efficient ensembling. InInternational Conference on Learning Representations,
+volume 2025, pages 77899–77935, 2025.
+[25] Prior Labs. TabPFN-2.6: Model documentation and official implementation, 2026. https:
+//docs.priorlabs.ai/models ; https://github.com/PriorLabs/TabPFN/blob/main/src/ta
+bpfn/architectures/tabpfn_v2_6.py.
+[26] Liudmila Prokhorenkova, Gleb Gusev, Aleksandr Vorobev, Anna Veronika Dorogush, and Andrey
+Gulin. Catboost: unbiased boosting with categorical features.Advances in neural information
+processing systems, 31, 2018.
+[27] Guolin Ke, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei Ye, and
+Tie-Yan Liu. Lightgbm: A highly efficient gradient boosting decision tree.Advances in neural
+information processing systems, 30, 2017.
+15
+
+Causilo Technical Report
+A Contributors
+Minyong Cho, Minho Jeong, Dooho Lee, Jinmo Lee, and Jaemin Yoo.
+The listing of contributors is in alphabetical order based on their last names.
+B Acknowledgements
+We thank Prior Labs for their contributions to tabular foundation models and continued efforts to
+advance the field. We are grateful to the TabICL authors for openly sharing their code, models,
+and technical insights, which informed the development of Causilo. We also thank the authors and
+maintainers of TabArena, BeyondArena, and ScoringBench for creating and operating benchmarks
+that enable rigorous evaluation and meaningful comparisons across tabular learning methods.
+16

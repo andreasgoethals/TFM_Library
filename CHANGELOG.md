@@ -4,6 +4,35 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-09-28
+
+- **Owner-requested Zotero mirror completed: 52 → 57 papers.** Queried the live collection by
+  its `Tabular Foundation Models` name substring; copied the five missing attached PDFs,
+  generated text mirrors, and completed summaries, overview rows and synthesis timeline rows.
+- Added **McCarter 2025-02 — What exactly has TabPFN learned to do?** (arXiv 2502.08978v1):
+  retained the expanded version with the v2 appendix; behavioural probes qualify universal
+  claims about duplication, ensembling and learned inductive bias.
+- Added **Schambach et al. 2026-05 — Benchmarking Attention for Tabular Foundation Models**:
+  distinguishes attention-backend and tensor-layout effects from architectural efficiency;
+  the synthesis keeps the H100 microbenchmark's scope explicit.
+- Added **Baesens et al. 2026-07 — Foundation Models for Credit Risk Prediction: A Game
+  Changer?** (arXiv 2605.18147v2): preserves the July revision; adds PD/LGD transfer evidence,
+  distinguishes discrimination from probability quality, and records the limits of the
+  cross-validation and pairwise-significance results.
+- Added **Zhang et al. 2026-09 — LimiX-2: A Contextual Mechanism Network Towards General
+  Structured-Data Intelligence** (arXiv 2609.17488v1): integrates masked conditional modelling
+  and persistent cells; separates causal-skeleton recovery from causal-effect identification.
+- Added **Cho et al. 2026-09 — Causilo Technical Report** (arXiv 2609.22866v1): adds cell
+  refinement before row compression, feature-side linear attention and distributional scoring;
+  records the accuracy/latency trade-off and the older BeyondArena comparator set.
+- **Sync checker now uses the live Local API, not a SQLite copy.** Adds pagination, stored
+  and linked attachment resolution, duplicate-match detection, version-aware date reporting,
+  and offline regression tests; README documents the actual behaviour.
+- **Existing filing discrepancy retained for review:** *Transformers Can Do Bayesian
+  Inference* is filed under `2021/12`, while Zotero and the stored conference PDF identify
+  ICLR 2022 and provide no arXiv version banner. No existing PDF was renamed or replaced,
+  and no Zotero record was edited.
+
 ## 2026-09-22
 
 Zotero-side only — no papers added, nothing in `papers/` changed.

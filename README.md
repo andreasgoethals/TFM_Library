@@ -14,8 +14,11 @@ for every research project that needs them:
    the papers shipped.
 
 Scope is **strictly tabular foundation models**: the PFN/TabPFN lineage,
-direct TFM competitors, and TFM variants. Benchmarks, ordinary tabular
-deep learning, and domain applications are deliberately out of scope.
+direct TFM competitors, and TFM variants. The owner's `Tabular Foundation
+Models` Zotero collection defines the exact paper set, including explicitly
+selected studies of TFM behaviour and evaluation. Unrelated benchmarks,
+ordinary tabular deep learning, and general domain literature are not
+collected here.
 
 The library is designed to be mounted as a **read-only folder inside
 other projects**, so all of them share one consistently maintained copy.
@@ -267,12 +270,17 @@ this repository — this repository is public.**
 python scripts/checks/check_zotero_sync.py
 ```
 
-It compares the collection against `papers/` and reports what diverged:
-items on one side only, year/month/title/author mismatches, missing
-identifiers, broken attachment links. It is **read-only on both sides**
-and it never moves a file or edits a Zotero item.
+It queries the **live Local API**, paginates collections/items/attachments,
+and compares the collection against `papers/` using normalised titles.
+It reports missing or extra papers, multiple items matched to one PDF,
+filing-date discrepancies, missing authors or identifiers, broken PDF
+attachments, and missing text extractions. Linked and stored PDFs are both
+resolved through Zotero's file-URL endpoint. It is **read-only on both
+sides** and never opens SQLite, moves a file, or edits a Zotero item.
+Zotero must be running with its Local API enabled; an unavailable API
+causes an explicit error instead of a potentially stale database fallback.
 
-Two things worth knowing about how it behaves:
+Three things worth knowing about how it behaves:
 
 - **It matches the collection by name substring**, not by number. The
   numeric prefixes are sort keys and get renumbered; `"Tabular Foundation
@@ -280,6 +288,10 @@ Two things worth knowing about how it behaves:
 - **It ignores trashed items.** Zotero keeps collection membership until
   the trash is emptied, so without that filter a paper you deliberately
   deleted is reported forever as "missing from `papers/`".
+- **It distinguishes publication dates from filed-version dates.** When
+  an extracted arXiv banner confirms the file's year/month, a different
+  Zotero publication date is informational. Without that version evidence,
+  a year disagreement remains a reported issue for review.
 
 A divergence is a **report, not a repair** — decide which side is wrong
 and fix that side by hand. Nothing here deletes a paper to make two
@@ -418,14 +430,14 @@ them survives, so a half-finished paper cannot be committed by accident.
 
 ### `scripts/checks/` — is everything still consistent?
 
-All four are **read-only** and exit non-zero when something is wrong, so
+The four audit scripts are **read-only** and exit non-zero when something is wrong, so
 they compose with `maintain.py` and with the pre-commit hook.
 
 | File | What it verifies |
 |---|---|
 | `check_docs.py` | Every paper has a text extraction, a summary entry, an overview row and a timeline row, with counts agreeing; every summary carries all four house sections; the sequences are chronological; every relative link and `#anchor` resolves; the changelog is newest-first with no duplicate or future dates; the shared documents name no consuming project; no unfinished scaffolds remain. |
 | `check_symbols.py` | Every code symbol cited in the documents still exists in the dump it is cited against — the check AGENTS.md rule 5 asks for after a refresh. Also flags any `` `dump.txt:1234` `` line-number citation. |
-| `check_zotero_sync.py` | The Zotero collection mirroring this library against `papers/`: what is in one place and not the other, year/month/title/author mismatches, missing arXiv IDs or DOIs. Queries a copy of `zotero.sqlite`; never writes to Zotero or moves a file. |
+| `check_zotero_sync.py` | Compares all live TFM collection references with library PDFs through the Local API: title-based presence, duplicate matches, version-aware filing dates, missing authors/identifiers, attachment health and extraction parity. Never reads SQLite or writes to Zotero. |
 | `check_paper_versions.py` | Asks arXiv whether a newer version exists than the PDF on disk. Never downloads anything — replacing a paper can change its year folder and month prefix, and the summaries may quote version-specific numbers, so it stays a manual decision. |
 
 ```bash
@@ -433,6 +445,15 @@ python scripts/checks/check_docs.py
 python scripts/checks/check_symbols.py --verbose
 python scripts/checks/check_zotero_sync.py --collection "Foundation Models"
 python scripts/checks/check_paper_versions.py
+```
+
+`test_check_zotero_sync.py` exercises pagination, collection selection,
+trash filtering, attachment resolution, missing/duplicate papers, version
+dates and API failures using local fixtures and mocks; it does not contact
+Zotero:
+
+```bash
+python -m unittest discover -s scripts/checks -p "test_*.py"
 ```
 
 ### `scripts/dumps/` — refreshing the code snapshots

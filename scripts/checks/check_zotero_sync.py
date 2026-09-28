@@ -1,34 +1,30 @@
 #!/usr/bin/env python
 """Check this library's ``papers/`` against the mirroring Zotero collection.
 
-Read-only on both sides. Zotero's database is **copied** before being
-queried (Zotero holds a write lock while running, and opening the live
-file read-write risks corruption), and nothing in ``papers/`` is moved,
-renamed, or written. The script only reports; you fix things by hand.
+Read-only on both sides. Query Zotero Desktop's live Local API, never
+``zotero.sqlite``: even a database copy can lag the running application.
+Nothing in Zotero or ``papers/`` is changed. Zotero must be running with
+its Local API enabled; an unavailable API is an error, not a DB fallback.
 
 What it compares
 ----------------
-* **Presence** — every PDF-bearing item in the Zotero collection should
+* **Presence** — every live reference in the Zotero collection should
   have a file in ``papers/<year>/``, and every file in ``papers/``
   should have a Zotero item.
-* **Year** — the Zotero item's year vs the ``papers/<year>/`` folder.
+* **Date** — the filed version's arXiv date vs the folder/month prefix;
+  publication-date differences in Zotero are informational when the
+  stored version's banner confirms the filename.
 * **Metadata completeness** — items with no author (which breaks the
-  filename convention) and items with neither DOI nor arXiv URL.
+  filename convention) and items with neither DOI nor URL.
 * **Broken links** — Zotero attachment paths that no longer resolve on
   disk.
 * **Extraction parity** — PDFs with no ``papers/text/<year>/`` mirror.
 
-How the Zotero side is located
-------------------------------
-Zotero's own preferences are the source of truth, read from
-``prefs.js`` in the Zotero profile:
-
-* ``extensions.zotero.dataDir``          -> where ``zotero.sqlite`` lives
-* ``extensions.zotero.baseAttachmentPath`` -> what ``attachments:`` means
-
-Linked attachments are stored as ``attachments:<relative/path.pdf>``,
-resolved against the base attachment path. Both are auto-detected;
-override with ``--data-dir`` / ``--base-path`` if needed.
+The collection is selected by a unique name substring, not its numeric
+prefix. Paginated API reads include all live top-level references, even
+those without a PDF. Attachment paths are resolved by Zotero itself,
+supporting both linked files and stored PDFs. Notes and trashed items
+are excluded. The preferences helper below is retained for new_paper.py.
 
 Usage::
 
@@ -36,8 +32,8 @@ Usage::
     python scripts/checks/check_zotero_sync.py --collection "Foundation Models"
     python scripts/checks/check_zotero_sync.py --json
 
-Exit code is 0 when nothing diverged, 1 otherwise (so it can gate a
-maintenance run).
+Exit code is 0 when nothing diverged, 1 for reported issues, and 2 when
+the live audit could not be completed (so it can gate a maintenance run).
 """
 
 from __future__ import annotations
@@ -45,23 +41,21 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
-import sqlite3
 import sys
-import tempfile
 import unicodedata
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from lib.library import MONTHS, _ARXIV_STAMP  # noqa: E402
 
 _ROOT = Path(__file__).resolve().parents[2]
 _PAPERS = _ROOT / "papers"
 
-DEFAULT_COLLECTION = "Foundation Models"
-
-# Zotero itemAttachments.linkMode values
-_LINK_MODE_IMPORTED_FILE = 0
-_LINK_MODE_IMPORTED_URL = 1
-_LINK_MODE_LINKED_FILE = 2
-_LINK_MODE_LINKED_URL = 3
+DEFAULT_COLLECTION = "Tabular Foundation Models"
+LOCAL_API = "http://127.0.0.1:23119/api/users/0"
 
 
 # --------------------------------------------------------------------------- #
@@ -164,85 +158,63 @@ def match_library_file(title: str, lib: dict[str, Path]) -> str | None:
 # --------------------------------------------------------------------------- #
 
 class ZoteroReader:
-    def __init__(self, sqlite_path: Path) -> None:
-        # Copy first: the live DB is locked while Zotero runs.
-        tmp = Path(tempfile.mkdtemp(prefix="zotero-check-")) / "zotero.sqlite"
-        shutil.copy2(sqlite_path, tmp)
-        self._tmp = tmp
-        self.db = sqlite3.connect(f"file:{tmp}?mode=ro", uri=True)
+    def get(self, route: str, *, raw: bool = False):
+        req = urllib.request.Request(
+            LOCAL_API + route, headers={"Zotero-API-Version": "3"})
+        with urllib.request.urlopen(req, timeout=30) as response:
+            body = response.read().decode("utf-8")
+        return body if raw else json.loads(body)
 
-    def close(self) -> None:
-        self.db.close()
-        shutil.rmtree(self._tmp.parent, ignore_errors=True)
+    def all(self, route: str) -> list[dict]:
+        """Read every page, including collections and item children."""
+        out: list[dict] = []
+        start = 0
+        while True:
+            page = self.get(f"{route}?limit=100&start={start}")
+            out.extend(page)
+            if len(page) < 100:
+                return out
+            start += len(page)
 
-    def collection_id(self, name: str) -> int | None:
-        """Exact name first, then a unique substring match.
+    def collection(self, name: str) -> dict:
+        matches = [c for c in self.all("/collections")
+                   if name.casefold() in c["data"]["name"].casefold()]
+        if len(matches) != 1:
+            raise ValueError(f"expected one collection containing {name!r}; "
+                             f"found {len(matches)}")
+        return matches[0]
 
-        Zotero collections here are numbered for ordering
-        (``1.14. Tabular Foundation Models``), so an exact-only lookup
-        would break the moment the numbering is renumbered. A substring
-        match is accepted only when it is unambiguous.
-        """
-        row = self.db.execute(
-            "select collectionID from collections where collectionName=?", (name,)
-        ).fetchone()
-        if row:
-            return row[0]
-        rows = self.db.execute(
-            "select collectionID, collectionName from collections "
-            "where collectionName like ?", (f"%{name}%",)).fetchall()
-        if len(rows) == 1:
-            return rows[0][0]
-        return None
+    def items(self, collection_key: str) -> list[dict]:
+        return [i for i in self.all(f"/collections/{collection_key}/items/top")
+                if not i["data"].get("deleted")
+                and i["data"].get("itemType") not in
+                ("attachment", "note", "annotation")]
 
-    def collection_names(self) -> list[str]:
-        return [r[0] for r in self.db.execute(
-            "select collectionName from collections order by collectionName")]
+    def pdfs(self, item_key: str) -> list[dict]:
+        return [c for c in self.all(f"/items/{item_key}/children")
+                if not c["data"].get("deleted")
+                and c["data"].get("contentType") == "application/pdf"]
 
-    def field(self, item_id: int, name: str) -> str | None:
-        row = self.db.execute(
-            """select v.value from itemData d
-                 join itemDataValues v on v.valueID = d.valueID
-                 join fields f on f.fieldID = d.fieldID
-                where d.itemID=? and f.fieldName=?""",
-            (item_id, name),
-        ).fetchone()
-        return row[0] if row else None
+    def file_path(self, attachment_key: str) -> Path:
+        url = self.get(f"/items/{attachment_key}/file/view/url", raw=True).strip()
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme != "file":
+            raise ValueError(f"attachment {attachment_key} has no local file URL")
+        path = (f"//{parts.netloc}" if parts.netloc else "") + parts.path
+        return Path(urllib.request.url2pathname(path))
 
-    def creators(self, item_id: int) -> list[str]:
-        return [r[0] for r in self.db.execute(
-            """select c.lastName from itemCreators ic
-                 join creators c on c.creatorID = ic.creatorID
-                where ic.itemID=? order by ic.orderIndex""", (item_id,))]
 
-    def items(self, collection_id: int) -> list[dict]:
-        # Trashed items keep their collection membership until the trash is
-        # emptied, so without this join a deleted item is reported as
-        # "in Zotero but missing from papers/" — a permanent false alarm
-        # about a paper the owner already decided to remove.
-        rows = self.db.execute(
-            """select i.itemID, t.typeName from collectionItems ci
-                 join items i on i.itemID = ci.itemID
-                 join itemTypes t on t.itemTypeID = i.itemTypeID
-                 left join deletedItems d on d.itemID = i.itemID
-                where ci.collectionID=? and d.itemID is null""",
-            (collection_id,)).fetchall()
-        out = []
-        for item_id, type_name in rows:
-            atts = self.db.execute(
-                """select linkMode, path, contentType from itemAttachments
-                    where parentItemID=?""", (item_id,)).fetchall()
-            out.append({
-                "itemID": item_id,
-                "type": type_name,
-                "title": self.field(item_id, "title") or "",
-                "date": self.field(item_id, "date") or "",
-                "doi": self.field(item_id, "DOI"),
-                "url": self.field(item_id, "url"),
-                "creators": self.creators(item_id),
-                "attachments": atts,
-            })
-        return out
+def filed_date(pdf: Path) -> tuple[str, str | None]:
+    """Filename date and, if available, the exact stored arXiv version date."""
+    filename_date = f"{pdf.parent.name}-{pdf.name[:2]}"
+    mirror = _PAPERS / "text" / pdf.parent.name / (pdf.stem + ".txt")
+    stamp = None
+    if mirror.is_file():
+        with mirror.open(encoding="utf-8") as stream:
+            stamp = _ARXIV_STAMP.search(stream.read(16000))
+    version_date = (f"{stamp.group(5)}-{MONTHS[stamp.group(4)]:02d}"
+                    if stamp else None)
+    return filename_date, version_date
 
 
 def author_segment(creators: list[str]) -> str:
@@ -270,7 +242,7 @@ class Report:
     def total(self) -> int:
         return sum(len(v) for v in self.sections.values())
 
-    def render(self, stats: dict[str, int]) -> str:
+    def render(self, stats: dict[str, int | str]) -> str:
         bar = "-" * 78
         out = [bar, "  Zotero <-> TFM Library consistency check", bar]
         for k, v in stats.items():
@@ -289,110 +261,119 @@ class Report:
         return "\n".join(out)
 
 
+def compare(z: ZoteroReader, collection: dict) -> tuple[dict, Report, list[str]]:
+    rep = Report()
+    notes: list[str] = []
+    lib = library_papers()
+    matched_lib: dict[str, str] = {}
+    items = z.items(collection["key"])
+
+    for item in items:
+        d = item["data"]
+        key = item["key"]
+        title = d.get("title", "")
+        label = f"{key} | {title}"
+        date = item.get("meta", {}).get("parsedDate") or d.get("date", "")
+        year_match = re.search(r"\b(20\d{2}|19\d{2})\b", date)
+        year = year_match.group(1) if year_match else ""
+        authors = [c for c in d.get("creators", [])
+                   if c.get("creatorType") == "author"
+                   and (c.get("lastName") or c.get("name"))]
+        if not authors:
+            rep.add("Zotero items with NO author", label)
+        if not d.get("DOI") and not d.get("url"):
+            rep.add("Zotero items with neither DOI nor URL", label)
+
+        pdfs = z.pdfs(key)
+        if not pdfs:
+            rep.add("Zotero items with no PDF attachment", label)
+        for attachment in pdfs:
+            akey = attachment["key"]
+            try:
+                path = z.file_path(akey)
+                if not path.is_file():
+                    rep.add("Zotero attachment paths broken on disk",
+                            f"{label} | attachment {akey}")
+            except (urllib.error.URLError, ValueError) as exc:
+                rep.add("Zotero PDF attachments unavailable",
+                        f"{label} | attachment {akey}: {exc}")
+
+        name = match_library_file(title, lib)
+        if name is None:
+            rep.add("In Zotero collection but NOT in papers/", label)
+            continue
+        if name in matched_lib:
+            rep.add("Multiple Zotero items matched to one library PDF",
+                    f"{matched_lib[name]} and {key} -> {name}")
+        matched_lib[name] = key
+        pdf = lib[name]
+        filename_date, version_date = filed_date(pdf)
+        if version_date:
+            if filename_date != version_date:
+                rep.add("Filed date disagrees with stored arXiv version",
+                        f"{name}: filename {filename_date}, banner {version_date}")
+            elif year and (year != version_date[:4]
+                          or (re.match(r"\d{4}-\d{2}", date)
+                              and date[:7] != version_date)):
+                notes.append(f"{key}: Zotero date {date}; stored version "
+                             f"{version_date} correctly retained ({name})")
+        elif year and pdf.parent.name != year:
+            rep.add("Year mismatch without an arXiv version date",
+                    f"{label}: Zotero {year}, library {pdf.parent.name}")
+        if not (_PAPERS / "text" / pdf.parent.name / (pdf.stem + ".txt")).is_file():
+            rep.add("PDFs with no text extraction", f"{pdf.parent.name}/{name}")
+
+    for name, path in sorted(lib.items()):
+        if name not in matched_lib:
+            rep.add("In papers/ but NOT in the Zotero collection",
+                    f"{path.parent.name}/{name}")
+    stats = {
+        "Zotero collection": collection["data"]["name"],
+        "source": "Zotero Desktop Local API (read-only)",
+        "items in collection": len(items),
+        "PDFs in papers/": len(lib),
+        "matched": len(matched_lib),
+    }
+    return stats, rep, notes
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--collection", default=DEFAULT_COLLECTION,
-                    help=f"Zotero collection mirroring this library "
+                    help="unique collection-name substring "
                          f"(default: {DEFAULT_COLLECTION!r})")
-    ap.add_argument("--data-dir", help="Zotero data dir (contains zotero.sqlite)")
-    ap.add_argument("--base-path", help="Zotero linked-attachment base directory")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--list-collections", action="store_true",
-                    help="print every Zotero collection name and exit")
+                    help="print every live Zotero collection name and exit")
     args = ap.parse_args(argv)
-
-    prefs = read_zotero_prefs()
-    data_dir = Path(args.data_dir or prefs.get("extensions.zotero.dataDir", ""))
-    base_path = Path(args.base_path
-                     or prefs.get("extensions.zotero.baseAttachmentPath", ""))
-
-    sqlite_path = data_dir / "zotero.sqlite"
-    if not sqlite_path.is_file():
-        print(f"ERROR: zotero.sqlite not found at {sqlite_path}\n"
-              f"       pass --data-dir explicitly.", file=sys.stderr)
-        return 2
-
-    z = ZoteroReader(sqlite_path)
+    z = ZoteroReader()
     try:
         if args.list_collections:
-            for n in z.collection_names():
-                print(n)
+            for c in sorted(z.all("/collections"), key=lambda c: c["data"]["name"]):
+                print(c["data"]["name"])
             return 0
-
-        cid = z.collection_id(args.collection)
-        if cid is None:
-            print(f"ERROR: no Zotero collection named {args.collection!r}.\n"
-                  f"       Available: {', '.join(z.collection_names())}",
-                  file=sys.stderr)
-            return 2
-
-        rep = Report()
-        lib = library_papers()
-        matched_lib: set[str] = set()
-        items = z.items(cid)
-
-        for it in items:
-            title = it["title"]
-            short = title[:62]
-            year = (it["date"] or "")[:4]
-            linked = [p for lm, p, _ in it["attachments"]
-                      if lm == _LINK_MODE_LINKED_FILE and p
-                      and p.startswith("attachments:")]
-            stored_pdf = [p for lm, p, ct in it["attachments"]
-                          if lm in (_LINK_MODE_IMPORTED_FILE, _LINK_MODE_IMPORTED_URL)
-                          and (ct or "") == "application/pdf"]
-
-            # --- metadata completeness -------------------------------------
-            if not it["creators"]:
-                rep.add("Zotero items with NO author (breaks the filename rule)",
-                        f"{year} | {short}")
-            if not it["doi"] and not (it["url"] or ""):
-                rep.add("Zotero items with neither DOI nor URL", f"{year} | {short}")
-
-            # --- attachment health -----------------------------------------
-            if not linked:
-                kind = ("PDF sits in Zotero storage, not linked to the base dir"
-                        if stored_pdf else "no PDF attachment at all")
-                rep.add("Zotero items with no linked PDF in the base directory",
-                        f"{year} | {short}  [{kind}]")
-            for rel in linked:
-                relpath = rel.split(":", 1)[1]
-                if not (base_path / relpath).is_file():
-                    rep.add("Zotero attachment paths broken on disk",
-                            f"{year} | {short}  -> {relpath}")
-
-            # --- presence + year, independent of attachment state ----------
-            name = match_library_file(title, lib)
-            if name is None:
-                rep.add("In Zotero collection but NOT in papers/", f"{year} | {short}")
-                continue
-            matched_lib.add(name)
-            folder = lib[name].parent.name
-            if year and folder != year:
-                rep.add("Year mismatch (Zotero vs papers/<year>/)",
-                        f"{short}: Zotero {year} vs library {folder}")
-            if not (_PAPERS / "text" / folder / (lib[name].stem + ".txt")).is_file():
-                rep.add("PDFs with no text extraction", f"{folder}/{name}")
-
-        for name, path in sorted(lib.items()):
-            if name not in matched_lib:
-                rep.add("In papers/ but NOT in the Zotero collection",
-                        f"{path.parent.name}/{name}")
-
-        stats = {
-            "Zotero collection": args.collection,
-            "items in collection": len(items),
-            "PDFs in papers/": len(lib),
-            "matched": len(matched_lib),
-        }
-
+        collection = z.collection(args.collection)
+        stats, rep, notes = compare(z, collection)
+    except (urllib.error.URLError, ValueError, OSError) as exc:
+        message = (f"Cannot complete the live Zotero check: {exc}. "
+                   "Zotero must be running with its Local API enabled. "
+                   "No SQLite fallback was attempted.")
         if args.json:
-            print(json.dumps({"stats": stats, "issues": rep.sections}, indent=2))
+            print(json.dumps({"error": message}, indent=2))
         else:
-            print(rep.render(stats))
-        return 1 if rep.total else 0
-    finally:
-        z.close()
+            print(f"ERROR: {message}", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(json.dumps({"stats": stats, "issues": rep.sections,
+                          "version_notes": notes}, indent=2))
+    else:
+        print(rep.render(stats))
+        if notes:
+            print("  Informational publication/version date differences:")
+            for note in notes:
+                print(f"    - {note}")
+    return 1 if rep.total else 0
 
 
 if __name__ == "__main__":

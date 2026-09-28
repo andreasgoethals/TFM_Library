@@ -774,7 +774,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabdpt"
-version = "1.3.0"
+version = "1.3.1"
 description = "TabDPT: Scaling Tabular Foundation Models on Real Data"
 readme = "README.md"
 license = "Apache-2.0"
@@ -1631,21 +1631,10 @@ class TabDPTEstimator(BaseEstimator):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.use_flash = use_flash and self.device == "cuda"
         self.missing_indicators = missing_indicators
+        self.clip_sigma = clip_sigma
+        self.model_weight_path = model_weight_path
 
-        if model_weight_path:
-            self.path = model_weight_path
-        else:
-            self.path = self.download_weights()
-
-        with safe_open(self.path, framework="pt", device=self.device) as f:
-            meta = f.metadata()
-            cfg_dict = json.loads(meta["cfg"])
-            cfg = OmegaConf.create(cfg_dict)
-            model_state = {k: f.get_tensor(k) for k in f.keys()}
-
-        cfg.env.device = self.device
-        self.model = TabDPTModel.load(model_state=model_state, config=cfg, use_flash=self.use_flash, clip_sigma=clip_sigma)
-        self.model.eval()
+        self._load_model()
 
         self.max_features = self.model.num_features
         self.max_num_classes = self.model.n_out
@@ -1691,6 +1680,32 @@ class TabDPTEstimator(BaseEstimator):
                 )
 
         self.projection = None
+
+    def _load_model(self) -> None:
+        """Read the checkpoint and build ``self.model``; the constructor calls this once.
+
+        Separated out so a caller can share one network across several estimators built with the
+        same ``model_weight_path`` (or the same default download), ``use_flash`` and ``clip_sigma``:
+        build one estimator, then for the next skip its own load by overriding or monkeypatching
+        this method to hand back the cached module instead of rebuilding it. Downloads from
+        Hugging Face when ``model_weight_path`` is unset.
+        """
+        if self.model_weight_path:
+            self.path = self.model_weight_path
+        else:
+            self.path = self.download_weights()
+
+        with safe_open(self.path, framework="pt", device=self.device) as f:
+            meta = f.metadata()
+            cfg_dict = json.loads(meta["cfg"])
+            cfg = OmegaConf.create(cfg_dict)
+            model_state = {k: f.get_tensor(k) for k in f.keys()}
+
+        cfg.env.device = self.device
+        self.model = TabDPTModel.load(
+            model_state=model_state, config=cfg, use_flash=self.use_flash, clip_sigma=self.clip_sigma
+        )
+        self.model.eval()
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         assert isinstance(X, np.ndarray), "X must be a numpy array"
@@ -3828,6 +3843,37 @@ def test_invalid_feature_reduction_raises():
 def test_invalid_faiss_metric_raises():
     with pytest.raises(AssertionError):
         build(faiss_metric="bad")
+
+
+# --- Separable model loading ---
+
+def test_load_model_is_separately_callable():
+    """``_load_model`` can be re-run (or overridden) after construction to swap the network."""
+    est = build()
+    first_model = est.model
+    est._load_model()
+    assert est.model is not first_model  # a fresh module, same checkpoint
+    assert est.max_features == MAX_FEATURES  # unaffected: derived once, from the first load
+
+
+def test_load_model_can_be_overridden_to_share_a_network():
+    """A caller can skip the per-instance download/build entirely by overriding ``_load_model``."""
+    donor = build()
+
+    class _SharedWeightEstimator(TabDPTEstimator):
+        def _load_model(self) -> None:
+            self.model = donor.model  # reuse the donor's network instead of loading one
+
+    est = _SharedWeightEstimator(mode="cls", device=DEVICE)
+    assert est.model is donor.model
+
+
+def test_get_params_reads_every_constructor_argument():
+    """``clip_sigma`` and ``model_weight_path`` are stored on ``self``, as sklearn's contract requires."""
+    est = build(clip_sigma=4.0)
+    params = est.get_params()
+    assert params["clip_sigma"] == 4.0
+    assert params["model_weight_path"] is None
 
 
 
