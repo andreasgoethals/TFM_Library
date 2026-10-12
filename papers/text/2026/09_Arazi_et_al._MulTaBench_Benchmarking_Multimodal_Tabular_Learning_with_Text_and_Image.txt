@@ -1,0 +1,2471 @@
+MulTaBench: Benchmarking Multimodal Tabular
+Learning with Text and Image
+Alan Arazi∗,1,2 Eilam Shapira∗,1 Shoham Grunblat1 Mor Ventura1
+Elad Hoffer3 Gioia Blayer4 David Holzmüller4 Lennart Purucker2,5
+Gaël Varoquaux4,6 Frank Hutter2,7,5 Roi Reichart1
+∗Equal contribution
+1Technion – Israel Institute of Technology 2Prior Labs 3NVIDIA
+4SODA Team, INRIA Saclay, Palaiseau 5University of Freiburg 6Probabl 7ELLIS Institute Tübingen
+{alanarazi7, eilam.shapira, roireichart}@gmail.com
+Abstract
+Tabular Foundation Models have recently established the state of the art in super-
+vised tabular learning, by leveraging pretraining to learn generalizable represen-
+tations of numerical and categorical structured data. However, they lack native
+support for unstructured modalities such as text and image, and rely on frozen, pre-
+trained embeddings to process them. On established Multimodal Tabular Learning
+benchmarks, we show that tuning the embeddings to the task improves perfor-
+mance. Existing benchmarks, however, often focus on the mere co-occurrence of
+modalities; this leads to high variance across datasets and masks the benefits of
+task-specific tuning. To address this gap, we introduce MulTaBench, a benchmark
+of 40 datasets, split equally between image-tabular and text-tabular tasks. We
+focus on predictive tasks where the modalities provide complementary predic-
+tive signal, and where generic embeddings lose critical information, necessitating
+Target-Aware Representations that are aligned with the task. Our experimental
+results demonstrate that the gains from target-aware representation tuning general-
+ize across both text and image modalities, several tabular learners, encoder scales,
+and embedding dimensions. MulTaBench constitutes the largest image-tabular
+benchmarking effort to date, spanning high-impact domains such as healthcare and
+e-commerce. It is designed to enable the research of novel architectures which
+incorporate joint modeling and target-aware representations, paving the way for
+the development of novel Multimodal Tabular Foundation Models.1
+1 Introduction
+Tabular Foundation Models (TFMs) [100, 43, 44, 80, 36, 81] have recently emerged as the state of the
+art (SOTA) for supervised tabular learning [23, 107]. They have surpassed gradient-boosted decision
+trees (GBDTs) [ 10, 14, 53, 77], which have historically been the leading approach [ 89, 34, 69].
+Recently, these versatile learners have been extended to causal inference [83], graph learning [38], and
+time-series [46]. However, the best-performing TFMs [36, 81] are trained exclusively on structured
+numerical data, making them fundamentally unimodal: unstructured inputs must be preprocessed via
+external embedding models [103, 90], with no unified support for modalities such as text and image.
+Yet, in many high-impact domains, tabular problems are multimodal: e-commerce listings [17, 94, 86],
+social media feeds [70, 74, 5], and medical health records [49, 16, 19, 26] combine image and text
+1https://github.com/alanarazi7/MulTaBench.
+40th Conference on Neural Information Processing Systems (NeurIPS 2026). Track on Evaluations and Datasets.
+arXiv:2605.10616v2  [cs.LG]  27 Sep 2026
+
+S
+t r u
+c
+t u
+r e
+d
+U
+n
+s t r u
+c
+t u
+r e
+d
+J
+o
+i n
+t  F
+r o
+z e
+n
+T a
+r g
+e
+t - A
+w
+a
+r e
+ ( T A
+R
+)
+0
+2 0
+4 0
+6 0
+8 0
+Does Joint
+Frozen
+outperform
+Structured?
+Yes
+Does Joint
+Frozen
+outperform
+Unstructured?
+Does Target-
+Aware (TAR)
+outperform
+Joint Frozen?
+No
+Discard. Pure
+Tabular task.
+Discard. Pure
+NLP/Vision task.
+Discard. No
+Adaptation Gain.
+Include In
+MulTaBench!+
+Yes
+No
+ No
+Yes
+Yes
+Train Tabular Models
+Figure 1: The MulTaBench Curation Pipeline. Datasets are included if joint prediction outperforms
+unimodal baselines and if Target-Aware Representations improve on frozen, off-the-shelf embeddings.
+with numerical features. While early work has begun extending TFMs to integrate text [3, 93], these
+extensions often compromise the model’s core tabular performance, and inherent support for visual
+modalities remains entirely absent. One might turn to Large Language and Vision-Language Models
+(LLMs/VLMs), which natively process unstructured inputs, but they are not suited for the inductive
+biases of tabular data; specifically, they are unoptimized for the relational structure [ 25] and are
+suboptimal for numerical features [ 100]. Addressing these limitations requires architectures that
+combine the numerical precision of TFMs while maintaining the rich input handling of multimodal
+foundation models. However, evaluating such a unified approach is difficult because the diverse nature
+of tasks within Multimodal Tabular Learning (MMTL) [52, 57] is not yet fully characterized; existing
+benchmarks [88, 63, 55, 97, 71] primarily highlight the coexistence of modalities, unintentionally
+grouping together problems that require fundamentally different modeling solutions.
+To characterize these problems, we observe that tabular models require inputs to be represented as
+feature columns, so high-dimensional images and texts must be compressed into compact representa-
+tions. Consequently, embeddings act as lossy summaries, as they capture only a fraction of the raw
+input’s information by design [104]. In order to generalize well, pretrained embedding models are
+optimized for broad semantic content, such as distinguishing an X-ray from a mammogram, at the
+expense of fine-grained details like precise size estimations or localized anomalies [75, 60]. While
+this compression is effective for global semantic mapping, it fails to preserve the specialized signals
+required for fine-grained MMTL tasks. For example, the optimal representation of a chest X-ray
+differs depending on whether the tabular task is to diagnose pneumonia or a rib fracture, and whether
+the patient is a young athlete or an elderly smoker. We thus advocate for the need for Target-Aware
+Representations (TAR): embeddings that are tuned to the target and, ideally, to the other modalities.
+Consider, for example, the task of pneumonia detection from a patient record combining age and
+smoking status with chest X-ray images. We argue that to study MMTL, a dataset should satisfy
+two properties: (1)Joint Signal, where each modality provides complementary information that
+contributes to the overall predictive performance, and (2)Task-awareness, where task-agnostic
+representations fail to capture the details required for a given objective. In our example, both the
+X-ray and the clinical profile offer unique, complementary information, and steering the image
+embedding to detect subtle signs of inflammation in the lungs should improve diagnostic accuracy.
+To translate these theoretical properties into a measurable test, we develop an algorithmic pipeline
+that quantifies whether a dataset complies with the aforementioned requirements. This approach
+approximates these properties by evaluating each task across a broad suite of tabular learners, ranging
+from light GBDTs to SOTA TFMs. To evaluate forJoint Signal, we demand a performance drop
+when either modality is removed, verifying that each input strengthens the predictive power. For
+Task-awareness, we finetune the encoder’s last 3 layers with LoRA [47] on the prediction target as
+a preprocessing step, and we expect these representations to outperform frozen ones when passed
+to tabular models. Crucially, our experiments confirm that target-aware representations outperform
+frozen embeddings across established MMTL benchmarks; however, we find that the magnitude of
+these gains is highly dataset-dependent, suggesting they represent distinct classes of MMTL tasks.
+Building on this framework, we introduceMulTaBench, a benchmark of 40 datasets balanced
+between image-tabular and text-tabular tasks, as well as classification and regression objectives. To
+ensure a comprehensive evaluation, the benchmark incorporates a wide range of sample sizes and
+feature counts, while spanning a diverse set of domains to capture the heterogeneity of real-world
+multimodal tabular data. MulTaBench represents the largest image-tabular benchmarking effort
+to date, and the first MMTL benchmark to explicitly test the limits of frozen embeddings. Rather
+2
+
+than attempting to cover the entire MMTL space, it specifically isolates datasets that benefit from
+joint fusion and favor target-aware adaptation. We additionally release 40 candidate datasets that
+satisfy theJoint Signalcriterion alone, extending MulTaBench to an 80-dataset collection. This
+allows models to be evaluated both where target-awareness is essential and where standard frozen
+embeddings suffice. Demonstrating the robustness of our curation criteria, we show that the gains
+from target-aware tuning generalize consistently across a diverse suite of independent tabular learners,
+encoder scales, and embedding dimensions. These findings suggest that designing novel architectures
+which contextualize the representations of unstructured modalities can push the boundaries of MMTL,
+and we believe that MulTaBench will be instrumental for developing true Multimodal TFMs.
+2 Related Work
+Tabular Foundation Models.The landscape of tabular learning shifted with Prior-data Fitted
+Networks (PFNs) [73], which pretrain transformers over synthetic tabular datasets with in-context
+learning (ICL) [11]. The TabPFN family [43, 44, 36, 29] pioneered this direction. Multiple subsequent
+works [80, 81, 66, 110, 93, 109, 8] advanced the paradigm with improvements spanning synthetic
+data diversity, real-world data pretraining, and architectural scalability. Among these, ConTextTab
+[93] is the only PFN to incorporate textual fields, yet it does not process raw strings; instead, it
+relies on external, frozen text embeddings as static inputs, decoupling the representation from the
+tabular learning objective. In addition, several non-PFN approaches [106, 55, 56] also incorporate
+semantic awareness, but likewise treat text representations as frozen. TabSTAR [ 3] represents a
+fundamental shift: rather than processing fixed representations, it jointly trains both the textual and
+tabular encoders, successfully demonstrating that TAR are essential for MMTL. However, it lacks
+support for images and its non-ICL architecture compromises its numerical performance.
+LLMs and VLMs.Recent years have seen the rise of LLMs and their evolution into VLMs
+[105, 108, 12]. These powerful models [91, 15] typically employ a unified transformer architecture
+[101] to process interleaved modalities within a single sequence, offering a path to integrate tabular
+data with text and image; however, research has primarily focused on text-tabular tasks [25]. TabLLM
+[41] explored different strategies to serialize the tabular data into natural language, and TabuLa-8B
+[28] and TabGemma [85] combined continued pretraining of LLMs on tabular corpora [ 22] with
+architectural modifications, achieving strong few-shot performance. Nevertheless, the autoregressive
+nature of LLMs is misaligned with the structure of tabular data, and their tokenization process
+damages numerical precision [98, 92]. Furthermore, their massive scale introduces prohibitive costs
+for high-throughput inference, while their extensive pretraining risks memorizing evaluation data
+[7, 33]. Consequently, generative architectures remain largely impractical for discriminative MMTL.
+Joint Multimodal Tabular Learning Architectures.Despite various proposals to advance MMTL
+[37, 51, 20, 48, 18, 4], the field still lacks a true multimodal foundation model for tabular data
+with text and images. AutoML [40] frameworks [88, 96, 97], led by AutoGluon-Multimodal [96],
+demonstrated the benefit of joint modeling by combining tabular, text and image encoders. However,
+their reliance on a non-ICL transformer [31] as the tabular backbone limits their tabular capacities.
+Similarly, TabSTAR [3] introduced a jointly pretrained text-tabular architecture and achieved strong
+performance on text-tabular classification tasks, but it struggled with regression tasks and with
+unimodal tabular benchmarks [23]. Recent attempts have built on stronger tabular foundations, by
+expanding the PFN paradigm with multimodal fusion strategies. TIME [65] proposed a late-fusion
+approach in an image-tabular setup, but missed cross-modal interactions and achieved mixed results
+when employing finetuning. MultiModalPFN [57] fused TabPFN with visual and textual backbones,
+but assumed frozen multimodal embeddings. To conclude, no existing model has successfully
+maintained SOTA performance on tabular tasks while learning TAR for text and images.
+Text-Tabular Benchmarks.Existing text-tabular benchmarks differ significantly in their curation
+philosophy and dataset scale. The Multimodal AutoML Benchmark [88] introduced 18 datasets with
+deliberate diversity in task type and predictive signal. Grinsztajn et al. [35] filtered 14 datasets from
+a bigger pool, where the text features provided a significant gain over a numerical-only baseline.
+TextTabBench [71] curated 13 text-tabular datasets, focusing on longer text fields while ensuring
+both the text modality and numerical features contribute to the prediction. CARTE [55] collected 51
+datasets, mainly featuring short strings and high-cardinality categories, typically present in knowledge
+3
+
+graphs. While these efforts were instrumental in advancing research on tabular data with strings,
+none of them were deliberately designed to isolate tasks where static representations fail to capture
+the necessary predictive signal. This limitation extends to concurrent works such as STRABLE [6],
+which benchmarks tabular learning with string columns, and BeyondArena [79], which includes a
+subset of text-tabular datasets. Importantly, as we show in § 4, most of the datasets included in the
+aforementioned benchmarks do not pass our curation pipeline. Consequently, potential performance
+gains that native Multimodal TFMs are designed to deliver might be overlooked. For example,
+ConTextTab set the SOTA for the CARTE benchmark [93], but struggles on MulTaBench (see § 5).
+Image-Tabular Benchmarks.The availability of image-tabular benchmarks is highly limited.
+MuG [63] introduced 4 data sources from the gaming domain combining tabular data with text
+and image, but offering limited domain diversity. Similarly, Tang et al. [97] curated 11 tabular
+datasets with images, but without quantifying the image signal’s necessity. In concurrent work,
+VT-Bench [50] curates 14 visual-tabular datasets to study fusion methods, rather than filtering for
+datasets where static representations fail. As detailed in § 4, these datasets often fail our curation
+pipeline, and, in certain cases, suffer from additional quality issues. This historical lack of large,
+accessible benchmarks led recent work such as TIME [65] and MultimodalTabPFN [57], to rely on a
+self-selected group of datasets, limiting the generalizability of their findings. We address this gap by
+doubling the benchmark size and assuring that the image representations are central for MMTL.
+Limits of Frozen Representations.Pretrained representations are optimized for general-purpose
+objectives and often fail to capture the fine-grained, task-specific details necessary for downstream
+performance [99, 62, 30, 13]. Weller et al. [104] provide a theoretical basis for this limitation,
+demonstrating how RAG systems [59] that rely on static embeddings can fail on even seemingly
+simple cases. To overcome this problem, alternative approaches [54, 67, 24, 95, 21, 102, 78, 58, 42]
+enabled the contextualization of document representations in the presence of the query. Similar
+limitations were also illustrated in VQA [2], where encoding images independently of the question
+leads to information loss, as the query determines which image regions are predictive [27, 60]. To
+overcome these limitations, VLMs have evolved toward deep multimodal alignment [82, 1, 61], and
+we argue that MMTL should undergo a similar evolution, moving away from decoupled preprocessing
+and frozen embeddings in favor of a joint learning approach.
+3 Benchmarking Multimodal Tabular Learning
+MMTL [52, 57] refers to prediction tasks where inputs combine structured data, such as numerical
+and categorical columns, with unstructured modalities like text or image. Within each modality, a
+dataset may contain multiple features, such as various numerical columns or distinct text fields. For
+the clarity of analysis in this section, we assume that a single unstructured modality is paired with the
+tabular data. However, our logic naturally extends to trimodal datasets, as discussed in §4.
+3.1 Desiderata for Multimodal Tabular Learning datasets
+Consider a pneumonia dataset where each observation pairs structured clinical metadata, such as age
+and smoking status, with textual clinical notes or chest X-ray images to predict diagnosis. While this
+seems a natural candidate for an MMTL benchmark, we argue that whether this dataset represents a
+challenging MMTL problem depends on two properties that must hold:
+Joint Signal.Following the principle in Mráz et al. [71], we require each modality to carry
+independent signal about the target, so the joint predictive performance exceeds the union of unimodal
+performances. In the pneumonia case, the X-ray encodes spatial lung patterns, while age and smoking
+status convey clinical risk factors that provide information invisible in pixels. This criterion could
+optionally capture cross-modal interactions, where one modality might only become discriminative
+once conditioned on the other. For instance, increased reticular markings may signal acute infection
+in non-smokers, yet merely represent baseline chronic changes in a long-term smoker; the visual
+feature only becomes discriminative when conditioned on the tabular history. A modality can fail this
+criterion if it carries no signal (e.g., a clinical note containing only administrative metadata), or if its
+signal is already captured by another modality and thus provides no predictive gain (e.g., a note that
+merely transcribes the patient’s age and smoking status, which already exist as structured features).
+4
+
+Task-awarenessWe defineTask-awarenessas a property of the computational problem where
+the optimal representation of an unstructured modality depends on the task context. A task exhibits
+Task-awarenesswhen the predictive signal is latent in the raw input at a level of granularity that differs
+from the modality’s global semantic meaning. Because general-purpose encoders are optimized
+to preserve high-level properties while discarding low-level variance, such as exact wording [104]
+or fine-grained spatial textures [ 75], they often discard the specific nuances required for MMTL.
+Recovering this signal necessitates TAR, which steer the representation to focus on the details relevant
+to the specific target.2 In our pneumonia example, a generic model might identify the scan’s global
+anatomy, whereas TAR would preserve the tiny visual patterns in the lung tissue that are key for
+diagnosis. Conversely, a task lacksTask-awarenessif the predictive signal is coarse enough to be
+captured by task-agnostic embeddings; for instance, if the objective is simply to categorize the scan
+type rather than identify a specific pathology, TAR would provide no significant advantage.
+3.2 The Curation Pipeline
+To bridge the gap between the theoretical desiderata and the empirical curation, we establish an
+evaluation protocol based on 4 experimental conditions, as summarized in Table 1 and Figure 1. The
+conditions vary by the features included and the specific representation of the unstructured modalities.
+Table 1: Experimental Conditions. Breakdown by feature composition and representation strategy.
+Condition Structured Unstructured Target-Aware (TAR)
+Unimodal Structured✓×–
+Unimodal Unstructured×✓×
+Joint Frozen✓ ✓×
+Joint TAR✓ ✓ ✓
+Our approach intentionally entangles task properties with algorithmic solutions in order to isolate
+datasets that align with our criteria and that current models struggle with. Embeddings are ex-
+tracted usinge5-v2-small[ 103] for texts andDINO-v3-small[ 90] for images, selected for their high
+performance-to-parameter efficiency [72]. To implement our proposed TAR condition, we finetune
+the last 3 layers on the prediction target using LoRA [47]. Crucially, this adaptation is performed as a
+specialized preprocessing step without the structured features and shared across learners. Representa-
+tions are down-projected with PCA [68] to a dimension of 30, to ensure computational efficiency.
+We employ 5 diverse tabular learners: GBDTs (LightGBM [53] and CatBoost [77]), the MLP-based
+TabM [32], and the TFMs TabPFNv2 [44] and TabPFN-2.5 [36]. For each candidate dataset, we
+evaluate every model in each condition over 5 random seeds, subsampling up to 10,000 examples per
+run for cost-effectiveness. Our metric is AUC for classification tasks andR 2 for regression tasks.
+LightGBM CatBoost T abM T abPFNv2 T abPFN-2.5
+0.56
+0.58
+0.60AUC
+ OSHA Accident Injury
+LightGBM CatBoost T abM T abPFNv2 T abPFN-2.5
+0.70
+0.75
+0.80AUC
+ CheXpert
+Unimodal Structured
+Unimodal Unstructured
+Joint Frozen
+Joint TAR
+Figure 2: Curation protocol over candidate datasets. Mean AUC per model and condition. TheOSHA
+Accident Injurydataset is rejected asTARfails to consistently improve overJoint Frozen.
+Acceptance Criteria.To pass the curation filter, a dataset should satisfy two conditions across at
+least 3 out of 5 learners: (1) ForJoint Signal, performance over theJoint Frozencondition should be
+higher than bothUnimodal StructuredandUnimodal Unstructuredvariants. This ensures that the
+unstructured modality is relevant, while also prevents the dataset from collapsing into a pure Natural
+Language Processing or Computer Vision task; and (2) ForTask-awarenesswe require that theJoint
+TARcondition will improve performance over theJoint Frozencondition, isolating the gain from
+representation tuning. Figure 2 illustrates the protocol over concrete examples. §5 analyzes how
+2While joint tuning with structured features could add predictive value, explicitly requiring it would be unnecessarily strict.
+5
+
+sensitive the final benchmark is to the acceptance criteria and to the choice of curation learners, and
+Appendix A provides a formal definition of the acceptance criteria, and details of the curation setup.
+4 MulTaBench
+MulTaBench is composed of 40 datasets split equally between image-tabular and text-tabular while
+balancing between regression and classification tasks, all satisfying our curation pipeline established
+in §3. The datasets vary in size, ranging from 400 to 114,000 rows and structured feature counts
+ranging from 1 to 245. While the text-tabular subset is derived exclusively from existing benchmarks,
+the image-tabular subset is curated and collected from public datasets. Among these, we can find
+datasets from various domains such as medical and e-commerce. We upload the benchmark to
+Kaggle3, using a unified API to link between the tables and the images. To facilitate MMTL research,
+we additionally release 40 candidate datasets meeting theJoint Signalcriterion, bringing the extended
+collection to a total of 80 datasets. Appendix B details the benchmark datasets and their properties.
+Text-Tabular Curation.To evaluate existing text-tabular benchmarks [88, 35, 55, 71], we aggregate
+all their 56 unique datasets and subject them to our 4 experimental conditions. To compare classifica-
+tion and regression tasks on a single scale, we normalize AUC and R2 scores to the [0,1] range using
+min-max scaling and average across datasets, reporting 95% CIs over all runs. In Figure 3, we com-
+pareJoint TARandJoint Frozenacross all datasets, finding that TAR consistently outperforms frozen
+embeddings for all learners, highlighting the limitations of using fixed representations. Similarly,
+Appendix C shows that theJoint Signalcondition improves on bothUnimodalconditions.
+With the results in hand, we apply our curation pipeline and find out that approximately 23% of the
+datasets fail theJoint Signalcriterion; of the remaining datasets, 36% do not pass theTask-awareness
+criterion, leaving 41% that pass both. From these, we subsample 20 datasets to match the size of the
+image-tabular subset. Our acceptance rate shows that while our requirements are common enough,
+they do not constitute the primary focus of standard text-tabular research. Without this distinction,
+existing benchmarks lack the focus to research target-awareness in MMTL, as shown in Figure 3.
+LightGBM CatBoost T abM T abPFNv2T abPFN-2.5
+0
+0.2
+0.4
+0.6
+0.8
+1
+Normalized Score
+All (56 datasets)
+LightGBM CatBoost T abM T abPFNv2T abPFN-2.5
+0
+0.2
+0.4
+0.6
+0.8
+1
+MulT aBench (20 datasets)
+Frozen
+TAR
+Figure 3: Target-Aware Representations Gains over Frozen. Normalized scores forJoint TARand
+Joint Frozenacross all text-tabular benchmark datasets (left), and its MulTaBench subset (right).
+Image-Tabular Curation.We collect candidate datasets from existing literature [ 63, 97, 65, 57],
+identifying a shared pool of 16 unique valid datasets, from which only 5 meet our criteria (31%), a
+proportion comparable to the text-tabular subset. We then manually curate additional datasets from
+Kaggle which pass our pipeline, eventually creating the largest image-tabular benchmark to this date
+with 20 datasets. In the process, we encountered significant challenges, such as: (1) isolating suitable
+candidates despite the inconsistent metadata found in public repositories; (2) handling substantial
+data volumes alongside the fragility of external image links; and (3) determining the appropriate
+preprocessing for each dataset. Appendix D elaborates on the curation process and its difficulties.
+Trimodal Datasets (Text-Image-Tabular).Within our final image-tabular subset, 9 datasets also
+contain text fields, leading us to apply the full curation pipeline to the text modality. We evaluate
+trimodality under a deliberately strict definition: a dataset qualifies as trimodal only if each unstruc-
+tured modality independently satisfiesJoint SignalandTask-awareness, and adapting both encoders
+improves upon adapting either one alone. We discover that only 2 datasets satisfy these criteria, with
+3https://www.kaggle.com/chico89/datasets
+6
+
+Table 2 presenting a case study of this analysis for thePetFinderdataset. Appendix E discusses
+whether weaker definitions could apply, noting that the extended collection of 80 released datasets
+includes 22 potentially trimodal candidates combining text, image, and structured features.
+Table 2: The PetFinder Analysis. S=Structured, I=Image, T=Text. For all models, performing Joint
+Modeling and Target-Aware Representations for both modalities maximizes AUC (shown in %).
+Single modality Frozen combinations Target-Aware Representations (TAR)
+ModelI T S+I S+T S+I+T S+I TAR+T S+I+T TAR S+ITAR+TTAR
+LightGBM 77.2 72.1 79.9 77.7 81.1 82.8 84.285.7
+CatBoost 78.9 73.5 81.7 79.3 83.2 83.9 85.286.4
+TabM 80.2 74.9 83.0 80.7 84.2 84.8 86.387.0
+TabPFNv2 80.7 73.5 83.2 79.3 83.9 84.5 86.387.1
+TabPFN-2.5 81.1 76.0 83.7 81.0 84.9 85.3 87.388.0
+5 Robustness Analysis
+While our curation pipeline identifies datasets with high multimodal potential, it is crucial to verify
+that these properties remain consistent across different modeling choices. We now focus on our second
+criterion,Task-awareness, as it has direct implications for how tabular models process unstructured
+features. In this section we first ask whether this property generalizes across new tabular learners,
+embedding models scale, and PCA projection dimensions, and then whether the curated set itself is
+an artifact of the thresholds and the learners used to build it. Appendix G provides extended results
+and an analysis of the high computational overhead of finetuning (see Appendix G.3).
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abICLv2
+T abPFNv2
+T abM
+T abDPT
+ConT extT ab
+CatBoost
+T abSTAR
+AG-MM
+LightGBM
+RealMLP
+RF
+XGBoost
+(a) Image-T abular
+Frozen
+TAR
+E2E
+Curation
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abICLv2
+T abPFN-2.5
+T abM
+CatBoost
+T abPFNv2
+AG-MM
+T abSTAR
+LightGBM
+RealMLP
+T abDPT
+XGBoost
+RF
+ConT extT ab
+(b) T ext-T abular
+Figure 4: Tabular Learners Performance Analysis. Normalized scores for MulTaBench datasets, with
+±95% CI. All learners gain from Target-Aware Representations (TAR).
+New Tabular Learners.Since model ranking suffers from selection bias favoring the curation
+models, our objective is not to establish the SOTA, but to provide a useful tool for the development of
+future multimodal architectures. Consequently, and to alleviate computation costs, we intentionally
+omit hyperparameter optimization for both the tabular learners and the TAR preprocessing, under-
+estimating both model performance and the gains from TAR. We supplement the original learners
+with XGBoost [14], RandomForest (RF) [10], RealMLP [45], TabDPT [66], and TabICLv2 [81]. We
+also include TabSTAR [3] and ConTextTab [93], which have native text support, and thus are treated
+as "end-to-end" (E2E) models for the text-tabular subset. Additionally, we evaluate the E2E model
+AutoGluon-Multimodal (AG-MM) [96], which natively processes texts and images.
+Figure 4 shows model performance on both MulTaBench subsets. Target-aware embeddings con-
+sistently outperform frozen embeddings across all new models and modalities, significantly so on
+37 of our 40 datasets (Appendix G.1). While this gain is expected for the curation models, its
+7
+
+generalization to all the other models provides an indication to the usefulness of our benchmark for
+MMTL research, confirming the robustness of our curation criteria. We note that GBDTs exhibit
+the most substantial gains. For the text-tabular subset, ConTextTab is significantly outperformed by
+AG-MM and TabSTAR, and has the worst performance compared to any TAR variant. This finding is
+particularly telling, as ConTextTab has set the SOTA for the CARTE Benchmark, emphasizing that
+MulTaBench targets a fundamentally different text-tabular problem.
+LightGBM CatBoost T abM T abPFNv2 T abPFN-2.50
+0.2
+0.4
+0.6
+0.8
+1
+Normalized Score
+Frozen Small
+Frozen Large
+TAR Small
+TAR Large
+Figure 5: Embedding Model Size Analysis. Normalized scores are computed with min-max scaling
+at the learner level. TAR variants outperform the frozen ones for both model sizes.
+Embedding Model Scale.So far, text and image were represented usinge5-v2-smallandDiNO-v3-
+small. Since the dimension of these embeddings is 384, one potential limitation may be that they are
+too small. We thus repeat the curation experiments using theLargevariants of the models, which
+have approximately 10 times more parameters, and a final dimension of 1024. Figure 5 shows that
+while a larger embedding model improves downstream performance, TAR significantly outperforms
+frozen embeddings even at the larger scale. In fact, we even observe that theTAR Smallvariant is
+better thanFrozen Large; this indicates that increased representational capacity does not guarantee
+that target-relevant signals are retained in the final representation, and tuning is still required.
+CatBoost LightGBM T abM T abPFNv2 T abPFN-2.5
+0
+0.2
+0.4
+0.6
+0.8
+1
+Normalized Score
+Frozen N=15
+Frozen N=30
+Frozen N=60
+TAR N=15
+TAR N=30
+TAR N=60
+Figure 6: Embedding Dimension Analysis. Normalized scores are computed with min-max scaling at
+the learner level. TAR variants are stronger than Frozen ones for 15, 30, and 60 PCA components.
+Embedding Dimension.To this point, our analysis has assumed a fixed embedding size of 30
+PCA components, following standard practice [35, 3]. This dimensionality reduction helps prevent
+overfitting and ensures computational efficiency by reducing memory requirements. However,
+this raises the question: is TAR really surfacing information which was missing in the original
+representations, or is the observed gain an artifact of the compression? We show that representation
+tuning remains effective across 15 and 60 dimensions (Figure 6), and even when dropping PCA
+completely in a reduced experiment (Appendix G.5). This stability proves that our findings are not
+artifacts of dimensionality, as TAR still improve performance for all of these conditions.
+Qualitative Analysis.So far, we relied on downstream performance to observe the benefits of TAR
+on MulTaBench. For image datasets, however, we can extract the last-layer [CLS]-to-patch attention
+maps from DINO-v3, to see what the representations learn before and after they are adjusted. Figure 7
+illustrates how target-aware adaptation reshapes the encoder’s focus across 4 MulTaBench datasets.
+8
+
+Image Frozen Target-Aware Image Frozen Target-Aware
+CheXpert
+PetFinder
+Glaucoma
+Celebs
+Figure 7: DINO-v3-small Attention Maps. Before (Frozen) and after (Target-Aware) finetuning on
+the target. The attention shifts from global details to specific regions relevant to the target variable.
+InCheXpertandGlaucoma, attention shifts from arbitrary anatomical borders toward the right lower
+lung and optic disc, respectively. ForPetFinder, the model suppresses background clutter to focus
+on the animal, specifically highlighting the ears as key indicators for kitten age. Similarly, focus in
+Celebsmoves from peripheral accessories to core facial features. These examples demonstrate that
+contextualization enables the encoder to surface specific details that are otherwise lost in generic,
+task-agnostic representations. Appendix H provides more visual examples.
+Curation Pipeline Sensitivity.Finally, we assess the robustness of our curation methodology,
+asking whether different hyperparameters and learner panels would have resulted in a different set
+of accepted datasets. First, we find that the benchmark’s composition is robust to the identity of
+the curation learners. Appendix G.6 shows that when we re-apply the pipeline using any 5-learner
+subset from our pool of 10, the accepted datasets remain largely unchanged, even when evaluated
+by a completely disjoint panel. Second, we examine the acceptance criteria. By demanding higher
+performance gains and broader learner consensus, we observe that dataset acceptance behaves as a
+spectrum. Appendix G.7 shows that when we require larger performance improvements or wider
+agreement among learners, the pipeline gradually isolates the datasets with the strongest need for
+target-awareness. Overall, while dataset acceptance is robust to the specific models used for curation,
+stricter thresholding can be used to pick out the datasets where target-awareness matters most.
+6 Towards Multimodal Tabular Foundation Models
+Our analysis of MulTaBench reveals a significant gap between current tabular learners and the
+demands of MMTL tasks, as existing architectures cannot jointly tune unstructured representations
+for the target label. In this section, we discuss the potential trajectory of future Multimodal TFMs.
+Our vision builds upon the framework proposed by Van Breugel and Van Der Schaar[100]. Their
+position piece identifies TFMs as a research priority and defines 4 core desiderata to guide their
+development: (D1) handlingmixed-type columns, such as numbers, categories and dates, (D2)
+enablingcross-dataset modeling, (D3) leveragingtextual contextand metadata, such as column
+names, and (D4) maintainingequivariance to column order. We expand their definition by suggesting
+(D5)Target-Aware Multimodal Tabular Learning; text and image embeddings should be target-aware.
+While PFNs have revolutionized structured learning, they are primarily designed for modalities where
+raw inputs already contain highly compressed signals. Initial efforts attempting to couple PFNs with
+multimodal encoders [65, 57] have struggled to unlock TAR without violating the core ICL premise of
+avoiding parameter updates. In contrast, joint modeling approaches such as AutoGluon-Multimodal
+and TabSTAR utilize finetuning to achieve target-awareness, yet this introduces significant practical
+challenges. Finetuning historically complicates tabular learning by increasing overfitting risks,
+particularly on small-to-medium datasets, and imposing substantial computational overhead as data,
+model and embedding scales grow. This burden increases further when using HPO or standard
+practices like cross-validation and ensembling, as these methods require repeating the expensive
+finetuning process multiple times to find the best parameters and prevent data leakage across splits.
+9
+
+To summarize, we argue that none of the current architectures are optimal for MMTL, and that the
+leading paradigms complement each other. MulTaBench enables their development by isolating the
+datasets that explicitly demand task-specific representations. While proposing a solution is out of this
+work’s scope, we believe that the optimal architecture should take the best of both worlds. An ideal
+model should bring the contextualization benefits of TAR while preserving the robustness and latency
+of ICL. We hope that the existence of MulTaBench will enable the research of such models.
+7 Discussion and Conclusion
+In this work, we introduce MulTaBench, a benchmark of 40 image-tabular and text-tabular datasets
+designed to explore challenging Multimodal Tabular Learning tasks. We contribute the largest image-
+tabular benchmark to date, while focusing on tasks that benefit from Joint Modeling and TAR, unlike
+existing MMTL benchmarks. Our findings show that existing models rely on representations that are
+often insufficient for the task at hand, making MulTaBench a necessary tool for evaluating the next
+generation of Multimodal Tabular Foundation Models.
+MulTaBench suffers from an important limitation: our curation pipeline entangles the computational
+problem with the algorithmic solution. As such, it is hard to predict in advance whether a new dataset
+meets our criteria, and the models used for the curation cannot be fairly evaluated due to selection bias.
+This entanglement is deliberate: MulTaBench is built to isolate the tasks where frozen representations
+discard the predictive signal, rather than to rank multimodal tabular models in general. To broaden its
+scope, we release 40 additional candidate datasets satisfying theJoint Signalcriterion, yielding a total
+of 80 datasets to explore MMTL more broadly. Together, they test the property we advocate: a strong
+architecture should win on MulTaBench without losing ground where frozen encoders already suffice.
+While we believe future research should aim to address these limitations, our work is a strong step to
+tackle a problem which was overlooked so far, yielding findings that generalize well to new models.
+Importantly, the automated nature of our pipeline facilitates the continuous expansion of MulTaBench
+to include new dataset candidates, the latest tabular learners, or refined selection logic as the field
+matures. As such, our curation pipeline is a contribution of its own, providing a mechanism to refresh
+the benchmark with harder candidates as current tasks become saturated by future models.
+Our research paves the way to many exciting future directions, such as expanding to a dedicated text-
+image-tabular benchmark, exploring other modalities such as audio and videos, analyzing different
+prompting strategies to steer embeddings towards the target, or exploring multimodality for other
+structured domains, such as relational [84, 39] or time-series [87]. Mainly, MulTaBench supports the
+development of Multimodal TFMs. In our opinion, there are two big challenges to solve: architecture
+and training data. For architectures, in §6, we suggest that future models should ideally take the best
+out of ICL and finetuning; for instance, coupling TFMs with LLMs and VLMs is a compelling path.
+For training data, since real data corpora for MMTL are rare [22], expanding the synthetic numerical
+priors used for training TFMs [44, 110, 81] to include text and image features is an exciting direction
+[64, 9]. We hope that our work will contribute to the research of Multimodal Tabular Learning, and
+we are excited towards a future where this crucial problem sees the progress it deserves.
+Acknowledgments and Disclosure of Funding
+AA, ES, SG, MV , and RR are supported by an Israel Ministry of Science and Technology (MOST)
+grant on multi-modal AI. ES is supported by a Google PhD Fellowship. GV acknowledges support
+from ANR via grant TaFoMo (ANR-25-CE23-1822). This work is partly supported by Hi! PARIS
+and ANR/France 2030 program (ANR-23-IACL-0005). FH acknowledges the financial support of
+the Hector Foundation. LP acknowledges funding by the Deutsche Forschungsgemeinschaft (DFG,
+German Research Foundation) under SFB 1597 (SmallData), grant number 499552394. Funded by
+the European Union. Views and opinions expressed are however those of the author(s) only and
+do not necessarily reflect those of the European Union or the European Commission. Neither the
+European Union nor the European Commission can be held responsible for them. This work was
+supported by the European Union’s Horizon Europe research and innovation programme under grant
+agreement No 101214398 (ELLIOT).
+10
+
+Competing interests.AA, ES, and RR are the developers of TabSTAR. DH is one of the authors
+of RealMLP. LP and FH are authors of TabPFNv2 and TabPFN-v2.5. DH and GV are authors of
+TabICLv2. LP and DH are maintainers of TabArena. LP is a maintainer of AutoGluon. GV is a core
+contributor to skrub and a co-founder of scikit-learn. AA, LP, and FH are affiliated with Prior Labs, a
+company developing the TabPFN model family. GV is affiliated with Probabl, a company developing
+software for industrial-grade data science. The authors declare no other competing interests.
+References
+[1] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson,
+Karel Lenc, Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual
+language model for few-shot learning.Advances in neural information processing systems, 35:
+23716–23736, 2022.
+[2] Stanislaw Antol, Aishwarya Agrawal, Jiasen Lu, Margaret Mitchell, Dhruv Batra, C. Lawrence
+Zitnick, and Devi Parikh. VQA: Visual Question Answering. In2015 IEEE International
+Conference on Computer Vision (ICCV), pages 2425–2433, Santiago, Chile, December 2015.
+IEEE. ISBN 978-1-4673-8391-2. doi: 10.1109/ICCV .2015.279. URL http://ieeexplore.
+ieee.org/document/7410636/.
+[3] Alan Arazi, Eilam Shapira, and Roi Reichart. TabSTAR: A Tabular Foundation Model
+for Tabular Data with Text Fields. In D. Belgrave, C. Zhang, H. Lin, R. Pas-
+canu, P. Koniusz, M. Ghassemi, and N. Chen, editors,Advances in Neural Informa-
+tion Processing Systems, volume 38, pages 172108–172161. Curran Associates, Inc.,
+2025. URL https://proceedings.neurips.cc/paper_files/paper/2025/file/
+faf6e23e198314c7728eaa6ac44ae079-Paper-Conference.pdf.
+[4] Ilia Azizi. Conformal calibration for multi-modal regression with missing modalities. In
+Proceedings of the Fifteenth Symposium on Conformal and Probabilistic Prediction with
+Applications, volume 329 ofProceedings of Machine Learning Research, pages 343–377.
+PMLR, 2026. URLhttps://proceedings.mlr.press/v329/azizi26a.html.
+[5] Yael Badian, Yaakov Ophir, Refael Tikochinski, Nitay Calderon, Anat Brunstein Klomek, Eyal
+Fruchter, and Roi Reichart. Social media images can predict suicide risk using interpretable
+large language-vision models.J Clin Psychiatry, 85(1):50516.
+[6] Gioia Blayer, Myung Jun Kim, Félix Lefebvre, Lennart Purucker, Alan Arazi, Eilam Shapira,
+Roi Reichart, Frank Hutter, Marine Le Morvan, David Holzmüller, et al. Strable: Benchmark-
+ing tabular machine learning with strings.arXiv preprint arXiv:2605.12292, 2026.
+[7] Sebastian Bordt, Harsha Nori, Vanessa Rodrigues, Besmira Nushi, and Rich Caruana. Ele-
+phants Never Forget: Memorization and Learning of Tabular Data in Large Language Models.
+First Conference on Language Modeling, 2024.
+[8] Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu. Orion-MSP:
+Multi-Scale Sparse Attention for Tabular In-Context Learning, November 2025. URL http:
+//arxiv.org/abs/2511.02818. arXiv:2511.02818 [cs].
+[9] Shreyas Bhat Brahmavar, Qiyang Liu, Yang Li, and Junier Oliva. Task Expansion and Cross
+Refinement for Open-World Conditional Modeling, March 2026. URL http://arxiv.org/
+abs/2603.13308. arXiv:2603.13308 [cs].
+[10] Leo Breiman. Random Forests.Machine Learning, 45(1):5–32, October 2001. ISSN
+1573-0565. doi: 10.1023/A:1010933404324. URL https://doi.org/10.1023/A:
+1010933404324.
+11
+
+[11] Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhari-
+wal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal,
+Ariel Herbert-V oss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel
+Ziegler, Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric Sigler, Mateusz Litwin,
+Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Rad-
+ford, Ilya Sutskever, and Dario Amodei. Language Models are Few-Shot Learners. In
+Advances in Neural Information Processing Systems, volume 33, pages 1877–1901. Curran
+Associates, Inc., 2020. URL https://proceedings.neurips.cc/paper/2020/hash/
+1457c0d6bfcb4967418bfb8ac142f64a-Abstract.html.
+[12] Davide Caffagni, Federico Cocchi, Luca Barsellotti, Nicholas Moratelli, Sara Sarto, Lorenzo
+Baraldi, Lorenzo Baraldi, Marcella Cornia, and Rita Cucchiara. The Revolution of Mul-
+timodal Large Language Models: A Survey. In Lun-Wei Ku, Andre Martins, and Vivek
+Srikumar, editors,Findings of the Association for Computational Linguistics: ACL 2024,
+pages 13590–13618, Bangkok, Thailand, August 2024. Association for Computational Lin-
+guistics. doi: 10.18653/v1/2024.findings-acl.807. URL https://aclanthology.org/
+2024.findings-acl.807/.
+[13] Bingyi Cao, Koert Chen, Kevis-Kokitsi Maninis, Kaifeng Chen, Arjun Karpur, Ye Xia, Sahil
+Dua, Tanmaya Dabral, Guangxing Han, Bohyung Han, Joshua Ainslie, Alex Bewley, Mithun
+Jacob, René Wagner, Washington Ramos, Krzysztof Choromanski, Mojtaba Seyedhosseini,
+Howard Zhou, and André Araujo. TIPSv2: Advancing Vision-Language Pretraining with
+Enhanced Patch-Text Alignment, April 2026. URLhttp://arxiv.org/abs/2604.12012.
+arXiv:2604.12012 [cs].
+[14] Tianqi Chen and Carlos Guestrin. XGBoost: A Scalable Tree Boosting System. InProceedings
+of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data
+Mining, KDD ’16, pages 785–794, New York, NY , USA, August 2016. Association for
+Computing Machinery. ISBN 978-1-4503-4232-2. doi: 10.1145/2939672.2939785. URL
+https://dl.acm.org/doi/10.1145/2939672.2939785.
+[15] Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit
+Dhillon, Marcel Blistein, Ori Ram, Dan Zhang, Evan Rosen, Luke Marris, Sam Petulla,
+Colin Gaffney, Asaf Aharoni, Nathan Lintz, Tiago Cardal Pais, Henrik Jacobsson, Idan
+Szpektor, Nan-Jiang Jiang, et al. Gemini 2.5: Pushing the Frontier with Advanced Reasoning,
+Multimodality, Long Context, and Next Generation Agentic Capabilities, December 2025.
+URLhttp://arxiv.org/abs/2507.06261. arXiv:2507.06261 [cs].
+[16] Can Cui, Haichun Yang, Yaohong Wang, Shilin Zhao, Zuhayr Asad, Lori A Coburn, Keith T
+Wilson, Bennett A Landman, and Yuankai Huo. Deep multimodal fusion of image and non-
+image data in disease diagnosis and prognosis: a review.Progress in Biomedical Engineering,
+5(2):022001, April 2023. ISSN 2516-1091. doi: 10.1088/2516-1091/acc2fe. URL https:
+//doi.org/10.1088/2516-1091/acc2fe.
+[17] Ronnie Das, Wasim Ahmed, Kshitij Sharma, Mariann Hardey, Yogesh K Dwivedi, Ziqi
+Zhang, Chrysostomos Apostolidis, and Raffaele Filieri. Towards the development of an
+explainable e-commerce fake review index: An attribute analytics approach.European Journal
+of Operational Research, 317(2):382–400, 2024.
+[18] Siyi Du, Shaoming Zheng, Yinsong Wang, Wenjia Bai, Declan P. O’Regan, and Chen
+Qin. TIP: Tabular-Image Pre-training for Multimodal Classification with Incomplete
+Data. In Aleš Leonardis, Elisa Ricci, Stefan Roth, Olga Russakovsky, Torsten Sattler,
+and Gül Varol, editors,Computer Vision – ECCV 2024, volume 15073, pages 478–496.
+Springer Nature Switzerland, Cham, 2025. ISBN 978-3-031-72632-3 978-3-031-72633-
+0. doi: 10.1007/978-3-031-72633-0_27. URL https://link.springer.com/10.1007/
+978-3-031-72633-0_27. Series Title: Lecture Notes in Computer Science.
+[19] Daniel Duenias, Brennan Nichyporuk, Tal Arbel, and Tammy Riklin Raviv. HyperFusion:
+A Hypernetwork Approach to Multimodal Integration of Tabular and Medical Imaging
+Data for Predictive Modeling.Medical Image Analysis, 102:103503, May 2025. ISSN
+13618415. doi: 10.1016/j.media.2025.103503. URL http://arxiv.org/abs/2403.13319.
+arXiv:2403.13319 [cs].
+12
+
+[20] Sayna Ebrahimi, Sercan O. Arik, Yihe Dong, and Tomas Pfister. LANISTR: Multimodal
+Learning from Structured and Unstructured Data, April 2024. URL http://arxiv.org/
+abs/2305.16556. arXiv:2305.16556 [cs].
+[21] Darren Edge, Ha Trinh, Newman Cheng, Joshua Bradley, Alex Chao, Apurva Mody, Steven
+Truitt, Dasha Metropolitansky, Robert Osazuwa Ness, and Jonathan Larson. From Local to
+Global: A Graph RAG Approach to Query-Focused Summarization, February 2025. URL
+http://arxiv.org/abs/2404.16130. arXiv:2404.16130 [cs].
+[22] Gus Eggert, Kevin Huo, Mike Biven, and Justin Waugh. TabLib: A Dataset of
+627M Tables with Context, October 2023. URL http://arxiv.org/abs/2310.07875.
+arXiv:2310.07875 [cs].
+[23] Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzmüller, Prateek Mutalik Desai,
+and David Salinas, and Frank Hutter. TabArena: A Living Benchmark for Machine Learning on
+Tabular Data, June 2025. URL http://arxiv.org/abs/2506.16791. arXiv:2506.16791
+[cs].
+[24] Wenqi Fan, Yujuan Ding, Liangbo Ning, Shijie Wang, Hengyun Li, Dawei Yin, Tat-Seng
+Chua, and Qing Li. A Survey on RAG Meeting LLMs: Towards Retrieval-Augmented Large
+Language Models. InProceedings of the 30th ACM SIGKDD Conference on Knowledge
+Discovery and Data Mining, KDD ’24, pages 6491–6501, New York, NY , USA, August 2024.
+Association for Computing Machinery. ISBN 979-8-4007-0490-1. doi: 10.1145/3637528.
+3671470. URLhttps://dl.acm.org/doi/10.1145/3637528.3671470.
+[25] Xi Fang, Weijie Xu, Fiona Anting Tan, Ziqing Hu, Jiani Zhang, Yanjun Qi, Srinivasan H.
+Sengamedu, and Christos Faloutsos. Large Language Models (LLMs) on Tabular Data:
+Prediction, Generation, and Understanding - A Survey.Transactions on Machine Learning
+Research, March 2024. ISSN 2835-8856. URL https://openreview.net/forum?id=
+IZnrCGF9WI.
+[26] Yibing Fu, Yunpeng Zhao, Zhitao Zeng, Cheng Chen, and Yueming Jin. Unleashing the Power
+of Image-Tabular Self-Supervised Learning via Breaking Cross-Tabular Barriers, December
+2025. URLhttp://arxiv.org/abs/2512.14026. arXiv:2512.14026 [cs].
+[27] Roy Ganz, Yair Kittenplon, Aviad Aberdam, Elad Ben Avraham, Oren Nuriel, Shai Mazor,
+and Ron Litman. Question Aware Vision Transformer for Multimodal Reasoning. In2024
+IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), pages 13861–
+13871, Seattle, WA, USA, June 2024. IEEE. ISBN 979-8-3503-5300-6. doi: 10.1109/
+CVPR52733.2024.01315. URL https://ieeexplore.ieee.org/document/10655638/.
+[28] Josh Gardner, Juan C. Perdomo, and Ludwig Schmidt. Large Scale Transfer Learning for
+Tabular Data via Language Modeling.Advances in Neural Information Processing Systems, 37:
+45155–45205, December 2024. URLhttps://proceedings.neurips.cc/paper_files/
+paper/2024/hash/4fd5cfd2e31bebbccfa5ffa354c04bdc-Abstract-Conference.
+html.
+[29] Anurag Garg, Muhammad Ali, Noah Hollmann, Lennart Purucker, Samuel Müller, and Frank
+Hutter. Real-TabPFN: Improving Tabular Foundation Models via Continued Pre-training With
+Real-World Data. June 2025. URLhttps://openreview.net/forum?id=BtEiqKsIMw.
+[30] Hippolyte Gisserot-Boukhlef, Nicolas Boizard, Manuel Faysse, Duarte Miguel Alves, Em-
+manuel Malherbe, Andre Martins, Celine Hudelot, and Pierre Colombo. Should We
+Still Pretrain Encoders with Masked Language Modeling? October 2025. URL https:
+//openreview.net/forum?id=jpz7e3jhRq.
+[31] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. Revisiting deep
+learning models for tabular data. InProceedings of the 35th International Conference on
+Neural Information Processing Systems, NIPS ’21, pages 18932–18943, Red Hook, NY , USA,
+December 2021. Curran Associates Inc. ISBN 978-1-7138-4539-3.
+[32] Yury Gorishniy, Akim Kotelnikov, and Artem Babenko. TabM: Advancing Tabular Deep
+Learning with Parameter-Efficient Ensembling, February 2025. URL http://arxiv.org/
+abs/2410.24210. arXiv:2410.24210 [cs].
+13
+
+[33] Aditya Gorla and Ratish Puduppully. The Illusion of Generalization: Re-examining Tabular
+Language Model Evaluation, February 2026. URL http://arxiv.org/abs/2602.04031.
+arXiv:2602.04031 [cs] version: 1.
+[34] Leo Grinsztajn, Edouard Oyallon, and Gael Varoquaux. Why do tree-based
+models still outperform deep learning on typical tabular data?Advances
+in Neural Information Processing Systems, 35:507–520, December 2022.
+URL https://proceedings.neurips.cc/paper_files/paper/2022/hash/
+0378c7692da36807bdec87ab043cdadc-Abstract-Datasets_and_Benchmarks.
+html.
+[35] Léo Grinsztajn, Edouard Oyallon, Myung Jun Kim, and Gaël Varoquaux. Vectorizing string
+entries for data processing on tables: when are larger language models better?, December 2023.
+URLhttp://arxiv.org/abs/2312.09634. arXiv:2312.09634 [stat].
+[36] Léo Grinsztajn, Klemens Flöge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof,
+Benjamin Jäger, Dominik Safaric, Simone Alessi, Adrian Hayler, Mihir Manium, Rosen
+Yu, Felix Jablonski, Shi Bin Hoo, Anurag Garg, Jake Robertson, Magnus Bühler, Vla-
+dyslav Moroshan, Lennart Purucker, Clara Cornu, Lilly Charlotte Wehrhahn, Alessandro
+Bonetto, Bernhard Schölkopf, Sauraj Gambhir, Noah Hollmann, and Frank Hutter. TabPFN-
+2.5: Advancing the State of the Art in Tabular Foundation Models, February 2026. URL
+http://arxiv.org/abs/2511.08667. arXiv:2511.08667 [cs].
+[37] Paul Hager, Martin J. Menten, and Daniel Rueckert. Best of Both Worlds: Multimodal
+Contrastive Learning with Tabular and Imaging Data, March 2023. URL http://arxiv.
+org/abs/2303.14080. arXiv:2303.14080 [cs].
+[38] Adrian Hayler, Xingyue Huang, ˙Ismail ˙Ilkan Ceylan, Michael Bronstein, and Ben Finkelshtein.
+Bringing Graphs to the Table: Zero-shot Node Classification via Tabular Foundation Models,
+2025. URLhttps://arxiv.org/abs/2509.07143. Version Number: 2.
+[39] Adrian Hayler, Klemens Flöge, Alan Arazi, Rishabh Ranjan, Jure Leskovec, et al. Advancing
+open and reproducible relational learning: Relarena- α, tabpfn-rel and rpi.arXiv preprint
+arXiv:2608.16319, 2026.
+[40] Xin He, Kaiyong Zhao, and Xiaowen Chu. AutoML: A survey of the state-of-the-art.
+Knowledge-Based Systems, 212:106622, January 2021. ISSN 0950-7051. doi: 10.1016/j.
+knosys.2020.106622. URL https://www.sciencedirect.com/science/article/pii/
+S0950705120307516.
+[41] Stefan Hegselmann, Alejandro Buendia, Hunter Lang, Monica Agrawal, Xiaoyi Jiang, and
+David Sontag. TabLLM: Few-shot Classification of Tabular Data with Large Language Models.
+InProceedings of The 26th International Conference on Artificial Intelligence and Statistics,
+pages 5549–5581. PMLR, April 2023. URL https://proceedings.mlr.press/v206/
+hegselmann23a.html.
+[42] Elad Hoffer, Yochai Blau, Ron Banner, Daniel Soudry, and Boris Ginsburg. Retrieval from
+within: An intrinsic capability of attention-based models, 2026. URL https://arxiv.org/
+abs/2605.05806.
+[43] Noah Hollmann, Samuel Müller, Katharina Eggensperger, and Frank Hutter. TabPFN: A
+Transformer That Solves Small Tabular Classification Problems in a Second. The Eleventh
+International Conference on Learning Representations, September 2022. URL https://
+openreview.net/forum?id=cp5PvcI6w8_.
+[44] Noah Hollmann, Samuel Müller, Lennart Purucker, Arjun Krishnakumar, Max Körfer, Shi Bin
+Hoo, Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data
+with a tabular foundation model.Nature, 637(8045):319–326, January 2025. ISSN 1476-
+4687. doi: 10.1038/s41586-024-08328-6. URL https://www.nature.com/articles/
+s41586-024-08328-6.
+14
+
+[45] David Holzmüller, Léo Grinsztajn, and Ingo Steinwart. Better by default:
+Strong pre-tuned MLPs and boosted trees on tabular data.Advances in
+Neural Information Processing Systems, 37:26577–26658, December 2024.
+URL https://proceedings.neurips.cc/paper_files/paper/2024/hash/
+2ee1c87245956e3eaa71aaba5f5753eb-Abstract-Conference.html.
+[46] Shi Bin Hoo, Samuel Müller, David Salinas, and Frank Hutter. The tabular foundation model
+tabpfn outperforms specialized time series forecasting models based on simple features. In
+NeurIPS workshop on time series in the age of large models, 2024.
+[47] Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang,
+Lu Wang, and Weizhu Chen. LoRA: Low-Rank Adaptation of Large Language Models.
+October 2021. URLhttps://openreview.net/forum?id=nZeVKeeFYf9.
+[48] Weihua Hu, Yiwen Yuan, Zecheng Zhang, Akihiro Nitta, Kaidi Cao, Vid Kocijan, Jinu
+Sunil, Jure Leskovec, and Matthias Fey. PyTorch Frame: A Modular Framework for Multi-
+Modal Tabular Learning. October 2024. URL https://openreview.net/forum?id=
+2ZHKA9xo8V#discussion.
+[49] Shih-Cheng Huang, Anuj Pareek, Saeed Seyyedi, Imon Banerjee, and Matthew P. Lungren. Fu-
+sion of medical imaging and electronic health records using deep learning: a systematic review
+and implementation guidelines.npj Digital Medicine, 3(1):136, October 2020. ISSN 2398-
+6352. doi: 10.1038/s41746-020-00341-z. URL https://www.nature.com/articles/
+s41746-020-00341-z.
+[50] Zi-Yi Jia, Zi-Jian Cheng, Xin-Yue Zhang, Kun-Yang Yu, Zhi Zhou, Yu-Feng Li, and Lan-Zhe
+Guo. Vt-bench: A unified benchmark for visual-tabular multi-modal learning.arXiv preprint
+arXiv:2605.08146, 2026.
+[51] Jun-Peng Jiang, Han-Jia Ye, Leye Wang, Yang Yang, Yuan Jiang, and De-Chuan Zhan. Tabular
+Insights, Visual Impacts: Transferring Expertise from Tables to Images. InProceedings of the
+41st International Conference on Machine Learning, pages 21988–22009. PMLR, July 2024.
+URLhttps://proceedings.mlr.press/v235/jiang24h.html.
+[52] Jun-Peng Jiang, Si-Yang Liu, Hao-Run Cai, Qi-Le Zhou, and Han-Jia Ye. Representation
+Learning for Tabular Data: A Comprehensive Survey.IEEE Transactions on Pattern Analysis
+and Machine Intelligence, pages 1–20, 2026. ISSN 1939-3539. doi: 10.1109/TPAMI.2026.
+3657217. URLhttps://ieeexplore.ieee.org/abstract/document/11369258.
+[53] Guolin Ke, Qi Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qi-
+wei Ye, and Tie-Yan Liu. LightGBM: A Highly Efficient Gradient Boosting Decision
+Tree. InAdvances in Neural Information Processing Systems, volume 30. Curran Asso-
+ciates, Inc., 2017. URL https://papers.nips.cc/paper_files/paper/2017/hash/
+6449f44a102fde848669bdd9eb6b76fa-Abstract.html.
+[54] Omar Khattab and Matei Zaharia. ColBERT: Efficient and Effective Passage Search via
+Contextualized Late Interaction over BERT. InProceedings of the 43rd International ACM
+SIGIR Conference on Research and Development in Information Retrieval, SIGIR ’20, pages
+39–48, New York, NY , USA, July 2020. Association for Computing Machinery. ISBN 978-1-
+4503-8016-4. doi: 10.1145/3397271.3401075. URL https://dl.acm.org/doi/10.1145/
+3397271.3401075.
+[55] Myung Jun Kim, Léo Grinsztajn, and Gaël Varoquaux. CARTE: pretraining and transfer for
+tabular learning. InProceedings of the 41st International Conference on Machine Learning,
+volume 235 ofICML’24, pages 23843–23866, Vienna, Austria, July 2024. JMLR.org.
+[56] Myung Jun Kim, Félix Lefebvre, Gaëtan Brison, Alexandre Perez-Lebel, and Gaël Varoquaux.
+Table Foundation Models: on knowledge pre-training for tabular learning, May 2025. URL
+http://arxiv.org/abs/2505.14415. arXiv:2505.14415 [cs].
+[57] Wall Kim, Chaeyoung Song, and Hanul Kim. MultiModalPFN: Extending Prior-Data Fitted
+Networks for Multimodal Tabular Learning. October 2025. URL https://openreview.
+net/forum?id=pSyuFl8mau.
+15
+
+[58] Omri Koshorek, Niv Granot, Aviv Alloni, Shahar Admati, Roee Hendel, Ido Weiss, Alan Arazi,
+Shay-Nitzan Cohen, and Yonatan Belinkov. Structured RAG for Answering Aggregative Ques-
+tions, November 2025. URL http://arxiv.org/abs/2511.08505. arXiv:2511.08505
+[cs].
+[59] Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman
+Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, Sebastian Riedel, and
+Douwe Kiela. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.
+[60] Wenyan Li, Raphael Tang, Chengzu Li, Caiqi Zhang, Ivan Vuli´c, and Anders Søgaard. Lost in
+Embeddings: Information Loss in Vision–Language Models. In Christos Christodoulopoulos,
+Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors,Findings of the Association for
+Computational Linguistics: EMNLP 2025, pages 22676–22693, Suzhou, China, November
+2025. Association for Computational Linguistics. ISBN 979-8-89176-335-7. doi: 10.18653/v1/
+2025.findings-emnlp.1235. URL https://aclanthology.org/2025.findings-emnlp.
+1235/.
+[61] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual Instruction Tun-
+ing.Advances in Neural Information Processing Systems, 36:34892–34916, Decem-
+ber 2023. URL https://proceedings.neurips.cc/paper_files/paper/2023/hash/
+6dcf277ea32ce3288914faf369fe6de0-Abstract-Conference.html.
+[62] Yiming Liu, Yuhui Zhang, Dhruba Ghosh, Ludwig Schmidt, and Serena Yeung-Levy. Data or
+Language Supervision: What Makes CLIP Better than DINO? In Christos Christodoulopoulos,
+Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors,Findings of the Association for
+Computational Linguistics: EMNLP 2025, pages 1868–1874, Suzhou, China, November 2025.
+Association for Computational Linguistics. ISBN 979-8-89176-335-7. doi: 10.18653/v1/2025.
+findings-emnlp.98. URLhttps://aclanthology.org/2025.findings-emnlp.98/.
+[63] Jiaying Lu, Yongchen Qian, Shifan Zhao, Yuanzhe Xi, and Carl Yang. MuG: A Multimodal
+Classification Benchmark on Game Data with Tabular, Textual, and Visual Fields. In Houda
+Bouamor, Juan Pino, and Kalika Bali, editors,Findings of the Association for Computational
+Linguistics: EMNLP 2023, pages 5332–5346, Singapore, December 2023. Association for
+Computational Linguistics. doi: 10.18653/v1/2023.findings-emnlp.354. URL https://
+aclanthology.org/2023.findings-emnlp.354/.
+[64] An Luo, Jin Du, Fangqiao Tian, Xun Xian, Robert Specht, Ganghua Wang, Xuan Bi, Charles
+Fleming, Jayanth Srinivasa, Ashish Kundu, Mingyi Hong, and Jie Ding. Can Agentic AI
+Match the Performance of Human Data Scientists?, December 2025. URL http://arxiv.
+org/abs/2512.20959. arXiv:2512.20959 [cs].
+[65] Jiaqi Luo, Yuan Yuan, and Shixin Xu. TIME: TabPFN-Integrated Multimodal Engine for
+Robust Tabular-Image Learning, June 2025. URL http://arxiv.org/abs/2506.00813.
+arXiv:2506.00813 [cs].
+[66] Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Hamidreza Kamkari, Alex Labach, Jesse C.
+Cresswell, Keyvan Golestan, Guangwei Yu, Anthony L. Caterini, and Maksims V olkovs.
+TabDPT: Scaling Tabular Foundation Models on Real Data, July 2025. URL http://arxiv.
+org/abs/2410.18164. arXiv:2410.18164 [cs].
+[67] Chaitanya Malaviya, Peter Shaw, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
+QUEST: A Retrieval Dataset of Entity-Seeking Queries with Implicit Set Operations. In
+Proceedings of the 61st Annual Meeting of the Association for Computational Linguis-
+tics (Volume 1: Long Papers), pages 14032–14047, Toronto, Canada, 2023. Associa-
+tion for Computational Linguistics. doi: 10.18653/v1/2023.acl-long.784. URL https:
+//aclanthology.org/2023.acl-long.784.
+[68] Andrzej Ma´ckiewicz and Waldemar Ratajczak. Principal components analysis (PCA).Com-
+puters & Geosciences, 19(3):303–342, March 1993. ISSN 0098-3004. doi: 10.1016/
+0098-3004(93)90090-R. URL https://www.sciencedirect.com/science/article/
+pii/009830049390090R.
+16
+
+[69] Duncan McElfresh, Sujay Khandagale, Jonathan Valverde, Vishak Prasad C, Ganesh Ramakr-
+ishnan, Micah Goldblum, and Colin White. When Do Neural Nets Outperform Boosted Trees
+on Tabular Data?Advances in Neural Information Processing Systems, 36:76336–76369, De-
+cember 2023. URL https://proceedings.neurips.cc/paper_files/paper/2023/
+hash/f06d5ebd4ff40b40dd97e30cee632123-Abstract-Datasets_and_Benchmarks.
+html.
+[70] Mayank Meghawat, Satyendra Yadav, Debanjan Mahata, Yifang Yin, Rajiv Ratn Shah, and
+Roger Zimmermann. A multimodal approach to predict social media popularity. In2018 IEEE
+conference on multimedia information processing and retrieval (MIPR), pages 190–195. IEEE,
+2018.
+[71] Martin Mráz, Breenda Das, Anshul Gupta, Lennart Purucker, and Frank Hutter. Towards
+Benchmarking Foundation Models for Tabular Data With Text. June 2025. URL https:
+//openreview.net/forum?id=yrmoQG9NAV.
+[72] Niklas Muennighoff, Nouamane Tazi, Loic Magne, and Nils Reimers. MTEB: Massive Text
+Embedding Benchmark. In Andreas Vlachos and Isabelle Augenstein, editors,Proceedings
+of the 17th Conference of the European Chapter of the Association for Computational Lin-
+guistics, pages 2014–2037, Dubrovnik, Croatia, May 2023. Association for Computational
+Linguistics. doi: 10.18653/v1/2023.eacl-main.148. URL https://aclanthology.org/
+2023.eacl-main.148/.
+[73] Samuel Müller, Noah Hollmann, Sebastian Pineda Arango, Josif Grabocka, and Frank Hutter.
+Transformers Can Do Bayesian Inference. October 2021. URL https://openreview.net/
+forum?id=KSugKcbNf9.
+[74] Yaakov Ophir, Refael Tikochinski, Christa SC Asterhan, Itay Sisso, and Roi Reichart. Deep
+neural networks detect suicide risk from textual facebook posts.Scientific reports, 10(1):
+16685, 2020.
+[75] Georgios Pantazopoulos, Alessandro Suglia, Oliver Lemon, and Arash Eshghi. Lost in Space:
+Probing Fine-grained Spatial Understanding in Vision and Language Resamplers. In Kevin
+Duh, Helena Gomez, and Steven Bethard, editors,Proceedings of the 2024 Conference of the
+North American Chapter of the Association for Computational Linguistics: Human Language
+Technologies (Volume 2: Short Papers), pages 540–549, Mexico City, Mexico, June 2024.
+Association for Computational Linguistics. doi: 10.18653/v1/2024.naacl-short.45. URL
+https://aclanthology.org/2024.naacl-short.45/.
+[76] Fabian Pedregosa, Gaël Varoquaux, Alexandre Gramfort, Vincent Michel, Bertrand Thirion,
+Olivier Grisel, Mathieu Blondel, Peter Prettenhofer, Ron Weiss, Vincent Dubourg, et al. Scikit-
+learn: Machine learning in python.the Journal of machine Learning research, 12:2825–2830,
+2011.
+[77] Liudmila Prokhorenkova, Gleb Gusev, Aleksandr V orobev, Anna Veronika Doro-
+gush, and Andrey Gulin. CatBoost: unbiased boosting with categorical features.
+InAdvances in Neural Information Processing Systems, volume 31. Curran Asso-
+ciates, Inc., 2018. URL https://proceedings.neurips.cc/paper/2018/hash/
+14491b756b3a51daac41c24863285549-Abstract.html.
+[78] Yuan Pu, Zhuolun He, Yuqi Jiang, Tairu Qiu, Haoyuan Wu, Qi Sun, Cheng Zhuo, and Bei Yu.
+Customized Retrieval Augmented Generation and Benchmarking for EDA Tool Documentation
+QA.IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 44
+(12):4615–4628, December 2025. ISSN 1937-4151. doi: 10.1109/TCAD.2025.3568776. URL
+https://ieeexplore.ieee.org/abstract/document/10994463.
+[79] Lennart Purucker, Andrej Tschalzev, Nick Erickson, Gioia Blayer, David HolzmÃ 1/4ller,
+Alan Arazi, Alexander Pfefferle, Mustafa Tajjar, GaÃ Varoquaux, Frank Hutter, et al. Beyond
+iid: How general are tabular foundation models, really?arXiv preprint arXiv:2606.30410,
+2026.
+17
+
+[80] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. TabICL: A Tabular
+Foundation Model for In-Context Learning on Large Data, February 2025. URL http:
+//arxiv.org/abs/2502.05564. arXiv:2502.05564 [cs].
+[81] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. TabICLv2: A
+better, faster, scalable, and open tabular foundation model, February 2026. URL http:
+//arxiv.org/abs/2602.11139. arXiv:2602.11139 [cs].
+[82] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini
+Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, Gretchen Krueger, and
+Ilya Sutskever. Learning Transferable Visual Models From Natural Language Supervision. In
+Proceedings of the 38th International Conference on Machine Learning, pages 8748–8763.
+PMLR, July 2021. URLhttps://proceedings.mlr.press/v139/radford21a.html.
+[83] Jake Robertson, Arik Reuter, Siyuan Guo, Noah Hollmann, Frank Hutter, and Bernhard
+Schölkopf. Do-PFN: In-Context Learning for Causal Effect Estimation, 2025. URL https:
+//arxiv.org/abs/2506.06039. Version Number: 3.
+[84] Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro
+Dobles, Matthias Fey, Jan E. Lenssen, Yiwen Yuan, Zecheng Zhang, Xinwei He, and Jure
+Leskovec. Relbench: A benchmark for deep learning on relational databases.arXiv preprint
+arXiv:2407.20060, 2024.
+[85] Günther Schindler, Maximilian Schambach, Michael Medek, and Sam Thelin. TabGemma:
+Text-Based Tabular ICL via LLM using Continued Pretraining and Retrieval. November 2025.
+URLhttps://openreview.net/forum?id=cv2uilalQx.
+[86] Eilam Shapira, Omer Madmon, Roi Reichart, and Moshe Tennenholtz. Can llms replace
+economic choice prediction labs? the case of language-based persuasion games.arXiv preprint
+arXiv:2401.17435, 2024.
+[87] Oleksandr Shchur, Abdul Fatir Ansari, Caner Turkmen, Lorenzo Stella, Nick Erickson, Pablo
+Guerron, Michael Bohlke-Schneider, and Yuyang Wang. fev-bench: A realistic benchmark for
+time series forecasting.arXiv preprint arXiv:2509.26468, 2025.
+[88] Xingjian Shi, Jonas Mueller, Nick Erickson, Mu Li, and Alex Smola. Benchmarking
+Multimodal AutoML for Tabular Data with Text Fields. August 2021. URL https:
+//openreview.net/forum?id=Q0zOIaec8HF.
+[89] Ravid Shwartz-Ziv and Amitai Armon. Tabular data: Deep learning is not all you need.Informa-
+tion Fusion, 81:84–90, May 2022. ISSN 1566-2535. doi: 10.1016/j.inffus.2021.11.011. URL
+https://www.sciencedirect.com/science/article/pii/S1566253521002360.
+[90] Oriane Siméoni, Huy V . V o, Maximilian Seitzer, Federico Baldassarre, Maxime Oquab, Cijo
+Jose, Vasil Khalidov, Marc Szafraniec, Seungeun Yi, Michaël Ramamonjisoa, Francisco Massa,
+Daniel Haziza, Luca Wehrstedt, Jianyuan Wang, Timothée Darcet, Théo Moutakanni, Leonel
+Sentana, Claire Roberts, Andrea Vedaldi, Jamie Tolan, John Brandt, Camille Couprie, Julien
+Mairal, Hervé Jégou, Patrick Labatut, and Piotr Bojanowski. DINOv3, August 2025. URL
+http://arxiv.org/abs/2508.10104. arXiv:2508.10104 [cs].
+[91] Aaditya Singh, Adam Fry, Adam Perelman, Adam Tart, Adi Ganesh, Ahmed El-Kishky, Aidan
+McLaughlin, Aiden Low, A. J. Ostrow, Akhila Ananthram, Akshay Nathan, Alan Luo, Alec
+Helyar, Aleksander Madry, Aleksandr Efremov, Aleksandra Spyra, Alex Baker-Whitcomb,
+Alex Beutel, Alex Karpenko, Alex Makelov, et al. OpenAI GPT-5 System Card, December
+2025. URLhttps://arxiv.org/abs/2601.03267v1.
+[92] Dimitris Spathis and Fahim Kawsar. The first step is the hardest: pitfalls of representing
+and tokenizing temporal data for large language models.Journal of the American Medical
+Informatics Association, 31(9):2151–2158, September 2024. ISSN 1527-974X. doi: 10.1093/
+jamia/ocae090. URLhttps://doi.org/10.1093/jamia/ocae090.
+[93] Marco Spinaci, Marek Polewczyk, Maximilian Schambach, and Sam Thelin. ConTextTab: A
+Semantics-Aware Tabular In-Context Learner, June 2025. URL http://arxiv.org/abs/
+2506.10707. arXiv:2506.10707 [cs].
+18
+
+[94] Maarten Sukel, Stevan Rudinac, and Marcel Worring. Multimodal temporal fusion transformers
+are good product demand forecasters.IEEE MultiMedia, 31(2):48–60, 2024.
+[95] Yixuan Tang and Yi Yang. Do We Need Domain-Specific Embedding Models? An Empirical
+Investigation. October 2024. URLhttps://openreview.net/forum?id=powufeT93G.
+[96] Zhiqiang Tang, Haoyang Fang, Su Zhou, Taojiannan Yang, Zihan Zhong, Cuixiong Hu,
+Katrin Kirchhoff, and George Karypis. AutoGluon-Multimodal (AutoMM): Supercharging
+Multimodal AutoML with Foundation Models. AutoML Conference 2024 (ABCD Track),
+April 2024. URLhttps://openreview.net/forum?id=irStSm9waW.
+[97] Zhiqiang Tang, Zihan Zhong, Tong He, and Gerald Friedland. Bag of Tricks for Multimodal
+AutoML with Image, Text, and Tabular Data, December 2024. URL http://arxiv.org/
+abs/2412.16243. arXiv:2412.16243 [cs].
+[98] Avijit Thawani, Jay Pujara, Filip Ilievski, and Pedro Szekely. Representing Numbers in
+NLP: a Survey and a Vision. In Kristina Toutanova, Anna Rumshisky, Luke Zettlemoyer,
+Dilek Hakkani-Tur, Iz Beltagy, Steven Bethard, Ryan Cotterell, Tanmoy Chakraborty, and
+Yichao Zhou, editors,Proceedings of the 2021 Conference of the North American Chapter
+of the Association for Computational Linguistics: Human Language Technologies, pages
+644–656, Online, June 2021. Association for Computational Linguistics. doi: 10.18653/v1/
+2021.naacl-main.53. URLhttps://aclanthology.org/2021.naacl-main.53/.
+[99] Shengbang Tong, Zhuang Liu, Yuexiang Zhai, Yi Ma, Yann LeCun, and Saining Xie. Eyes
+Wide Shut? Exploring the Visual Shortcomings of Multimodal LLMs. pages 9568–9578,
+2024. URL https://openaccess.thecvf.com/content/CVPR2024/html/Tong_
+Eyes_Wide_Shut_Exploring_the_Visual_Shortcomings_of_Multimodal_LLMs_
+CVPR_2024_paper.html.
+[100] Boris Van Breugel and Mihaela Van Der Schaar. Position: why tabular foundation models
+should be a research priority. InProceedings of the 41st International Conference on Ma-
+chine Learning, volume 235 ofICML’24, pages 48976–48993, Vienna, Austria, July 2024.
+JMLR.org.
+[101] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N
+Gomez, Ł ukasz Kaiser, and Illia Polosukhin. Attention is All you Need. In
+Advances in Neural Information Processing Systems, volume 30. Curran Asso-
+ciates, Inc., 2017. URL https://papers.nips.cc/paper_files/paper/2017/hash/
+3f5ee243547dee91fbd053c1c4a845aa-Abstract.html.
+[102] Feng Wang, Yuqing Li, and Han Xiao. jina-reranker-v3: Last but Not Late Interaction for
+Listwise Document Reranking, October 2025. URL http://arxiv.org/abs/2509.25085.
+arXiv:2509.25085 [cs].
+[103] Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang, Rangan
+Majumder, and Furu Wei. Text Embeddings by Weakly-Supervised Contrastive Pre-training,
+February 2024. URLhttp://arxiv.org/abs/2212.03533. arXiv:2212.03533 [cs].
+[104] Orion Weller, Michael Boratko, Iftekhar Naim, and Jinhyuk Lee. On the Theoretical Limi-
+tations of Embedding-Based Retrieval. October 2025. URL https://openreview.net/
+forum?id=k9CzIvzfaA.
+[105] Jiayang Wu, Wensheng Gan, Zefeng Chen, Shicheng Wan, and Philip S. Yu. Multimodal Large
+Language Models: A Survey, November 2023. URL http://arxiv.org/abs/2311.13165.
+arXiv:2311.13165 [cs].
+[106] Jiahuan Yan, Bo Zheng, Hongxia Xu, Yiheng Zhu, Danny Chen, Jimeng Sun, Jian Wu,
+and Jintai Chen. Making Pre-trained Language Models Great on Tabular Prediction. The
+Twelfth International Conference on Learning Representations, October 2023. URL https:
+//openreview.net/forum?id=anzIzGZuLi.
+[107] Han-Jia Ye, Si-Yang Liu, Hao-Run Cai, Qi-Le Zhou, and De-Chuan Zhan. A Closer Look at
+Deep Learning Methods on Tabular Datasets, November 2025. URL http://arxiv.org/
+abs/2407.00956. arXiv:2407.00956 [cs].
+19
+
+[108] Shukang Yin, Chaoyou Fu, Sirui Zhao, Ke Li, Xing Sun, Tong Xu, and Enhong Chen. A
+survey on multimodal large language models.National Science Review, 11(12):nwae403,
+December 2024. ISSN 2095-5138. doi: 10.1093/nsr/nwae403. URL https://doi.org/10.
+1093/nsr/nwae403.
+[109] Xingxuan Zhang, Gang Ren, Han Yu, Hao Yuan, Hui Wang, Jiansheng Li, Jiayun Wu, Lang
+Mo, Li Mao, Mingchao Hao, Ningbo Dai, Renzhe Xu, Shuyang Li, Tianyang Zhang, Yue
+He, Yuanrui Wang, Yunjia Zhang, Zijing Xu, Dongzhe Li, Fang Gao, Hao Zou, Jiandong
+Liu, Jiashuo Liu, Jiawei Xu, Kaijie Cheng, Kehan Li, Linjun Zhou, Qing Li, Shaohua Fan,
+Xiaoyu Lin, Xinyan Han, Xuanyue Li, Yan Lu, Yuan Xue, Yuanyuan Jiang, Zimu Wang,
+Zhenlei Wang, and Peng Cui. LimiX: Unleashing Structured-Data Modeling Capability
+for Generalist Intelligence, November 2025. URL http://arxiv.org/abs/2509.03505.
+arXiv:2509.03505 [cs].
+[110] Xiyuan Zhang, Danielle C. Maddix, Junming Yin, Nick Erickson, Abdul Fatir Ansari, Boran
+Han, Shuai Zhang, Leman Akoglu, Christos Faloutsos, Michael W. Mahoney, Cuixiong Hu,
+Huzefa Rangwala, George Karypis, and Bernie Wang. Mitra: Mixed Synthetic Priors for
+Enhancing Tabular Foundation Models, October 2025. URL http://arxiv.org/abs/2510.
+21204. arXiv:2510.21204 [cs].
+20
+
+A Curation Pipeline
+A.1 Target-Aware Representations
+Target-Aware Representations are produced by finetuning the top 3 transformer layers of the encoder
+using LoRA [47], with a single linear head mapping the encoder output (384-dim) to the number
+of output classes. Finetuning is performed as a preprocessing step, independently of the structured
+features and the downstream tabular learner. The encoder is adapted on the training split only, using
+a stratified 90/10 train/validation split to select the best checkpoint. Importantly, there is no data
+leakage, as the test set is never used for this step, just like any other preprocessing.
+Hyperparameters.Both DINO-v3-small 4 and e5-small-v25 share the same LoRA configuration:
+r= 16 , α= 32 , dropout 0.1. Training uses AdamW with learning rate 10−4 for e5 and 0.001 for
+DINO, with a batch size of 256, and weight decay 0.01. For DINO, we train to up to 100 epochs.
+As many datasets have multiple text features, we reduce this number for e5 to 50. We apply early
+stopping after 3 epochs of no improvement on the validation loss. All hyperparameters are fixed
+across datasets; no per-dataset tuning is performed. Reported gains are therefore conservative lower
+bounds on what task-specific adaptation could achieve.
+Regression.For regression targets, the continuous label is discretized into 20 equal-frequency bins
+and the adaptation objective is cross-entropy over these bins. We find this technique to be more stable
+than direct regression finetuning, as it is much less sensitive to outliers. However, it’s plausible that
+this decision could be optimized much further.
+Text.While MulTaBench image datasets have a single image feature, text-tabular datasets often
+have more than one text field, which we defined as string features that have at least 100 distinct
+values. For efficiency, a single e5 model is finetuned jointly across all text columns: each row-col
+pair generates one training example in the format “col_name:col_val ", paired with the row’s target
+label. This allows the model to learn a shared representation across all text features simultaneously.
+This decision might harm representations, especially as feature size grows, but finetuning a dedicated
+embedding model for each feature would have been computationally infeasible.
+A.2 Curation Experimental Setup
+Each candidate dataset is evaluated by 5 tabular learners: LightGBM, CatBoost, TabM, TabPFNv2,
+and TabPFN-2.5, over five random seeds under the 4 conditions defined in §3.2. Training is capped at
+10,000 examples per fold, and the metric is AUC for classification andR 2 for regression tasks.
+We run models using default configurations. For LightGBM, we use its default implementation 6.
+For CatBoost, we follow previous work [31, 3] and set early_stopping_rounds= 50, od_pval=
+0.001, iterations= 2000. For TabM, we use itspytabkit 7 implementation with default parameters.
+For TabPFNv2 and TabPFN-2.5, we use their default implementation.8
+A.3 Formal Acceptance Criteria
+Let D be a candidate dataset and M be a pool of 5 curation tabular learners. For a given learner
+m∈ M, let Sm(Condition) denote its average predictive performance (AUC orR2) under a given
+condition.
+Joint Signal.We define theJointgain as the improvement of the joint model over the strongest
+unimodal baseline:
+∆Joint(m) =S m(Joint Frozen)−max
+
+Sm(UnimodalStructured), Sm(UnimodalUnstructured)
+
+4https://huggingface.co/facebook/dinov3-vits16-pretrain-lvd1689m
+5https://huggingface.co/intfloat/e5-small-v2
+6https://pypi.org/project/lightgbm/
+7https://github.com/dholzmueller/pytabkit
+8https://github.com/PriorLabs/TabPFN
+21
+
+Task-awareness.We define theAwarenessgain as the improvement of Joint TAR over Joint Frozen:
+∆Awareness(m) =S m(Joint TAR)−S m(Joint Frozen)
+Selection rule.To ensure that the observed improvements are robust and meet a minimum signifi-
+cance margin, we introduce a threshold parameter δ >0 and a consensus fraction ρ∈(0.5,1] . A
+datasetDis accepted if and only if both gains reachδfor a majority of the learners:
+Accept(D)⇐ ⇒ |{m∈ M: ∆Joint(m)≥δ∧∆ Awareness(m)≥δ}| ≥ρ· |M|
+The two conditions are evaluated jointly per learner: a model counts toward the threshold only if
+both gains reach it. Scores are averaged across folds and rounded to three decimals, so every gain
+is a multiple of 0.001 and δ is the smallest improvement the rule can express. In our case, we set
+δ= 0.001 and ρ= 3/5 . We note that since we use a binary decision threshold, some datasets can
+marginally cross it while others can generate consensus. Demanding stricter thresholds could enhance
+the robustness of the selected datasets. Appendix G.7 quantifies how much the selected set depends
+on both thresholds.
+B MulTaBench Datasets
+In this section we present MulTaBench datasets. Table 3 provides their high-level statistics, including
+the number of rows and feature type breakdown. The rest of the section provides a concise per-dataset
+high-level description; their exact preprocessing logic can be found in our released code.
+B.1 Image-Tabular Dataset Descriptions
+CBIS-DDSM.Cropped mammography mass regions from the Curated Breast Imaging Subset of
+DDSM. The 4-class target is BI-RADS breast density. Structured features describe lesion morphology,
+such as laterality, imaging view, mass shape and margins, BI-RADS assessment score, pathology,
+and subtlety rating.
+Celeb Attractiveness.Celebrity face images from the CelebA dataset, subsampled from the full
+release. The binary target is a crowd-annotated attractiveness label. Each row pairs the face image
+with binary facial-attribute flags such asSmiling,Wearing_Lipstick, orBald, making the image a
+complement to an already rich structured signal.
+CheXpert.Chest X-ray images from the Stanford CheXpert dataset, covering frontal and lateral
+views. The 3-class target is the Cardiomegaly label (positive, negative, or uncertain). Structured
+features include patient sex, age, and co-occurring pathology labels, many of them sparsely observed,
+reflecting the natural label uncertainty of radiology reports.
+CS:GO Skins.Weapon skin images and marketplace metadata from Counter-Strike: Global
+Offensive. The 10-class target discretizes market price into decile bins. Structured features include
+the skin rarity tier, weapon category, and availability, with a free-text skin name describing the visual
+design.
+Flower Bouquets.Flower bouquet photographs paired with sales metadata from a Russian online
+florist. The 5-class target is a customer satisfaction rating (1–5). Features include a free-text bouquet
+description, the average comment-based rating, and the price.
+Glaucoma SMDG.Retinal fundus photographs from the SMDG multi-source glaucoma benchmark.
+The 3-class target encodes glaucoma diagnosis (positive, negative, or uncertain). Clinical metadata
+such as patient age, sex, laterality, and intraocular pressure are available but heavily sparse, reflecting
+real-world incompleteness in ophthalmic records.
+22
+
+Table 3: All 40 MulTaBench Datasets Properties.Task: Classification (CLS) or Regression (REG).
+Classes: number of target classes (for CLS).N: total examples.Struct.: numerical + categorical
+features.Text: free-text features.Img.: image features.
+Dataset Task ClassesNStruct. Text Img.
+Image-Tabular (20 datasets)
+CBIS-DDSM CLS 4 1,696 8 0 1
+Celeb Attractiveness CLS 2 99,999 39 0 1
+CheXpert CLS 3 46,437 17 0 1
+CS:GO Skins CLS 10 956 3 1 1
+Flower Bouquets CLS 5 600 3 1 1
+Glaucoma SMDG CLS 3 12,449 8 0 1
+Hateful Meme CLS 2 9,000 20 0 1
+HubMAP HPA CLS 10 12,581 5 1 1
+Justin Instagram CLS 5 10,319 6 0 1
+Mammography CMMD CLS 2 5,202 4 0 1
+PetFinder CLS 8 14,652 17 4 1
+Zooscan Plankton CLS 10 100,000 28 0 1
+Amazon Bestseller REG – 3,488 4 0 1
+Amazon Packages REG – 46,398 1 1 1
+H&M Fashion REG – 104,072 9 4 1
+Khaadi Clothes REG – 400 2 1 1
+Letterboxd Movies REG – 12,564 23 3 1
+Mango Mass REG – 546 2 0 1
+MkPhoto Bots REG – 13,748 8 0 1
+Painting Price REG – 12,369 245 2 1
+Text-Tabular (20 datasets)
+Data Scientist Salary CLS 6 15,841 1 5 0
+Fake Job Postings CLS 2 12,725 2 3 0
+Jigsaw Toxicity CLS 2 100,000 30 1 0
+Kickstarter CLS 2 86,502 6 3 0
+Michelin Guide CLS 5 18,843 5 6 0
+Product Sentiment CLS 4 5,091 1 1 0
+Spotify Genres CLS 114 114,000 15 3 0
+US Accidents CLS 4 100,001 38 6 0
+Wine Review CLS 30 84,123 3 2 0
+Women’s Clothing CLS 5 18,788 8 2 0
+Baby Products REG – 5,085 8 4 0
+Book Price REG – 4,989 3 5 0
+Book Readability REG – 4,724 24 6 0
+Mercari Marketplace REG – 100,000 3 6 0
+Montgomery Salaries REG – 9,228 8 3 0
+Rotten Tomatoes REG – 7,158 2 13 0
+SciMagojr Impact REG – 31,136 12 10 0
+Vancouver Salaries REG – 44,574 3 2 0
+Video Games Sales REG – 16,598 3 2 0
+Zomato Restaurants REG – 41,665 8 7 0
+Hateful Meme.Multimodal memes from the Facebook Hateful Memes Challenge. The binary
+target labels each meme as hateful or not. To make it a tabular task, the text field is pre-embedded
+into continuous variables, so the structured columns should be treated as numeric features rather than
+raw text, with the meme image providing complementary visual context.
+HubMAP HPA.Histology tissue tiles from the HuBMAP-HPA organ segmentation competition.
+The 10-class target discretizes donor age into decile bins, asking whether tissue morphology encodes
+biological age. Structured features include the organ type, donor sex, the tile index, and the source
+image dimensions.
+Justin Instagram.Instagram posts from five celebrities named Justin (Bieber, Trudeau, Timberlake,
+Long, Hartley). The 5-class target identifies which Justin authored each post. Structured features
+include post-level metadata: counts of hashtags, characters, words, emojis, and mentions, plus a
+binary video indicator.
+23
+
+Mammography CMMD.Mammography images from the Chinese Mammography Database,
+cropped to the lesion region. The binary target distinguishes malignant from benign findings.
+Structured features include patient age, laterality, abnormality type (mass, calcification, or both), and
+the cropping method used.
+PetFinder.Pet adoption listings from the Malaysian PetFinder platform. The 8-class target dis-
+cretizes listed pet age into octile bins, testing whether visual appearance and listing text jointly predict
+developmental stage. Features include the species, breed, color, health status, adoption fee, and state
+location, alongside a free-text listing description and the pet’s photograph.
+Zooscan Plankton.Zooplankton specimens from the PELGAS Bay of Biscay survey, scanned with
+a ZooScan optical system. The 10-class target classifies copepod taxa such as Calanoida, Oithonidae,
+Calanidae, and Temoridae. Structured features include morphometric descriptors computed from
+the scan, such as circularity, skewness, and fractal dimension, alongside sampling metadata such as
+geographic coordinates, depth, collection date, and mesh size.
+Amazon Bestseller.Product listings from Amazon’s bestseller rankings across all departments.
+The target is the log-transformed product price. Structured features include the number of ratings, the
+bestseller rank within department, the star rating, and the list page, while the thumbnail image gives
+visual cues about item type and packaging.
+Amazon Packages.Warehouse bin images from Amazon’s robotic fulfillment centers. The target
+is the total weight of the bin’s contents in pounds. The only structured feature is the expected item
+count, with a free-text product description naming the item in each bin.
+H&M Fashion.Clothing article metadata and thumbnail images from H&M’s product catalog.
+The target is the average age of purchasing customers, capturing whether visual style and descriptive
+text encode demographic appeal. Structured attributes are the product type, color group, graphical
+appearance, garment group, and department, with the product name and a free-text detail description
+as text features, making this a trimodal dataset.
+Khaadi Clothes.Apparel listings from the Pakistani fashion brand Khaadi. The target is the retail
+price in Pakistani rupees. Structured features include the color and product category, with a free-text
+description specifying fabric type and construction.
+Letterboxd Movies.Film metadata and poster images from the Letterboxd movie-tracking platform,
+covering releases between 2021 and 2024. The target is the average community rating. Features
+include binary genre flags, the release year, and the runtime, with the tagline and theme descriptions
+as text alongside the official poster image.
+Mango Mass.Mango fruit photographs from a variety classification study. The target is the fruit
+mass in kilograms. The only structured features are the color group and the quality grade, making the
+image the dominant signal for weight prediction.
+MkPhoto Bots.Social media photographs collected for image authenticity research. The target
+is a continuous trust score, the estimated probability that the post is genuine. Structured features
+include binary flags for GAN generation and deepfake manipulation, presence of a person, face count,
+a recognized-celebrity list, upload speed, and a noise-quality score.
+Painting Price.Painting images and metadata from an online art marketplace. The target is the sale
+price. Structured features include the physical dimensions, the material, and binary style tags such
+asabstractorimpressionism, with a high-cardinality free-text styles column adding further stylistic
+signal.
+B.2 Text-Tabular Dataset Descriptions
+Data Scientist Salary.Indian data science job postings. The 6-class target is the salary band in lakh
+rupees per annum. Text features include the experience range, job description, designation, required
+key skills, and city, with a noisy job-type field as a weak structured signal.
+24
+
+Fake Job Postings.Job listings annotated for authenticity. The binary target flags fraudulent
+listings. Text features include the job title and full description, while structured features capture
+the required experience level, required education, and salary range, testing whether deceptive intent
+surfaces in free text beyond coarse metadata.
+Jigsaw Toxicity.Online comments from the Civil Comments platform, collected for Jigsaw’s
+toxicity detection task. The binary target labels each comment as toxic. Alongside the comment
+text, structured features include identity-mention fraction scores, community-reaction counts, and the
+comment creation timestamp.
+Kickstarter.Crowdfunding campaigns from Kickstarter. The binary target indicates whether the
+funding goal was reached. Text features include the project name, description, and keyword slug,
+while structured features cover the funding goal, country, currency, and the campaign deadline and
+creation timestamps.
+Michelin Guide.Restaurant listings from the 2021 Michelin Guide. The 5-class target is the award
+level, from Selected Restaurants and Bib Gourmand up to three stars. Text features include the
+restaurant name, address, location, cuisine type, facilities, and the Michelin editorial description,
+while structured features cover the geo-coordinates, price tier, and a Green Star sustainability flag.
+Product Sentiment.Tweets about Apple, Google, and Twitter products posted during SXSW 2011.
+The 4-class target is sentiment: Positive, Negative, No Sentiment, or Cannot Say. The only text
+feature is the tweet content, with an integer-encoded product-type column identifying the product
+being discussed.
+Spotify Genres.Spotify track metadata sampled evenly across genres. The 114-class target is the
+track genre. Text features include the artist, album, and track name, while structured features cover
+the Spotify audio descriptors such as danceability, energy, loudness, and valence.
+US Accidents.Traffic accident records from the contiguous United States. The 4-class target is
+accident severity on a 1–4 scale. Text features include a free-text incident description and several loca-
+tion fields, while structured features cover the coordinates, state and timezone, weather measurements
+and conditions, timestamps, and binary road-feature flags.
+Wine Review.Professional wine tasting notes from Wine Enthusiast magazine. The 30-class target
+is the grape variety. Text features include the tasting note and the province of origin, with the numeric
+rating, price, and country as structured features, making grape identification from flavor language a
+natural text-tabular benchmark.
+Women’s Clothing.Customer reviews of women’s clothing from an anonymous US e-commerce
+retailer. The 5-class target is the star rating (1–5). Text features include the review title and body, while
+structured features cover the customer age, product and department metadata, a recommendation
+indicator, and the positive feedback count.
+Baby Products.Nursery and baby product listings from a US retail catalog. The target is the retail
+price. Text features include the product title, brand name, and sparsely populated color, fabric, and
+material fields, while structured features cover a discount flag, the product category, and physical
+dimensions.
+Book Price.Books listed on an online marketplace. The target is the log-transformed price in USD.
+Text features include the title, author, edition details, synopsis, genre tag, and broad book category,
+with the average star rating and the number of ratings as structured features.
+Book Readability.Text excerpts from the CLEAR Corpus of children’s and educational literature.
+The target is the New Dale–Chall Readability Formula score, a standard measure of text difficulty.
+The excerpt itself is the key text feature, accompanied by linguistic and bibliographic attributes such
+as the publication year, sentence and paragraph counts, classical readability metrics, and MPAA
+content rating.
+25
+
+Mercari Marketplace.Secondhand item listings from the Mercari mobile marketplace. The target
+is the log-transformed sale price. Text features include the item name, the free-text description, and a
+hierarchical category label, while structured features cover the item condition, the brand name, and a
+shipping-included flag.
+Montgomery Salaries.Annual salary records of Montgomery County (Maryland, USA) govern-
+ment employees. The target is the current annual salary. Text features include the employee name,
+division, and job title, while structured features cover gender, prior-year gross and overtime pay,
+department, assignment type, and hire date.
+Rotten Tomatoes.Movie metadata aggregated from IMDb and Rotten Tomatoes. The target is an
+audience and critic composite rating. Text features include the movie name, director, screenwriter,
+cast list, language, country, filming locations, genre tags, and plot description, while structured
+features cover the release year, runtime, and rating and review counts.
+SciMagojr Impact.Academic journal and book series metadata from the SCImago Journal &
+Country Rank database. The target is the journal’s H-index. Text features include the title, publisher,
+coverage period, and subject categories, while structured features cover the SJR impact score, quartile
+ranking, document and citation counts, Overton policy citation index, and SDG alignment score.
+Vancouver Salaries.Annual salary disclosures for City of Vancouver public employees. The target
+is the annual remuneration. Text features include the job title and department name, with the fiscal
+year, employee name, and declared expenses as structured features.
+Video Games Sales.Video game sales records from VGChartz. The target is the global sales in
+millions of units. Text features include the game title and publisher name, with the platform, release
+year, and genre as structured features.
+Zomato Restaurants.Restaurant listings from the Zomato platform covering Bangalore, India.
+The target is the aggregate user rating. Text features include the restaurant name, address, cuisine
+types, highlighted dishes, raw user review text, and menu item lists, while structured features cover
+the online ordering and reservation availability, total votes, neighborhood, restaurant type, and
+approximate cost for two.
+C Text-Tabular Curation
+We evaluate existing text-tabular benchmarks by drawing candidates from 4 sources: the Multimodal
+AutoML Benchmark [88], Grinsztajn et al. [35], CARTE [55], and TextTabBench [71], yielding
+56 unique candidates after deduplication and exclusion of datasets which were unavailable due to
+improper hosting. Each dataset is evaluated by 5 tabular learners over 5 folds under the 4 conditions
+defined in §3.2.
+C.1 Existing Benchmarks
+The 4 source benchmarks share a substantial number of datasets, either by directly using the exact
+same source or by using similar-enough datasets. We adopt the deduplication performed by Arazi
+et al. [3], and extend it to include TextTabBench [71], yielding a pool of 56 unique datasets. Table 4
+shows datasets which are shared across more than one existing text-tabular benchmark.
+C.2 Empirical Results for Curation Conditions
+Figure 8 shows normalized scores across all 4 conditions for the full pool and the MulTaBench subset.
+TheStructuredandUnstructuredbars serve as unimodal baselines. The MulTaBench subset shows a
+consistent ordering across all 4 conditions, which is more pronounced than in the full corpus.
+26
+
+Table 4: Duplicate datasets across benchmarks.✓indicates presence.
+Dataset AutoML Multimodal Grinsztajn et al CARTE TextTabBench
+Wine Review✓ ✓ ✓ ✓
+BikeWale Bikes✓ ✓
+Book Readability✓ ✓
+Company Size✓ ✓
+Montgomery Salaries✓ ✓
+Ramen Ratings✓ ✓
+US Accidents✓ ✓
+Vancouver Salaries✓ ✓
+Zomato Restaurants✓ ✓
+California Prices✓ ✓
+Fake Job Postings✓ ✓
+Kickstarter✓ ✓
+Mercari Marketplace✓ ✓
+Spotify Genres✓ ✓
+Beer Ratings✓ ✓
+LightGBM CatBoost T abM T abPFNv2 T abPFN-2.5
+0
+0.2
+0.4
+0.6
+0.8
+1
+Normalized Score
+All (56 datasets)
+LightGBM CatBoost T abM T abPFNv2 T abPFN-2.5
+MulT aBench (20 datasets)
+Unimodal Structured Unimodal Unstructured Joint Frozen Joint TAR
+Figure 8: Curations Conditions for the Text-Tabular Pool. Normalized scores forStructured,Unstruc-
+tured,Joint Frozen, andJoint TARacross all 56 candidates (left) and the MulTaBench subset (right).
+C.3 Benchmark Acceptance Breakdown
+Table 5 reports acceptance rates per source benchmark. Grinsztajn et al. and the AutoML Multimodal
+Benchmark yield the highest rates. CARTE has the lowest acceptance rate (33%), reflecting its
+focus on knowledge-graph-style short strings and high-cardinality categorical columns. Out of 56
+candidates, 23 pass all criteria; we retain 20 for MulTaBench.
+Table 5: Text-tabular curation acceptance rates by source benchmark.
+Benchmark Candidates Accepted Rate
+AutoML Multimodal 16 10 62%
+Grinsztajn et al. 11 7 64%
+CARTE 33 11 33%
+TextTabBench 13 7 54%
+Total (deduplicated) 56 23 41%
+C.4 Per-Dataset Curation Results
+Table 6 reports, for each of the 56 candidate datasets, whether each of the five curation models
+satisfies both criteria jointly. A checkmark indicates both hold simultaneously; × indicates failure on
+at least one; − indicates the model could not be evaluated, due to highly-multiclass problems where
+TabPFN’s variants can’t run on. Datasets are sorted approved-first, then by descending pass count.
+27
+
+Table 6: Per-dataset curation grid. Models: LightGBM (LGBM), Cat-
+Boost (Cat), TabM, PFNv2 (TabPFNv2), PFN-2.5 (TabPFN-2.5). Each
+cell indicates whether the model satisfies criteria.Pass?column shows
+how many models pass. Options are pass (✓), fail (×), and N/A (−).
+Dataset LGBM Cat TabM PFNv2 PFN-2.5 Pass?
+Approved (23 datasets)
+Kickstarter Funding✓ ✓ ✓ ✓ ✓5
+Jigsaw Toxicity✓ ✓ ✓ ✓ ✓5
+Product Sentiment✓ ✓ ✓ ✓ ✓5
+Women’s Clothing✓ ✓ ✓ ✓ ✓5
+Michelin Guide✓ ✓ ✓ ✓ ✓5
+News Channel Category✓ ✓ ✓ ✓ ✓5
+Baby Products✓ ✓ ✓ ✓ ✓5
+Vancouver Salaries✓ ✓ ✓ ✓ ✓5
+SciMagojr Impact✓ ✓ ✓ ✓ ✓5
+Book Readability✓ ✓ ✓ ✓ ✓5
+Video Games Sales✓ ✓ ✓ ✓ ✓5
+Consumer Complaint✓ ✓ ✓ ✓×4
+Hearthstone Cards✓ ✓×✓ ✓4
+US Accidents✓ ✓×✓ ✓4
+Book Price✓ ✓ ✓ ✓×4
+Mercari Marketplace✓ ✓ ✓ ✓×4
+Zomato Restaurants✓ ✓ ✓ ✓×4
+Rotten Tomatoes✓ ✓×✓ ✓4
+Fake Job Posting✓ ✓×✓×3
+Wine Review✓ ✓ ✓− −3
+Data Scientist Salary×✓×✓ ✓3
+Spotify Genres✓ ✓ ✓− −3
+Montgomery Salaries× ×✓ ✓ ✓3
+Rejected (33 datasets)
+OSHA Accident Injury✓×✓× ×2
+Google Q&A Type× × ×✓ ✓2
+American Eagle Prices×✓ ✓× ×2
+JC Penney Products✓× ×✓×2
+Wikiliq Alcohol× ×✓ ✓×2
+Chocolate Bar Ratings×✓ ✓× ×2
+Wine Vivino Spain✓×✓× ×2
+California House Prices✓ ✓× × ×2
+SF Permit Applications× ×✓ ✓×2
+FIFA22 Wages✓× ×✓×2
+IMDB Genre× × ×✓×1
+Melbourne Airbnb✓× × × ×1
+Bike Price Bikewale× × ×✓×1
+Car Price Cardekho✓× × × ×1
+Polish Wine Prices×✓× × ×1
+ML/DS Job Salaries× ×✓× ×1
+Books Goodreads×✓× × ×1
+Korean Drama✓× × × ×1
+US Museum Revenues✓× × × ×1
+Used Cars Pakistan✓× × × ×1
+Used Cars Saudi Arabia× × × ×✓1
+Yelp Reviews× × × × ×0
+Laptop Indian Prices× × × × ×0
+Beer Ratings× × × × ×0
+Coffee Review× × × × ×0
+(continued on next page)
+28
+
+(continued from previous page)
+Dataset LGBM Cat TabM PFNv2 PFN-2.5 Pass?
+Ramen Ratings× × × × ×0
+Airbnb Seattle× × × × ×0
+Company Employee Size× × × × ×0
+Anime Planet Rating× × × × ×0
+FilmTV Movie Rating× × × × ×0
+Movies Dataset Revenue× × × × ×0
+NBA Draft VORP× × × × ×0
+Mercedes Italy Cars× × × × ×0
+D Image-Tabular Curation
+D.1 Existing Benchmarks
+The image-tabular benchmarking landscape is substantially more limited than its text-tabular coun-
+terpart. MuG [63] reports 8 text-image-tabular datasets, but these correspond to only 4 underlying
+datasets, some of them using different target variables. Tang et al. [97] curate 22 datasets spanning
+varying modality combinations: 6 are text-tabular and overlap with text-tabular benchmarks; 5 are
+text-image datasets that lie outside the scope of this paper; and the remaining 11 qualify for our image-
+tabular definition (6 of them also have text). In addition, we include the datasets introduced by TIME
+[65] and MultimodalTabPFN [57], some of them overlapping with aforementioned benchmarks.
+However, many of these datasets suffer from serious reproducibility problems. For example, the
+Seattledataset contains links to images via external URLs that are no longer reachable; and theKARD
+dataset points to a Kaggle dataset that has since been deleted. The remaining candidates are partially
+recoverable, but their preprocessing logic is often undocumented and difficult to replicate faithfully.
+After deduplication and removal of unavailable datasets, we are able to evaluate 16 unique datasets,
+from which only 5 pass the curation filter. For the ones which did non pass, it was sometimes hard to
+assess whether we have curated them properly. Therefore, we do not report curation statistics at the
+same level of detail as for text-tabular, and focus the remaining of the section on elaborating on the
+curation process.
+D.2 Curation Logic
+The curation of datasets found in the wild involved several decisions with the goal of making the
+image feature important and interesting enough to qualify as a relevant true image-tabular task.
+Images.Each dataset contains exactly one image column; datasets with multiple image fields per
+row (e.g., product galleries) were reduced to a single image for simplicity. Rows with absent or
+corrupt image files are dropped without imputation, as there is no sensible substitute for a missing
+image, and placeholder images would inject noise into the encoding step.
+Feature and Target engineering.In several cases the raw target required transformation before
+satisfying the curation criteria, and we provide a non-exhaustive list of examples.Log transformation:
+Amazon Bestseller retail price is transformed as log(1 + price) to stabilize the regression target
+across several orders of magnitude.Quantile binning: CS:GO Skin Price (10 equal-frequency bins),
+PetFinder listed age (8 bins), and HubMAP HPA donor age (10 bins) are discretized into multiclass
+targets.Feature removal: structured columns that directly encode the target or fully dominate the
+image signal are dropped. This is particularly evident in examples like Zooscan Plankton, where
+features were extracted directly from the image, and removing them increased the image importance.
+Kaggle upload.To ensure reproducibility, all the image-tabular datasets we release are preprocessed
+and uploaded to Kaggle under the MulTaBench organization. Each upload contains a flat images/
+directory with one file per row named consistently, a data.csv with features and target. The image
+column stores relative paths into images/ directory. A unified loading API handles download and
+ingestion, ensuring all datasets are accessed identically regardless of original source format.
+29
+
+E Text-Image-Tabular Datasets
+Within the 20 image-tabular datasets in MulTaBench, 9 include one or more text columns alongside the
+image and structured features. This section details our methodology for testing whether these datasets
+are genuinely trimodal, justifies our strict definition of trimodality, and explores the implications of
+adopting weaker criteria.
+E.1 A Strict Definition of Trimodality
+Consistent with our core motivation, the mere coexistence of text, images, and tabular data does not
+constitute a trimodal task unless each modality independently fulfills our strict multimodal criteria.
+We therefore apply the selection rule of Appendix A.3 to each unstructured modality independently,
+and accept a dataset as trimodal only if all of the following hold for a majority of the curation learners:
+1. Joint Signal, per modality.The joint frozen model must outperform both the individual
+unstructured modality and the bimodal baseline that omits it. Satisfying this for both text
+and images confirms that all three modalities provide complementary predictive signals.
+2. Task-awareness, per modality.Applying TAR to either the image or the text individually
+improves upon the joint frozen condition, demonstrating that both frozen encoders discard
+task-relevant information.
+3. Joint Task-awareness.Adapting both encoders simultaneously outperforms adapting either
+one alone, ensuring the dual adaptation is not redundant.
+These latter two conditions deliberately raise the bar compared to our bimodal requirements. Relaxing
+them would substantially increase the number of trimodal datasets in both the core benchmark and
+the extended collection. While we considerJoint Signal, per modalityto be strictly mandatory, as
+failing it implies a redundant modality, theTask-awarenessrequirements could be more flexible. For
+instance, one could omit theJoint Task-awarenessconstraint, or requireTask-awarenessfrom only
+a single unstructured modality. Acknowledging that any strict binary cutoff is inherently rigid, we
+encourage future researchers to challenge our own definitions of trimodality.
+E.2 Per-Dataset Results
+Only 2 datasets from our pool of 9 candidates qualify, and they do so across all 5 learners for every
+condition. The remaining 7 qualify on no learner at all. The outcome is therefore insensitive to the
+consensus threshold ρ: any threshold perfectly separates the passing datasets from the failing ones,
+indicating that the hyperparameter choices are not what makes the trimodal subset small.
+Interestingly, all candidates satisfyJoint Signalfor both modalities, and as expected, they all satisfy
+Task-awarenessfor the image. The rejected datasets specifically failTask-awarenessfor the text:
+their text encoder, even when left frozen, already supplies the necessary predictive signal for the task.
+The results forPetFinderare presented in Table 2 of the main paper.Amazon Packagesis a regression
+task predicting the total weight of an Amazon bin from a warehouse photograph, a product description,
+and the expected item quantity. The results for this dataset are presented in Table 7.
+Table 7: Amazon Packages Analysis. S=Structured, I=Image, T=Text. Mean R2 (%) per model and
+condition. For all models, TAR over both modalities dominates.
+Single modality Frozen combinations Target-Aware Representations (TAR)
+ModelI T S+I S+T S+I+T S+I TAR+T S+I+T TAR S+ITAR+TTAR
+LightGBM 43.2 17.5 45.4 20.8 49.9 56.9 52.259.4
+CatBoost 44.2 19.0 46.7 22.5 52.5 58.1 53.859.8
+TabM 46.6 20.5 48.6 24.2 55.7 60.3 56.161.1
+TabPFNv2 46.6 20.2 49.3 23.9 54.9 59.8 56.261.3
+TabPFN-2.5 47.5 21.1 50.2 24.9 56.2 60.7 57.261.5
+30
+
+E.3 Additional Trimodal Candidates
+Among the 20 supplementary image-tabular datasets in Appendix F, 13 also carry text columns.
+Across the entire 80-dataset release, 22 datasets thus feature all three modalities. Under our strict
+criteria, these 13 datasets are ineligible for trimodal status because most already failTask-awareness
+for the image encoder, rendering a complete text-modality curation redundant. We therefore leave
+these candidates uncurated for text, noting that they offer a natural starting point for future work
+developing dedicated trimodal tabular benchmarks.
+F Additional Released Datasets
+Alongside the 40 MulTaBench datasets we release 40 further datasets, 20 image-tabular and 20
+text-tabular, bringing the released collection to 80 datasets of which 40 are image-tabular. All of
+them satisfy theJoint Signalcriterion, but do not necessarily meet theTask-awarenesscriterion.
+Most of them fail it, and others failed it under a different curation regime; a few pass it weakly and
+were excluded to keep the benchmark at exactly 40 datasets, balanced between the image and text
+modalities and between classification and regression.
+These additional datasets are therefore intended for work on multimodal fusion, where the question
+is how to combine modalities rather than how to adapt the encoder. Table 8 reports the per-dataset
+scores behind their admission and Table 9 their properties, with the two subsections below describing
+each dataset individually, following the format used for MulTaBench in Appendix B.
+F.1 Image-Tabular Dataset Descriptions
+HAM10000 Lesions.Dermatoscopic images of common pigmented skin lesions gathered at two
+sites over twenty years. The 7-class target is the diagnosis, covering melanoma, melanocytic nevi,
+basal cell carcinoma, actinic keratoses, benign keratosis-like lesions, dermatofibroma, and vascular
+lesions. Structured features include the patient age, sex, and the anatomical localization of the lesion;
+the diagnostic confirmation method is dropped because it leaks the label.
+Hearthstone Class.Collectible cards from the digital card game Hearthstone, paired with their
+illustration art. The 11-class target is the hero class the card belongs to, such as Mage, Druid, or
+Warrior. Structured features include the card statistics: mana cost, attack, health, rarity, card type,
+race, and set, while the free-text features cover the card name, rules text, mechanics list, and illustrator
+credit.
+Minecraft Mobs.Screenshots of Minecraft gameplay annotated with the game state at the moment
+of capture. The 7-class target is the mob the player is facing. Structured features record the player’s
+activity, remaining hearts, light level, and item in hand, together with the decision fields derived from
+them; the column restating the mob label is dropped.
+OASIS Alzheimer’s.Cross-sectional brain MRI scans from the Open Access Series of Imaging
+Studies. The binary target is whether the subject is demented. Structured features include the sex, age,
+years of education, socioeconomic status, estimated total intracranial volume, atlas scaling factor, and
+scan delay; clinical gradings such as CDR and MMSE are dropped because they restate the diagnosis.
+PAD-UFES Lesions.Smartphone photographs of skin lesions collected in Brazil by the Derma-
+tological and Surgical Assistance Program. The 6-class target is the diagnosis, spanning basal and
+squamous cell carcinoma, melanoma, actinic and seborrheic keratosis, and nevus. Structured features
+cover patient demographics and habits, family cancer history, environmental exposures, Fitzpatrick
+skin type, lesion region and size, and symptoms such as itching, bleeding, and growth; the biopsy
+indicator is dropped as it leaks the label.
+Pinterest Repins.Pinterest pins paired with their images and engagement counts. The binary target
+is whether the pin is widely repinned, defined by a median split of the repin count. The pin title and
+description are compressed into E5 components, which form the structured features.
+31
+
+Table 8: Datasets released alongside MulTaBench, admitted onJoint Signal. Structured, Unstructured
+and Joint are the mean score over the curation learners under each condition, AUC for classification
+and R2 for regression. ∆Joint is the median of Joint minus the better unimodal condition, and Pass
+counts the learners for which it reachesδ, out of those evaluated.
+DatasetTask Structured Unstructured Joint∆ Joint Pass
+Image-Tabular
+Watch Tier REG 0.341 0.201 0.479 0.150 5/5
+eMAG Products REG 0.749 0.769 0.841 0.063 5/5
+Zepto Groceries REG 0.670 0.467 0.727 0.054 5/5
+Tokopedia Weight REG 0.635 0.422 0.687 0.040 5/5
+PAD-UFES Lesions CLS 0.921 0.896 0.950 0.030 5/5
+Minecraft Mobs CLS 0.940 0.957 0.988 0.028 5/5
+Pinterest Repins CLS 0.622 0.638 0.659 0.025 5/5
+Airbnb NYC REG 0.701 0.309 0.721 0.020 5/5
+OASIS Alzheimer’s CLS 0.910 0.893 0.931 0.019 5/5
+SoCal Houses REG 0.735 0.339 0.757 0.017 5/5
+Goias Apartments REG 0.931 0.660 0.947 0.015 5/5
+Kamernet Room Size REG 0.446 0.129 0.459 0.015 5/5
+Sao Paulo Apartments REG 0.833 0.420 0.847 0.015 5/5
+Lahaina Art Auction REG 0.558 0.093 0.576 0.013 5/5
+Reddit Memes CLS 0.929 0.766 0.939 0.013 4/5
+Flipkart Discount REG 0.710 0.450 0.722 0.012 5/5
+DVM Car Prices REG 0.592 0.357 0.594 0.009 4/5
+Hearthstone Class CLS 0.905 0.812 0.914 0.009 3/3
+Pokemon Height CLS 0.849 0.709 0.853 0.007 4/5
+HAM10000 Lesions CLS 0.798 0.949 0.956 0.005 5/5
+Mean0.739 0.562 0.777 0.016
+Text-Tabular
+Chocolate Bars REG 0.166 0.130 0.257 0.104 5/5
+Wine Poland REG 0.458 0.159 0.539 0.087 4/5
+Anime Planet REG 0.661 0.616 0.751 0.086 5/5
+WikiLiq Spirits REG -0.001 0.155 0.226 0.060 5/5
+Used Cars Pakistan REG 0.863 0.820 0.911 0.050 5/5
+Box Office CLS 0.819 0.763 0.861 0.042 5/5
+Goodreads Books CLS 0.706 0.724 0.756 0.031 5/5
+Used Cars Saudi REG 0.867 0.174 0.895 0.029 5/5
+Consumer Complaints CLS 0.848 0.887 0.906 0.026 5/5
+Ramen Ratings REG 0.087 0.159 0.181 0.025 5/5
+FIFA22 Wages REG 0.761 0.042 0.775 0.017 5/5
+IMDB Genre CLS 0.832 0.753 0.844 0.014 5/5
+Wine Vivino Spain REG 0.816 0.773 0.826 0.011 5/5
+OSHA Injury CLS 0.580 0.573 0.592 0.010 4/5
+Korean Drama CLS 0.640 0.694 0.702 0.008 5/5
+Airbnb Seattle REG 0.649 0.454 0.660 0.008 4/5
+News Channel CLS 0.802 0.609 0.809 0.007 5/5
+American Eagle CLS 0.994 0.989 0.996 0.003 4/5
+California Prices CLS 0.990 0.956 0.993 0.002 5/5
+Airbnb Melbourne CLS 0.838 0.779 0.837 0.002 3/5
+Mean0.669 0.560 0.716 0.021
+32
+
+Table 9: All 40 Additional Released Datasets Properties.Task: Classification (CLS) or Regression
+(REG).Classes: number of target classes (for CLS).N: total examples.Struct.: numerical +
+categorical features.Text: free-text features.Img.: image features.
+Dataset Task ClassesNStruct. Text Img.
+Image-Tabular (20 datasets)
+HAM10000 Lesions CLS 7 7,470 3 0 1
+Hearthstone Class CLS 11 4,281 11 4 1
+Minecraft Mobs CLS 7 6,089 7 0 1
+OASIS Alzheimer’s CLS 2 436 7 0 1
+PAD-UFES Lesions CLS 6 1,641 21 0 1
+Pinterest Repins CLS 2 1,504 15 0 1
+Pokemon Height CLS 10 1,077 27 4 1
+Reddit Memes CLS 7 4,821 6 0 1
+Airbnb NYC REG – 16,780 46 3 1
+DVM Car Prices REG – 100,000 14 1 1
+eMAG Products REG – 38,294 2 0 1
+Flipkart Discount REG – 60,900 1 2 1
+Goias Apartments REG – 9,830 73 1 1
+Kamernet Room Size REG – 1,638 20 4 1
+Lahaina Art Auction REG – 968 6 2 1
+Sao Paulo Apartments REG – 23,432 28 1 1
+SoCal Houses REG – 15,474 4 2 1
+Tokopedia Weight REG – 1,197 13 2 1
+Watch Tier REG – 1,260 1 1 1
+Zepto Groceries REG – 13,345 5 2 1
+Text-Tabular (20 datasets)
+Airbnb Melbourne CLS 10 18,316 68 20 0
+American Eagle CLS 5 22,662 8 5 0
+Box Office CLS 5 7,408 10 9 0
+California Prices CLS 2 37,951 21 18 0
+Consumer Complaints CLS 8 100,000 11 5 0
+Goodreads Books CLS 3 3,967 6 8 0
+IMDB Genre CLS 2 800 7 4 0
+Korean Drama CLS 10 1,647 3 6 0
+News Channel CLS 6 20,284 16 1 0
+OSHA Injury CLS 2 4,847 13 3 0
+Airbnb Seattle REG – 3,818 51 14 0
+Anime Planet REG – 14,391 7 7 0
+Chocolate Bars REG – 1,795 5 3 0
+FIFA22 Wages REG – 19,178 27 1 0
+Ramen Ratings REG – 4,105 2 2 0
+Used Cars Pakistan REG – 72,655 6 3 0
+Used Cars Saudi REG – 8,035 11 1 0
+WikiLiq Spirits REG – 12,569 6 6 0
+Wine Poland REG – 2,247 13 5 0
+Wine Vivino Spain REG – 8,650 5 2 0
+33
+
+Pokemon Height.Sprites from the Pokemon franchise, paired with the game statistics of each
+entry. The 10-class target is the height decile, obtained after capping height at 10 meters. Structured
+features include the base, minimum, and maximum battle statistics together with weight, catch rate,
+base friendship and experience, growth rate, egg groups, and gender ratio, while the text features
+cover the name, species, type, and ability list.
+Reddit Memes.Meme images scraped from Reddit together with the posting account and its
+engagement statistics. The 7-class target is the subreddit category the meme was posted to. Structured
+features include the poster’s total and comment karma, the upvote ratio, the number of comments,
+the time of day, and the account cake day; the title, extracted caption, author, and upvote count are
+dropped.
+Airbnb NYC.Airbnb listings in New York City paired with the primary listing photograph,
+downscaled to a maximum side of 512 pixels. The regression target is the nightly price. Structured
+features cover host response and acceptance, superhost status, property and room type, capacity, stay
+limits, availability, and review counts and scores, with the neighbourhood and host location as text
+features; host prose, scrape identifiers, and coordinates are dropped.
+DVM Car Prices.Advertisement records from the DVM-CAR collection of the UK used car market,
+each paired with a photograph of the vehicle. The regression target is the advertised price. Structured
+features include the maker, advertisement date, colour, registration year, body type, mileage, engine
+size, gearbox, fuel type, seat and door counts, the predicted viewpoint of the photograph, and a quality
+check flag, with the general model name as a text feature.
+eMAG Products.Product listings scraped from the Romanian retailers eMAG and Flanco, each
+with a product photograph. The regression target is the price. Only the customer rating and the
+product category are kept as structured features; the Romanian product title, identifiers, and URLs
+are dropped because the title names the object shown in the image.
+Flipkart Discount.Fashion product listings from Flipkart paired with their catalogue photographs.
+The regression target is the discount ratio, the sold price divided by the listed price. The listed price
+is the only structured feature, with the brand and the product title as text features; the sold price is
+dropped as it is the numerator of the target.
+Goias Apartments.Apartment listings from Goiania in the Brazilian state of Goias, each with
+a photograph of the unit. The regression target is the asking price. Structured features include the
+floor area, room, bathroom and parking counts, floor level, listing stage and business type, and
+binary amenity flags such as pool, elevator, and gym, with the neighbourhood as a text feature; the
+Portuguese description, address, condominium fee, and property tax are dropped.
+Kamernet Room Size.Room rental listings from the Dutch platform Kamernet, each with a
+photograph of the room. The regression target is the floor area of the room in square meters.
+Structured features include the place and furnishing type, rent and additional costs, tenant and
+roommate composition, shared facility flags, the energy label, and the availability start date, with the
+city, requested age range, and listed extras as text features; the listing description is dropped because
+it states the floor area.
+Lahaina Art Auction.Artworks offered in the 2023 Artists for Lahaina charity auction, each with
+a photograph of the piece. The regression target is the winning bid. Structured features include the
+medium, the canvas dimensions, the stated value, the buy-now price, and the gallery, with the artist
+name and the work title as text features.
+Sao Paulo Apartments.Property listings from Sao Paulo paired with a photograph of the unit. The
+regression target is the asking price. Structured features include the listing date and featured flag,
+property category and type, clipped floor area, bedroom, bathroom and parking counts, zone, and
+a set of amenity flags, with the neighbourhood as a text feature; the Portuguese headers and values
+were translated to English, and the previous price, condominium fee, and property tax were dropped.
+34
+
+SoCal Houses.House listings from Southern California paired with a photograph of the property.
+The regression target is the price. Structured features include the city identifier, the bedroom and
+bathroom counts, and the floor area in square feet, with the street address and the city name as text
+features.
+Tokopedia Weight.Product listings from the Indonesian marketplace Tokopedia paired with their
+catalogue photographs. The regression target is the shipping weight of the product. Structured features
+include the order quantity limits, condition and status, price and discount, shop city, transaction
+counts, units sold, review count, rating, and number of images, with the category and shop names as
+text features; identifiers, URLs, and the Indonesian title and description are dropped.
+Watch Tier.Product photographs of wristwatches spanning fifty brands. The regression target is
+the price of the watch relative to the median price of its brand, so that the label measures within-brand
+positioning rather than brand identity. The brand is the only structured feature, with the model name
+as a text feature.
+Zepto Groceries.Grocery listings from the Indian quick-commerce service Zepto paired with their
+product images. The regression target is the price. Structured features include the rating, review
+count, stock status, category, and storefront interface, with the pack quantity and the sub-category as
+text features; the undiscounted price and the product name are dropped.
+F.2 Text-Tabular Dataset Descriptions
+Airbnb Melbourne.Airbnb listings in Melbourne. The 10-class target is the nightly price binned
+into deciles. Free-text features include the host’s descriptions of the listing, the space, the neigh-
+bourhood, transit, access, interaction, and house rules, together with the amenity list, while the
+structured features cover host attributes, property type and capacity, availability, review scores, and
+host verification flags.
+American Eagle.Apparel products from the American Eagle catalogue. The 5-class target is the
+price binned into quintiles. Free-text features include the product name, description, style attributes,
+available sizes, and the product page URL, while the structured features cover the recommended
+retail price, brand, category, retailer, rating, review count, and colour.
+Box Office.Films from The Movies Dataset, restricted to titles that report a non-zero box office
+revenue. The 5-class target is the revenue binned into quintiles. Free-text features include the title,
+overview, tagline, genres, collection, production companies and countries, and spoken languages,
+while the structured features cover the budget, runtime, popularity, vote statistics, original language,
+release date, and the adult and video flags.
+California Prices.Residential property listings from California. The binary target is whether the
+sold price is above the median. Free-text features include the address, the listing summary, the
+heating, cooling, parking, flooring, laundry, and appliance descriptions, and the school names, while
+the structured features cover the year built, room counts, interior area, school scores and distances,
+tax assessment, and previous prices.
+Consumer Complaints.Complaints filed with the US Consumer Financial Protection Bureau. The
+8-class target is the company’s response to the consumer, such as closed with explanation or closed
+with monetary relief. Free-text features include the consumer complaint narrative, the issue, and the
+company name, while the structured features cover the product, state, submission channel, receipt
+and dispatch dates, and the timely response and dispute flags.
+Goodreads Books.Books scraped from Goodreads. The 3-class target is the average rating binned
+into tertiles. Free-text features include the title, description, publisher, author names, and ISBN, while
+the structured features cover the page count, number of ratings, format, language, and publication
+date.
+35
+
+IMDB Genre.Films from the IMDB top-rated list. The binary target is whether the film is a drama.
+Free-text features include the title, plot description, director, and cast list, while the structured features
+cover the rank, year, runtime, rating, vote count, revenue, and Metascore.
+Korean Drama.Top-rated Korean television dramas. The 10-class target is the viewer score binned
+into deciles. Free-text features include the title, synopsis, genre, tags, main cast, and broadcast
+network, while the structured features cover the year, content rating, and number of episodes.
+News Channel.Online news articles described by the surface statistics of their body text. The
+6-class target is the publishing channel: World, Tech, Entertainment, Business, Social Media, or
+Lifestyle. The article title is the only text feature, while the structured features include token counts
+and ratios, link, image and video counts, average token length, subjectivity, sentiment polarity, and
+positive and negative word rates.
+OSHA Injury.Accident and injury reports filed with the US Occupational Safety and Health
+Administration between 2015 and 2017. The binary target is whether the injured worker was
+regularly assigned to the task being performed. Free-text features include the accident abstract, event
+description, and event keywords, while the structured features describe the event date, the work
+setting, the project cost and type, the degree and nature of the injury, and the contributing factors.
+Airbnb Seattle.Airbnb listings in Seattle. The regression target is the nightly price. Free-text
+features include the host’s descriptions of the listing, space, neighbourhood, transit, and house notes,
+the host’s own profile text, and the amenity and verification lists, while the structured features cover
+host attributes, location, property type and capacity, availability, review scores, and booking policies.
+Anime Planet.Anime titles scraped from Anime-Planet. The regression target is the average rating
+score. Free-text features include the name and alternative name, the synopsis, tags, content warnings,
+studios, and season, while the structured features cover the vote count, type, episode count, duration,
+and the start and end years.
+Chocolate Bars.Expert reviews of plain dark chocolate bars. The regression target is the reviewer’s
+rating. Free-text features include the manufacturer name, the specific bean origin or bar name, and
+the broad bean origin, while the structured features cover the review reference number, review date,
+cocoa percentage, company location, and bean type.
+FIFA22 Wages.Player records from the FIFA 22 video game. The regression target is the weekly
+wage in euros. The nationality is the only text feature, while the structured features include the age,
+height and weight, the overall and potential ratings, and skill ratings covering attacking, dribbling,
+passing, movement, defending, and goalkeeping.
+Ramen Ratings.Instant ramen products reviewed by The Ramen Rater. The regression target is
+the star rating. The brand and the variety name are the text features, with the packaging style and the
+country of origin as the only structured features.
+Used Cars Pakistan.Used car listings from the Pakistani market in 2021. The regression target
+is the asking price. Free-text features include the model, version, and registration city, while the
+structured features cover the make, manufacture year, engine displacement, assembly, mileage, and
+transmission.
+Used Cars Saudi.Used car listings from Saudi Arabia. The regression target is the asking price.
+The car type is the only text feature, while the structured features include the make, year, origin,
+colour, options package, engine size, fuel type, gear type, mileage, region, and whether the price is
+negotiable.
+WikiLiq Spirits.Spirit products listed on the WikiLiq price aggregator. The regression target is
+the price. Free-text features include the product name, brand, country, category list, tasting notes, and
+description, while the structured features cover the alcohol by volume, base ingredient, years aged,
+rating, rating count, and bottle volume.
+36
+
+Wine Poland.Wines offered on the Polish retail market. The regression target is the price in Polish
+zloty. Free-text features include the wine name, region, appellation, vineyard, and grape varieties,
+while the structured features cover the country, vintage, bottle volume, alcohol percentage, serving
+temperature, colour, kind, taste, style, medals, vegan and natural flags, and the critic score.
+Wine Vivino Spain.Spanish wines listed on Vivino. The regression target is the user rating. The
+wine name and the winery are the text features, while the structured features include the vintage year,
+number of reviews, price, and region.
+G Extended Results
+G.1 Main Results Breakdown
+New Models.We extend our models suite by adding new models.
+• For XGBoost, we follow previous work [ 31, 3] and use the default implementa-
+tion from thexgboostpackage, 9 with booster=gbtree, early_stopping_rounds=
+50, n_estimators= 2000.
+• For RandomForest, we use the default scikit-learn implementation with default configuration
+withn_estimators= 100.
+• ForRealMLPwe use its official implementation in thepytabkitpackage, disable label
+smoothing and optimize for cross_entropy for binary classification and 1−auc_ovr for
+multiclass classification, keeping the other default hyperparameters.
+• ForTabICLv2, 10 TabSTAR,11 ConTextTab,12 andTabDPT,13 we use their default implemen-
+tations.
+• ForAutoGluon-Multimodalwe useMultiModalPredictor 14 with pretrained=T rue and
+optimizing for roc_auc (binary classification), roc_auc_ovr (multiclass classification), and
+r2 (regression).
+Task Type BreakdownFigures 9 and 10 replicate Figure 4, but breaking down to classification and
+regression datasets respectively. TAR consistently outperforms Frozen in both task types and both
+modalities, indicating that the benefit of target-aware representations is not specific to any of them.
+Win Rate by ModelTable 10 reports the fraction of (dataset, fold) pairs where TAR outperforms
+Frozen for each model, with 95% CIs. End-to-end systems that do not expose a separate TAR
+condition for a given modality (TabSTAR, ConTextTab) are excluded from the corresponding column.
+TAR beats Frozen in the large majority of runs across all models and both modalities.
+Per-dataset Results.Tables 11 and 12 report per-dataset results for all 20 image-tabular and 20
+text-tabular datasets, averaged over all learners that have both Frozen and TAR conditions and 5
+random seeds, sorted by TAR gain. Negative R2 scores are clipped before averaging. To test whether
+the gains from adaptation are significant, we pair each learner-fold run underJoint TARwith the
+same learner and fold underJoint Frozen, giving 60 paired observations per image dataset (12
+learners × 5 folds) and up to 50 per text dataset (10 learners × 5 folds), and apply a one-sided paired
+t-test against the null of no gain. All 40 p-values are corrected together as a single family with the
+Benjamini-Hochberg procedure at α= 0.05 , and Tables 11 and 12 report the corrected value per
+dataset. In total, 37 of the 40 datasets show a significant gain, 18 of 20 on the image side and 19 of
+20 on the text side. The three exceptions are Painting Price, CS:GO Skins, and Fake Job Postings;
+two show a small positive gain that the test cannot separate from noise, and one a small negative one,
+showing that our curation logic could have been stricter as these datasets do not generalize.
+9https://pypi.org/project/xgboost/
+10https://pypi.org/project/tabicl/
+11https://pypi.org/project/tabstar/
+12https://github.com/SAP-samples/sap-rpt-1-oss
+13https://pypi.org/project/tabdpt/
+14https://auto.gluon.ai/stable/api/autogluon.multimodal.MultiModalPredictor.html
+37
+
+Table 10: Per-model TAR win rate on MulTaBench. End-to-end models excluded from columns
+where they lack a separate TAR condition.
+Model Image (%) Text (%) All (%)
+CatBoost90.0±5.9 93.0±5.0 91.5±5.5
+LightGBM84.0±7.2 93.0±5.0 88.5±6.2
+RF85.0±7.0 90.0±5.9 87.5±6.5
+XGBoost80.0±7.8 90.0±5.9 85.0±6.9
+TabPFNv277.0±8.2 84.4±7.5 80.7±7.9
+TabM82.0±7.5 77.0±8.2 79.5±7.9
+TabDPT70.0±9.0 87.0±6.6 78.5±7.9
+RealMLP78.0±8.1 78.0±8.1 78.0±8.1
+TabSTAR76.0±8.4—76.0±8.4
+TabPFN-2.577.0±8.2 73.3±9.1 75.2±8.7
+ConTextTab73.0±8.7—73.0±8.7
+TabICLv255.0±9.8 75.0±8.5 65.0±9.2
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abICLv2
+T abPFN-2.5
+T abPFNv2
+AG-MM
+T abDPT
+ConT extT ab
+T abM
+CatBoost
+RealMLP
+T abSTAR
+LightGBM
+RF
+XGBoost
+(a) Image-T abular
+Frozen
+TAR
+E2E
+Curation
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abICLv2
+T abPFN-2.5
+T abSTAR
+T abPFNv2
+AG-MM
+T abM
+CatBoost
+RealMLP
+T abDPT
+LightGBM
+XGBoost
+RF
+ConT extT ab
+(b) T ext-T abular
+Figure 9: Tabular Learners Performances Analysis for Classification Tasks. Normalized scores over
+MulTaBench, with±95% CI.
+Elo LeaderboardFollowing the protocol adopted by TabArena, we rank competitors using the
+Bradley-Terry model. We define a battle as the head-to-head comparison of two models on a single
+dataset-fold, with missing evaluations safely omitted. Ratings are mapped onto the standard Elo
+scale and anchored by setting RandomForest underJoint Frozento 1000, with confidence intervals
+derived from dataset-level bootstrap resampling. Figure 11 plots each learner by condition, placing
+Joint FrozenandJoint TARin direct competition. Of the 27 total entries, 12 are evaluated under both
+conditions. Crucially, all 12 models achieve a higher Elo rating with target-aware representations,
+securing improvements that range from 128 points (TabDPT) to 319 points (RandomForest).
+G.2 Missing Baselines
+We deliberately exclude autoregressive generative models (LLMs and VLMs) from the benchmark
+evaluation, due to prohibitive inference costs and a memorization risk. The research on bench-
+marking LLMs and VLMs for MMTL task still needs to be explored. Although TIME [ 65] and
+MultimodalTabPFN [57] are relevant baselines, TIME has not released the code at the time of our
+submission. MultimodalTabPFN, on the contrary, has a working codebase, but it is highly not flexible
+to serve the model using the popularscikit-learn[76] wrapper, making it hard to evaluate.
+G.3 Computation Costs
+Table 13 and Figure 12 reports median wall-clock runtimes and peak GPU memory per (dataset, fold)
+run on a singleNVIDIA A100-SXM4GPU with 40GB memory, and 8 CPU cores of typeAMD EPYC
+38
+
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abM
+T abPFNv2
+T abICLv2
+CatBoost
+ConT extT ab
+LightGBM
+T abDPT
+T abSTAR
+RF
+RealMLP
+XGBoost
+AG-MM
+(a) Image-T abular
+Frozen
+TAR
+E2E
+Curation
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abICLv2
+T abM
+CatBoost
+ConT extT ab
+LightGBM
+T abPFNv2
+AG-MM
+RealMLP
+T abDPT
+T abSTAR
+XGBoost
+RF
+(b) T ext-T abular
+Figure 10: Tabular Learners Performances Analysis for Regression Tasks. Normalized scores over
+MulTaBench, with±95% CI.
+Table 11: MulTaBench Image-Tabular Per-dataset Results. Averaged over 12 learners and 5 seeds,
+with both Frozen and TAR conditions, sorted by Gain. AUROC for classification, R2 for regression.
+pBH is the Benjamini-Hochberg adjusted significance of the gain.
+Dataset Frozen TAR Gainp BH
+Mango Mass 0.533 0.653+0.120<0.001
+Khaadi Clothes 0.565 0.683+0.118<0.001
+Amazon Packages 0.523 0.579+0.056<0.001
+CheXpert 0.762 0.803+0.041<0.001
+CBIS-DDSM 0.858 0.893+0.035<0.001
+Amazon Bestseller 0.543 0.566+0.024<0.001
+MkPhoto Bots 0.341 0.361+0.020<0.001
+Justin Instagram 0.956 0.974+0.017<0.001
+Hateful Meme 0.745 0.760+0.015<0.001
+H&M Fashion 0.389 0.404+0.015<0.001
+Glaucoma SMDG 0.921 0.934+0.012<0.001
+Mammography CMMD 0.770 0.780+0.010 0.005
+CelebA Attractiveness 0.903 0.913+0.009<0.001
+PetFinder 0.832 0.841+0.009<0.001
+HubMAP HPA 0.959 0.968+0.009<0.001
+Flower Bouquets 0.627 0.636+0.009 0.010
+Painting Price 0.270 0.275+0.005 0.236
+Letterboxd Movies 0.439 0.443+0.004 0.002
+Zooscan Plankton 0.983 0.985+0.003<0.001
+CS:GO Skins 0.871 0.870−0.001 0.763
+Mean0.690 0.716+0.027
+7742 64-Core Processor. We report results for each of the 5 core learners across frozen and TAR
+conditions and both encoder sizes. From the table, it is evident that the embeddings dominate all
+metrics. TAR adds a substantial overhead relative to frozen embeddings, dominated by the encoder
+fine-tuning step. For image datasets with the small DINO encoder, TAR roughly doubles runtime; the
+large encoder raises costs further.
+Text TAR is significantly more expensive:e5-smallTAR takes roughly ten times longer than frozen,
+ande5-largeTAR approaches three hours per run. The gap arises partly as text-tabular datasets often
+contain more than a single text column, making their effective dataset size much bigger.
+The costs above are measured without any hyperparameter optimization (HPO). Standardizing HPO
+across 40 datasets is computationally prohibitive under the TAR paradigm: the encoder must be
+fine-tuned separately for each cross-validation fold to prevent data leakage, so a standard HPO sweep
+39
+
+1000 1200 1400 1600 1800 2000
+Elo rating (RandomForest Frozen anchored at 1000)
+TabPFN-2.5 (TAR)*
+T abICLv2 (TAR)
+T abICLv2 (Frozen)
+TabPFN-2.5 (Frozen)*
+TabM (TAR)*
+TabPFNv2 (TAR)*
+ConT extT ab (TAR-Image)
+CatBoost (TAR)*
+T abDPT (TAR)
+AutoGluon-MM
+T abSTAR (End2End-T ext)
+TabM (Frozen)*
+T abSTAR (TAR-Image)
+TabPFNv2 (Frozen)*
+ConT extT ab (Frozen-Image)
+RealMLP (TAR)
+LightGBM (TAR)*
+T abDPT (Frozen)
+CatBoost (Frozen)*
+ConT extT ab (End2End-T ext)
+RandomForest (TAR)
+T abSTAR (Frozen-Image)
+RealMLP (Frozen)
+XGBoost (TAR)
+LightGBM (Frozen)*
+XGBoost (Frozen)
+RandomForest (Frozen)
+1,916
+1,910
+1,774
+1,727
+1,714
+1,698
+1,640
+1,622
+1,566
+1,562
+1,555
+1,509
+1,498
+1,495
+1,476
+1,468
+1,449
+1,438
+1,363
+1,334
+1,319
+1,306
+1,288
+1,278
+1,197
+1,009
+1,000
+T arget-Aware
+Frozen
+End-to-End
+Figure 11: Elo over all 40 MulTaBench datasets. Learners marked with∗ form the curation committee.
+AutoGluon-MM is a single multimodal system and has no frozen/target-aware split; TabSTAR and
+ConTextTab are end-to-end models for text, but have frozen and target-aware variants for image.
+would require repeating encoder fine-tuning for every hyperparameter trial, multiplying an already
+expensive operation by the number of trials. Consequently, all experiments use a single fixed LoRA
+configuration across all datasets, with no per-dataset tuning of the encoder or the learner. All reported
+gains should therefore be interpreted as conservative lower bounds on what a fully tuned system
+could achieve.
+G.4 Encoder Scale by Task Type
+We replace our default encoders, DINO-small and E5-small, with DINO-large15 and e5-large. Roughly
+speaking, this moves from models of 30M paremeters to models of 300M parameters. We then
+re-evaluate all 20 image and 20 text datasets. Figures 13 and 14 replicate Figure 5 restricted to
+classification and regression datasets respectively. TAR consistently outperforms Frozen across
+encoder sizes and task types, confirming that the benefit of TAR generalizes also to larger encoders.
+15The official names aredinov3-vits16-pretrain-lvd1689mfor small, anddinov3-vitl16-pretrain-lvd1689mfor large.
+40
+
+Table 12: MulTaBench Text-Tabular Per-dataset Results. Averaged over 10 learners and 5 seeds, with
+both Frozen and TAR conditions, sorted by Gain. AUROC for classification, R2 for regression. pBH
+is the Benjamini-Hochberg adjusted significance of the gain.
+Dataset Frozen Contextualized Gainp BH
+Jigsaw Toxicity 0.806 0.926+0.119<0.001
+Video Games Sales 0.348 0.385+0.036 0.004
+Mercari 0.412 0.436+0.024<0.001
+Baby Products 0.873 0.895+0.022<0.001
+Vancouver Salaries 0.753 0.775+0.022<0.001
+Rotten Tomatoes 0.490 0.508+0.018<0.001
+Kickstarter 0.720 0.737+0.017<0.001
+Book Price 0.529 0.543+0.013 0.001
+Zomato Restaurants 0.818 0.832+0.013<0.001
+Michelin Guide 0.896 0.909+0.013<0.001
+Book Readability 0.809 0.821+0.012<0.001
+Wine Review 0.968 0.976+0.009<0.001
+Product Sentiment 0.901 0.909+0.009<0.001
+SciMagojr Impact 0.852 0.860+0.009<0.001
+US Accidents 0.965 0.974+0.008<0.001
+Women’s Clothing 0.903 0.909+0.006<0.001
+Spotify Genres 0.935 0.940+0.005<0.001
+Data Scientist Salary 0.823 0.828+0.005<0.001
+Montgomery Salaries 0.968 0.972+0.004<0.001
+Fake Job Postings 0.916 0.918+0.002 0.459
+Mean0.784 0.803+0.018
+Table 13: Computation costs per run. Median Runtime in seconds and Median Peak GPU memory in
+GB. Partitioned by tabular learners, modality and encoder size.
+Small Encoder Large Encoder
+Runtime (s) Peak GPU (GB) Runtime (s) Peak GPU (GB)
+ModelFrozen TAR Frozen TAR Frozen TAR Frozen TAR
+Image-Tabular (DINO encoder)
+LightGBM 141 287 5.5 7.6 411 1,003 2.7 16.7
+CatBoost 128 307 5.4 7.6 432 1,002 2.7 16.7
+TabM 129 282 5.4 7.6 375 993 2.7 16.8
+TabPFNv2 173 318 5.3 7.6 432 1,055 2.7 14.8
+TabPFN-2.5 169 316 5.5 7.6 405 1,048 2.7 14.8
+Text-Tabular (E5 encoder)
+LightGBM 223 2,417 1.1 17.3 1,284 10,867 2.9 39.6
+CatBoost 323 2,471 1.1 17.3 1,377 10,860 2.9 39.6
+TabM 225 2,408 1.2 17.3 1,256 10,833 2.9 39.6
+TabPFNv2 253 2,430 1.1 18.6 1,368 11,569 2.9 39.6
+TabPFN-2.5 242 2,396 1.1 18.6 1,347 11,556 2.9 39.6
+G.5 No PCA Variant
+To verify that the gains from target-aware adaptation do not depend on the PCA compression step,
+we repeat the core Frozen vs. TAR comparison using raw 384-dimensional embeddings, omitting the
+projection entirely. Since this largely increases the number of features for the downstream task, we
+limit the analysis to CatBoost and LightGBM, and exclude datasets with more than 5 text features,
+resulting in 33 datasets. Figure 15 shows 4 conditions side by side, varying between N=30 and
+No-PCA, and Frozen vs TAR. We observe that TAR outperforms Frozen in both settings, for both
+learners, confirming that the advantage is not an artifact of dimensionality reduction. The signal
+surfaced by fine-tuning is present in the raw 384-dimensional space and persists regardless of whether
+embeddings are subsequently compressed.
+41
+
+Image
+Small
+Image
+Large
+T ext
+Small
+T ext
+Large
+103
+104
+Runtime (s)
+Frozen
+TAR
+Image
+Small
+Image
+Large
+T ext
+Small
+T ext
+Large
+40Peak GPU memory (GB)
+Figure 12: Computation costs per run. Left: median runtime in seconds (log scale). Right: median
+peak GPU memory. The dashed vertical line separates image (left) and text (right) conditions.
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abPFNv2
+T abM
+CatBoost
+LightGBM
+(a) Image-T abular (DINO-v3)
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abPFNv2
+T abM
+CatBoost
+LightGBM
+(b) T ext-T abular (E5-v2)
+Frozen Small
+Frozen Large
+TAR Small
+TAR Large
+Figure 13: Encoder Scale Analysis for Classification. Small and large encoder variants, frozen and
+TAR, normalized within each model.
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abPFNv2
+T abM
+CatBoost
+LightGBM
+(a) Image-T abular (DINO-v3)
+0 0.2 0.4 0.6 0.8 1
+Normalized Score
+T abPFN-2.5
+T abPFNv2
+T abM
+CatBoost
+LightGBM
+(b) T ext-T abular (E5-v2)
+Frozen Small
+Frozen Large
+TAR Small
+TAR Large
+Figure 14: Encoder Scale Analysis for Regression. Small and large encoder variants, frozen and TAR,
+normalized within each model.
+G.6 Curation Committee
+A benchmark curated by a fixed panel of learners risks encoding the algorithmic preferences of that
+specific committee. To investigate this, we test the acceptance rule under alternative learner panels
+using the 56-dataset text-tabular pool. We simulate acceptance for every 5-learner panel that can be
+drawn from the 10, which are
+10
+5
+
+= 252options.
+42
+
+CatBoost LightGBM
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Normalized Score
+No PCA Ablation (33 datasets)
+PCA / mode
+30 dims, Frozen
+30 dims, Contextualized
+No PCA, Frozen
+No PCA, Contextualized
+Figure 15: No-PCA ablation on 33 datasets for CatBoost and LightGBM. Normalized scores are on
+the model level.
+LightGBM
+CatBoost
+T abM
+T abPFNv2
+T abPFN-2.5
+RandomForest
+RealMLP
+T abDPT
+T abICLv2
+XGBoost
+LightGBM
+CatBoost
+T abM
+T abPFNv2
+T abPFN-2.5
+RandomForest
+RealMLP
+T abDPT
+T abICLv2
+XGBoost
+75 70 74 67 79 75 66 66 64
+75 77 74 74 82 79 66 66 68
+70 77 72 68 70 70 64 68 70
+74 74 72 78 70 67 68 78 67
+67 74 68 78 78 74 65 74 70
+79 82 70 70 78 71 73 66 79
+75 79 70 67 74 71 59 70 61
+66 66 64 68 65 73 59 64 70
+66 66 68 78 74 66 70 64 70
+64 68 70 67 70 79 61 70 70
+50
+60
+70
+80
+90
+100
+Agreement (%)
+Figure 16: Pairwise agreement of the 10 pool learners on the 56-dataset text-tabular pool.
+Table 14 details the acceptance rate for every candidate across all 252 simulated committees. The
+results strongly support the robustness of the selection process, naturally grouping the candidate
+datasets into four tiers of multimodal signal strength:
+• Full Consensus:33 datasets generated complete consensus, consistently passing (17
+datasets) or failing (16 datasets) across 100% of all committee combinations.
+• Near Consensus:12 datasets exhibited near-unanimous agreement. The lowest accepted
+dataset in this tier passed in 91.7% of committees, while the highest rejected dataset passed
+in only 8.3%.
+• Strong Majority:7 datasets maintained a clear and stable majority. This tier included
+2 accepted datasets with a 73.8% acceptance rate and 5 rejected datasets with a 26.2%
+acceptance rate.
+43
+
+Table 14: Per-candidate acceptance rate across every 5-learner committee, on the 56-dataset text-
+tabular pool at δ= 0.001 and ρ= 3/5 .Decision: the decision the published panel reached, where ✓
+is accepted and released, (✓) accepted but held out to match the image subset’s size, and × rejected.
+Rate: share of the
+10
+5
+
+= 252committees drawable from the 10-learner pool that admit the dataset.
+Dataset Decision Rate Dataset Decision Rate
+Baby Products✓100.0% Used Cars Saudi×26.2%
+Book Readability✓100.0% WikiLiq Spirits×26.2%
+Data Scientist Salary✓100.0% AI Job Salaries×8.3%
+Jigsaw Toxicity✓100.0% BikeWale Bikes×8.3%
+Kickstarter✓100.0% California Prices×8.3%
+Mercari Marketplace✓100.0% JC Penney×8.3%
+Michelin Guide✓100.0% Korean Drama×8.3%
+Product Sentiment✓100.0% SF Permits×8.3%
+Rotten Tomatoes✓100.0% US Museums×8.3%
+SciMagojr Impact✓100.0% Used Cars Mercedes×8.3%
+Spotify Genres✓100.0% Used Cars Pakistan×8.3%
+US Accidents✓100.0% Wine Poland×8.3%
+Vancouver Salaries✓100.0% Airbnb Melbourne×0.0%
+Video Games Sales✓100.0% Airbnb Seattle×0.0%
+Wine Review✓100.0% Anime Planet×0.0%
+Women’s Clothing✓100.0% Beer Ratings×0.0%
+Zomato Restaurants✓100.0% Box Office×0.0%
+Book Price✓91.7% CarDekho Cars×0.0%
+Hearthstone Cards(✓)91.7% Coffee Reviews×0.0%
+Montgomery Salaries✓73.8% Company Size×0.0%
+News Channel(✓)73.8% FilmTV Ratings×0.0%
+Consumer Complaints(✓)50.0% Goodreads Books×0.0%
+FIFA22 Wages×50.0% Google QA×0.0%
+Fake Job Postings✓50.0% IMDB Genre×0.0%
+Wine Vivino Spain×50.0% Indian Laptops×0.0%
+American Eagle×26.2% NBA Draft Value×0.0%
+Chocolate Bars×26.2% Ramen Ratings×0.0%
+OSHA Injury×26.2% Yelp Reviews×0.0%
+• Borderline Candidates:The remaining 4 datasets sat exactly on the decision boundary
+with a 50.0% acceptance rate.
+Given that two of the five models are from the TabPFN family, we also investigate whether their
+shared architecture acts as a voting bloc that biases the overall rates. Figure 16 measures the pairwise
+agreement across all 10 pool learners. We find that while TabPFNv2 and TabPFN-2.5 are positively
+correlated, their agreement rate (78%) is identical to that of completely distinct model families,
+such as RandomForest and TabPFN-2.5. The average pairwise agreement across all models is 70%,
+ranging from 59% (TabDPT and RealMLP) to 82% (CatBoost and RandomForest). This healthy
+variance confirms that the two TabPFN variants do not act as an isolated voting bloc. Ultimately,
+these results provide strong evidence that our dataset selection is highly robust to the specific choice
+of tabular learners.
+G.7 Threshold Sensitivity
+The acceptance rule elaborated in Appendix A.3 has two hyperparameters: a minimal performance
+margin (δ= 0.001 ) and a simple majority vote ( ρ= 3/5 ) to generate consensus across learners.
+While this design imposes a strict binary cutoff for inclusion, the underlying demand for target-
+awareness naturally exists on a spectrum. Some datasets cross the threshold marginally, whereas
+others generate strong, undeniable consensus across learners. In this subsection, we analyze how the
+benchmark varies when demanding stricter thresholds.
+Table 15 details the number of datasets retained across different combinations ofδ and ρ. Elevating the
+consensus requirement from a simple majority (3/5) to 4/5 retains 33 datasets, naturally discarding
+those that marginally cleared the initial curation. Even under strict unanimity ( 5/5), 23 datasets
+survive, demonstrating that MulTaBench datasets generate broad agreement across tabular models.
+Similarly, increasing the performance margin δ systematically isolates the strongest target-aware
+signals. Doubling the margin to 0.002 retains 36 datasets, and raising it to 0.005 retains 30. Further-
+more, we observe that demanding a strict 1% absolute improvement (δ= 0.01 ) still preserves over
+half the benchmark (21 datasets). This is a notably high bar in tabular learning, where performance
+44
+
+Table 15:Threshold sensitivity analysis.Number of datasets (out of 40) retained when varying the
+required performance margin (δ) and learner consensus (ρ). The baseline setting is in bold.
+Consensus (ρ)
+Margin (δ)3/54/5 5/5
+0.001 4033 23
+0.002 36 30 20
+0.005 30 21 13
+0.01 21 12 2
+0.02 7 3 2
+gaps between competitive models are often narrower. Ultimately, this analysis confirms that the
+need for target-aware representations falls along a continuous spectrum, and that applying stricter
+thresholds reliably acts as a filter to surface the most pronounced multimodal tasks.
+H Additional Attention Maps
+Each of the 4 datasets in Figure 7 is accompanied by 3 additional test-set examples below. In every
+case, Frozen attention remains scattered across task-irrelevant regions, while Target-Aware attention
+converges on semantically meaningful area identified in the main figure, relevant to the prediction.
+45
+
+Image Frozen Target-Aware
+Figure 17: CheXpert Attention Maps. The attention shifts from diffused edges to the lung.
+46
+
+Image Frozen Target-Aware
+Figure 18: PetFinder Attention Maps. Attention isolates the cat ears and the dog’s eyes.
+47
+
+Image Frozen Target-Aware
+Figure 19: Glaucoma Attention Maps. Frozen attention scatters randomly across the retina; TAR
+converges on the optic disc and nerve fiber region, the clinically relevant area for glaucoma diagnosis.
+48
+
+Image Frozen Target-Aware
+Figure 20: Celeb Attractiveness Attention Maps. Frozen attention disperses across accessories,
+clothing, and background; TAR consistently focuses on facial features.
+49

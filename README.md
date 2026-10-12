@@ -363,7 +363,11 @@ deserve mention here because they are exceptions:
   scripting, partition and GPU choice, the Lustre/GPFS storage split, and
   credit accounting are shared questions across all of them; having the
   answers greppable offline is worth far more than the file costs. No
-  further non-TFM files should be added.
+  further non-TFM files should be added. The [VSC usage guide](REPOSITORIES.md#vsc-usage)
+  reconciles the refreshed snapshot with the October 2026 changes: P100/V100 now
+  belong to wICE, explicit Slurm cluster selection is still required for submissions,
+  and storage access, time limits, credits and OnDemand features are documented there.
+  Check the linked live status page for temporary outages before scheduling work.
 
 Cite these dumps **by symbol name, never by line number** — a refresh
 moves every line by thousands.

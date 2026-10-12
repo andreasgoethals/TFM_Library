@@ -4,6 +4,30 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-12
+
+- **Owner-requested live Zotero mirror: 57 → 59 papers.** Two collection items were
+  missing; copied their attached PDFs using curated metadata, generated text mirrors,
+  and completed summaries, overview rows, synthesis timelines and thematic comparisons.
+- Added **Ning et al. 2026-10 — Test-Time Compute for Tabular Foundation Models:
+  Mechanisms, Gains, and Limits** (arXiv 2610.12005v1, 8 October): integrates DiagScale,
+  selective aggregation, compute costs and retrieval failures; revises blanket full-FT
+  preferences and the outdated claim that regression adaptation remains untested.
+- Added **Arazi et al. 2026-09 — MulTaBench: Benchmarking Multimodal Tabular Learning
+  with Text and Image** (arXiv 2605.10616v2, 27 September): connects target-aware
+  representation evidence to TabSTAR/ConTextTab, retaining curation bias and the
+  distinction between supervised encoder tuning and joint multimodal modelling.
+- **Reconciled VSC guidance with the owner's refreshed 39,613-line dump.** Updated
+  `REPOSITORIES.md` and README for P100/V100 migration to wICE, explicit submission
+  cluster selection, GPU/CPU/interactive limits, regular Mindwell credit accounts,
+  CPU-plus-GPU billing, architecture-specific software and Lustre/GPFS transfer rules.
+- Recorded the supplied **1 October OnDemand notice** and linked live operational
+  sources; the 12 October status check still reports V100 unavailable. Removed stale
+  free-pilot and universal 72-hour GPU claims; the supplied dump itself was retained.
+- **Preserved the existing PFN filing discrepancy:** Zotero dates *Transformers Can Do
+  Bayesian Inference* to 2022, while the stored PDF remains filed under `2021/12` without
+  an arXiv version banner. Paper coverage is complete; this date warning remains for review.
+
 ## 2026-09-28
 
 - **Owner-requested Zotero mirror completed: 52 → 57 papers.** Queried the live collection by

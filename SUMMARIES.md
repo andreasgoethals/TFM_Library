@@ -9,7 +9,9 @@ synthetic-only default) → TabPFN-3 (May 2026; new three-stage architecture, sc
 test-time-compute "Thinking" mode) → and, from June 2026, the first big-tech entrant shipping
 the paradigm as a product (Google's TabFM, wired into BigQuery). The September releases
 extend the comparison to TabPFN-3.5, Mitra-v2, Xiaomi-TabLDM, LimiX-2's masked conditional
-modelling, and Causilo's refinement-before-compression design.
+modelling, and Causilo's refinement-before-compression design. MulTaBench tests the
+multimodal representation gap; the October test-time-compute study separates the gains
+from adapting weights, selecting ensemble members, and constructing the context.
 
 For every paper:
 
@@ -85,6 +87,8 @@ this folder and write them there.
 | 2026-09 | Xiaomi-TabLDM Team | **Xiaomi-TabLDM** — A Tabular Foundation Model | First **sparse Mixture-of-Experts** in a TFM, and a deliberate regression specialist: 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost. | [pdf](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf) |
 | 2026-09 | Zhang et al. | **LimiX-2** — A Contextual Mechanism Network Towards General Structured-Data Intelligence | Retains cells and jointly trains target prediction and masked-feature reconstruction; strong three-benchmark results and attention-based causal-skeleton recovery, which does not establish causal-effect identification. | [pdf](papers/2026/09_Zhang_et_al._LimiX_2_A_Contextual_Mechanism_Network_Towards_General_Structured_Data_Intelligence.pdf) |
 | 2026-09 | Cho et al. | **Causilo** — Technical Report | Refines cells across both axes before row compression; fixed summary tokens make feature-side attention linear, reaching 1785 TabArena Elo at 0.1043 s per 1K queries in the reported snapshot. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
+| 2026-09 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | 40 datasets selected for complementary modalities and gains from target-aware representations; 40 additional joint-signal candidates expose the benchmark's selection boundary. | [pdf](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
+| 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | DiagScale matches much of full finetuning's gain; selective aggregation helps at substantial cost, while retrieval can help or fail and context expansion gives no consistent gain. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
 
 ---
 
@@ -2690,5 +2694,134 @@ depends on the benchmark snapshot and comparator set. CRPS is a proper distribut
 score, not a standalone calibration guarantee. The report distinguishes Apache-2.0 code
 from separately licensed weights restricted to non-commercial research, with commercial
 or hosted use requiring a separate licence.
+
+---
+
+<a id="multabench-benchmarking-multimodal"></a>
+
+## 2026-09 — Arazi et al. — MulTaBench: Benchmarking Multimodal Tabular Learning with Text and Image
+
+**arXiv:** [2605.10616v2](https://arxiv.org/abs/2605.10616v2), **27 September 2026** ·
+**NeurIPS 2026, Evaluations and Datasets track** (identified on the filed PDF;
+Zotero records the arXiv preprint) · **Technion-led multi-institution collaboration** ·
+**PDF:** [open](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf)
+
+**Citation key:** `2026.ARAZI.multabenchbenchmarkingmultimodaltabularlearningtextimage`.
+
+**Where it fits.** Turns the representation argument in Arazi 2025 (*TabSTAR: A Tabular
+Foundation Model for Tabular Data with Text Fields*) into an explicit evaluation target
+for both text and images. Spinaci 2025 (*ConTextTab: A Semantics-Aware Tabular In-Context
+Learner*) shows that frozen semantic embeddings can work well on CARTE; MulTaBench asks
+where they lose target-relevant information. Like Purucker 2026 (*Beyond IID*,
+[summary](#beyond-iid)), it qualifies the generality implied by a benchmark win, but
+through modality and representation requirements rather than temporal/grouped splits.
+It is an owner-selected evaluation paper in the mirrored Zotero collection, not a new TFM.
+
+**What it contains.** **40 datasets: 20 text-tabular and 20 image-tabular**, spanning
+classification/regression, 400–114,000 rows and 1–245 structured features. A further
+**40 candidates** meet the joint-signal criterion, producing an 80-dataset extended
+collection. The main set deliberately requires both **Joint Signal** (joint frozen
+representations outperform either modality alone) and **Task-awareness** (target-aware
+representations outperform joint frozen ones). Both gains must reach **0.001** in
+rounded mean AUC/R² for the same **at least three of five** curation learners:
+LightGBM, CatBoost, TabM, TabPFNv2 and TabPFN-2.5.
+
+The four conditions are structured-only, unstructured-only, joint frozen, and joint
+target-aware. Text/image encoders are **e5-small-v2 / DINOv3-small**; target-aware
+representations (TAR) tune their last three layers with LoRA, then use 30 PCA components
+as tabular inputs. Encoder adaptation uses training labels only, with an internal 90/10
+checkpoint-selection split. It is performed **without the structured features**, so it
+is target adaptation rather than evidence for a jointly trained fusion architecture.
+Regression labels are discretised into 20 quantile bins for this encoder-training step.
+The curation experiments use five seeds and cap training at 10,000 examples per fold.
+
+TAR gains extend to learners outside the curation panel, including TabICLv2 and TabDPT;
+the authors report significant improvements on **37/40 datasets**. Larger encoders and
+15/60-dimensional projections preserve the pattern, with a smaller experiment also
+removing PCA. ConTextTab's CARTE strength does not transfer to this selected text subset.
+Only two of the nine main image-tabular datasets containing text pass the paper's strict
+trimodal criterion. No new multimodal TFM is trained or proposed as a finished solution.
+
+**Strengths.** Makes complementary modality information and representation adaptation
+separately testable; includes unimodal controls, additional learners, encoder-size and
+dimension ablations, and sensitivity to the curation panel and thresholds. Releases
+the broader candidate collection so evaluation can also cover cases where frozen
+embeddings suffice. The PDF explicitly acknowledges selection bias and adaptation cost.
+
+**Limitations.** Selection deliberately favours tasks on which the tested TAR recipe
+helps, so neither its model ranking nor the prevalence of TAR gains estimates general
+multimodal performance. The curation models have an intrinsic selection advantage;
+new-learner robustness reduces, but does not remove, dependence on the chosen encoders
+and selection rule. There is no per-dataset HPO, and tuning cost can dominate downstream
+learning. Supervised encoder tuning must be repeated within each evaluation fold; a
+globally target-tuned embedding cache would leak labels. The results motivate joint
+modelling but do not establish that an ICL-only, label-free or jointly conditioned
+representation method reproduces the supervised TAR gains.
+
+---
+
+<a id="test-time-compute"></a>
+
+## 2026-10 — Ning et al. — Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits
+
+**arXiv:** [2610.12005v1](https://arxiv.org/abs/2610.12005v1), **8 October 2026** · preprint;
+no publication venue recorded in Zotero · **University of Connecticut / Morgan Stanley** ·
+**PDF:** [open](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf)
+
+**Citation key:** `2026.NING.testtimecomputetabularfoundationmodelsmechanismsgainslimits`.
+
+**Where it fits.** Revisits Rubachev 2025 (*On Finetuning Tabular Foundation Models*,
+[summary](#on-finetuning)) on newer backbones and separates mechanisms that Thomas 2024
+(*Retrieval & Fine-Tuning for In-Context Tabular Models*, [LoCalPFN summary](#localpfn))
+combines. It tests how much Grinsztajn 2026 (*TabPFN-3*, [summary](#tabpfn-3)) gains
+beyond its already ensembled default. Here **test-time compute includes supervised
+task-specific fitting after pretraining**, not access to unseen query labels.
+
+**What it contains.** Three axes: **adaptation, aggregation and context construction**.
+Adaptation is evaluated on **51 TabArena classification/regression datasets** with
+TabPFN-3, TabICLv2 and TabFM; aggregation/context studies focus on TabPFN-3, with
+additional wide and large OpenML tables. A 25-setting adaptation sweep motivates
+**DiagScale**: freeze pretrained weights and learn a zero-initialised diagonal
+query–key multiplier, changing attention logits to `qᵀ(I + diag(δ))k`. At the logit
+level this is equivalent to IA³ key scaling. Only **0.003–0.03%** of parameters train;
+on regression checkpoints this is 12.7K for TabPFN-3, 7.3K for TabICLv2 and 53.8K for
+TabFM. Their respective Elo gains are **+26/+82/+20**, versus **+25/+77/+28** for full
+finetuning, each relative to its own frozen baseline in the specified comparison fit.
+Checkpoint selection includes fallback to the pretrained model.
+
+Increasing TabPFN-3's native ensemble from eight to 32 views reduces error by only
+**0.60%**, with little further gain at 64. For a separate pool of **96 configurations**,
+greedy selection using training-side out-of-fold predictions reduces error by **2.44%**
+(95% CI −4.75% to −0.80%; +67 Elo), while uniform averaging **increases** it by 3.68%.
+Using only one eighth of selector labels erases the estimated gain. Combining DiagScale
+and greedy aggregation reaches **+93 Elo**, but costs **253.1 GPU-hours** over the
+benchmark workload versus 6.61 for DiagScale alone and 247.5 for aggregation; fewer
+trainable parameters do not imply a comparable reduction in fitting time.
+
+Attention-guided retrieval can use source pools up to **10M rows**, beyond the tested
+4–4.5M full-context memory boundary on an 80 GB H100. Matched random-context controls
+show that *which* rows are selected matters. Yet on **COMET_MC**, retrieval raises log
+loss from **0.0151 to 0.2302**, concentrating a 1.7% rare class to a median 40.3% of
+retrieved contexts; correcting proportions only partially repairs the loss. Column
+selection also varies by dataset. Synthetic/optimised rows, pseudo-labels and derived
+features provide no consistent gain in the tested context-expansion experiments.
+
+**Strengths.** Separates parameter, ensemble-reducer and context effects with matched
+controls; reports uncertainty, negative results, validation-label sensitivity and total
+fitting/prediction costs. Tests a compact adaptation mechanism across three independently
+pretrained backbones and both task types rather than treating v2 conclusions as universal.
+Code is linked from the paper, and the appendix specifies splits and reference predictions.
+
+**Limitations.** Unreviewed, benchmark-bound evidence: aggregation/retrieval results are
+not established for every backbone or for temporal/grouped evaluation. Learning-rate
+defaults are selected across the benchmark; three diagnostic datasets motivate the
+similarity mechanism. Elo depends on the reference field, and reported error reductions
+combine different task metrics, not a common absolute accuracy gain. Benefits concentrate
+on a few datasets and the tested predictors barely forecast their magnitude (best
+cross-validated R² 0.012). Frozen TabFM exceeds the heavily adapted/ensembled TabPFN-3
+at lower measured total cost, so this is not evidence that extra compute on a fixed
+backbone is always the best purchase. The retrieval failure and context-expansion null
+results constrain the tested recipes; they do not prove all retrieval or learned-context
+methods ineffective, nor do these experiments establish probability calibration.
 
 ---

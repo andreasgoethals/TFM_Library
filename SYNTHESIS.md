@@ -25,7 +25,7 @@ A **Tabular Foundation Model (TFM)** is a neural network — in practice, almost
 - **The prior is synthetic and causal by construction.** TabPFN v1/v2 sample millions of tables from random structural causal models (SCMs); v2's ~100M synthetic tables sufficed to beat tuned GBDTs on ≤10k-row tasks in one forward pass — the "GBDTs always win on tabular" era ended in 2025 for small data.
 - **Scaling happened on two axes at once**: context (rows/features) via architectural moves — bi-attention over feature×datapoint cells (v2), then column-collapsing row embeddings borrowed from TabICL (Qu 2025) that carry v3 and Qu 2026 (*TabICLv2*) to ~1M rows — and prior quality via mixture recipes (Zhang 2025's Mitra) and sheer token count (v3's 8T-token SCM prior).
 - **Real data re-entered through continued pretraining, not from-scratch training.** Garg 2025 (Real-TabPFN) showed that continued pretraining of TabPFNv2 on 71 curated real tables with L2-SP regularization beats the synthetic-only default; TabDPT (Ma 2026) went further and pretrained on real data alone with SSL + retrieval, exhibiting power-law scaling. This is the direct methodological template for any domain specialisation.
-- **Per-dataset adaptation is genuinely contested.** Rubachev 2025 (*On Finetuning Tabular Foundation Models*) finds *full* finetuning matches the PEFT/LoRA variants while converging fastest, and works by sharpening query–key retrieval, but is unstable under temporal shift; Tanna 2025/2026 (TabTune benchmark) find finetuning rarely helps across six-seven TFMs, often *hurts* accuracy and calibration — with TabPFN the most tolerant of SFT. Zero-shot is a strong, sometimes unbeatable baseline; always report it.
+- **Per-dataset adaptation depends on the backbone and evaluation.** Rubachev 2025 (*On Finetuning Tabular Foundation Models*) favours full finetuning for v2; Tanna 2025/2026 (*TabTune* and its benchmark) find accuracy/calibration failures under other recipes. Ning 2026 (*Test-Time Compute for Tabular Foundation Models*) now finds compact query–key scaling close to full finetuning on three newer backbones, while selective ensembling brings extra gains at much greater cost. Always retain frozen and full-FT baselines, and compare total compute rather than parameter counts alone.
 - **Calibration is a first-class selling point of the paradigm** — the PPD interpretation means TFMs are natively probabilistic, and Zhang et al. 2025 show out-of-the-box TabPFNv2 beats specialized SOTA in semi-supervised estimation, heterogeneous treatment effects, and covariate shift — but adaptation (esp. naive SFT) can destroy calibration, which is exactly the risk axis for PD models.
 - **The paradigm extends by re-authoring the prior, not the model**: time-driven SCMs give drift detection/extrapolation (Helli 2024), observational+interventional SCM pairs give causal-effect prediction (Robertson 2025, Ma 2026 CausalFM), biased/fair SCM pairs give fairness (FairPFN), calendar features on top of frozen TabPFN give SOTA zero-shot forecasting (Hoo 2024/2026), and a feature-widening prior gives 30k-feature HDLSS handling (Kolberg 2026).
 - **In-context "training" is free retraining** — Rundel 2024 (*Interpretable ML for TabPFN*) exploits one-forward-pass refits to make Data Shapley, LOCO, and exact-retraining interpretability cheap; BETA (Liu & Ye 2025) and Ye 2025's divide-and-conquer show the frozen model can be patched at inference time (ensembled encoders, bagging, chunked contexts) instead of retrained.
@@ -98,6 +98,8 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-09 | Xiaomi Team 2026 (*Xiaomi-TabLDM*) | First **sparse MoE** inside a TFM; dual-stream feature grouping extending TabICLv2; deliberate regression specialist — 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost | TabICLv2 (QASSMax, grouping); TabFM |
 | 2026-09 | Zhang 2026 (*LimiX-2*) | Persistent cell representations with target prediction plus masked-feature reconstruction; controlled capacity scaling and attention-based causal-skeleton probes | LimiX/CCMM; synthetic SCMs; dual-axis cell attention |
 | 2026-09 | Cho 2026 (*Causilo*) | Refines cells across features and context before row compression; linear feature-side attention and an explicit accuracy/latency trade-off | TabICLv2; inducing/summary tokens; bounded QASSMax |
+| 2026-09 | Arazi 2026 (*MulTaBench*) | 40 text/image-tabular datasets require joint signal and gains from target-aware representations; 40 extra candidates test the broader boundary | TabSTAR; ConTextTab; benchmark scope |
+| 2026-10 | Ning 2026 (*Test-Time Compute for Tabular Foundation Models*) | DiagScale recovers much of full-FT gains; selective aggregation helps at high cost; matched retrieval controls expose gains and failures | Rubachev's finetuning; LoCalPFN/LimiX retrieval; TabPFN-3 |
 
 
 ## Foundations — Prior-Fitted Networks & Bayesian in-context learning
@@ -361,6 +363,20 @@ A third axis, orthogonal to both architecture and prior *realism*, entered in 20
 Stepping back, the field has an unresolved argument about where scale should come from. TabDPT and Real-TabPFN (Garg 2025) argue real data carries structure synthetic priors miss; TabICLv2 counters by beating RealTabPFN-2.5 with zero real data, attributing the gains to prior design, Muon optimization, and attention scaling — implying real-data continued pretraining may partly compensate for a fixable prior deficit rather than add irreducible signal. Mitra sits between them: better synthetic mixtures help, but its finetuning-dependence shows the pretrain/downstream gap is real and must be closed *somewhere* — by richer priors, real corpora, or downstream adaptation. This tension is not academic for domain specialisation: it predicts that continued pretraining should help most precisely where the target domain is *distinctive* relative to the prior (a hypothesis Mitra's generalizability-matrix methodology could test directly), while TabICLv2 warns that a sufficiently good synthetic backbone may erase much of that headroom. Meanwhile the collective silence on calibration — none of TabICLv2, TabDPT, or Mitra reports ECE or Brier scores despite log-loss training — and TabICLv2's mean-imputation of missing values (hostile to the informative missingness typical of credit files) mark exactly the gaps a domain-specialized, calibration-audited model can occupy.
 
 
+**Semantic content and task-relevant representations are separate requirements.**
+[Arazi 2026, *MulTaBench: Benchmarking Multimodal Tabular Learning with Text and
+Image*](SUMMARIES.md#multabench-benchmarking-multimodal), sharpens the difference between
+TabSTAR and ConTextTab: a frozen encoder can preserve broad meaning while discarding
+details needed for a particular prediction. Its 40-dataset set requires both modalities
+to add signal and target-tuned embeddings to improve on frozen ones, with gains extending
+to learners and encoder scales outside the curation setup. ConTextTab's CARTE success and
+its weakness here can therefore coexist. This is a deliberate stress test, not an unbiased
+ranking of multimodal learners: the 40 additional joint-signal candidates are needed to
+test whether a method also retains performance where frozen encoders suffice. Moreover,
+MulTaBench's encoder is tuned on training labels without structured features. Its evidence
+supports task adaptation, while joint cross-modal conditioning with the speed of frozen
+ICL remains an architectural goal rather than an achieved result.
+
 ## Adapting a pretrained TFM — finetuning, continued pretraining, LoRA, tooling
 
 Scaling asks how good a *general* model can be made. The moment anyone wants one for a particular domain, a different question opens: given a pretrained TFM, what should you change — the weights, the prior, or nothing at all? This is where the corpus is least settled, and where the disagreements are sharpest, because the answers were reached on different architectures under different budgets.
@@ -375,11 +391,53 @@ Kolberg (2026) validates that this recipe is a *template*, not a one-off: TabPFN
 
 The Tanna papers fill exactly that calibration hole, at the cost of shallower tuning. TabTune (Tanna 2025) is the tooling contribution — a scikit-learn-style library unifying zero-shot ICL, episodic meta-learning, full SFT, and LoRA (r=8, α=16, dropout 0.05) across seven TFMs — and its companion benchmark (Tanna 2026) is the empirical payload: adaptation outcomes are strongly *architecture-dependent*. Full SFT is near-catastrophic for TabICL and Orion-BiX (TabZilla accuracy 0.873→0.567) yet TabPFN survives it essentially intact, and is uniquely the model whose calibration stays flat under full finetuning (ECE 0.0276 zero-shot → 0.0287 after SFT, while SFT triples–quadruples ECE elsewhere). Their TabPFN SFT defaults (AdamW, lr 1e-5, wd 1e-4, ≤10–25 epochs) sit between Garg and Rubachev; LoRA they find *unstable* for TabPFN specifically (batched-inference constraints force auto-fallback to full FT), which converges with Rubachev's conclusion from the opposite direction — LoRA buys nothing on TabPFNv2 and may cost something. The regime breakdown is practically useful: finetuning pays off on medium (1k–10k rows) and wide (>100 features) datasets, while on <1k rows zero-shot wins outright. But the honesty caveats are real: four pages, one hyperparameter setting per strategy (TabICL's "collapse" may be under-tuning, not physics), Mitra's broken numbers suggest harness bugs, PEFT calibration tables duplicate non-PEFT rows, and the authors' own Orion models top their own leaderboards.
 
+**Compact adaptation reopens the full-FT conclusion on newer models.**
+[Ning 2026, *Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and
+Limits*](SUMMARIES.md#test-time-compute), isolates the query–key mechanism implicated
+by Rubachev's attention analysis. DiagScale trains a diagonal correction with only
+0.003–0.03% of the backbone's parameters, recovering much of full finetuning's gain on
+TabPFN-3, Qu 2026 (*TabICLv2*) and Kong & Das 2026 (*TabFM*). This preserves full FT as
+a strong comparator while removing the basis for making it the universal default.
+It does not establish faster fitting in proportion to parameter savings: DiagScale and
+full FT have similar measured fitting costs. The benchmark includes regression, but
+neither temporal robustness nor probability calibration follows from its aggregate Elo.
+
+**More predictions help only when their errors and the reducer cooperate.** Ning's
+TabPFN-3 study extends [McCarter 2025, *What exactly has TabPFN learned to do?*](SUMMARIES.md#mccarter-tabpfn)
+from behavioural probes to a controlled compute budget. Native-view averaging largely
+saturates by 32 views; over 96 inference configurations, uniform averaging worsens error
+by 3.68%, whereas out-of-fold greedy selection reduces it by 2.44%. The reducer also
+needs enough training-side labels. DiagScale plus selection gains 93 Elo, but takes
+253.1 GPU-hours across the benchmark against 6.61 for DiagScale; frozen TabFM is stronger
+than the combination at lower total measured cost. Thus test-time compute is a resource
+allocation problem that includes backbone choice, not a monotonic promise of accuracy.
+
+**Retrieval quality must be separated from context size.** Ning adapts the LimiX
+attention-retrieval idea to frozen TabPFN-3 and compares selected rows with matched random
+contexts. This provides the control missing when retrieval and finetuning are changed
+together in LoCalPFN. It can improve predictions and reach 10M-row source pools, yet on
+COMET_MC it increases log loss from 0.0151 to 0.2302 and heavily overrepresents a rare
+class. Correcting the class mix does not restore the baseline. More context is therefore
+not always better, but learned relevance is not automatically safe either. The tested
+synthetic-row, pseudo-label and derived-feature expansions also give no consistent gain;
+that result concerns adding context to a strong backbone, not a refutation of TuneTables'
+different goal of compressing context for a small-capacity model.
+
 **Two earlier results that anticipated both conclusions.** The adaptation literature's two headline findings — that fine-tuning a TFM pays, and that *localising* the context pays — were both visible in 2024. den Breejen et al. (TabForestPFN) extended TabPFN to fine-tuning and found not only a large gain but a mechanism: fine-tuned ICL transformers form complex decision boundaries that ordinary networks do not. They then drew the counter-intuitive inference and pretrained on a deliberately **unrealistic** forest-based generator chosen for boundary complexity rather than realism — and TabForest fine-tunes better the more complex its pretraining data, beating TabPFN on some real datasets after fine-tuning *despite worse zero-shot performance*. Prior realism and prior adaptability are therefore different axes, which is the observation Mitra later formalised into measurable criteria. Feuer et al. (TuneTables) had already supplied a third answer, by optimising the context instead of the weights: compress a large dataset into a small *learned* context and the ~1000-row ceiling lifts, with the best average performance across nineteen algorithms on 98 datasets while touching under 5% of TabPFN's parameters — and, uniquely in this corpus, the optimised context becomes a place to impose constraints, since it can be tuned against a fairness objective rather than only accuracy. This is the "partial adaptation to protect the prior" position that Rubachev 2025 (*On Finetuning Tabular Foundation Models*) later overturned for v2, and the reversal is instructive: the argument for context optimisation was strongest precisely while the architecture's row ceiling was low. Thomas et al. (LoCalPFN) supplied the other half: retrieve the query's k-nearest neighbours as the in-context set and fine-tune with those neighbours in context, reaching a new state of the art on the 95 TabZilla datasets against tuned tree models. That pairing is the most direct empirical answer to Nagler's (2023) bias analysis — retrieval *is* localisation — and its cost is the one retrieval always carries: inference becomes per-query rather than per-dataset, and rows are assumed exchangeable.
 
 **The frozen-weights alternative.** BETA (Liu & Ye 2025) shows adaptation need not touch the prior at all: a lightweight learnable input encoder (2-layer MLP with periodic activations, Batch-Ensemble multi-path diversity) plus inference-time bagging lifts TabPFN's feature/class caps and cuts both bias and variance at 0.6 MB of trainable parameters and sub-second inference. It is a compelling PEFT-style baseline, but it targets v1, classification only, and fixed 1k contexts — it complements rather than competes with the CPT line.
 
-**Synthesis for a credit-domain specialization.** The papers agree that (i) TabPFN is the architecture that tolerates gradient adaptation best, in accuracy *and* calibration (Rubachev 2025; Tanna 2025, 2026); (ii) full-parameter updates beat LoRA for it; (iii) gains grow with rows, and large-context/large-dataset training is the lever (Garg 2025; Rubachev 2025). They disagree — or rather, never confronted each other — on optimizer aggressiveness (3e-7+L2-SP vs 1e-5+wd 1e-4) and on whether finetuning-induced retrieval sharpening threatens calibration under the temporal drift endemic to credit portfolios (Rubachev's Homecredit instability vs Tanna's stable ECE, measured only on i.i.d. splits). And all of them, without exception, leave regression untested — the LGD half of any credit specialization proceeds without a published recipe to lean on.
+**Synthesis for downstream adaptation.** The evidence supports comparing frozen,
+full-parameter and compact similarity adaptation under the same splits and total budget,
+rather than carrying a v2-era preference for full FT or LoRA across generations. Garg
+2025 (*Real-TabPFN*) still provides a corpus-level continued-pretraining recipe; Ning's
+per-task fitting does not validate that recipe for newer architectures. Regression now
+has direct adaptation evidence, so the earlier claim that it is wholly untested no longer
+holds. What remains unresolved is whether these gains survive temporal/grouped shift
+and preserve calibrated probabilities or predictive distributions in a specific domain.
+MulTaBench (Arazi 2026, *Benchmarking Multimodal Tabular Learning with Text and Image*)
+adds a separate adaptation site: the text/image encoder. Its supervised preprocessing
+must be fitted within each evaluation fold, even if the final tabular model stays frozen.
 
 ## Extending TFMs to new problems — time series, causal inference, fairness, interpretability, drift
 
@@ -506,10 +564,10 @@ a later result removes the ground from an earlier one.
 
 | Claim | Made by | Contested or overturned by | Status |
 |---|---|---|---|
-| Use **parameter-efficient** adaptation, or finetuning destroys the prior | Feuer 2024 (TuneTables) | **Rubachev 2025 (*On Finetuning Tabular Foundation Models*)**: for v2, *full* finetuning matches every PEFT variant and converges fastest | **Overturned** for v2. The original argument was strongest while v1's row ceiling was low; v2 raised it architecturally |
-| **Retrieval** is how you give a PFN the localisation its bias term needs | Thomas 2024 (LoCalPFN); Ma 2026 (TabDPT ships FAISS) | **Hosseinzadeh 2026 (TabDPT-Turbo)** — *the same lab* — removes retrieval as 100×–1000× too slow, substituting long-context pretraining | **Withdrawn by its own originators.** Localisation can be bought through the training distribution instead of the inference path |
+| Use **parameter-efficient** adaptation, or finetuning destroys the prior | Feuer 2024 (TuneTables) | **Rubachev 2025 (*On Finetuning Tabular Foundation Models*)** favours full FT for v2; **Ning 2026 (*Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits*)** recovers much of full-FT gains with DiagScale on three newer backbones | **Backbone- and mechanism-dependent.** Compact adaptation is competitive without proving full FT unsafe or dramatically reducing fitting time |
+| **Retrieval** is how you give a PFN the localisation its bias term needs | Thomas 2024 (LoCalPFN); Ma 2026 (TabDPT ships FAISS) | **Hosseinzadeh 2026 (TabDPT-Turbo)** replaces costly retrieval with long-context pretraining; **Ning 2026** finds both strong retrieval gains and a severe COMET_MC failure under matched controls | **Conditional.** Long-context training and selected contexts are different routes; attention relevance can distort class composition, so compare with full and matched random contexts |
 | **Real data** carries structure synthetic priors miss | Garg 2025 (Real-TabPFN); Ma 2026 (TabDPT) | **Qu 2026 (TabICLv2)** beats Real-TabPFN-2.5 with *zero* real data; **Grinsztajn 2026 (TabPFN-3)** does the same on a purely synthetic 8T-token prior; **Hoo 2026 (*From Tables to Time*)** finds swapping in the real-data-pretrained TabDPT backbone *degrades* transfer | **Unresolved, and probably mis-stated.** The evidence favours: real data helps *in-domain*, synthetic breadth wins *out-of-domain* |
-| Fine-tuning a TFM **helps** | Rubachev 2025 (SOTA on academic splits) | **Tanna 2026**: across six TFMs it rarely helps, often hurts accuracy *and* calibration, and the effect is architecture-dependent — SFT collapses TabICL (0.873→0.567) while TabPFN survives intact | **Both right, different scopes.** The disagreement is really about which architecture, measured on which splits |
+| Fine-tuning a TFM **helps** | Rubachev 2025 (academic splits) | **Tanna 2026 (*Exploring Fine-Tuning for Tabular Foundation Models*)** reports architecture-dependent accuracy/calibration failures; **Ning 2026** reports adaptation gains on three newer backbones with validation fallback | **Different protocols and generations.** Average gains coexist with per-task regressions and do not settle calibration or temporal transfer |
 | Causal PFNs should assume **ignorability** | Balazadeh 2025 (CausalPFN) | **Robertson 2025 (Do-PFN)** is built precisely to survive its violation; **Ma 2026 (CausalFM)** proves mixing identifiable and non-identifiable SCMs yields non-informative posteriors | **Theory vs empirics.** CausalFM has the theorem and *loses to CausalPFN on ACIC2016* — the theorem's practical bite is unsettled |
 | Column-embed → row-compress → **ICL** is the settled architecture | Qu 2025/2026; Grinsztajn 2026 (v3); Kong & Das 2026 (TabFM) | **Hosseinzadeh 2026 (TabDPT-Turbo)** stays row-based; **Eo 2026 (EXAONE Tabular)** and **Zhang 2026 (LimiX-2)** retain cells; **Cho 2026 (Causilo)** refines cells across both axes before compression | **An open design trade-off.** Persistent cells and delayed compression offer different quality/cost points; objectives, priors and implementations also differ |
 | Architectural gains are attributable | the whole line, implicitly | **Bouadi 2026 (O'Prior)**: "prior work conflates architectural improvements with prior improvements — TabPFN v2 enriched both simultaneously, making attribution impossible"; **Tao 2026 (Mitra-v2)** concedes it of itself under *incomplete training provenance* | **Conceded, and still being violated.** O'Prior shows the prior alone moves ROC-AUC substantially; Mitra-v2 alone holds the architecture fixed, while TabPFN-3.5, EXAONE and Xiaomi-TabLDM each ship 4+ simultaneous changes unablated |
@@ -517,7 +575,16 @@ a later result removes the ground from an earlier one.
 | Pretraining works by inducing a **Bayesian prior** over data-generating processes, so a task must lie in the prior's support | Müller 2021 (*Transformers Can Do Bayesian Inference*); Hollmann 2023/2025; Müller 2025 (*The Future of Bayesian Prediction Is Prior-Fitted*) | **Shaheen 2026 (*Understanding the Surprising Generalization Properties of TFMs*)**: a model pretrained on *one* table (MNIST) transfers to California Housing — a prior induced by one table cannot cover that task. Proposes learned **retrieval-and-aggregation** instead | **Live challenge to the corpus's founding claim**, and from a team including TabPFN's own senior author. Scope limits — real-data pretraining, row-based attention only — stop it being decisive |
 | Only a very **diverse, massive** pretraining corpus enables out-of-domain generalisation | the scaling line: Qu 2026 (~35M synthetic tables); Grinsztajn 2026 (8T tokens); Kong & Das 2026 (hundreds of millions) | **Shaheen 2026**: one table suffices for non-trivial transfer, and what matters is the number of *tasks* a corpus yields — hence table **width**, not corpus size | **Awkward for the scaling race.** Diversity may be a proxy for task count, which width buys far more cheaply |
 | TFMs are general-purpose tabular predictors | the field's headline framing | **Purucker 2026 (BeyondArena)**, co-authored by Prior Labs: on non-IID splits — temporal and grouped — tuned RealMLP and CatBoost win, and the gap grows with sample size and categorical cardinality | **Qualified, then answered — by the same lab.** **Jäger 2026 (TabPFN-3.5)** retunes the prior for grouped, wide and high-cardinality data and takes 1st on BeyondArena at an 83% win rate. Unreviewed and unablated, so the regime-boundedness is contested rather than settled |
-| Model choice is what a benchmark measures | every leaderboard here | **Tanna 2026 (credit)**: on imbalanced credit data the *context-construction strategy* explained more AUC variance than the choice of TFM — 3–4 points, wider than the spread between models | **Uncomfortable, and largely untested elsewhere.** Every comparison in this synthesis holds context construction fixed |
+| Model choice is what a benchmark measures | every leaderboard here | **Tanna 2026 (*Data Presentation Over Architecture*)** finds context construction outweighs model choice on imbalanced credit data; **Ning 2026** isolates strong reducer and retrieval effects | **Now tested beyond one domain.** Compare the whole recipe, including validation-label access, context, backbone and total fitting/prediction cost |
+
+**Frozen semantic embeddings are useful without being sufficient.** Spinaci 2025
+(*ConTextTab: A Semantics-Aware Tabular In-Context Learner*) performs strongly on CARTE,
+whereas Arazi 2026 (*MulTaBench: Benchmarking Multimodal Tabular Learning with Text and
+Image*, [summary](SUMMARIES.md#multabench-benchmarking-multimodal)) exposes a different
+regime in which task-tuned embeddings win. The latter deliberately selects for those
+gains, so it qualifies the former's reach rather than overturning its benchmark result.
+Testing both the selected set and its broader candidates is necessary before calling
+one representation strategy generally superior.
 
 **Apparent contradictions need matching evaluation targets.** Baesens 2026
 (*Foundation Models for Credit Risk Prediction: A Game Changer?*,
