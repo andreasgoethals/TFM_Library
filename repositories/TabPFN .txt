@@ -9,29 +9,7 @@ Directory structure:
     ├── THIRD-PARTY-NOTICES.md
     ├── .pre-commit-config.yaml
     ├── changelog/
-    │   ├── README.md
-    │   ├── 1215.fixed.md
-    │   ├── 1219.fixed.md
-    │   ├── 1250.breaking.md
-    │   ├── 1255.changed.md
-    │   ├── 1257.changed.md
-    │   ├── 1269.fixed.md
-    │   ├── 1270.changed.md
-    │   ├── 1282.changed.md
-    │   ├── 1288.fixed.md
-    │   ├── 1290.changed.md
-    │   ├── 1290.fixed.md
-    │   ├── 1295.changed.md
-    │   ├── 1296.changed.md
-    │   ├── 1299.added.md
-    │   ├── 1301.fixed.md
-    │   ├── 1307.fixed.md
-    │   ├── 1315.added.md
-    │   ├── 1315.breaking.md
-    │   ├── 1321.fixed.md
-    │   ├── 1323.changed.md
-    │   ├── 1325.fixed.md
-    │   └── 1328.changed.md
+    │   └── README.md
     ├── examples/
     │   ├── batched_classification_cv.py
     │   ├── batched_regression_m4.py
@@ -165,6 +143,7 @@ Directory structure:
     │   ├── __init__.py
     │   ├── conftest.py
     │   ├── quick_test.py
+    │   ├── test_batched_members.py
     │   ├── test_batched_prediction_data_util.py
     │   ├── test_batched_prediction_shape_safety.py
     │   ├── test_browser_auth.py
@@ -228,6 +207,7 @@ Directory structure:
     │   │   ├── test_init.py
     │   │   ├── test_kv_cache.py
     │   │   ├── test_mlx_backend.py
+    │   │   ├── test_regression_target_projection.py
     │   │   ├── test_tabpfn_v2.py
     │   │   ├── test_tabpfn_v2_5.py
     │   │   ├── test_tabpfn_v2_6.py
@@ -346,6 +326,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [9.1.0] - 2026-10-02
+
+### Breaking Changes
+
+- Remove the unused `cache_trainset_representation` argument from `ArchitectureModule.get_architecture`, `load_model` and `load_model_criterion_config`, and the `fit_mode` argument from `initialize_tabpfn_model`. ([#1250](https://github.com/PriorLabs/TabPFN/pull/1250))
+- Replace `ClassifierModelSpecs`, `RegressorModelSpecs`, and `BaseModelSpecs` with the unified `ModelSpecs` dataclass. Update imports, constructors, and task-specific type checks; retain `norm_criterion` for legacy regression models without embedded borders. ([#1315](https://github.com/PriorLabs/TabPFN/pull/1315))
+
+### Added
+
+- Add `kv_cache_precision="adaptive"`. ([#1299](https://github.com/PriorLabs/TabPFN/pull/1299))
+- Add a shared `ModelSpecs` dataclass for in-memory classification and regression. Regression automatically derives its distribution from `model.regression_borders`; legacy models without embedded borders still require `norm_criterion`. ([#1315](https://github.com/PriorLabs/TabPFN/pull/1315))
+
+### Changed
+
+- Faster modality detection on wide inputs: a numeric array's distinct values are counted for all columns at once instead of per column, a numeric column stored as `object` is recognized with `pd.api.types.infer_dtype` instead of a value-by-value walk, and the nullable-dtype coercion is decided once per dtype. The inferred modalities are unchanged. ([#1255](https://github.com/PriorLabs/TabPFN/pull/1255))
+- Building a model from a checkpoint no longer runs torch's random parameter initialisation, which made up most of the per-fit model construction time. ([#1257](https://github.com/PriorLabs/TabPFN/pull/1257))
+- `SAMPLE_SUBSAMPLING_METHOD="majority_downsample"` now corrects the target prior shift it introduces, so predicted probabilities and regression distributions are calibrated to the training data rather than to the downsampled context. `predict_proba_batched` and `predict_batched` raise with this sampler; score datasets individually instead. ([#1270](https://github.com/PriorLabs/TabPFN/pull/1270))
+- Relabel the README architecture and attention diagrams as TabPFN-3.5. ([#1282](https://github.com/PriorLabs/TabPFN/pull/1282))
+- - `examples/finetune_regressor.py` now fine-tunes on the bigger OpenML diamonds dataset. ([#1290](https://github.com/PriorLabs/TabPFN/pull/1290))
+- `n_preprocessing_jobs > 1` now parallelises the per-estimator preprocessing over threads instead of processes, which we have found to be faster. Parallelisation is turned off by default, as previously. ([#1295](https://github.com/PriorLabs/TabPFN/pull/1295))
+- Link the TabPFN-3.5 technical report and add its BibTeX entry to the README citation section. ([#1296](https://github.com/PriorLabs/TabPFN/pull/1296))
+- - Batch estimators. ([#1312](https://github.com/PriorLabs/TabPFN/pull/1312))
+- Estimators fitted with `fit_mode="fit_with_cache"` use less host memory and save to smaller files. Predictions are unchanged. ([#1323](https://github.com/PriorLabs/TabPFN/pull/1323))
+- Note TabPFN-3.5-Fast alongside TabPFN-3 and TabPFN-3.5 in the README CPU sample-limit description. ([#1328](https://github.com/PriorLabs/TabPFN/pull/1328))
+
+### Fixed
+
+- Fix `FullSupportBarDistribution` CDF, quantiles, and sampling to match its half-normal tails while preserving batch shape, device, and dtype. ([#1215](https://github.com/PriorLabs/TabPFN/pull/1215))
+- The opt-in built-model cache (`TABPFN_MODEL_CACHE_SIZE`) now keys on device and inference precision, so estimators with different settings no longer share one model. ([#1219](https://github.com/PriorLabs/TabPFN/pull/1219))
+- numpy `StringDType` arrays are accepted as input at fit and predict, like unicode and `object` arrays (numpy 2.5 or newer). ([#1269](https://github.com/PriorLabs/TabPFN/pull/1269))
+- Regression density and likelihood evaluation reports far fewer infinite NLLs for targets in a narrow bucket or in a distribution's tail. ([#1288](https://github.com/PriorLabs/TabPFN/pull/1288))
+- Fixed `FinetunedTabPFNRegressor` computing the loss against z-scored targets for ensemble members that use a target transform (such as the default `safepower`); their loss now uses the transformed targets they predict in. ([#1290](https://github.com/PriorLabs/TabPFN/pull/1290))
+- MPS support and GQA attention now detect the installed torch version correctly when `torch.__version__` is a plain string. ([#1301](https://github.com/PriorLabs/TabPFN/pull/1301))
+- Raise a proper validation error when the training inputs have mismatched lengths or are not two-dimensional, so these mistakes are reported as user errors like all other input problems ([#1307](https://github.com/PriorLabs/TabPFN/pull/1307))
+- Fixed TabPFN-3.5 jumping too far when it predicts past the range of a feature, most visibly on a time feature whose values repeat, such as a year column with one row per month. Predictions change for any table with values outside the range seen at fit. ([#1310](https://github.com/PriorLabs/TabPFN/pull/1310))
+- `TabPFNRegressor` no longer fails or returns meaningless predictions when the target's mean is large relative to its spread (e.g. ID-like values around `1e10`). ([#1311](https://github.com/PriorLabs/TabPFN/pull/1311))
+- Allow fitted estimator archives to save supported dataclass-valued initialization parameters such as InferenceConfig. ([#1321](https://github.com/PriorLabs/TabPFN/pull/1321))
+- Forced float16 squashing preprocessing no longer squashes a finite extreme value to zero. ([#1322](https://github.com/PriorLabs/TabPFN/pull/1322))
+- Saving a fitted estimator no longer copies the model weights, so it uses less memory, and saving a `fit_mode="fit_with_cache"` estimator no longer briefly removes its caches while another thread may be predicting. ([#1325](https://github.com/PriorLabs/TabPFN/pull/1325))
+- Fixed `predict` raising `could not convert string to float` when a column was constant or all-missing at fit and held a string at predict. Such a column now gets its fit-time value back at predict, so it carries no information there. ([#1329](https://github.com/PriorLabs/TabPFN/pull/1329))
+- Avoid a runtime C compiler requirement in batched v3 and v3.5 regression target encoding on recent PyTorch versions. ([#1338](https://github.com/PriorLabs/TabPFN/pull/1338))
+
 
 ## [9.0.0] - 2026-09-15
 
@@ -1221,7 +1244,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabpfn"
-version = "9.0.0"
+version = "9.1.0"
 dependencies = [
   "torch>=2.5",
   "safetensors>=0.4.0",
@@ -1869,159 +1892,6 @@ This will:
 1. Compile all fragments into `CHANGELOG.md`
 2. Delete the fragment files
 3. Add a new `## [Unreleased]` section
-
-
-
-================================================
-FILE: changelog/1215.fixed.md
-================================================
-Fix `FullSupportBarDistribution` CDF, quantiles, and sampling to match its half-normal tails while preserving batch shape, device, and dtype.
-
-
-
-================================================
-FILE: changelog/1219.fixed.md
-================================================
-The opt-in built-model cache (`TABPFN_MODEL_CACHE_SIZE`) now keys on device and inference precision, so estimators with different settings no longer share one model.
-
-
-
-================================================
-FILE: changelog/1250.breaking.md
-================================================
-Remove the unused `cache_trainset_representation` argument from `ArchitectureModule.get_architecture`, `load_model` and `load_model_criterion_config`, and the `fit_mode` argument from `initialize_tabpfn_model`.
-
-
-
-================================================
-FILE: changelog/1255.changed.md
-================================================
-Faster modality detection on wide inputs: a numeric array's distinct values are counted for all columns at once instead of per column, a numeric column stored as `object` is recognized with `pd.api.types.infer_dtype` instead of a value-by-value walk, and the nullable-dtype coercion is decided once per dtype. The inferred modalities are unchanged.
-
-
-
-================================================
-FILE: changelog/1257.changed.md
-================================================
-Building a model from a checkpoint no longer runs torch's random parameter initialisation, which made up most of the per-fit model construction time.
-
-
-
-================================================
-FILE: changelog/1269.fixed.md
-================================================
-numpy `StringDType` arrays are accepted as input at fit and predict, like unicode and `object` arrays (numpy 2.5 or newer).
-
-
-
-================================================
-FILE: changelog/1270.changed.md
-================================================
-`SAMPLE_SUBSAMPLING_METHOD="majority_downsample"` now corrects the target prior shift it introduces, so predicted probabilities and regression distributions are calibrated to the training data rather than to the downsampled context. `predict_proba_batched` and `predict_batched` raise with this sampler; score datasets individually instead.
-
-
-
-================================================
-FILE: changelog/1282.changed.md
-================================================
-Relabel the README architecture and attention diagrams as TabPFN-3.5.
-
-
-
-================================================
-FILE: changelog/1288.fixed.md
-================================================
-Regression density and likelihood evaluation reports far fewer infinite NLLs for targets in a narrow bucket or in a distribution's tail. Point predictions move with it: by round-off for well-behaved targets, measurably for skewed ones. A tuned `eval_metric="nll"` temperature may also differ, because candidates whose holdout loss came out infinite no longer silently keep the default.
-
-
-
-================================================
-FILE: changelog/1290.changed.md
-================================================
-- `examples/finetune_regressor.py` now fine-tunes on the bigger OpenML diamonds dataset (~54k rows) instead of California Housing (~21k rows).
-
-
-================================================
-FILE: changelog/1290.fixed.md
-================================================
-Fixed `FinetunedTabPFNRegressor` computing the loss against z-scored targets for ensemble members that use a target transform (such as the default `safepower`); their loss now uses the transformed targets they predict in.
-
-
-
-================================================
-FILE: changelog/1295.changed.md
-================================================
-`n_preprocessing_jobs > 1` now parallelises the per-estimator preprocessing over threads instead of processes, which we have found to be faster. Parallelisation is turned off by default, as previously.
-
-
-
-================================================
-FILE: changelog/1296.changed.md
-================================================
-Link the TabPFN-3.5 technical report and add its BibTeX entry to the README citation section.
-
-
-
-================================================
-FILE: changelog/1299.added.md
-================================================
-Add `kv_cache_precision="adaptive"`: the KV cache is stored on the grid an attention backend declaring `kv_grid_dtype` already rounded the keys and values to, when that backend took the call, and as `"int8"` otherwise.
-
-
-
-================================================
-FILE: changelog/1301.fixed.md
-================================================
-MPS support and GQA attention now detect the installed torch version correctly when `torch.__version__` is a plain string.
-
-
-
-================================================
-FILE: changelog/1307.fixed.md
-================================================
-Raise a proper validation error when the training inputs have mismatched lengths or are not two-dimensional, so these mistakes are reported as user errors like all other input problems
-
-
-
-================================================
-FILE: changelog/1315.added.md
-================================================
-Add a shared `ModelSpecs` dataclass for in-memory classification and regression. Regression automatically derives its distribution from `model.regression_borders`; legacy models without embedded borders still require `norm_criterion`.
-
-
-
-================================================
-FILE: changelog/1315.breaking.md
-================================================
-Replace `ClassifierModelSpecs`, `RegressorModelSpecs`, and `BaseModelSpecs` with the unified `ModelSpecs` dataclass. Update imports, constructors, and task-specific type checks; retain `norm_criterion` for legacy regression models without embedded borders.
-
-
-
-================================================
-FILE: changelog/1321.fixed.md
-================================================
-Allow fitted estimator archives to save supported dataclass-valued initialization parameters such as InferenceConfig.
-
-
-
-================================================
-FILE: changelog/1323.changed.md
-================================================
-Estimators fitted with `fit_mode="fit_with_cache"` use less host memory and save to smaller files. Predictions are unchanged.
-
-
-
-================================================
-FILE: changelog/1325.fixed.md
-================================================
-Saving a fitted estimator no longer copies the model weights, so it uses less memory, and saving a `fit_mode="fit_with_cache"` estimator no longer briefly removes its caches while another thread may be predicting.
-
-
-
-================================================
-FILE: changelog/1328.changed.md
-================================================
-Note TabPFN-3.5-Fast alongside TabPFN-3 and TabPFN-3.5 in the README CPU sample-limit description.
 
 
 
@@ -11671,7 +11541,8 @@ from typing_extensions import override
 import joblib
 import torch
 
-from tabpfn.architectures.kv_cache import KV_CACHE_PRECISION_DTYPES
+from tabpfn.architectures.interface import EstimatorBatchBudget
+from tabpfn.architectures.kv_cache import KV_CACHE_PRECISION_DTYPES, KVCache
 from tabpfn.architectures.shared.workaround_mps_linear_bug import (
     maybe_replace_linears_on_mps,
 )
@@ -11740,6 +11611,223 @@ def _model_expectes_task_type_arg(model: Architecture) -> bool:
     This is a check for backwards compatibility.
     """
     return "task_type" in signature(model.forward).parameters
+
+
+def _estimator_batch_budget(model: Architecture) -> EstimatorBatchBudget:
+    """The model's batching budget, with the settings overriding either part.
+
+    A model whose budget is zero does not batch estimators, whatever the settings.
+    """
+    budget = model.estimator_batch_budget
+    if not _batches(budget):
+        return budget
+    rows = settings.tabpfn.max_batched_estimator_rows
+    cells = settings.tabpfn.max_batched_estimator_cells
+    return EstimatorBatchBudget(
+        rows=budget.rows if rows is None else rows,
+        cells=budget.cells if cells is None else cells,
+    )
+
+
+def _shared_estimator_batch_budget(
+    model_caches: Sequence[_PerDeviceModelCache],
+) -> EstimatorBatchBudget:
+    """The tightest budget over the models, for grouping before the model is known.
+
+    Models that do not batch contribute nothing; if none does, the budget is zero.
+    """
+    budgets = [_estimator_batch_budget(cache.get_any()) for cache in model_caches]
+    batching = [b for b in budgets if _batches(b)]
+    if not batching:
+        return EstimatorBatchBudget(rows=0, cells=0)
+    return EstimatorBatchBudget(
+        rows=min(b.rows for b in batching), cells=min(b.cells for b in batching)
+    )
+
+
+def _batches(budget: EstimatorBatchBudget) -> bool:
+    """Whether the budget lets any two estimators share a forward pass."""
+    return budget.rows > 0 and budget.cells > 0
+
+
+def _members_per_forward(
+    rows_per_member: int, columns_per_member: int, budget: EstimatorBatchBudget
+) -> int:
+    """How many members of the given prepared shape share one forward pass.
+
+    Bounded by the budget's rows and cells (rows times columns), summed over the
+    members of the forward; either at zero runs every member alone.
+    """
+    by_rows = budget.rows // max(rows_per_member, 1)
+    by_cells = budget.cells // max(rows_per_member * columns_per_member, 1)
+    return max(1, min(by_rows, by_cells))
+
+
+def _prepare_train_inputs(
+    member: TabPFNEnsembleMember,
+    device: torch.device,
+    force_inference_dtype: torch.dtype | None,
+) -> tuple[torch.Tensor, torch.Tensor, list[int]]:
+    """A member's train rows as ``(rows, 1, C)``, targets, and categorical indices."""
+    tensor_dtype = force_inference_dtype or torch.float32
+    X_train, y_train = member.X_train, member.y_train
+    if not isinstance(X_train, torch.Tensor):
+        X_train = torch.as_tensor(X_train, dtype=tensor_dtype, device=device)
+    else:
+        X_train = X_train.to(device)
+    X = X_train.unsqueeze(1)
+    if not isinstance(y_train, torch.Tensor):
+        y = torch.as_tensor(y_train, dtype=tensor_dtype, device=device)
+    else:
+        y = y_train.to(device)
+    X, feature_schema = _maybe_run_gpu_preprocessing(
+        X,
+        gpu_preprocessor=member.gpu_preprocessor,
+        feature_schema=member.feature_schema,
+    )
+    if force_inference_dtype is not None:
+        X = X.type(force_inference_dtype)
+        y = y.type(force_inference_dtype)
+    return X, y, feature_schema.indices_for(FeatureModality.CATEGORICAL)
+
+
+def _cache_builds(
+    positions: list[int],
+    rows_per_member: int,
+    columns_per_member: int,
+    budget: EstimatorBatchBudget,
+) -> list[list[list[int]]]:
+    """The forwards that build each cache of equal-shape members.
+
+    Returns one list of forwards per cache; each forward lists the members it
+    builds together, as many as the budgets allow. A budget of zero gives every
+    member a cache of its own, so predict runs them one at a time as the
+    full-forward engines do.
+    """
+    if not _batches(budget):
+        return [[[i]] for i in positions]
+    per_forward = _members_per_forward(rows_per_member, columns_per_member, budget)
+    return [
+        [
+            positions[start : start + per_forward]
+            for start in range(0, len(positions), per_forward)
+        ]
+    ]
+
+
+def _member_key(
+    member: TabPFNEnsembleMember,
+    index: int,
+    model_caches: list[_PerDeviceModelCache],
+    devices: Sequence[torch.device],
+) -> tuple:
+    """What a member must share with another to run in the same forward.
+
+    Members of an architecture that does not batch ensemble members get a key of
+    their own, so they always run alone. So do all members on MPS, where the
+    attention kernels of recent torch builds give wrong results for a batch of
+    members.
+    """
+    model = model_caches[member.config._model_index].get_any()
+    if not _batches(model.estimator_batch_budget) or any(
+        d.type == "mps" for d in devices
+    ):
+        return ("single", index)
+    return (member.config._model_index, tuple(member.X_train.shape))
+
+
+def _group_equal(keys: Sequence[tuple]) -> list[list[int]]:
+    """Indices grouped by equal key, in order of each key's first appearance."""
+    by_key: dict[tuple, list[int]] = {}
+    for index, key in enumerate(keys):
+        by_key.setdefault(key, []).append(index)
+    return list(by_key.values())
+
+
+def _member_groups(
+    keys: Sequence[tuple], size: int, *, num_devices: int = 1
+) -> list[list[int]]:
+    """Member indices grouped by key, in runs of at most ``size``.
+
+    The members of a key are first spread over the devices, so that every device
+    gets a group, and only the members left per device share a forward. Groups
+    follow the first member of each key, so an ensemble whose members all share a
+    key yields consecutive runs in member order.
+    """
+    groups: list[list[int]] = []
+    for indices in _group_equal(keys):
+        per_device = -(-len(indices) // max(num_devices, 1))
+        run = max(1, min(size, per_device))
+        groups.extend(
+            indices[start : start + run] for start in range(0, len(indices), run)
+        )
+    return groups
+
+
+_ModelOutput = torch.Tensor | dict[str, torch.Tensor]
+# A forward's output with the members along dimension 1, and which positions of the
+# group of members it holds.
+_MemberOutputs = list[tuple[list[int], _ModelOutput]]
+
+
+def _member_output(output: _ModelOutput, index: int) -> _ModelOutput:
+    """Member ``index`` of a batched output, its batch dimension kept."""
+    if isinstance(output, dict):
+        return {k: v[:, index : index + 1] for k, v in output.items()}
+    return output[:, index : index + 1]
+
+
+def _yield_in_member_order(
+    groups: Sequence[Sequence[int]],
+    group_outputs: Iterator[_MemberOutputs],
+    total: int,
+) -> Iterator[_ModelOutput]:
+    """Unstack the groups' outputs and hand them out in member order.
+
+    Members are yielded as soon as every earlier member is done, so groups that
+    arrive in member order stream through.
+    """
+    outputs: list[_ModelOutput | None] = [None] * total
+    next_member = 0
+    # `groups` may still be growing while the outputs are produced, so it is read
+    # by position rather than zipped.
+    for group_index, member_outputs in enumerate(group_outputs):
+        for positions, output in member_outputs:
+            for column, position in enumerate(positions):
+                outputs[groups[group_index][position]] = _member_output(output, column)
+        while next_member < total and outputs[next_member] is not None:
+            yield outputs[next_member]  # type: ignore[misc]
+            outputs[next_member] = None
+            next_member += 1
+    assert next_member == total
+
+
+def _iter_chunks(items: Iterator[_T], size: int) -> Iterator[list[_T]]:
+    chunk: list[_T] = []
+    for item in items:
+        chunk.append(item)
+        if len(chunk) == size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def _batch_member_inputs(
+    xs: Sequence[torch.Tensor], ys: Sequence[torch.Tensor]
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Members' ``(rows, 1, C)`` inputs and ``(num_train,)`` targets as one batch.
+
+    Targets given as ``(num_train, 1)`` are accepted too; the batch has them as
+    ``(num_train, B)``. A single member passes through untouched, so its forward is
+    the same call as without batching.
+    """
+    if len(xs) == 1:
+        return xs[0], ys[0]
+    return (
+        torch.cat(list(xs), dim=1),
+        torch.cat([y.reshape(y.shape[0], -1) for y in ys], dim=1),
+    )
 
 
 class InferenceEngine(ABC):
@@ -12032,7 +12120,6 @@ class InferenceEngineOnDemand(MultiDeviceInferenceEngine):
         only_return_standard_out: bool = True,
     ) -> Iterator[tuple[torch.Tensor | dict, EnsembleConfig]]:
         devices = self.get_devices()
-
         save_peak_mem = should_save_peak_mem(
             memory_saving_mode=self.save_peak_mem,
             X_train_shape=self.X_train.shape,
@@ -12040,7 +12127,6 @@ class InferenceEngineOnDemand(MultiDeviceInferenceEngine):
             devices=devices,
             dtype_byte_size=self.dtype_byte_size,
         )
-
         if self.force_inference_dtype is not None:
             for model_cache in self.model_caches:
                 model_cache.set_dtype(self.force_inference_dtype)
@@ -12052,35 +12138,60 @@ class InferenceEngineOnDemand(MultiDeviceInferenceEngine):
                 parallel_mode="in-order",
             )
         )
-
-        model_forward_functions = (
-            partial(
-                self._call_model,
-                X_train=em.X_train,
-                X_test=em.transform_X_test(X),
-                y_train=em.y_train,
-                feature_schema=em.feature_schema,
-                only_return_standard_out=only_return_standard_out,
-                autocast=autocast,
-                model_index=em.config._model_index,
-                save_peak_mem=save_peak_mem,
-                gpu_preprocessor=em.gpu_preprocessor,
-                task_type=task_type,
-            )
-            for em in ensemble_members_iterator
+        # Members are preprocessed lazily, so only one chunk of them is held at a
+        # time; each chunk is grouped by model and prepared shape. The members are
+        # spread over the devices first; only the rest share a forward.
+        num_members = len(self.ensemble_preprocessor.configs)
+        # The members' prepared width is not known before they are preprocessed;
+        # the feature cap of the ensemble config bounds it.
+        columns = min(
+            self.X_train.shape[1],
+            self.ensemble_preprocessor.configs[
+                0
+            ].preprocess_config.max_features_per_estimator,
         )
+        chunk_size = _members_per_forward(
+            self.X_train.shape[0] + X.shape[0],
+            columns,
+            _shared_estimator_batch_budget(self.model_caches),
+        )
+        chunk_size = max(1, min(chunk_size, -(-num_members // len(devices))))
+        groups: list[list[int]] = []
+        seen = 0
+
+        def model_forward_functions() -> Iterator[partial]:
+            nonlocal seen
+            for chunk in _iter_chunks(ensemble_members_iterator, chunk_size):
+                keys = [
+                    _member_key(em, i, self.model_caches, devices)
+                    for i, em in enumerate(chunk)
+                ]
+                for positions in _member_groups(keys, len(chunk)):
+                    members = [chunk[i] for i in positions]
+                    groups.append([seen + i for i in positions])
+                    yield partial(
+                        self._call_model,
+                        members=members,
+                        X_tests=[em.transform_X_test(X) for em in members],
+                        autocast=autocast,
+                        only_return_standard_out=only_return_standard_out,
+                        save_peak_mem=save_peak_mem,
+                        task_type=task_type,
+                    )
+                seen += len(chunk)
 
         timed_outputs = _TimedIterator(
             parallel_execute(
                 devices,
-                model_forward_functions,
+                model_forward_functions(),
                 prewarm_lapack=self.ensemble_preprocessor.any_estimator_uses_gpu_svd(),
             ),
             devices,
         )
-
         for config, output in zip(
-            self.ensemble_preprocessor.configs, timed_outputs, strict=True
+            self.ensemble_preprocessor.configs,
+            _yield_in_member_order(groups, timed_outputs, num_members),
+            strict=True,
         ):
             yield _move_and_squeeze_output(output, devices[0]), config
 
@@ -12088,61 +12199,34 @@ class InferenceEngineOnDemand(MultiDeviceInferenceEngine):
             timed_outputs.elapsed_seconds
         )
 
-    def _call_model(  # noqa: PLR0913
+    def _call_model(
         self,
         *,
         device: torch.device,
-        X_train: torch.Tensor | np.ndarray,
-        X_test: torch.Tensor | np.ndarray,
-        y_train: torch.Tensor | np.ndarray,
-        feature_schema: FeatureSchema,
+        members: list[TabPFNEnsembleMember],
+        X_tests: list[torch.Tensor | np.ndarray],
         autocast: bool,
         only_return_standard_out: bool,
-        model_index: int,
         save_peak_mem: bool,
-        gpu_preprocessor: TorchPreprocessingPipeline | None,
         task_type: str,
-    ) -> torch.Tensor | dict[str, torch.Tensor]:
-        """Execute a model forward pass on the provided device.
+    ) -> _MemberOutputs:
+        """Run the members' forward passes on the given device, batched when possible.
 
         Note that several instances of this function may be executed in parallel in
         different threads, one for each device in the system.
         """
-        model = self.model_caches[model_index].get(device)
-
-        X_full, y_train = _prepare_model_inputs(
-            device, self.force_inference_dtype, X_train, X_test, y_train
+        return _call_model_on_members(
+            self.model_caches,
+            device=device,
+            members=members,
+            X_tests=X_tests,
+            force_inference_dtype=self.force_inference_dtype,
+            autocast=autocast,
+            inference_mode=True,
+            only_return_standard_out=only_return_standard_out,
+            save_peak_mem=save_peak_mem,
+            task_type=task_type,
         )
-
-        performance_options = model.get_default_performance_options()
-        performance_options = dataclasses.replace(
-            performance_options,
-            save_peak_memory_factor=DEFAULT_SAVE_PEAK_MEMORY_FACTOR
-            if save_peak_mem
-            else None,
-        )
-
-        X_full, feature_schema = _maybe_run_gpu_preprocessing(
-            X_full,
-            gpu_preprocessor=gpu_preprocessor,
-            num_train_rows=X_train.shape[0],
-            feature_schema=feature_schema,
-        )
-        batched_cat_ix = [feature_schema.indices_for(FeatureModality.CATEGORICAL)]
-
-        kwargs = {}
-        if _model_expectes_task_type_arg(model):
-            kwargs["task_type"] = task_type
-
-        with get_autocast_context(device, enabled=autocast), torch.inference_mode():
-            return model(
-                X_full,
-                y_train,
-                only_return_standard_out=only_return_standard_out,
-                categorical_inds=batched_cat_ix,
-                performance_options=performance_options,
-                **kwargs,
-            )
 
 
 class InferenceEngineBatchedNoPreprocessing(SingleDeviceInferenceEngine):
@@ -12284,8 +12368,10 @@ class InferenceEngineCachePreprocessing(MultiDeviceInferenceEngine):
     transformed training data on RAM (not GPU RAM).
 
     This saves some time on each predict call, at the cost of increasing the amount
-    of memory in RAM. The main functionality performed at `predict()` time is to
-    forward pass through the model which is currently done sequentially.
+    of memory in RAM. The main functionality performed at `predict()` time is the
+    forward pass through the model, run for as many ensemble members at once as
+    the row and cell budgets allow: the model's ``estimator_batch_budget``, which
+    the ``TABPFN_MAX_BATCHED_ESTIMATOR_ROWS`` and ``_CELLS`` settings override.
     """
 
     def __init__(
@@ -12376,21 +12462,30 @@ class InferenceEngineCachePreprocessing(MultiDeviceInferenceEngine):
         ) -> np.ndarray | torch.Tensor:
             return X if self.no_preprocessing else ensemble_member.transform_X_test(X)
 
+        members = self.ensemble_members
+        groups = _member_groups(
+            [
+                _member_key(em, i, self.model_caches, devices)
+                for i, em in enumerate(members)
+            ],
+            _members_per_forward(
+                members[0].X_train.shape[0] + X.shape[0],
+                members[0].X_train.shape[1],
+                _shared_estimator_batch_budget(self.model_caches),
+            ),
+            num_devices=len(devices),
+        )
         model_forward_functions = (
             partial(
                 self._call_model,
-                X_train=ensemble_member.X_train,
-                X_test=_transform_X_test(ensemble_member),
-                y_train=ensemble_member.y_train,
-                feature_schema=ensemble_member.feature_schema,
+                members=[members[i] for i in group],
+                X_tests=[_transform_X_test(members[i]) for i in group],
                 autocast=autocast,
                 only_return_standard_out=only_return_standard_out,
-                model_index=ensemble_member.config._model_index,
                 save_peak_mem=save_peak_mem,
-                gpu_preprocessor=ensemble_member.gpu_preprocessor,
                 task_type=task_type,
             )
-            for ensemble_member in self.ensemble_members
+            for group in groups
         )
 
         timed_outputs = _TimedIterator(
@@ -12403,7 +12498,9 @@ class InferenceEngineCachePreprocessing(MultiDeviceInferenceEngine):
         )
 
         for output, ensemble_member in zip(
-            timed_outputs, self.ensemble_members, strict=True
+            _yield_in_member_order(groups, timed_outputs, len(members)),
+            members,
+            strict=True,
         ):
             yield _move_and_squeeze_output(output, devices[0]), ensemble_member.config
 
@@ -12411,64 +12508,34 @@ class InferenceEngineCachePreprocessing(MultiDeviceInferenceEngine):
             timed_outputs.elapsed_seconds
         )
 
-    def _call_model(  # noqa: PLR0913
+    def _call_model(
         self,
         *,
         device: torch.device,
-        X_train: torch.Tensor | np.ndarray,
-        X_test: torch.Tensor | np.ndarray,
-        y_train: torch.Tensor | np.ndarray,
-        feature_schema: FeatureSchema,
+        members: list[TabPFNEnsembleMember],
+        X_tests: list[torch.Tensor | np.ndarray],
         autocast: bool,
         only_return_standard_out: bool,
-        model_index: int,
         save_peak_mem: bool,
-        gpu_preprocessor: TorchPreprocessingPipeline | None,
         task_type: str,
-    ) -> torch.Tensor | dict[str, torch.Tensor]:
-        """Execute a model forward pass on the provided device.
+    ) -> _MemberOutputs:
+        """Run the members' forward passes on the given device, batched when possible.
 
         Note that several instances of this function may be executed in parallel in
         different threads, one for each device in the system.
         """
-        model = self.model_caches[model_index].get(device)
-
-        X_full, y_train = _prepare_model_inputs(
-            device, self.force_inference_dtype, X_train, X_test, y_train
+        return _call_model_on_members(
+            self.model_caches,
+            device=device,
+            members=members,
+            X_tests=X_tests,
+            force_inference_dtype=self.force_inference_dtype,
+            autocast=autocast,
+            inference_mode=self.inference_mode,
+            only_return_standard_out=only_return_standard_out,
+            save_peak_mem=save_peak_mem,
+            task_type=task_type,
         )
-
-        performance_options = model.get_default_performance_options()
-        performance_options = dataclasses.replace(
-            performance_options,
-            save_peak_memory_factor=DEFAULT_SAVE_PEAK_MEMORY_FACTOR
-            if save_peak_mem
-            else None,
-        )
-
-        X_full, feature_schema = _maybe_run_gpu_preprocessing(
-            X_full,
-            gpu_preprocessor=gpu_preprocessor,
-            num_train_rows=X_train.shape[0],
-            feature_schema=feature_schema,
-        )
-        batched_cat_ix = [feature_schema.indices_for(FeatureModality.CATEGORICAL)]
-
-        kwargs = {}
-        if _model_expectes_task_type_arg(model):
-            kwargs["task_type"] = task_type
-
-        with (
-            get_autocast_context(device, enabled=autocast),
-            torch.inference_mode(self.inference_mode),
-        ):
-            return model(
-                X_full,
-                y_train,
-                only_return_standard_out=only_return_standard_out,
-                categorical_inds=batched_cat_ix,
-                performance_options=performance_options,
-                **kwargs,
-            )
 
     @override
     def use_torch_inference_mode(self, *, use_inference: bool) -> None:
@@ -12624,20 +12691,28 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
         )
         stage_caches_on_cpu = keep_cache_on_device and save_peak_mem_during_build
 
-        # Build per-estimator caches in parallel across devices
+        # Members sharing a model and a prepared shape end up in one cache, with
+        # the members along the batch dimension, so that predict runs them as one
+        # batch. The members are spread over the devices first; how many of them
+        # build together in one forward is bounded inside _build_cache.
+        members = self.ensemble_members
+        groups = _member_groups(
+            [
+                _member_key(em, i, self.model_caches, devices)
+                for i, em in enumerate(members)
+            ],
+            len(members),
+            num_devices=len(devices),
+        )
         build_functions = (
             partial(
                 self._build_cache,
-                X_train=ensemble_member.X_train,
-                y_train=ensemble_member.y_train,
-                feature_schema=ensemble_member.feature_schema,
-                model_index=ensemble_member.config._model_index,
-                gpu_preprocessor=ensemble_member.gpu_preprocessor,
+                members=[members[i] for i in group],
                 autocast=autocast,
                 save_peak_mem=save_peak_mem_during_build,
                 stage_cache_on_cpu=stage_caches_on_cpu,
             )
-            for ensemble_member in self.ensemble_members
+            for group in groups
         )
         timed_caches = _TimedIterator(
             parallel_execute(
@@ -12648,13 +12723,18 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
             devices,
         )
         built_caches = list(timed_caches)
-        if stage_caches_on_cpu:
-            # Each completed cache was staged on CPU by _build_cache while the
-            # remaining ensemble members were being constructed. Now that every
-            # build has finished, move each cache back to its build device.
-            self.kv_caches: list = [cache.to(device) for cache, device in built_caches]
-        else:
-            self.kv_caches = [cache for cache, _device in built_caches]
+        # One cache per group of members; `cache_groups[i]` lists the members whose
+        # batch positions `kv_caches[i]` holds, in order.
+        self.cache_groups: list[list[int]] = []
+        self.kv_caches: list = []
+        for group, (caches, device) in zip(groups, built_caches, strict=True):
+            for positions, cache in caches:
+                self.cache_groups.append([group[i] for i in positions])
+                # A cache staged on CPU by _build_cache while the remaining groups
+                # were being built moves back to its build device now.
+                self.kv_caches.append(
+                    cache.to(device) if stage_caches_on_cpu else cache
+                )
         self._speed_metrics["fit_model_forward_seconds"] = timed_caches.elapsed_seconds
 
         # The caches replace the training features; predict only reads y_train.
@@ -12665,64 +12745,43 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
         self,
         *,
         device: torch.device,
-        X_train: torch.Tensor | np.ndarray,
-        y_train: torch.Tensor | np.ndarray,
-        feature_schema: FeatureSchema,
-        model_index: int,
-        gpu_preprocessor: TorchPreprocessingPipeline | None,
+        members: list[TabPFNEnsembleMember],
         autocast: bool,
         save_peak_mem: bool,
         stage_cache_on_cpu: bool,
-    ) -> tuple[KVCache, torch.device]:
-        """Build KV cache for one ensemble member on the given device.
+    ) -> tuple[list[tuple[list[int], KVCache]], torch.device]:
+        """Build the KV caches of a group of ensemble members on the given device.
+
+        Members whose prepared train inputs share a shape end up in one cache with
+        the members along the batch dimension. They are built in forwards of as
+        many members as the batching budgets allow, and the resulting caches are
+        concatenated, so the budgets bound the build but not the batch the cache
+        serves at predict.
 
         Called via :func:`parallel_execute` â€” may run on different devices
         in parallel threads.
 
         Returns:
-            A tuple containing the completed cache and its build device. The
-            device is also the cache's destination for inference. The cache
-            tensors themselves are on CPU when ``stage_cache_on_cpu`` is true
-            (or when ``keep_cache_on_device`` is false); otherwise, they remain
-            on the returned device.
+            The caches, each with the positions in ``members`` it holds, and the
+            build device, which is also the caches' destination for inference. The
+            cache tensors themselves are on CPU when ``stage_cache_on_cpu`` is true
+            (or when ``keep_cache_on_device`` is false); otherwise, they remain on
+            the returned device.
         """
-        model = self.model_caches[model_index].get(device)
+        model = self.model_caches[members[0].config._model_index].get(device)
         kv_cache_precision = _resolve_kv_cache_precision(
             self.kv_cache_precision, architecture=model, device=device
         )
-
-        # Cast model weights to match force_inference_dtype (else linear
-        # layers throw a Half/Float mismatch).
         if self.force_inference_dtype is not None:
             model.type(self.force_inference_dtype)
 
-        tensor_dtype = self.force_inference_dtype or torch.float32
-        if not isinstance(X_train, torch.Tensor):
-            X_train = torch.as_tensor(X_train, dtype=tensor_dtype, device=device)
-        else:
-            X_train = X_train.to(device)
-        X = X_train.unsqueeze(1)
-        if not isinstance(y_train, torch.Tensor):
-            y = torch.as_tensor(y_train, dtype=tensor_dtype, device=device)
-        else:
-            y = y_train.to(device)
+        prepared = [
+            _prepare_train_inputs(member, device, self.force_inference_dtype)
+            for member in members
+        ]
 
-        # Fit the gpu preprocessor on train data (populates fitted_cache
-        # when keep_fitted_cache=True, so predict can use_fitted_cache=True)
-        X, feature_schema = _maybe_run_gpu_preprocessing(
-            X,
-            gpu_preprocessor=gpu_preprocessor,
-            feature_schema=feature_schema,
-        )
-        batched_cat_ix = [feature_schema.indices_for(FeatureModality.CATEGORICAL)]
-
-        if self.force_inference_dtype is not None:
-            X = X.type(self.force_inference_dtype)
-            y = y.type(self.force_inference_dtype)
-
-        performance_options = model.get_default_performance_options()
         performance_options = dataclasses.replace(
-            performance_options,
+            model.get_default_performance_options(),
             save_peak_memory_factor=DEFAULT_SAVE_PEAK_MEMORY_FACTOR
             if save_peak_mem
             else None,
@@ -12733,29 +12792,47 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
             ),
             kv_cache_follows_attention_grid=kv_cache_precision == "adaptive",
         )
-
         kwargs = {}
         if _model_expectes_task_type_arg(model):
             kwargs["task_type"] = self.task_type
 
-        with (
-            get_autocast_context(device, enabled=autocast),
-            torch.inference_mode(),
-        ):
-            _, cache = model(
-                X,
-                y,
-                only_return_standard_out=True,
-                categorical_inds=batched_cat_ix,
-                performance_options=performance_options,
-                return_kv_cache=True,
-                **kwargs,
+        def build(positions: list[int]) -> KVCache:
+            X, y = _batch_member_inputs(
+                [prepared[i][0] for i in positions],
+                [prepared[i][1] for i in positions],
             )
+            with (
+                get_autocast_context(device, enabled=autocast),
+                torch.inference_mode(),
+            ):
+                _, cache = model(
+                    X,
+                    y,
+                    only_return_standard_out=True,
+                    categorical_inds=[prepared[i][2] for i in positions],
+                    performance_options=performance_options,
+                    return_kv_cache=True,
+                    **kwargs,
+                )
+            assert cache is not None
+            if not self.keep_cache_on_device or stage_cache_on_cpu:
+                cache = cache.to("cpu")
+            return cache
 
-        assert cache is not None
-        if not self.keep_cache_on_device or stage_cache_on_cpu:
-            cache = cache.to("cpu")
-        return cache, device
+        # GPU preprocessing may have changed the members' widths, so the group is
+        # refined by the prepared shapes.
+        caches: list[tuple[list[int], KVCache]] = []
+        shapes = [tuple(X.shape) for X, _, _ in prepared]
+        budget = _estimator_batch_budget(model)
+        for positions in _group_equal(shapes):
+            rows, _, columns = prepared[positions[0]][0].shape
+            for forwards in _cache_builds(positions, rows, columns, budget):
+                parts = [build(members) for members in forwards]
+                cache = (
+                    parts[0] if len(parts) == 1 else type(parts[0]).concatenate(parts)
+                )
+                caches.append(([i for members in forwards for i in members], cache))
+        return caches, device
 
     @override
     def iter_outputs(
@@ -12782,21 +12859,18 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
             dtype_byte_size=self.dtype_byte_size,
         )
 
+        members = self.ensemble_members
         model_forward_functions = (
             partial(
                 self._call_model,
-                cache_index=i,
-                X_test=ensemble_member.transform_X_test(X),
-                y_train=ensemble_member.y_train,
-                feature_schema=ensemble_member.feature_schema,
+                cache_index=cache_index,
+                X_tests=[members[i].transform_X_test(X) for i in group],
                 autocast=autocast,
                 only_return_standard_out=only_return_standard_out,
-                model_index=ensemble_member.config._model_index,
                 save_peak_mem=save_peak_mem,
-                gpu_preprocessor=ensemble_member.gpu_preprocessor,
                 task_type=task_type,
             )
-            for i, ensemble_member in enumerate(self.ensemble_members)
+            for cache_index, group in enumerate(self.cache_groups)
         )
         timed_outputs = _TimedIterator(
             parallel_execute(
@@ -12808,7 +12882,9 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
         )
 
         for output, ensemble_member in zip(
-            timed_outputs, self.ensemble_members, strict=True
+            _yield_in_member_order(self.cache_groups, timed_outputs, len(members)),
+            members,
+            strict=True,
         ):
             yield _move_and_squeeze_output(output, devices[0]), ensemble_member.config
 
@@ -12816,72 +12892,76 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
             timed_outputs.elapsed_seconds
         )
 
-    def _call_model(  # noqa: PLR0913
+    def _call_model(
         self,
         *,
         device: torch.device,
         cache_index: int,
-        X_test: torch.Tensor | np.ndarray,
-        y_train: torch.Tensor | np.ndarray,
-        feature_schema: FeatureSchema,
+        X_tests: list[torch.Tensor | np.ndarray],
         autocast: bool,
         only_return_standard_out: bool,
-        model_index: int,
         save_peak_mem: bool,
-        gpu_preprocessor: TorchPreprocessingPipeline | None,
         task_type: str,
-    ) -> torch.Tensor | dict[str, torch.Tensor]:
-        """Execute a model forward pass on the provided device.
+    ) -> _MemberOutputs:
+        """Predict the test rows of the members sharing ``kv_caches[cache_index]``.
 
-        Each ensemble member (estimator) has its own KV cache at
-        ``self.kv_caches[cache_index]``.  When ``keep_cache_on_device`` is True,
-        the cache is moved to ``device`` on the first call and kept there.
+        The members' test rows go through the model as one batch against their
+        shared cache. When ``keep_cache_on_device`` is True, the cache is moved to
+        ``device`` on the first call and kept there.
 
-        Only X_test is uploaded and preprocessed â€” the v3 model's cache
-        fast path never reads train rows when ``x_is_test_only=True``.
+        Only X_test is uploaded and preprocessed â€” the model's cache fast path
+        never reads train rows when ``x_is_test_only=True``.
 
         May be executed in parallel across threads, one per device.
         """
-        model = self.model_caches[model_index].get(device)
-
+        members = [self.ensemble_members[i] for i in self.cache_groups[cache_index]]
+        model = self.model_caches[members[0].config._model_index].get(device)
         dtype = self.force_inference_dtype or torch.float32
-        X_test_tensor = torch.as_tensor(X_test, dtype=dtype, device=device).unsqueeze(1)
-        y_train = torch.as_tensor(y_train, dtype=dtype, device=device)
 
-        X_test_tensor, feature_schema = _maybe_run_gpu_preprocessing(
-            X_test_tensor,
-            gpu_preprocessor=gpu_preprocessor,
-            num_train_rows=0,
-            use_fitted_cache=True,
-            feature_schema=feature_schema,
-        )
+        xs: list[torch.Tensor] = []
+        ys: list[torch.Tensor] = []
+        categorical_inds: list[list[int]] = []
+        for member, X_test in zip(members, X_tests, strict=True):
+            X_test_tensor = torch.as_tensor(X_test, dtype=dtype, device=device)
+            X_test_tensor = X_test_tensor.unsqueeze(1)
+            y_train = torch.as_tensor(member.y_train, dtype=dtype, device=device)
+            X_test_tensor, feature_schema = _maybe_run_gpu_preprocessing(
+                X_test_tensor,
+                gpu_preprocessor=member.gpu_preprocessor,
+                num_train_rows=0,
+                use_fitted_cache=True,
+                feature_schema=member.feature_schema,
+            )
+            # Cast post-preproc tensors back to force_inference_dtype if set â€”
+            # GPU preprocessing may emit fp32 internally (SVD/quantile for
+            # numerical stability) even under a fp16 run.
+            if self.force_inference_dtype is not None:
+                X_test_tensor = X_test_tensor.type(self.force_inference_dtype)
+                y_train = y_train.type(self.force_inference_dtype)
+            xs.append(X_test_tensor)
+            ys.append(y_train)
+            categorical_inds.append(
+                feature_schema.indices_for(FeatureModality.CATEGORICAL)
+            )
+        if len({tuple(x.shape) for x in xs}) != 1:
+            raise RuntimeError(
+                "The members sharing a KV cache produced test inputs of different "
+                f"shapes: {[tuple(x.shape) for x in xs]}."
+            )
+        X, y = _batch_member_inputs(xs, ys)
 
-        # Cast post-preproc tensors back to force_inference_dtype if set â€”
-        # GPU preprocessing may emit fp32 internally (SVD/quantile for
-        # numerical stability) even under a fp16 run.
-        if self.force_inference_dtype is not None:
-            X_test_tensor = X_test_tensor.type(self.force_inference_dtype)
-            y_train = y_train.type(self.force_inference_dtype)
-
-        batched_cat_ix = [feature_schema.indices_for(FeatureModality.CATEGORICAL)]
-
-        performance_options = model.get_default_performance_options()
         performance_options = dataclasses.replace(
-            performance_options,
+            model.get_default_performance_options(),
             save_peak_memory_factor=DEFAULT_SAVE_PEAK_MEMORY_FACTOR
             if save_peak_mem
             else None,
         )
-
         kwargs = {}
         if _model_expectes_task_type_arg(model):
             kwargs["task_type"] = task_type
 
-        # Get cache for this estimator and move to target device
-        cache = self.kv_caches[cache_index]
-        cache_on_device = cache.to(device)
+        cache_on_device = self.kv_caches[cache_index].to(device)
         if self.keep_cache_on_device:
-            # Persist on-device copy so subsequent calls skip the transfer
             self.kv_caches[cache_index] = cache_on_device
 
         def run(x_test: torch.Tensor) -> torch.Tensor | dict[str, torch.Tensor]:
@@ -12891,46 +12971,26 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
             ):
                 return model(
                     x_test,
-                    y_train,
+                    y,
                     only_return_standard_out=only_return_standard_out,
-                    categorical_inds=batched_cat_ix,
+                    categorical_inds=categorical_inds,
                     performance_options=performance_options,
                     kv_cache=cache_on_device,
                     x_is_test_only=True,
                     **kwargs,
                 )
 
-        # Test rows are independent given the KV cache, so we run the
-        # forward pass in chunks of at most max_batched_test_rows and concatenate
-        # to bound peak activation memory. Chunking is mathematically equivalent;
-        # outputs may differ slightly due to floating-point non-associativity
-        # (see github.com/PriorLabs/TabPFN/issues/800#issuecomment-4903444425).
-        # 32768 already saturates the hardware, so larger chunks give tiny speedup.
-        max_rows = settings.tabpfn.max_batched_test_rows
-        n_test = X_test_tensor.shape[0]
-        if max_rows <= 0 or n_test <= max_rows:
-            return run(X_test_tensor)
-
-        outputs = [
-            run(X_test_tensor[i : i + max_rows]) for i in range(0, n_test, max_rows)
-        ]
-        if not isinstance(outputs[0], dict):
-            return torch.cat(outputs)
-
-        concat_keys = {"standard", "test_embeddings"}
-        # Not emitted by the v3 cached path, but v2 still replicates it per chunk.
-        shared_keys = {"train_embeddings"}
-        unexpected = outputs[0].keys() - concat_keys - shared_keys
-        if unexpected:
-            raise RuntimeError(
-                f"KV-cache test-row chunking has no reassembly rule for model "
-                f"output key(s) {sorted(unexpected)}; update the chunk-merge logic "
-                f"in InferenceEngineExplicitKVCache._call_model."
+        n_test, batch, columns = X.shape
+        chunk = _test_rows_per_forward(
+            n_test, batch, columns, _estimator_batch_budget(model)
+        )
+        if chunk >= n_test:
+            output = run(X)
+        else:
+            output = _concat_test_chunks(
+                [run(X[start : start + chunk]) for start in range(0, n_test, chunk)]
             )
-        return {
-            k: outputs[0][k] if k in shared_keys else torch.cat([o[k] for o in outputs])
-            for k in outputs[0]
-        }
+        return [(list(range(len(members))), output)]
 
     @override
     def _create_copy_for_pickling(self) -> InferenceEngine:
@@ -12941,13 +13001,133 @@ class InferenceEngineExplicitKVCache(MultiDeviceInferenceEngine):
 
     @override
     def _move_models_to_devices(self, devices: Sequence[torch.device]) -> None:
-        super()._move_models_to_devices(devices)
         # kv_caches don't exist yet during the .to() call in __init__ (it runs
-        # before the caches are built). Once they do and are kept on device,
-        # move them with the models so .to() leaves nothing on the old device;
-        # iter_outputs redistributes them across devices on the next predict.
-        if self.keep_cache_on_device and getattr(self, "kv_caches", None):
+        # before the caches are built).
+        has_caches = bool(getattr(self, "kv_caches", None))
+        # A cache holds the batch it was built with; MPS runs members alone.
+        if (
+            has_caches
+            and any(d.type == "mps" for d in devices)
+            and any(len(group) > 1 for group in self.cache_groups)
+        ):
+            raise RuntimeError(
+                "This KV cache was built for a batch of ensemble members and "
+                "cannot be used on MPS. Fit the estimator on the MPS device instead."
+            )
+        super()._move_models_to_devices(devices)
+        # Caches kept on device move with the models so .to() leaves nothing on
+        # the old device; iter_outputs redistributes them on the next predict.
+        if has_caches and self.keep_cache_on_device:
             self.kv_caches = [cache.to(devices[0]) for cache in self.kv_caches]
+
+
+def _test_rows_per_forward(
+    n_test: int, batch: int, columns: int, budget: EstimatorBatchBudget
+) -> int:
+    """Test rows one cached forward takes for a batch of members.
+
+    The cached-inference limit and, for a batch, the row and cell budgets are all
+    shared by the members of the batch.
+    """
+    chunk = n_test
+    max_rows = settings.tabpfn.max_batched_test_rows
+    if max_rows > 0:
+        chunk = min(chunk, max(1, max_rows // batch))
+    if batch > 1:
+        if budget.rows > 0:
+            chunk = min(chunk, max(1, budget.rows // batch))
+        if budget.cells > 0:
+            chunk = min(chunk, max(1, budget.cells // (batch * columns)))
+    return chunk
+
+
+def _concat_test_chunks(
+    outputs: list[torch.Tensor | dict[str, torch.Tensor]],
+) -> torch.Tensor | dict[str, torch.Tensor]:
+    """Reassemble the outputs of a forward that was run in test-row chunks."""
+    if not isinstance(outputs[0], dict):
+        return torch.cat(outputs)  # type: ignore[arg-type]
+    concat_keys = {"standard", "test_embeddings"}
+    shared_keys = {"train_embeddings"}
+    unexpected = outputs[0].keys() - concat_keys - shared_keys
+    if unexpected:
+        raise RuntimeError(
+            f"KV-cache test-row chunking has no reassembly rule for model "
+            f"output key(s) {sorted(unexpected)}; update the chunk-merge logic "
+            f"in _concat_test_chunks."
+        )
+    return {
+        k: outputs[0][k] if k in shared_keys else torch.cat([o[k] for o in outputs])  # type: ignore[index]
+        for k in outputs[0]
+    }
+
+
+def _call_model_on_members(
+    model_caches: list[_PerDeviceModelCache],
+    *,
+    device: torch.device,
+    members: list[TabPFNEnsembleMember],
+    X_tests: list[torch.Tensor | np.ndarray],
+    force_inference_dtype: torch.dtype | None,
+    autocast: bool,
+    inference_mode: bool,
+    only_return_standard_out: bool,
+    save_peak_mem: bool,
+    task_type: str,
+) -> _MemberOutputs:
+    """Forward the members, which share a model, from their train and test rows.
+
+    Members whose prepared inputs share a shape run as one forward with the members
+    along the batch dimension. Returns each forward's output with the positions in
+    ``members`` it holds.
+    """
+    model = model_caches[members[0].config._model_index].get(device)
+    prepared: list[tuple[torch.Tensor, torch.Tensor, list[int]]] = []
+    for member, X_test in zip(members, X_tests, strict=True):
+        X_full, y_train = _prepare_model_inputs(
+            device, force_inference_dtype, member.X_train, X_test, member.y_train
+        )
+        X_full, feature_schema = _maybe_run_gpu_preprocessing(
+            X_full,
+            gpu_preprocessor=member.gpu_preprocessor,
+            num_train_rows=member.X_train.shape[0],
+            feature_schema=member.feature_schema,
+        )
+        prepared.append(
+            (X_full, y_train, feature_schema.indices_for(FeatureModality.CATEGORICAL))
+        )
+    performance_options = dataclasses.replace(
+        model.get_default_performance_options(),
+        save_peak_memory_factor=DEFAULT_SAVE_PEAK_MEMORY_FACTOR
+        if save_peak_mem
+        else None,
+    )
+    kwargs = {}
+    if _model_expectes_task_type_arg(model):
+        kwargs["task_type"] = task_type
+
+    # GPU preprocessing may have changed the members' widths, so the group is
+    # refined by the prepared shapes.
+    outputs: _MemberOutputs = []
+    shapes = [tuple(X_full.shape) for X_full, _, _ in prepared]
+    for positions in _group_equal(shapes):
+        X, y = _batch_member_inputs(
+            [prepared[i][0] for i in positions], [prepared[i][1] for i in positions]
+        )
+        with (
+            get_autocast_context(device, enabled=autocast),
+            torch.inference_mode(inference_mode),
+        ):
+            output = model(
+                X,
+                y,
+                only_return_standard_out=only_return_standard_out,
+                categorical_inds=[prepared[i][2] for i in positions],
+                performance_options=performance_options,
+                **kwargs,
+            )
+        outputs.append((positions, output))
+    return outputs
 
 
 def _prepare_model_inputs(
@@ -13041,6 +13221,10 @@ class _PerDeviceModelCache:
             return deepcopy(existing_model).to(device)
 
         self._models = {device: get_on_device(device) for device in devices}
+
+    def get_any(self) -> Architecture:
+        """Return the model on any of its devices, for reading its attributes."""
+        return next(iter(self._models.values()))
 
     def get(self, device: torch.device) -> Architecture:
         """Return the model on the given device.
@@ -17040,9 +17224,12 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         ``y_train_std_`` must already be set as Python floats.
         """
         borders = self.znorm_space_bardist_.borders.detach()
-        self.raw_space_bardist_ = FullSupportBarDistribution(
-            borders * self.y_train_std_ + self.y_train_mean_,
-        ).float()
+        self.raw_space_bardist_ = _place_raw_space_bardist(
+            FullSupportBarDistribution(
+                borders.cpu().double() * self.y_train_std_ + self.y_train_mean_,
+            ),
+            borders.device,
+        )
 
     def _build_ensemble_preprocessor_and_executor(
         self,
@@ -17699,7 +17886,9 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         logit_to_output = partial(
             _logits_to_output,
             logits=logits,
-            criterion=self.raw_space_bardist_,
+            znorm_space_bardist=self.znorm_space_bardist_,
+            y_mean=self.y_train_mean_,
+            y_std=self.y_train_std_,
             quantiles=quantiles,
         )
         if output_type in ["full", "main"]:
@@ -18144,6 +18333,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         results: list[RegressionResultType | None] = [None] * len(X_train_list)
         items: list[RegressorBatch] = []
         item_indices: list[int] = []
+        item_y_scales: list[tuple[float, float]] = []
         znorm_borders: torch.Tensor | None = None
 
         for idx, (X, y, X_test) in enumerate(
@@ -18221,6 +18411,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
                 )
             )
             item_indices.append(idx)
+            item_y_scales.append((worker.y_train_mean_, worker.y_train_std_))
 
         if items:
             worker.fit_mode = "batched"
@@ -18276,10 +18467,14 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
                     # retaining every dataset's tensor through the whole decode loop.
                     accumulated[lane] = None
                     item = items[position]
+                    y_mean, y_std = item_y_scales[position]
                     results[item_indices[position]] = worker._decode_batched_dataset(
                         accumulated_logits=logits,
                         n_estimators=n_estimators,
                         raw_space_bardist=item.raw_space_bardist,
+                        znorm_space_bardist=item.znorm_space_bardist,
+                        y_mean=y_mean,
+                        y_std=y_std,
                         output_type=output_type,
                         quantiles=quantiles,
                     )
@@ -18332,6 +18527,9 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         accumulated_logits: torch.Tensor,
         n_estimators: int,
         raw_space_bardist: FullSupportBarDistribution,
+        znorm_space_bardist: FullSupportBarDistribution,
+        y_mean: float,
+        y_std: float,
         output_type: OutputType,
         quantiles: list[float],
     ) -> RegressionResultType:
@@ -18339,7 +18537,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         Shares :meth:`_reduce_accumulated_logits` with :meth:`predict`, so the
         two paths average identically, and decodes with this dataset's own
-        raw-space bar distribution as the criterion.
+        target mean and std; `raw_space_bardist` is the returned criterion.
         """
         assert n_estimators > 0
         # `predict_batched` rejects `tuning_config`, so the temperature applied
@@ -18350,7 +18548,9 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         logit_to_output = partial(
             _logits_to_output,
             logits=logits,
-            criterion=raw_space_bardist,
+            znorm_space_bardist=znorm_space_bardist,
+            y_mean=y_mean,
+            y_std=y_std,
             quantiles=quantiles,
         )
         if output_type in _OUTPUT_TYPES_COMPOSITE:
@@ -18604,19 +18804,46 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         if hasattr(self, "znorm_space_bardist_"):
             self.znorm_space_bardist_.to(self.devices_[0])
         if hasattr(self, "raw_space_bardist_"):
-            self.raw_space_bardist_.to(self.devices_[0])
+            # Rebuilt rather than moved: a float32 copy left behind by MPS must
+            # not carry over to a device that supports float64.
+            if hasattr(self, "y_train_mean_"):
+                self._rebuild_raw_space_bardist()
+            else:
+                self.raw_space_bardist_ = _place_raw_space_bardist(
+                    self.raw_space_bardist_, self.devices_[0]
+                )
+
+
+def _place_raw_space_bardist(
+    bardist: FullSupportBarDistribution, device: torch.device | str
+) -> FullSupportBarDistribution:
+    """Keep the raw-space criterion in float64, except on MPS, which lacks it."""
+    if torch.device(device).type == "mps":
+        return bardist.float().to(device)
+    return bardist.to(device)
 
 
 def _logits_to_output(
     *,
     output_type: str,
     logits: torch.Tensor,
-    criterion: FullSupportBarDistribution,
+    znorm_space_bardist: FullSupportBarDistribution,
+    y_mean: float,
+    y_std: float,
     quantiles: list[float],
 ) -> np.ndarray | list[np.ndarray]:
-    """Converts raw model logits to the desired prediction format."""
+    """Converts raw model logits to the desired prediction format.
+
+    Decodes in z-normalised space and undoes the normalisation in float64, so
+    the decode never has to resolve the target's magnitude.
+    """
+    criterion = znorm_space_bardist
+
+    def to_raw(output: torch.Tensor) -> np.ndarray:
+        return output.cpu().detach().numpy().astype(np.float64) * y_std + y_mean
+
     if output_type == "quantiles":
-        return [criterion.icdf(logits, q).cpu().detach().numpy() for q in quantiles]
+        return [to_raw(criterion.icdf(logits, q)) for q in quantiles]
 
     # TODO: support
     #   "pi": criterion.pi(logits, np.max(self.y)),
@@ -18630,7 +18857,7 @@ def _logits_to_output(
     else:
         raise ValueError(f"Invalid output type: {output_type}")
 
-    return output.cpu().detach().numpy()
+    return to_raw(output)
 
 
 def _validate_eval_metric(
@@ -18723,6 +18950,25 @@ class TabPFNSettings(BaseSettings):
         "forward pass during cached ('fit_with_cache') inference. Larger test sets "
         "are chunked. Performance is close to optimal at the default of 32768. "
         "Set to 0 to disable chunking.",
+    )
+    max_batched_estimator_rows: int | None = Field(
+        default=None,
+        ge=0,
+        description="Overrides the model's row budget for batching estimators: "
+        "estimators whose rows (train plus test, or test only when predicting from "
+        "a KV cache) sum to at most this many run as one forward pass; longer "
+        "contexts run one estimator at a time. Unset, each architecture applies its "
+        "own default. Set to 0 to run every estimator in its own forward pass and "
+        "its own cache.",
+    )
+    max_batched_estimator_cells: int | None = Field(
+        default=None,
+        ge=0,
+        description="Overrides the model's cell budget for batching estimators: "
+        "estimators whose cells (rows times prepared columns) sum to at most this "
+        "many run as one forward pass. Applies together with the row budget. Unset, "
+        "each architecture applies its own default. Set to 0 to run every estimator "
+        "in its own forward pass and its own cache.",
     )
 
     def model_post_init(self, _: Any) -> None:
@@ -20121,6 +20367,27 @@ class ArchitectureModule(Protocol):
         ...
 
 
+@dataclasses.dataclass(frozen=True)
+class EstimatorBatchBudget:
+    """What one forward pass may carry summed over batched estimators.
+
+    Attributes:
+        rows: Train plus test rows, or test rows when predicting from a KV cache.
+        cells: Rows times prepared columns.
+    """
+
+    rows: int
+    cells: int
+
+
+#: The budget of the architectures that batch estimators, unless their config says
+#: otherwise: the rows keep the ICL activations of a batch bounded, the cells are
+#: the widest and tallest table a single estimator already supports.
+DEFAULT_ESTIMATOR_BATCH_BUDGET = EstimatorBatchBudget(
+    rows=32_768, cells=768 * 1_000_000
+)
+
+
 class Architecture(nn.Module, ABC):
     """The interface that all architectures must implement.
 
@@ -20229,6 +20496,16 @@ class Architecture(nn.Module, ABC):
         return ("auto",)
 
     @property
+    def estimator_batch_budget(self) -> EstimatorBatchBudget:
+        """How much one forward may carry summed over batched estimators.
+
+        A zero budget means the architecture cannot run equal-shape estimators as
+        one batched forward pass; the ``TABPFN_MAX_BATCHED_*`` settings override
+        any other budget.
+        """
+        return EstimatorBatchBudget(rows=0, cells=0)
+
+    @property
     @abstractmethod
     def embedding_dim(self) -> int:
         """The row-level embedding dimension produced by this architecture.
@@ -20259,10 +20536,14 @@ symmetric quantization.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import TypeVar
 
 import torch
 from torch import Tensor
+
+_T = TypeVar("_T")
 
 QUANTIZED_KV_DTYPE: torch.dtype = torch.int8  # default
 FP8_KV_DTYPE: torch.dtype = torch.float8_e4m3fn
@@ -20290,12 +20571,15 @@ _FLOAT_QUANTIZATION_DTYPES = (torch.float8_e4m3fn,)
 
 
 def _quantize_tensor(
-    t: Tensor, dtype: torch.dtype = torch.int8
+    t: Tensor, dtype: torch.dtype = torch.int8, *, per_batch_element: bool = False
 ) -> tuple[Tensor, Tensor]:
-    """Per-tensor symmetric quantization to the given *dtype*.
+    """Symmetric quantization to the given *dtype*.
 
     Returns ``(quantized, scale)`` where ``scale = absmax / max_val`` and
-    ``quantized ~= t / scale``, so ``float = quantized * scale``.
+    ``quantized ~= t / scale``, so ``float = quantized * scale``. The scale is a
+    scalar over the whole tensor, or, with ``per_batch_element`` and a leading
+    dimension above one, one scalar per leading index shaped ``(B, 1, ..., 1)`` so
+    that every batch element keeps its own range, as it would quantized alone.
     """
     if dtype in _QUANTIZATION_RANGES:
         lo, hi, max_val = _QUANTIZATION_RANGES[dtype]
@@ -20307,7 +20591,10 @@ def _quantize_tensor(
             f"Unsupported quantization dtype {dtype}. Supported: "
             f"{list(_QUANTIZATION_RANGES) + list(_FLOAT_QUANTIZATION_DTYPES)}"
         )
-    absmax = t.abs().amax()
+    if per_batch_element and t.dim() > 1 and t.shape[0] > 1:
+        absmax = t.abs().amax(dim=tuple(range(1, t.dim())), keepdim=True)
+    else:
+        absmax = t.abs().amax()
     scale = absmax / float(max_val)
     # Avoid division by zero for all-zero tensors; floor at scale.dtype's
     # smallest positive normal so the clamp is representable in any dtype.
@@ -20368,6 +20655,15 @@ class KVCacheEntry:
             dtype = self.grid_dtype
         return self if dtype is None else self.quantize(dtype)
 
+    @staticmethod
+    def concatenate(entries: Sequence[KVCacheEntry]) -> KVCacheEntry:
+        """One entry holding the batch elements of ``entries`` in order."""
+        assert all(entry.is_valid() for entry in entries)
+        return KVCacheEntry(
+            key=torch.cat([entry.key for entry in entries]),
+            value=torch.cat([entry.value for entry in entries]),
+        )
+
     def quantize(
         self, dtype: torch.dtype = QUANTIZED_KV_DTYPE
     ) -> QuantizedKVCacheEntry:
@@ -20377,8 +20673,8 @@ class KVCacheEntry:
             dtype: Target quantization dtype (default `QUANTIZED_KV_DTYPE`).
         """
         assert self.is_valid()
-        k_q, k_s = _quantize_tensor(self.key, dtype)
-        v_q, v_s = _quantize_tensor(self.value, dtype)
+        k_q, k_s = _quantize_tensor(self.key, dtype, per_batch_element=True)
+        v_q, v_s = _quantize_tensor(self.value, dtype, per_batch_element=True)
         return QuantizedKVCacheEntry(key=k_q, value=v_q, key_scale=k_s, value_scale=v_s)
 
 
@@ -20396,8 +20692,9 @@ class QuantizedKVCacheEntry:
         key: Quantized key projections, shape ``(B, N_train, num_kv_heads, head_dim)``.
         value: Quantized value projections, shape ``(B, N_train, num_kv_heads,
         head_dim)``.
-        key_scale: Scalar scale factor for keys.
-        value_scale: Scalar scale factor for values.
+        key_scale: Scale factor for keys: a scalar, or ``(B, 1, 1, 1)`` when the
+            entry holds several batch elements, each with its own scale.
+        value_scale: Scale factor for values, shaped like ``key_scale``.
     """
 
     key: Tensor | None = None
@@ -20423,6 +20720,31 @@ class QuantizedKVCacheEntry:
             value=self.value.to(device),
             key_scale=self.key_scale.to(device),
             value_scale=self.value_scale.to(device),
+        )
+
+    @staticmethod
+    def concatenate(
+        entries: Sequence[QuantizedKVCacheEntry],
+    ) -> QuantizedKVCacheEntry:
+        """One entry holding the batch elements of ``entries`` in order.
+
+        A scalar scale is expanded to one per batch element first, so the result
+        always scales per batch element.
+        """
+        assert all(entry.is_valid() for entry in entries)
+
+        def per_element(scale: Tensor, batch: int) -> Tensor:
+            return scale.reshape(-1, 1, 1, 1).expand(batch, 1, 1, 1)
+
+        return QuantizedKVCacheEntry(
+            key=torch.cat([entry.key for entry in entries]),
+            value=torch.cat([entry.value for entry in entries]),
+            key_scale=torch.cat(
+                [per_element(e.key_scale, e.key.shape[0]) for e in entries]
+            ),
+            value_scale=torch.cat(
+                [per_element(e.value_scale, e.value.shape[0]) for e in entries]
+            ),
         )
 
     def dequantize(self, dtype: torch.dtype) -> KVCacheEntry:
@@ -20466,6 +20788,58 @@ class KVCache(ABC):
     ) -> dict[int, KVCacheEntry | QuantizedKVCacheEntry]:
         """Move the per-layer KV entries to the given device."""
         return {idx: entry.to(device) for idx, entry in self.kv.items()}
+
+    @classmethod
+    def concatenate(cls, caches: Sequence[KVCache]) -> KVCache:
+        """One cache holding the batch elements of ``caches`` in order.
+
+        Consumes ``caches``: their per-layer entries are released as the result is
+        assembled, so the transient memory is one layer's worth rather than a
+        second copy of the whole cache.
+        """
+        raise NotImplementedError(f"{cls.__name__} cannot concatenate caches.")
+
+    @staticmethod
+    def _consume_and_concatenate_layers(
+        caches: Sequence[KVCache],
+    ) -> dict[int, KVCacheEntry | QuantizedKVCacheEntry]:
+        """Concatenate the per-layer KV entries along the batch, layer by layer.
+
+        Pops each layer from the source caches once it is copied, so the caller
+        gives up ownership of ``caches``.
+        """
+        layers = list(caches[0].kv)
+        assert all(list(cache.kv) == layers for cache in caches)
+        kv: dict[int, KVCacheEntry | QuantizedKVCacheEntry] = {}
+        for idx in layers:
+            entries = [cache.kv.pop(idx) for cache in caches]
+            if isinstance(entries[0], QuantizedKVCacheEntry):
+                kv[idx] = QuantizedKVCacheEntry.concatenate(entries)  # type: ignore[arg-type]
+            else:
+                kv[idx] = KVCacheEntry.concatenate(entries)  # type: ignore[arg-type]
+        return kv
+
+    @staticmethod
+    def _cat(items: Sequence[_T], dim: int = 0) -> _T:
+        """Concatenate tensors along ``dim``, also inside dicts and lists.
+
+        Every item must have the same structure; ``None`` passes through when all
+        items are ``None``.
+        """
+        first = items[0]
+        if first is None:
+            assert all(item is None for item in items)
+            return first
+        if isinstance(first, dict):
+            keys = list(first)
+            assert all(list(item) == keys for item in items)  # type: ignore[arg-type]
+            return {k: KVCache._cat([item[k] for item in items], dim) for k in keys}  # type: ignore[index, return-value]
+        if isinstance(first, list):
+            return [  # type: ignore[return-value]
+                KVCache._cat(parts, dim)
+                for parts in zip(*items, strict=True)  # type: ignore[arg-type]
+            ]
+        return torch.cat(items, dim=dim)  # type: ignore[arg-type, return-value]
 
     @staticmethod
     def _dict_of_tensors_to(
@@ -24525,7 +24899,7 @@ import contextlib
 import dataclasses
 import logging as _logging
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, cast
 from typing_extensions import override
@@ -24538,8 +24912,10 @@ import torch.utils.checkpoint
 from torch import nn
 
 from tabpfn.architectures.interface import (
+    DEFAULT_ESTIMATOR_BATCH_BUDGET,
     Architecture,
     ArchitectureConfig,
+    EstimatorBatchBudget,
     PerformanceOptions,
 )
 from tabpfn.architectures.kv_cache import (
@@ -24657,8 +25033,29 @@ class TabPFNV3Config(ArchitectureConfig):
     of the cell embedder."""
 
     # ---- Memory-efficient inference ----
-    inference_row_chunk_size: int = 2048
-    """Max rows per Stage 0-2 chunk during inference."""
+    inference_chunk_cells: int = 2048 * 768
+    """Cells per Stage 0-2 chunk during inference, summed over the batch.
+
+    Rows per chunk are this divided by the batch size times the column count, so
+    narrower inputs and smaller batches get more rows per chunk.
+    2048 (rows) * 768 (max columns of v3.5) is the size we found to be stable
+    before.
+    """
+
+    max_batched_estimator_rows: int = DEFAULT_ESTIMATOR_BATCH_BUDGET.rows
+    """Rows one forward pass may carry summed over batched estimators.
+
+    Bounds the ICL activations of a batch; longer contexts run one estimator at a
+    time.
+    """
+
+    max_batched_estimator_cells: int = DEFAULT_ESTIMATOR_BATCH_BUDGET.cells
+    """Cells (rows times prepared columns) one forward pass may carry summed over
+    batched estimators.
+
+    Bounds the stage 0-2 activations; the default is the widest and tallest table
+    a single estimator supports.
+    """
 
     inference_col_chunk_size: int = 4
     """Max output groups per chunk for inducing hidden state computation."""
@@ -24740,6 +25137,22 @@ class TabPFNV3Cache(KVCache):
             train_shape=self.train_shape,
             scaler_cache=self._dict_of_tensors_to(self.scaler_cache, device),
             inducing_hidden=self._list_of_tensors_to(self.inducing_hidden, device),
+        )
+
+    @override
+    @classmethod
+    def concatenate(cls, caches: Sequence[KVCache]) -> TabPFNV3Cache:
+        """One cache holding the batch elements of ``caches`` in order."""
+        assert all(isinstance(cache, TabPFNV3Cache) for cache in caches)
+        v3_caches = cast("Sequence[TabPFNV3Cache]", caches)
+        num_train = {cache.train_shape[1] for cache in v3_caches}
+        assert len(num_train) == 1, "Caches to concatenate differ in train rows."
+        return TabPFNV3Cache(
+            kv=cls._consume_and_concatenate_layers(caches),
+            decoder_keys=cls._cat([c.decoder_keys for c in v3_caches]),
+            train_shape=(sum(c.train_shape[0] for c in v3_caches), num_train.pop()),
+            scaler_cache=cls._cat([c.scaler_cache for c in v3_caches]),
+            inducing_hidden=cls._cat([c.inducing_hidden for c in v3_caches]),
         )
 
     def quantize(self, dtype: torch.dtype = QUANTIZED_KV_DTYPE) -> TabPFNV3Cache:
@@ -26324,8 +26737,17 @@ class TabPFNV3(Architecture):
         self.standard_scaler = TorchStandardScaler()
         self._nan_safe_output = True
         self.emsize = config.embed_dim
-        self.inference_row_chunk_size = config.inference_row_chunk_size
+        self.inference_chunk_cells = config.inference_chunk_cells
+        self._estimator_batch_budget = EstimatorBatchBudget(
+            rows=config.max_batched_estimator_rows,
+            cells=config.max_batched_estimator_cells,
+        )
         self.inference_col_chunk_size = config.inference_col_chunk_size
+
+    @property
+    @override
+    def estimator_batch_budget(self) -> EstimatorBatchBudget:
+        return self._estimator_batch_budget
 
     @property
     @override
@@ -26592,13 +27014,17 @@ class TabPFNV3(Architecture):
         """Embed y_train for the col stage â†’ (B, T, E)."""
         if self.task_type == "multiclass":
             return self.col_y_encoder(y_BN)
-        return self.col_y_encoder(y_BN.unsqueeze(-1))
+        # A 2D projection avoids eager Triton BMM and its C compiler requirement.
+        y_emb = self.col_y_encoder(y_BN.reshape(-1, 1))
+        return y_emb.reshape(*y_BN.shape, y_emb.shape[-1])
 
     def _embed_icl_y(self, y_BN: torch.Tensor) -> torch.Tensor:
         """Embed y_train for the ICL stage â†’ (B, T, D)."""
         if self.task_type == "multiclass":
             return self.icl_y_encoder(y_BN)
-        return self.icl_y_encoder(y_BN.unsqueeze(-1))
+        # A 2D projection avoids eager Triton BMM and its C compiler requirement.
+        y_emb = self.icl_y_encoder(y_BN.reshape(-1, 1))
+        return y_emb.reshape(*y_BN.shape, y_emb.shape[-1])
 
     def _preprocess_raw(
         self,
@@ -26775,7 +27201,11 @@ class TabPFNV3(Architecture):
         """
         num_train = y.shape[0]
         if performance_options.use_chunkwise_inference and not self.training:
-            row_chunk_size = self.inference_row_chunk_size
+            # A chunk holds a fixed number of cells summed over the batch, so a batch
+            # of ensemble members costs the memory of a single one and narrow inputs
+            # take more rows per chunk.
+            _, batch, columns = x_RiBC.shape
+            row_chunk_size = max(1, self.inference_chunk_cells // (batch * columns))
             col_chunk_size = self.inference_col_chunk_size
         else:
             row_chunk_size = None
@@ -26885,7 +27315,8 @@ class TabPFNV3(Architecture):
                 _logger.warning(
                     "OOM: halving row_chunk_size to %d", effective_chunk_size
                 )
-                self.inference_row_chunk_size = effective_chunk_size
+                # Stored as cells summed over the batch, as it is configured.
+                self.inference_chunk_cells = effective_chunk_size * batch * columns
 
         if use_chunks:
             inducing_hidden = precomputed_hidden
@@ -27159,7 +27590,7 @@ import contextlib
 import dataclasses
 import logging as _logging
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Any, Literal, cast
 from typing_extensions import override
@@ -27172,8 +27603,10 @@ import torch.utils.checkpoint
 from torch import nn
 
 from tabpfn.architectures.interface import (
+    DEFAULT_ESTIMATOR_BATCH_BUDGET,
     Architecture,
     ArchitectureConfig,
+    EstimatorBatchBudget,
     PerformanceOptions,
 )
 from tabpfn.architectures.kv_cache import (
@@ -27307,8 +27740,27 @@ class TabPFNV3p5Config(ArchitectureConfig):
     recomputation."""
 
     # ---- Memory-efficient inference ----
-    inference_row_chunk_size: int = 2048
-    """Max rows per Stage 0-2 chunk during inference."""
+    inference_chunk_cells: int = 2048 * 768
+    """Cells per Stage 0-2 chunk during inference, summed over the batch.
+
+    Rows per chunk are this divided by the batch size times the column count, so
+    narrower inputs and smaller batches get more rows per chunk.
+    """
+
+    max_batched_estimator_rows: int = DEFAULT_ESTIMATOR_BATCH_BUDGET.rows
+    """Rows one forward pass may carry summed over batched estimators.
+
+    Bounds the ICL activations of a batch; longer contexts run one estimator at a
+    time.
+    """
+
+    max_batched_estimator_cells: int = DEFAULT_ESTIMATOR_BATCH_BUDGET.cells
+    """Cells (rows times prepared columns) one forward pass may carry summed over
+    batched estimators.
+
+    Bounds the stage 0-2 activations; the default is the widest and tallest table
+    a single estimator supports.
+    """
 
     inference_col_chunk_size: int = 4
     """Max output groups per chunk for inducing hidden state computation."""
@@ -27413,6 +27865,24 @@ class TabPFNV3p5Cache(KVCache):
                 self.ecdf_context.to(device) if self.ecdf_context is not None else None
             ),
             inducing_hidden=self._list_of_tensors_to(self.inducing_hidden, device),
+        )
+
+    @override
+    @classmethod
+    def concatenate(cls, caches: Sequence[KVCache]) -> TabPFNV3p5Cache:
+        """One cache holding the batch elements of ``caches`` in order."""
+        assert all(isinstance(cache, TabPFNV3p5Cache) for cache in caches)
+        v35_caches = cast("Sequence[TabPFNV3p5Cache]", caches)
+        num_train = {cache.train_shape[1] for cache in v35_caches}
+        assert len(num_train) == 1, "Caches to concatenate differ in train rows."
+        return TabPFNV3p5Cache(
+            kv=cls._consume_and_concatenate_layers(caches),
+            decoder_keys=cls._cat([c.decoder_keys for c in v35_caches]),
+            train_shape=(sum(c.train_shape[0] for c in v35_caches), num_train.pop()),
+            scaler_cache=cls._cat([c.scaler_cache for c in v35_caches]),
+            # The ECDF context carries the batch on its second axis.
+            ecdf_context=cls._cat([c.ecdf_context for c in v35_caches], dim=1),
+            inducing_hidden=cls._cat([c.inducing_hidden for c in v35_caches]),
         )
 
     def quantize(self, dtype: torch.dtype = QUANTIZED_KV_DTYPE) -> TabPFNV3p5Cache:
@@ -29332,7 +29802,11 @@ class TabPFNV3p5(Architecture):
         self._nan_safe_output = True
         self._icl_bf16 = False
         self.emsize = config.embed_dim
-        self.inference_row_chunk_size = config.inference_row_chunk_size
+        self.inference_chunk_cells = config.inference_chunk_cells
+        self._estimator_batch_budget = EstimatorBatchBudget(
+            rows=config.max_batched_estimator_rows,
+            cells=config.max_batched_estimator_cells,
+        )
         self.inference_col_chunk_size = config.inference_col_chunk_size
 
     @property
@@ -29345,6 +29819,11 @@ class TabPFNV3p5(Architecture):
         self.icl_blocks.to(torch.bfloat16)
         self.output_norm.to(torch.bfloat16)
         self._icl_bf16 = True
+
+    @property
+    @override
+    def estimator_batch_budget(self) -> EstimatorBatchBudget:
+        return self._estimator_batch_budget
 
     @property
     @override
@@ -29657,7 +30136,9 @@ class TabPFNV3p5(Architecture):
         if task_type == "multiclass":
             y_emb = self.col_y_encoder["multiclass"](y_BN)
         elif task_type == "regression":
-            y_emb = self.col_y_encoder["regression"](y_BN.unsqueeze(-1))
+            # A 2D projection avoids eager Triton BMM and its C compiler requirement.
+            y_emb = self.col_y_encoder["regression"](y_BN.reshape(-1, 1))
+            y_emb = y_emb.reshape(*y_BN.shape, y_emb.shape[-1])
         else:
             raise ValueError(f"Unsupported task type: {task_type}")
         return self.col_y_layernorm(y_emb)
@@ -29667,7 +30148,9 @@ class TabPFNV3p5(Architecture):
         if task_type == "multiclass":
             y_emb = self.icl_y_encoder["multiclass"](y_BN)
         elif task_type == "regression":
-            y_emb = self.icl_y_encoder["regression"](y_BN.unsqueeze(-1))
+            # A 2D projection avoids eager Triton BMM and its C compiler requirement.
+            y_emb = self.icl_y_encoder["regression"](y_BN.reshape(-1, 1))
+            y_emb = y_emb.reshape(*y_BN.shape, y_emb.shape[-1])
         else:
             raise ValueError(f"Unsupported task type: {task_type}")
         return self.icl_y_layernorm(y_emb)
@@ -29926,7 +30409,11 @@ class TabPFNV3p5(Architecture):
         """
         num_train = y.shape[0]
         if performance_options.use_chunkwise_inference and not self.training:
-            row_chunk_size = self.inference_row_chunk_size
+            # A chunk holds a fixed number of cells summed over the batch, so a batch
+            # of ensemble members costs the memory of a single one and narrow inputs
+            # take more rows per chunk.
+            _, batch, columns = x_RiBC.shape
+            row_chunk_size = max(1, self.inference_chunk_cells // (batch * columns))
             col_chunk_size = self.inference_col_chunk_size
         else:
             row_chunk_size = None
@@ -30067,7 +30554,8 @@ class TabPFNV3p5(Architecture):
                 _logger.warning(
                     "OOM: halving row_chunk_size to %d", effective_chunk_size
                 )
-                self.inference_row_chunk_size = effective_chunk_size
+                # Stored as cells summed over the batch, as it is configured.
+                self.inference_chunk_cells = effective_chunk_size * batch * columns
 
         if use_chunks:
             inducing_hidden = precomputed_hidden
@@ -30322,7 +30810,11 @@ def _build_ecdf_context(
 def _ecdf_midrank_counts(
     values_BCRi: torch.Tensor, ecdf_context: torch.Tensor
 ) -> torch.Tensor:
-    """Midrank of each value against the buckets, as a train-row count."""
+    """Midrank of each value against the buckets, as a train-row count.
+
+    A value outside the train range gets the midrank of the nearest train
+    extreme, not 0 or the row count.
+    """
     edges_BCK, below_BCK, at_most_BCK = ecdf_context
     k = edges_BCK.shape[-1]
     # int32 indices halve these two transients; K is a bucket count.
@@ -30351,7 +30843,16 @@ def _ecdf_midrank_counts(
     is_edge = right > left
     exact = 0.5 * (below_hi + at_most_BCK.gather(-1, hi_idx))
     counts = torch.where(is_edge, exact, counts)
-    return torch.where((left == 0) & ~is_edge, counts.new_zeros(()), counts)
+    counts = torch.where((left == 0) & ~is_edge, counts.new_zeros(()), counts)
+
+    # Hold values outside the train range at the midrank of the train extreme.
+    # A tied extreme sits half its tie block below the count an out-of-range
+    # value would otherwise get, so the rank gap across the boundary grows with
+    # the tie count while the value gap stays one step, and the model reads the
+    # difference as distance and over-extrapolates.
+    mid_lo = 0.5 * (below_BCK[..., :1] + at_most_BCK[..., :1])
+    mid_hi = 0.5 * (below_BCK[..., -1:] + at_most_BCK[..., -1:])
+    return counts.clamp(min=mid_lo, max=mid_hi)
 
 
 def _in_context_ecdf(x_BRiC: torch.Tensor, ecdf_context: torch.Tensor) -> torch.Tensor:
@@ -30362,7 +30863,7 @@ def _in_context_ecdf(x_BRiC: torch.Tensor, ecdf_context: torch.Tensor) -> torch.
     two counts the bucket's ends bracket â€” an interval that is empty when the
     buckets hold every distinct train value, so the estimate is then exact too.
     Inputs must be finite: torch sorts NaN last, so a NaN query would come out at
-    rank 1.0.
+    the top train value's rank.
     """
     num_rows, columns = x_BRiC.shape[1], x_BRiC.shape[2]
     at_most_BCK = ecdf_context[2]
@@ -30839,6 +31340,25 @@ if TYPE_CHECKING:
     import matplotlib.pyplot as plt
 
 
+def _common_dtype(*tensors: torch.Tensor) -> torch.dtype:
+    """The widest dtype among `tensors`, so float64 borders keep float64 results."""
+    dtype = tensors[0].dtype
+    for tensor in tensors[1:]:
+        dtype = torch.promote_types(dtype, tensor.dtype)
+    return dtype
+
+
+def _expected_value(logits: torch.Tensor, values: torch.Tensor) -> torch.Tensor:
+    """Softmax-weighted sum of `values`, in the wider of the two dtypes.
+
+    The softmax runs in that dtype too, so the weights sum to 1 to that dtype's
+    precision however far `values` lie from zero.
+    """
+    dtype = _common_dtype(logits, values)
+    p = torch.softmax(logits.to(dtype), -1)
+    return p @ values.to(device=logits.device, dtype=dtype)
+
+
 # TODO: Merge functionality from BarDistribution and FullSupportBarDistribution
 class BarDistribution(nn.Module):
     """Distribution over buckets."""
@@ -30991,6 +31511,7 @@ class BarDistribution(nn.Module):
         """Map each target value to the index of the bucket it falls into."""
         # assert the borders are actually sorted
         assert (self.borders[1:] - self.borders[:-1] >= 0.0).all()
+        y = y.to(self.borders.dtype)
         target_sample = torch.searchsorted(self.borders, y) - 1
         target_sample[y == self.borders[0]] = 0
         target_sample[y == self.borders[-1]] = self.num_bars - 1
@@ -31079,8 +31600,7 @@ class BarDistribution(nn.Module):
     def mean(self, logits: torch.Tensor) -> torch.Tensor:
         """Expected value of the distribution."""
         bucket_means = self.borders[:-1] + self.bucket_widths / 2
-        p = torch.softmax(logits, -1)
-        return p @ bucket_means
+        return _expected_value(logits, bucket_means)
 
     def median(self, logits: torch.Tensor) -> torch.Tensor:
         """Median of the distribution."""
@@ -31187,6 +31707,7 @@ class BarDistribution(nn.Module):
         assert maximize
         if not torch.is_tensor(best_f) or not len(best_f.shape):  # type: ignore
             best_f = torch.full(logits[..., 0].shape, best_f, device=logits.device)  # type: ignore
+        best_f = best_f.to(_common_dtype(best_f, self.borders))  # type: ignore
 
         best_f = best_f[..., None].repeat(*[1] * len(best_f.shape), logits.shape[-1])  # type: ignore
         clamped_best_f = best_f.clamp(self.borders[:-1], self.borders[1:])
@@ -31199,8 +31720,9 @@ class BarDistribution(nn.Module):
             - best_f * (self.borders[1:] - clamped_best_f)
         ) / bucket_diffs
 
-        p = torch.softmax(logits, -1)
-        return torch.einsum("...b,...b->...", p, bucket_contributions)
+        dtype = _common_dtype(logits, bucket_contributions)
+        p = torch.softmax(logits.to(dtype), -1)
+        return torch.einsum("...b,...b->...", p, bucket_contributions.to(dtype))
 
     def pi(
         self,
@@ -31246,8 +31768,7 @@ class BarDistribution(nn.Module):
             + right_borders.square()
             + left_borders * right_borders
         ) / 3.0
-        p = torch.softmax(logits, -1)
-        return p @ bucket_mean_of_square
+        return _expected_value(logits, bucket_mean_of_square)
 
     def variance(self, logits: torch.Tensor) -> torch.Tensor:
         """Variance of the distribution."""
@@ -31553,14 +32074,13 @@ class FullSupportBarDistribution(BarDistribution):
     @override
     def mean(self, logits: torch.Tensor) -> torch.Tensor:
         bucket_means = self.borders[:-1] + self.bucket_widths / 2
-        p = torch.softmax(logits, -1)
         side_normals = (
             self.halfnormal_with_p_weight_before(self.bucket_widths[0]),
             self.halfnormal_with_p_weight_before(self.bucket_widths[-1]),
         )
         bucket_means[0] = -side_normals[0].mean + self.borders[1]
         bucket_means[-1] = side_normals[1].mean + self.borders[-2]
-        return p @ bucket_means.to(logits.device).type(logits.dtype)
+        return _expected_value(logits, bucket_means)
 
     @override
     def mean_of_square(self, logits: torch.Tensor) -> torch.Tensor:
@@ -31588,8 +32108,7 @@ class FullSupportBarDistribution(BarDistribution):
             side_normals[1].variance
             + (side_normals[1].mean + self.borders[-2]).square()
         )
-        p = torch.softmax(logits, -1)
-        return p @ bucket_mean_of_square
+        return _expected_value(logits, bucket_mean_of_square)
 
     @override
     def pi(
@@ -31683,6 +32202,7 @@ class FullSupportBarDistribution(BarDistribution):
         assert maximize
         if not torch.is_tensor(best_f) or not len(best_f.shape):  # type: ignore
             best_f = torch.full(logits[..., 0].shape, best_f, device=logits.device)  # type: ignore
+        best_f = best_f.to(_common_dtype(best_f, self.borders))  # type: ignore
 
         assert best_f.shape == logits[..., 0].shape, (  # type: ignore
             f"best_f.shape: {best_f.shape}, logits.shape: {logits.shape}"  # type: ignore
@@ -31720,8 +32240,9 @@ class FullSupportBarDistribution(BarDistribution):
             torch.zeros_like(position_in_side_normals[0]),
         ) - self.ei_for_halfnormal(side_normals[0].scale, position_in_side_normals[0])
 
-        p = torch.softmax(logits, -1)
-        return torch.einsum("...b,...b->...", p, bucket_contributions)
+        dtype = _common_dtype(logits, bucket_contributions)
+        p = torch.softmax(logits.to(dtype), -1)
+        return torch.einsum("...b,...b->...", p, bucket_contributions.to(dtype))
 
 
 def get_bucket_limits(
@@ -33269,10 +33790,15 @@ class DatasetCollectionWithPreprocessing(torch.utils.data.Dataset):
 
             y_test_standardized = (y_test_raw - train_mean) / train_std
             y_train_standardized = (y_train_raw - train_mean) / train_std
-            raw_space_bardist_ = FullSupportBarDistribution(
-                znorm_space_bardist_.borders * train_std
-                + train_mean  # Inverse normalization back to raw space
-            ).float()
+            znorm_borders = znorm_space_bardist_.borders
+            raw_space_bardist_ = (
+                FullSupportBarDistribution(
+                    znorm_borders.cpu().double() * train_std
+                    + train_mean  # Inverse normalization back to raw space
+                )
+                .float()
+                .to(znorm_borders.device)
+            )
             y_train = y_train_standardized
         else:
             y_train = y_train_raw
@@ -36769,6 +37295,20 @@ def clean_data_transform(
     Returns:
         The cleaned data as a float64 array.
     """
+    if constant_values := getattr(ord_encoder, "constant_values_", None):
+        # A column constant at fit gets its fit-time value back, so it is cleaned
+        # exactly as at fit, whatever it holds at predict.
+        numeric = all(
+            isinstance(v, (int, float, np.number)) for v in constant_values.values()
+        )
+        # A copy either way: the caller's array must not be written to.
+        if not numeric:
+            X = X.astype(object)
+        else:
+            X = X.astype(X.dtype if X.dtype.kind in "fO" else np.float64)
+        for index, value in constant_values.items():
+            X[:, index] = value
+
     if _is_plain_numeric_array(X) and _encoder_selects_nothing(ord_encoder):
         # `passthrough_inf` makes no difference here: it records the +/-inf cells,
         # NaNs them so the encoder does not choke, and writes them back at the same
@@ -36805,6 +37345,12 @@ def clean_data(
 
     # Ensure categories are ordinally encoded
     ord_encoder = get_ordinal_encoder()
+    # Restored by `clean_data_transform`, so these columns carry no information at
+    # predict and never meet a value, e.g. a string, that fit did not see.
+    ord_encoder.constant_values_ = {  # type: ignore[attr-defined]
+        index: X[0, index]
+        for index in feature_schema.indices_for(FeatureModality.CONSTANT)
+    }
 
     if not cat_indices and _is_plain_numeric_array(X):
         # A numeric array holds no string cell, so with no categorical column
@@ -47454,15 +48000,6 @@ _FIT_UNBLOCKED_BYTES = 512 * 1024 * 1024
 _TRANSFORM_BLOCK_BYTES = 32 * 1024 * 1024
 
 
-def _scalar(value: float, like: torch.Tensor) -> torch.Tensor:
-    """A 0-dim tensor of `like`'s dtype and device, to broadcast into `where`.
-
-    `torch.where` takes a Python float directly, but not alongside `out=`; a 0-dim
-    tensor is what lets the result be written straight into an existing buffer.
-    """
-    return torch.full((), value, dtype=like.dtype, device=like.device)
-
-
 def _replace_inf_with_nan(x: torch.Tensor) -> torch.Tensor:
     """Replace Â±inf with NaN so percentile/min/max see only finite values."""
     return torch.where(torch.isinf(x), float("nan"), x)
@@ -47659,15 +48196,24 @@ class TorchSquashingScaler:
 
         # only the output has to exist in full
         out = torch.empty_like(x)
-        nan = _scalar(float("nan"), x)
+        work_dtype = (
+            torch.float32 if x.dtype in (torch.float16, torch.bfloat16) else x.dtype
+        )
+        work_center = center if work_dtype == x.dtype else center.to(work_dtype)
+        work_scale = scale if work_dtype == x.dtype else scale.to(work_dtype)
+        work_nan = torch.full((), float("nan"), dtype=work_dtype, device=x.device)
         block = _block_size(x, dim=0, budget_bytes=_TRANSFORM_BLOCK_BYTES)
         for start in range(0, x.shape[0], block):
             stop = start + block
-            # rows are safe to split on because every step in
-            # `_transform_block` is elementwise
+            x_block = x[start:stop]
+            out_block = out[start:stop]
+            work_x = x_block if work_dtype == x.dtype else x_block.to(work_dtype)
+            work_out = out_block if work_dtype == x.dtype else torch.empty_like(work_x)
             self._transform_block(
-                x[start:stop], out[start:stop], center, scale, zero_mask, nan
+                work_x, work_out, work_center, work_scale, zero_mask, work_nan
             )
+            if work_dtype != x.dtype:
+                out_block.copy_(work_out)
         return out
 
     def _transform_block(
@@ -48607,6 +49153,360 @@ if __name__ == "__main__":
             quantiles=[0.1, 0.5, 0.9],
         )
     )
+
+
+
+================================================
+FILE: tests/test_batched_members.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+"""The inference engines run equal-shape ensemble members as one batched forward."""
+
+from __future__ import annotations
+
+import pickle
+
+import numpy as np
+import pytest
+import torch
+from numpy.random import default_rng
+
+from tabpfn.architectures import tabpfn_v3
+from tabpfn.architectures.interface import EstimatorBatchBudget
+from tabpfn.inference import (
+    InferenceEngineCachePreprocessing,
+    InferenceEngineExplicitKVCache,
+    InferenceEngineOnDemand,
+    _batch_member_inputs,
+    _estimator_batch_budget,
+    _group_equal,
+    _member_groups,
+    _member_key,
+    _members_per_forward,
+    _yield_in_member_order,
+)
+from tabpfn.preprocessing import (
+    PreprocessorConfig,
+    generate_classification_ensemble_configs,
+)
+from tabpfn.preprocessing.ensemble import TabPFNEnsemblePreprocessor
+from tabpfn.preprocessing.torch import FeatureSchema
+from tabpfn.settings import settings
+
+N_TRAIN, N_TEST, N_FEATURES, N_CLASSES, N_MEMBERS = 40, 7, 4, 3, 5
+# The features plus the fingerprint feature the test preprocessor appends.
+N_PREPARED_COLUMNS = N_FEATURES + 1
+CPU = torch.device("cpu")
+ENGINES = ["on_demand", "cache_preprocessing", "explicit_kv_cache"]
+
+
+def _model() -> tabpfn_v3.TabPFNV3:
+    config = tabpfn_v3.TabPFNV3Config(
+        max_num_classes=10,
+        num_buckets=5,
+        embed_dim=32,
+        nlayers=2,
+        icl_num_heads=4,
+        dist_embed_num_heads=4,
+        dist_embed_num_blocks=1,
+        feat_agg_num_heads=4,
+        feat_agg_num_blocks=1,
+        feat_agg_num_cls_tokens=2,
+        dist_embed_num_inducing_points=8,
+    )
+    torch.manual_seed(0)
+    return tabpfn_v3.get_architecture(config).to(torch.float32).eval()
+
+
+def _data() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    rng = default_rng(0)
+    X_train = rng.standard_normal((N_TRAIN, N_FEATURES))
+    y_train = rng.integers(0, N_CLASSES, size=N_TRAIN)
+    return X_train, y_train, rng.standard_normal((N_TEST, N_FEATURES))
+
+
+def _preprocessor(n_members: int = N_MEMBERS) -> TabPFNEnsemblePreprocessor:
+    """Members that differ in feature order and class permutation only, as v3.5's."""
+    configs = generate_classification_ensemble_configs(
+        num_estimators=n_members,
+        add_fingerprint_feature=True,
+        polynomial_features="no",
+        feature_shift_decoder="shuffle",
+        preprocessor_configs=[
+            PreprocessorConfig(
+                "none", categorical_name="numeric", max_features_per_estimator=500
+            )
+        ],
+        class_shift_method="shuffle",
+        n_classes=N_CLASSES,
+        random_state=0,
+        num_models=1,
+        outlier_removal_std=None,
+    )
+    return TabPFNEnsemblePreprocessor(
+        configs=configs,
+        n_samples=N_TRAIN,
+        feature_schema=FeatureSchema.from_only_categorical_indices([], N_FEATURES),
+        random_state=default_rng(0),
+        n_preprocessing_jobs=1,
+    )
+
+
+def _engine(kind: str, model: tabpfn_v3.TabPFNV3) -> object:
+    X_train, y_train, _ = _data()
+    common = {
+        "ensemble_preprocessor": _preprocessor(),
+        "models": [model],
+        "devices": [CPU],
+        "dtype_byte_size": 4,
+        "force_inference_dtype": None,
+        "save_peak_mem": False,
+    }
+    if kind == "on_demand":
+        return InferenceEngineOnDemand(X_train, y_train, **common)
+    if kind == "cache_preprocessing":
+        return InferenceEngineCachePreprocessing(
+            X_train, y_train, inference_mode=True, **common
+        )
+    return InferenceEngineExplicitKVCache(
+        X_train, y_train, autocast=False, task_type="multiclass", **common
+    )
+
+
+def _predict(engine: object) -> list[tuple[torch.Tensor, object]]:
+    _, _, X_test = _data()
+    return list(engine.iter_outputs(X_test, autocast=False, task_type="multiclass"))  # type: ignore[attr-defined]
+
+
+@torch.no_grad()
+@pytest.mark.parametrize("kind", ENGINES)
+def test__iter_outputs__batched_matches_sequential_in_member_order(
+    kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = _model()
+    batched = _predict(_engine(kind, model))
+
+    monkeypatch.setattr(
+        type(model),
+        "estimator_batch_budget",
+        property(lambda _: EstimatorBatchBudget(rows=0, cells=0)),
+    )
+    sequential = _predict(_engine(kind, model))
+
+    assert len(batched) == len(sequential) == N_MEMBERS
+    for (out_b, config_b), (out_s, config_s) in zip(batched, sequential, strict=True):
+        assert repr(config_b) == repr(config_s)
+        assert out_b.shape == out_s.shape == (N_TEST, 10)
+        torch.testing.assert_close(out_b, out_s, atol=1e-5, rtol=1e-5)
+
+
+@torch.no_grad()
+@pytest.mark.parametrize("kind", ENGINES)
+def test__iter_outputs__row_budget_bounds_the_rows_per_forward(
+    kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A budget of two members' rows splits the work; the outputs are unchanged.
+
+    The engines that run the full forward at predict split the members into
+    forwards of at most two. The KV-cache engine builds the cache in forwards of
+    at most two members, but the cache still holds every member, and predict
+    splits the test rows instead.
+    """
+    model = _model()
+    reference = _predict(_engine(kind, model))
+    cached = kind == "explicit_kv_cache"
+    rows = N_TEST if cached else N_TRAIN + N_TEST
+    monkeypatch.setattr(
+        settings.tabpfn, "max_batched_estimator_cells", 2 * rows * N_PREPARED_COLUMNS
+    )
+    calls: list[tuple[int, int]] = []
+    original = type(model).forward
+
+    def counting(
+        self: object, x: torch.Tensor, *args: object, **kwargs: object
+    ) -> object:
+        calls.append((x.shape[1], x.shape[0]))
+        return original(self, x, *args, **kwargs)
+
+    monkeypatch.setattr(type(model), "forward", counting)
+    engine = _engine(kind, model)
+    build_calls, calls = calls, []
+    outputs = _predict(engine)
+
+    if cached:
+        assert engine.cache_groups == [list(range(N_MEMBERS))]  # type: ignore[attr-defined]
+        assert all(batch <= 2 * N_TEST // N_TRAIN + 1 for batch, _ in build_calls)
+        assert sum(batch for batch, _ in build_calls) == N_MEMBERS
+        (batch,) = {batch for batch, _ in calls}
+        assert batch == N_MEMBERS
+        assert all(rows <= 2 * N_TEST // batch for _, rows in calls)
+        assert sum(rows for _, rows in calls) == N_TEST
+    else:
+        assert not build_calls
+        assert all(batch <= 2 for batch, _ in calls)
+        assert sum(batch for batch, _ in calls) == N_MEMBERS
+    for (out, _), (expected, _) in zip(outputs, reference, strict=True):
+        torch.testing.assert_close(out, expected, atol=1e-5, rtol=1e-5)
+
+
+@torch.no_grad()
+def test__explicit_kv_cache__one_cache_holds_all_members() -> None:
+    engine = _engine("explicit_kv_cache", _model())
+    assert isinstance(engine, InferenceEngineExplicitKVCache)
+    assert engine.cache_groups == [list(range(N_MEMBERS))]
+    (cache,) = engine.kv_caches
+    assert cache.train_shape == (N_MEMBERS, N_TRAIN)
+    for entry in cache.kv.values():
+        assert entry.key.shape[0] == N_MEMBERS
+
+
+@torch.no_grad()
+def test__explicit_kv_cache__built_one_member_at_a_time_matches_one_forward(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The row budget bounds the build; the concatenated cache predicts the same."""
+    model = _model()
+    expected = _predict(_engine("explicit_kv_cache", model))
+
+    monkeypatch.setattr(settings.tabpfn, "max_batched_estimator_rows", N_TRAIN)
+    engine = _engine("explicit_kv_cache", model)
+    assert isinstance(engine, InferenceEngineExplicitKVCache)
+    assert engine.cache_groups == [list(range(N_MEMBERS))]
+    (cache,) = engine.kv_caches
+    assert cache.train_shape == (N_MEMBERS, N_TRAIN)
+    for (out, _), (out_expected, _) in zip(_predict(engine), expected, strict=True):
+        torch.testing.assert_close(out, out_expected, atol=1e-5, rtol=1e-5)
+
+
+@torch.no_grad()
+def test__explicit_kv_cache__zero_budget_keeps_one_cache_per_member(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model = _model()
+    expected = _predict(_engine("explicit_kv_cache", model))
+
+    monkeypatch.setattr(settings.tabpfn, "max_batched_estimator_rows", 0)
+    engine = _engine("explicit_kv_cache", model)
+    assert isinstance(engine, InferenceEngineExplicitKVCache)
+    assert engine.cache_groups == [[i] for i in range(N_MEMBERS)]
+    assert all(cache.train_shape == (1, N_TRAIN) for cache in engine.kv_caches)
+    for (out, _), (out_expected, _) in zip(_predict(engine), expected, strict=True):
+        torch.testing.assert_close(out, out_expected, atol=1e-5, rtol=1e-5)
+
+
+@torch.no_grad()
+def test__explicit_kv_cache__pickled_copy_predicts_the_same() -> None:
+    engine = _engine("explicit_kv_cache", _model())
+    assert isinstance(engine, InferenceEngineExplicitKVCache)
+    expected = _predict(engine)
+
+    copy = pickle.loads(pickle.dumps(engine._create_copy_for_pickling()))  # noqa: S301
+    copy._set_models([engine.model_caches[0].get(CPU)])
+    copy.to([CPU], None, 4)
+    for (out, _), (out_expected, _) in zip(_predict(copy), expected, strict=True):
+        torch.testing.assert_close(out, out_expected, atol=1e-5, rtol=1e-5)
+
+
+def test__member_key__runs_members_alone_on_mps() -> None:
+    engine = _engine("cache_preprocessing", _model())
+    assert isinstance(engine, InferenceEngineCachePreprocessing)
+    member = engine.ensemble_members[0]
+    key = _member_key(member, 0, engine.model_caches, [CPU])
+    assert key == (0, (N_TRAIN, N_PREPARED_COLUMNS))
+    mps = [torch.device("mps")]
+    assert _member_key(member, 0, engine.model_caches, mps) == ("single", 0)
+
+
+def test__explicit_kv_cache__refuses_to_move_a_batched_cache_to_mps() -> None:
+    engine = _engine("explicit_kv_cache", _model())
+    assert isinstance(engine, InferenceEngineExplicitKVCache)
+    with pytest.raises(RuntimeError, match="cannot be used on MPS"):
+        engine._move_models_to_devices([torch.device("mps")])
+
+
+def test__member_groups__splits_by_key_and_size() -> None:
+    keys = [("a",), ("b",), ("a",), ("a",), ("b",), ("a",)]
+    assert _group_equal(keys) == [[0, 2, 3, 5], [1, 4]]
+    assert _member_groups(keys, 2) == [[0, 2], [3, 5], [1, 4]]
+    assert _member_groups(keys, 0) == [[0], [2], [3], [5], [1], [4]]
+
+
+def test__member_groups__spreads_over_devices_before_batching() -> None:
+    """Every device gets a group; only the members left per device share one."""
+    keys = [("a",)] * 8
+    assert _member_groups(keys, 100, num_devices=2) == [
+        [0, 1, 2, 3],
+        [4, 5, 6, 7],
+    ]
+    assert _member_groups(keys, 100, num_devices=3) == [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7],
+    ]
+    assert _member_groups(keys, 100, num_devices=16) == [[i] for i in range(8)]
+    assert _member_groups(keys, 3, num_devices=2) == [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7],
+    ]
+
+
+def test__members_per_forward__follows_the_tighter_of_both_budgets() -> None:
+    budget = EstimatorBatchBudget(rows=10_000, cells=10_000)
+    assert _members_per_forward(100, 10, budget) == 10
+    assert _members_per_forward(100, 20, budget) == 5
+    assert _members_per_forward(2000, 10, budget) == 1
+    budget = EstimatorBatchBudget(rows=10_000, cells=10**9)
+    assert _members_per_forward(100, 20, budget) == 100
+    assert _members_per_forward(4000, 1, budget) == 2
+    assert _members_per_forward(1, 1, EstimatorBatchBudget(rows=0, cells=10**9)) == 1
+
+
+def test__estimator_batch_budget__model_default_then_settings_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The architecture's config sets the budget; a setting overrides one part."""
+    model = _model()
+    assert _estimator_batch_budget(model) == EstimatorBatchBudget(
+        rows=32_768, cells=768 * 1_000_000
+    )
+    config = tabpfn_v3.TabPFNV3Config(
+        max_num_classes=10, num_buckets=5, max_batched_estimator_rows=5
+    )
+    small = tabpfn_v3.get_architecture(config)
+    assert _estimator_batch_budget(small).rows == 5
+    monkeypatch.setattr(settings.tabpfn, "max_batched_estimator_rows", 7)
+    assert _estimator_batch_budget(small) == EstimatorBatchBudget(
+        rows=7, cells=768 * 1_000_000
+    )
+
+
+def test__batch_member_inputs__lays_members_along_the_batch_dimension() -> None:
+    xs = [torch.full((6, 1, 3), float(i)) for i in range(4)]
+    ys = [torch.full((4,), float(i)) for i in range(4)]
+    X, y = _batch_member_inputs(xs, ys)
+    assert X.shape == (6, 4, 3)
+    assert y.shape == (4, 4)
+    assert torch.equal(X[:, 2], xs[2][:, 0])
+    assert torch.equal(y[:, 2], ys[2])
+    _, y_2d = _batch_member_inputs(xs, [y.unsqueeze(1) for y in ys])
+    assert torch.equal(y_2d, y)
+    X1, y1 = _batch_member_inputs(xs[:1], ys[:1])
+    assert X1 is xs[0]
+    assert y1 is ys[0]
+
+
+def test__yield_in_member_order__reorders_and_streams() -> None:
+    groups = [[2, 3], [0], [1]]
+    outputs = iter(
+        [
+            [([1], torch.tensor([[3.0]])), ([0], torch.tensor([[2.0]]))],
+            [([0], torch.tensor([[0.0]]))],
+            [([0], torch.tensor([[1.0]]))],
+        ]
+    )
+    result = list(_yield_in_member_order(groups, outputs, total=4))
+    assert [float(r) for r in result] == [0.0, 1.0, 2.0, 3.0]
 
 
 
@@ -52627,6 +53527,11 @@ device_combinations = [
 ]
 
 
+def _batched_cache_moved_onto_mps(fit_mode: str, device_1: str, device_2: str) -> bool:
+    """A KV cache built for a batch of members off MPS refuses to move onto MPS."""
+    return fit_mode == "fit_with_cache" and device_2 == "mps" and device_1 != "mps"
+
+
 @pytest.mark.parametrize(("device_1", "device_2"), device_combinations)
 @pytest.mark.parametrize("estimator_class", [TabPFNRegressor, TabPFNClassifier])
 @pytest.mark.parametrize(
@@ -52659,6 +53564,10 @@ def test__to__between_fit_and_predict__does_not_crash(
     estimator = estimator_class(fit_mode=fit_mode, device=device_1, n_estimators=2)
     X_train, X_test, y_train = _get_tiny_dataset(estimator)
     estimator.fit(X_train, y_train)
+    if _batched_cache_moved_onto_mps(fit_mode, device_1, device_2):
+        with pytest.raises(RuntimeError, match="cannot be used on MPS"):
+            estimator.to(device_2)
+        return
     estimator.to(device_2)
     estimator.predict(X_test)
 
@@ -52684,6 +53593,10 @@ def test__to__between_fits__outputs_equal(
     X_train, X_test, y_train = _get_tiny_dataset(estimator)
     estimator.fit(X_train, y_train)
     prediction_1 = estimator.predict(X_test)
+    if _batched_cache_moved_onto_mps(fit_mode, device_1, device_2):
+        with pytest.raises(RuntimeError, match="cannot be used on MPS"):
+            estimator.to(device_2)
+        return
     estimator.to(device_2)
     estimator.fit(X_train, y_train)
     prediction_2 = estimator.predict(X_test)
@@ -56009,7 +56922,11 @@ from torch import Tensor, nn
 
 from tabpfn import TabPFNClassifier, TabPFNRegressor
 from tabpfn.architectures import tabpfn_v2
-from tabpfn.architectures.interface import Architecture, PerformanceOptions
+from tabpfn.architectures.interface import (
+    DEFAULT_ESTIMATOR_BATCH_BUDGET,
+    Architecture,
+    PerformanceOptions,
+)
 from tabpfn.architectures.kv_cache import KVCacheEntry
 from tabpfn.architectures.shared import workaround_mps_linear_bug
 from tabpfn.architectures.shared.workaround_mps_linear_bug import MpsSafeLinear
@@ -56037,6 +56954,8 @@ from .utils import get_pytest_devices, get_pytest_devices_with_mps_marked_slow
 
 
 class _TestModel(Architecture):
+    estimator_batch_budget = DEFAULT_ESTIMATOR_BATCH_BUDGET
+
     def __init__(self) -> None:
         """Create a new instance."""
         super().__init__()
@@ -56082,10 +57001,12 @@ class _TestModel(Architecture):
         assert isinstance(x, Tensor)
         assert isinstance(y, Tensor)
         self.received_task_type = task_type
-        n_train_test, _, _ = x.shape
-        n_train, _ = y.shape
-        test_rows = n_train_test - n_train
-        return x.sum(-2, keepdim=True).sum(-1, keepdim=True).reshape(-1, test_rows)
+        n_train = y.shape[0]
+        # (test rows, batch, 1): each test row's feature sum plus the train rows'
+        # mean feature sum, per batch element, so the output depends on both
+        return x[n_train:].sum(-1, keepdim=True) + x[:n_train].sum(
+            -1, keepdim=True
+        ).mean(0, keepdim=True)
 
     @property
     @override
@@ -56101,6 +57022,8 @@ class _TestModel(Architecture):
 
 
 class _TestModelLegacy(Architecture):
+    estimator_batch_budget = DEFAULT_ESTIMATOR_BATCH_BUDGET
+
     """A test model whose forward pass doesn't have task_type argument."""
 
     def __init__(self) -> None:
@@ -56125,10 +57048,12 @@ class _TestModelLegacy(Architecture):
         """Perform a forward pass."""
         assert isinstance(x, Tensor)
         assert isinstance(y, Tensor)
-        n_train_test, _, _ = x.shape
-        n_train, _ = y.shape
-        test_rows = n_train_test - n_train
-        return x.sum(-2, keepdim=True).sum(-1, keepdim=True).reshape(-1, test_rows)
+        n_train = y.shape[0]
+        # (test rows, batch, 1): each test row's feature sum plus the train rows'
+        # mean feature sum, per batch element, so the output depends on both
+        return x[n_train:].sum(-1, keepdim=True) + x[:n_train].sum(
+            -1, keepdim=True
+        ).mean(0, keepdim=True)
 
     @property
     @override
@@ -56144,6 +57069,8 @@ class _TestModelLegacy(Architecture):
 
 
 class _TestModelWithKVCache(Architecture):
+    estimator_batch_budget = DEFAULT_ESTIMATOR_BATCH_BUDGET
+
     """A test model that supports explicit KV cache forward kwargs.
 
     Counters track how often each path runs so tests can assert that the
@@ -56173,36 +57100,26 @@ class _TestModelWithKVCache(Architecture):
     ) -> Tensor | tuple[Tensor, TabPFNV3Cache]:
         assert isinstance(x, Tensor)
         assert isinstance(y, Tensor)
-        n_rows = x.shape[0]
         n_train = y.shape[0]
-        if x_is_test_only:
-            # Test-only path: x carries only test rows
-            test_rows = n_rows
-            output = (
-                x.sum(-2, keepdim=True).sum(-1, keepdim=True).reshape(-1, test_rows)
-            )
-        else:
-            test_rows = n_rows - n_train
-            if test_rows > 0:
-                output = (
-                    x.sum(-2, keepdim=True).sum(-1, keepdim=True).reshape(-1, test_rows)
-                )
-            else:
-                # Train-only call (e.g. _build_cache) â€” output is discarded
-                output = x.new_zeros(1, 1)
-
+        batch = x.shape[1]
+        # (test rows, batch, 1): each test row's feature sum, per batch element. On
+        # the test-only path x carries only test rows; a train-only call (e.g.
+        # _build_cache) has no test rows and its output is discarded.
+        test_x = x if x_is_test_only else x[n_train:]
+        output = test_x.sum(-1, keepdim=True)
         if return_kv_cache:
             self.cache_build_count += 1
             self.cache_build_task_type = task_type
-            # Build a dummy cache with a single KVCacheEntry
+            # Build a dummy cache with a single KVCacheEntry, one batch position
+            # per ensemble member in the batch
             dummy_kv = KVCacheEntry(
-                key=torch.zeros(1, n_train, 1, 1, device=x.device),
-                value=torch.zeros(1, n_train, 1, 1, device=x.device),
+                key=torch.zeros(batch, n_train, 1, 1, device=x.device),
+                value=torch.zeros(batch, n_train, 1, 1, device=x.device),
             )
             cache = TabPFNV3Cache(
                 kv={0: dummy_kv},
-                decoder_keys=torch.zeros(1, n_train, 1, 1, device=x.device),
-                train_shape=(1, n_train),
+                decoder_keys=torch.zeros(batch, n_train, 1, 1, device=x.device),
+                train_shape=(batch, n_train),
             )
             return output, cache
 
@@ -56550,18 +57467,22 @@ def test__explicit_kv_cache__produces_outputs() -> None:
         autocast=False,
         task_type="multiclass",
     )
-    # _build_cache runs once per ensemble member during engine construction.
-    assert model.cache_build_count == n_configs
+    # _build_cache runs once per group of members sharing a prepared shape; the
+    # two preprocessor configs give two shapes, so two caches for three members.
+    assert len(engine.kv_caches) == len(engine.cache_groups) == 2
+    assert sorted(i for group in engine.cache_groups for i in group) == list(
+        range(n_configs)
+    )
+    assert model.cache_build_count == len(engine.kv_caches)
     assert model.cache_used_count == 0
-    assert len(engine.kv_caches) == n_configs
 
     outputs = list(engine.iter_outputs(X_test, autocast=False, task_type="multiclass"))
     assert len(outputs) == n_configs
     for output, _config in outputs:
         assert isinstance(output, Tensor)
     # Predict consumed each cache once and did not rebuild any of them.
-    assert model.cache_build_count == n_configs
-    assert model.cache_used_count == n_configs
+    assert model.cache_build_count == len(engine.kv_caches)
+    assert model.cache_used_count == len(engine.kv_caches)
 
 
 def test__explicit_kv_cache__drops_member_train_features_after_build() -> None:
@@ -61197,6 +62118,7 @@ from tabpfn.validation import ensure_compatible_predict_input_sklearn
 
 from .utils import (
     get_pytest_devices,
+    get_pytest_devices_with_mps_marked_slow,
     is_cpu_float16_supported,
     mark_mps_configs_as_slow,
     patch_layernorm_no_affine,
@@ -61982,6 +62904,51 @@ def test_constant_feature_handling(X_y: tuple[np.ndarray, np.ndarray]) -> None:
         decimal=5,  # Allow small numerical differences
         err_msg="Predictions changed after adding constant features",
     )
+
+
+@pytest.mark.parametrize("offset", [1e8, 1e10, -1e10])
+def test_predictions_shift_with_a_target_offset_far_above_its_spread(
+    X_y: tuple[np.ndarray, np.ndarray], offset: float
+) -> None:
+    X, y = X_y
+    reference = TabPFNRegressor(n_estimators=2, random_state=42).fit(X, y)
+    shifted = TabPFNRegressor(n_estimators=2, random_state=42).fit(X, y + offset)
+
+    expected = reference.predict(X, output_type="main")
+    actual = shifted.predict(X, output_type="main")
+    atol = 1e-3 * np.std(y)
+    for key in ("mean", "median", "mode"):
+        np.testing.assert_allclose(actual[key] - offset, expected[key], atol=atol)
+    for got, want in zip(actual["quantiles"], expected["quantiles"], strict=True):
+        np.testing.assert_allclose(got - offset, want, atol=atol)
+
+
+@pytest.mark.parametrize("offset", [0.0, 1e10])
+def test_full_output_criterion_mean_matches_the_predicted_mean(
+    X_y: tuple[np.ndarray, np.ndarray], offset: float
+) -> None:
+    X, y = X_y
+    model = TabPFNRegressor(n_estimators=2, random_state=42, device="cpu")
+    full = model.fit(X, y + offset).predict(X, output_type="full")
+
+    criterion_mean = full["criterion"].mean(full["logits"]).cpu().numpy()
+    np.testing.assert_allclose(criterion_mean, full["mean"], atol=1e-3 * np.std(y))
+
+
+@pytest.mark.parametrize("via_device", get_pytest_devices_with_mps_marked_slow())
+def test_raw_space_bardist_is_float64_after_a_round_trip_through_a_device(
+    X_y: tuple[np.ndarray, np.ndarray], via_device: str
+) -> None:
+    X, y = X_y
+    model = TabPFNRegressor(n_estimators=2, random_state=42, device="cpu")
+    model.fit(X, y + 1e10)
+    model.to(via_device)
+    model.to("cpu")
+
+    assert model.raw_space_bardist_.borders.dtype == torch.float64
+    full = model.predict(X, output_type="full")
+    criterion_mean = full["criterion"].mean(full["logits"]).cpu().numpy()
+    np.testing.assert_allclose(criterion_mean, full["mean"], atol=1e-3 * np.std(y))
 
 
 @pytest.mark.parametrize("constant_value", [0.0, 1.0, -1.0, 1e-5, -1e-5, 1e5, -1e5])
@@ -63274,8 +64241,8 @@ def _assert_roundtrip_predictions(
 ) -> None:
     """Check that a save/load round-trip produced an equivalent model.
 
-    Same-device round-trips must reproduce predictions near-exactly, so we
-    assert numerical equivalence. Cross-device round-trips (e.g.
+    Same-device round-trips must reproduce predictions to float32 precision, so
+    we assert numerical equivalence. Cross-device round-trips (e.g.
     ``cpu``<->``cuda``) cannot: CPU and GPU use different default inference
     precisions and different matmul/attention kernels whose summation order
     differs, so bit-identity is unattainable. For those we only verify that the
@@ -63299,9 +64266,19 @@ def _assert_roundtrip_predictions(
         return
 
     # Same device: the round-trip must be numerically faithful.
-    np.testing.assert_array_almost_equal(original_preds, loaded_preds)
     if isinstance(original, TabPFNClassifier):
+        np.testing.assert_array_almost_equal(original_preds, loaded_preds)
         np.testing.assert_array_almost_equal(original_probas, loaded_probas)
+    else:
+        # original_preds = (y_train_std * z) + y_train_mean
+        # z is computed in float32, so its error grows with |z|, and the
+        # predictions must agree to float32 error scaled by y_train_std * |z|.
+        y_train_std_abs_z = np.abs(original_preds - original.y_train_mean_)
+        min_abs_z = 1.0
+        atol = 1e-6 * max(
+            float(np.max(y_train_std_abs_z)), original.y_train_std_ * min_abs_z
+        )
+        np.testing.assert_allclose(loaded_preds, original_preds, rtol=0, atol=atol)
 
 
 @pytest.mark.parametrize(
@@ -66283,6 +67260,7 @@ from tabpfn.architectures import tabpfn_v3, tabpfn_v3_5
 from tabpfn.architectures.kv_cache import (
     FP8_KV_DTYPE,
     KVCacheEntry,
+    QuantizedKVCacheEntry,
     _dequantize_tensor,
     _quantize_tensor,
 )
@@ -66446,6 +67424,71 @@ def test_classifier_fp8_cache_end_to_end_on_cpu() -> None:
     proba = clf.predict_proba(X[40:])
     assert np.all(np.isfinite(proba))
     assert proba.shape == (20, 2)
+
+
+def test__quantize__batched_entry_keeps_each_batch_element_its_own_scale() -> None:
+    """A batched entry quantizes like its members quantized one by one."""
+    torch.manual_seed(0)
+    key = torch.randn(3, 16, 2, 4) * torch.tensor([1.0, 10.0, 100.0]).view(3, 1, 1, 1)
+    value = torch.randn(3, 16, 2, 4)
+    batched = KVCacheEntry(key=key, value=value).quantize(torch.int8)
+    assert batched.key_scale.shape == (3, 1, 1, 1)
+    for i in range(3):
+        single = KVCacheEntry(key=key[i : i + 1], value=value[i : i + 1]).quantize(
+            torch.int8
+        )
+        assert single.key_scale.dim() == 0
+        torch.testing.assert_close(batched.key[i : i + 1], single.key)
+        torch.testing.assert_close(batched.key_scale[i].reshape(()), single.key_scale)
+        torch.testing.assert_close(
+            batched.dequantize(torch.float32).key[i : i + 1],
+            single.dequantize(torch.float32).key,
+        )
+
+
+def test__concatenate__quantized_entries_keep_their_scales() -> None:
+    """Concatenated entries dequantize like the parts, scalar scales included."""
+    torch.manual_seed(0)
+    parts = [
+        KVCacheEntry(key=torch.randn(b, 8, 2, 4) * s, value=torch.randn(b, 8, 2, 4))
+        for b, s in ((1, 1.0), (2, 50.0))
+    ]
+    quantized = [part.quantize(torch.int8) for part in parts]
+    joined = QuantizedKVCacheEntry.concatenate(quantized)
+    assert joined.key.shape == (3, 8, 2, 4)
+    assert joined.key_scale.shape == joined.value_scale.shape == (3, 1, 1, 1)
+    expected = torch.cat([q.dequantize(torch.float32).key for q in quantized])
+    torch.testing.assert_close(joined.dequantize(torch.float32).key, expected)
+
+
+def test__concatenate__v3p5_cache_joins_every_field_along_the_batch() -> None:
+    """Each field concatenates on its batch axis; the sources give up their layers."""
+
+    def cache(batch: int) -> tabpfn_v3_5.TabPFNV3p5Cache:
+        return tabpfn_v3_5.TabPFNV3p5Cache(
+            kv={
+                0: KVCacheEntry(
+                    key=torch.full((batch, 5, 1, 2), float(batch)),
+                    value=torch.zeros(batch, 5, 1, 2),
+                )
+            },
+            decoder_keys=torch.zeros(batch, 5, 2, 3),
+            train_shape=(batch, 5),
+            scaler_cache={"mean": torch.zeros(batch, 4), "std": torch.ones(batch, 4)},
+            ecdf_context=torch.zeros(3, batch, 4, 5),
+            inducing_hidden=[torch.zeros(batch * 4, 2, 6)],
+        )
+
+    parts = [cache(1), cache(2)]
+    joined = tabpfn_v3_5.TabPFNV3p5Cache.concatenate(parts)
+    assert joined.train_shape == (3, 5)
+    assert joined.kv[0].key.shape == (3, 5, 1, 2)
+    torch.testing.assert_close(joined.kv[0].key[:, 0, 0, 0], torch.tensor([1.0, 2, 2]))
+    assert joined.decoder_keys.shape == (3, 5, 2, 3)
+    assert joined.scaler_cache["mean"].shape == (3, 4)
+    assert joined.ecdf_context.shape == (3, 3, 4, 5)
+    assert joined.inducing_hidden[0].shape == (12, 2, 6)
+    assert all(not part.kv for part in parts)
 
 
 
@@ -66773,6 +67816,89 @@ def test__dispatch_mlx_matches_sdpa_reference(
     ref = ref.permute(0, 2, 1, 3).half()  # back to BSHD
 
     torch.testing.assert_close(out_mlx.cpu(), ref.cpu(), atol=1e-2, rtol=1e-2)
+
+
+
+================================================
+FILE: tests/test_architectures/test_regression_target_projection.py
+================================================
+# Copyright (c) Prior Labs GmbH 2026.
+
+"""Regression target projections must not require a runtime compiler."""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+import torch
+from torch.torch_version import TorchVersion
+
+from tests.test_architectures.test_tabpfn_v3 import _get_regression_model
+from tests.test_architectures.test_tabpfn_v3_5 import _get_model
+
+
+@pytest.mark.parametrize("version", ["v3", "v3.5"])
+def test_regression_target_projection(version: str) -> None:
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = (_get_regression_model() if version == "v3" else _get_model()).to(device)
+    targets = torch.randn(1002, 8, device=device).T.requires_grad_()
+    kwargs = {} if version == "v3" else {"task_type": "regression"}
+    for stage in ("col", "icl"):
+        project = getattr(model, f"_embed_{stage}_y")
+        expected = torch.cat([project(row[None], **kwargs) for row in targets])
+        expected_grad = torch.autograd.grad(expected.square().sum(), targets)[0]
+        actual = project(targets, **kwargs)
+        actual_grad = torch.autograd.grad(actual.square().sum(), targets)[0]
+        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(actual_grad, expected_grad)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA unavailable")
+@pytest.mark.skipif(
+    TorchVersion(torch.__version__) < TorchVersion("2.13"),
+    reason="Eager Triton outer-product dispatch requires Torch 2.13+",
+)
+def test_regression_target_projection_without_compiler(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tests.test_architectures.test_regression_target_projection",
+        ],
+        cwd=Path(__file__).resolve().parents[2],
+        env={**os.environ, "TRITON_CACHE_DIR": str(tmp_path)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def _check_without_compiler() -> None:
+    from triton.runtime import build  # noqa: PLC0415
+
+    def reject_compilation(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Regression target encoding requested a C compiler")
+
+    build._build = reject_compilation
+    targets = torch.randn(1002, 8, device="cuda").T
+    with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+        for version in ("v3", "v3.5"):
+            model = (
+                _get_regression_model() if version == "v3" else _get_model()
+            ).cuda()
+            kwargs = {} if version == "v3" else {"task_type": "regression"}
+            for stage in ("col", "icl"):
+                getattr(model, f"_embed_{stage}_y")(targets, **kwargs)
+        torch.cuda.synchronize()
+
+
+if __name__ == "__main__":
+    _check_without_compiler()
 
 
 
@@ -67699,7 +68825,7 @@ def test__mem_eff_forward_matches_standard_forward() -> None:
 
     # Memory-efficient path: small fixed chunk sizes to force chunking
     # even on this tiny dataset.
-    arch.inference_row_chunk_size = 50
+    arch.inference_chunk_cells = 50 * 2 * 20  # 50 rows of the (100, 2, 20) inputs
     arch.inference_col_chunk_size = 10
     output_mem_eff = arch(
         x,
@@ -67743,7 +68869,7 @@ def test__chunked_inference_recovers_from_oom(
     expected = arch(x, y, only_return_standard_out=False)
 
     # Force chunking so the inducing-hidden (column) recovery path is exercised.
-    arch.inference_row_chunk_size = 50
+    arch.inference_chunk_cells = 50 * 2 * 20  # 50 rows of the (100, 2, 20) inputs
     arch.inference_col_chunk_size = 10
 
     # Raise a single OOM the first time a column chunk is processed, so the
@@ -67857,11 +68983,11 @@ def test__kv_cache__multiclass_matches_standard() -> None:
 
 @torch.no_grad()
 def test__kv_cache__row_chunked_matches_unchunked() -> None:
-    """Cached forward with a small inference_row_chunk_size must match unchunked.
+    """Cached forward with a small inference_chunk_cells must match unchunked.
 
     Exercises the chunked branch of ``_forward_with_cache`` (R_test >
     row_chunk_size), which the existing cache tests don't hit because
-    ``inference_row_chunk_size="auto"`` short-circuits to a single chunk
+    a large ``inference_chunk_cells`` short-circuits to a single chunk
     on small R_test.
     """
     arch = _get_regression_model()
@@ -67877,7 +69003,7 @@ def test__kv_cache__row_chunked_matches_unchunked() -> None:
     _, cache = arch(x, y, performance_options=perf, return_kv_cache=True)
 
     # Force multi-chunk test-row processing: 10 test rows / 3 per chunk = 4 chunks
-    arch.inference_row_chunk_size = 3
+    arch.inference_chunk_cells = 3 * 5  # 3 rows of the 5-column inputs
     out_cached_chunked = arch(x, y, performance_options=perf, kv_cache=cache)
 
     assert torch.allclose(out_standard, out_cached_chunked, atol=1e-6), (
@@ -68431,6 +69557,37 @@ def test__kv_cache__adaptive__stores_the_grid_the_train_call_left() -> None:
         assert entry.key.dtype == FP8_KV_DTYPE
 
 
+@torch.no_grad()
+def test__row_chunking__shares_the_chunk_rows_over_the_batch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A batch of B members runs B times as many, B times smaller row chunks."""
+    arch = _get_regression_model().eval()  # chunked inference is off in training
+    arch.inference_chunk_cells = 8 * 5  # 8 rows of the 5-column inputs
+    perf = PerformanceOptions(use_chunkwise_inference=True)
+    torch.manual_seed(0)
+    x = torch.randn(32, 4, 5) * 0.1
+    y = torch.randn(16, 4)
+
+    chunks: list[int] = []
+    original = tabpfn_v3.TabPFNV3._process_row_chunk
+
+    def counting(self: tabpfn_v3.TabPFNV3, *args: object, **kwargs: object) -> object:
+        chunks.append(1)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(tabpfn_v3.TabPFNV3, "_process_row_chunk", counting)
+    out_batched = arch(x, y, performance_options=perf)
+    batched_chunks = len(chunks)
+    chunks.clear()
+    out_single = arch(x[:, :1], y[:, :1], performance_options=perf)
+    single_chunks = len(chunks)
+
+    assert single_chunks == 32 // 8
+    assert batched_chunks == 4 * single_chunks
+    torch.testing.assert_close(out_batched[:, :1], out_single, atol=1e-5, rtol=1e-5)
+
+
 
 ================================================
 FILE: tests/test_architectures/test_tabpfn_v3_5.py
@@ -68499,7 +69656,7 @@ _SMALL_CONFIG: dict[str, object] = {
     "feat_agg_num_cls_tokens": 2,
     "dist_embed_num_inducing_points": 8,
     # Small enough that the chunked inference path splits the test inputs.
-    "inference_row_chunk_size": 8,
+    "inference_chunk_cells": 8 * NUM_FEATURES,
     "inference_col_chunk_size": 2,
 }
 
@@ -68589,7 +69746,9 @@ def test__config__defaults__match_the_v3_5_checkpoint() -> None:
         "cell_ecdf_num_frequencies": 4,
         "cell_ecdf_num_buckets": 8192,
         "cell_embed_row_chunk_size": 2048,
-        "inference_row_chunk_size": 2048,
+        "inference_chunk_cells": 2048 * 768,
+        "max_batched_estimator_rows": 32_768,
+        "max_batched_estimator_cells": 768 * 1_000_000,
         "inference_col_chunk_size": 4,
     }
 
@@ -68953,6 +70112,31 @@ def test__in_context_ecdf__buckets_cover_every_value__matches_exact_midranks(
     assert torch.equal(ranks, _exact_midranks(x_BRiC, x_BRiC.shape[1]))
 
 
+def test__in_context_ecdf__out_of_range_values__get_the_extremes_midrank() -> None:
+    """A tied extreme, not 0 or 1, bounds the rank of an out-of-range value.
+
+    Without the bound, the rank gap between the top train value and anything
+    above it grows with the tie block while the value gap stays one step.
+    """
+    tie = 12
+    train = torch.arange(35.0).repeat_interleave(tie)
+    num_train = train.numel()
+    queries = torch.tensor([-7.0, -1.0, 35.0, 99.0])
+    x_BRiC = torch.cat([train, queries]).reshape(1, -1, 1)
+
+    ranks = tabpfn_v3_5._in_context_ecdf(
+        x_BRiC, tabpfn_v3_5._build_ecdf_context(x_BRiC, num_train, 8192)
+    )
+    train_ranks = ranks[0, :num_train, 0]
+    below, above = ranks[0, num_train:, 0][:2], ranks[0, num_train:, 0][2:]
+
+    assert torch.allclose(below, train_ranks.min().expand(2))
+    assert torch.allclose(above, train_ranks.max().expand(2))
+    # The midranks of the end blocks, i.e. half a block inside the [0, 1] ends.
+    assert torch.allclose(below, torch.tensor(0.5 * tie / num_train))
+    assert torch.allclose(above, torch.tensor(1.0 - 0.5 * tie / num_train))
+
+
 def test__build_ecdf_context__dense_values_in_a_wide_range__keep_their_rank() -> None:
     """Edges must follow the rows, not the distinct values, once they run out.
 
@@ -69127,7 +70311,7 @@ def test__kv_cache__x_is_test_only_without_cache__raises() -> None:
 
 @torch.no_grad()
 def test__kv_cache__row_chunked_matches_unchunked() -> None:
-    """Cached forward with a small inference_row_chunk_size must match unchunked."""
+    """Cached forward with a small inference_chunk_cells must match unchunked."""
     arch = _get_model()
     x, y = _inputs("regression")
     perf = PerformanceOptions(use_chunkwise_inference=False)
@@ -69138,7 +70322,7 @@ def test__kv_cache__row_chunked_matches_unchunked() -> None:
     )
 
     # Force multi-chunk test-row processing: 4 test rows / 3 per chunk = 2 chunks.
-    arch.inference_row_chunk_size = 3
+    arch.inference_chunk_cells = 3 * NUM_FEATURES
     out_cached_chunked = arch(
         x, y, task_type="regression", performance_options=perf, kv_cache=cache
     )
@@ -69337,18 +70521,32 @@ def test__kv_cache__layerwise_quantization_matches_post_forward(
         actual = layerwise.kv[layer_idx]
         assert isinstance(expected, QuantizedKVCacheEntry)
         assert isinstance(actual, QuantizedKVCacheEntry)
-        # torch.equal lacks CPU float8 support in the lowest supported PyTorch.
-        # Comparing after an exact float32 widening works for int8 and float8.
-        assert torch.equal(actual.key.float(), expected.key.float())
-        assert torch.equal(actual.value.float(), expected.value.float())
-        # The scales are an absmax over a fresh forward pass, and BLAS on some
-        # platforms (macOS arm64) is not bitwise reproducible across runs.
+        # The layerwise cache comes from a second forward pass, and BLAS is not
+        # bitwise reproducible across passes on every platform. A last-bit
+        # difference flips a value at a rounding tie, so one quantization step
+        # is allowed; the widening to float32 is exact for int8 and float8.
+        _assert_within_one_quantization_step(actual.key, expected.key)
+        _assert_within_one_quantization_step(actual.value, expected.value)
         torch.testing.assert_close(
             actual.key_scale, expected.key_scale, rtol=1e-6, atol=0
         )
         torch.testing.assert_close(
             actual.value_scale, expected.value_scale, rtol=1e-6, atol=0
         )
+
+
+def _assert_within_one_quantization_step(
+    actual: torch.Tensor, expected: torch.Tensor
+) -> None:
+    """Quantized values equal except for rare one-step rounding flips."""
+    a, e = actual.float(), expected.float()
+    if expected.dtype == torch.int8:
+        step = torch.ones_like(e)
+    else:  # e4m3: three mantissa bits, so a step is 2 ** (exponent - 3)
+        exponent = torch.floor(torch.log2(e.abs().clamp(min=2.0**-6)))
+        step = 2.0 ** (exponent - 3)
+    assert ((a - e).abs() <= step).all()
+    assert (a == e).float().mean() > 0.99
 
 
 class _GridBackend:
@@ -71558,6 +72756,54 @@ def test__classifier_fit_predict__all_missing_declared_categorical_then_strings(
     proba = clf.predict_proba(X_pred)
     assert proba.shape == (len(X_pred), 2)
     assert np.isfinite(proba).all()
+
+
+@pytest.mark.parametrize("estimator_cls", [TabPFNClassifier, TabPFNRegressor])
+@pytest.mark.parametrize(
+    ("fit_value", "predict_value"),
+    [
+        pytest.param(np.nan, "ACTING DEPUTY PRINCIPAL", id="all_nan_then_string"),
+        pytest.param("a", "b", id="single_string_then_unseen_string"),
+    ],
+)
+def test__fit_predict__constant_column_carries_no_information_at_predict(
+    estimator_cls: type[TabPFNClassifier | TabPFNRegressor],
+    fit_value: object,
+    predict_value: object,
+) -> None:
+    """An all-NaN object column is numeric at fit, so a string in it at predict
+    used to crash with `could not convert string to float`.
+    """
+    rng = np.random.default_rng(0)
+    n = 60
+    X = pd.DataFrame(
+        {"x": rng.normal(size=n), "note": np.array([fit_value] * n, dtype=object)}
+    )
+    y = X["x"] * 2
+    if estimator_cls is TabPFNClassifier:
+        y = (y > 0).astype(int)
+    X_test = X.iloc[:5].copy()
+    X_test.loc[X_test.index[0], "note"] = predict_value
+
+    model = estimator_cls(n_estimators=1, device="cpu", random_state=0).fit(X, y)
+
+    np.testing.assert_array_equal(model.predict(X_test), model.predict(X.iloc[:5]))
+
+
+def test__clean_data_transform__all_nan_column_with_integer_predict_array() -> None:
+    schema = FeatureSchema(
+        features=[
+            Feature(name="x", modality=FeatureModality.NUMERICAL),
+            Feature(name="empty", modality=FeatureModality.CONSTANT),
+        ]
+    )
+    _, ord_encoder, _ = clean_data(np.array([[1.0, np.nan], [2.0, np.nan]]), schema)
+
+    X_out = clean_data_transform(
+        np.array([[3, 7]]), cat_indices=[], ord_encoder=ord_encoder
+    )
+
+    np.testing.assert_array_equal(X_out, [[3.0, np.nan]])
 
 
 def test__classifier_fit__string_category_plus_nullable_dtype() -> None:
@@ -77434,6 +78680,7 @@ def test__process_text_na_dataframe__single_float_block_round_trips_infs() -> No
     assert got_neg[3, 2]
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(PANDAS_BELOW_3, reason="native pandas <3.0.0 is faster and in use")
 def test__inf_mask__per_block_path_not_slower_than_pandas_on_fragmented() -> None:
     """On a fragmented frame the per-block numpy path beats pure pandas.
@@ -77465,6 +78712,7 @@ def test__inf_mask__per_block_path_not_slower_than_pandas_on_fragmented() -> Non
     )
 
 
+@pytest.mark.slow
 def test__inf_mask__pandas_path_not_slower_than_per_block_on_single_block() -> None:
     """On a consolidated float frame the fast pandas path beats per-block numpy.
 
@@ -105388,6 +106636,26 @@ class TestBlockingEquivalence:
         _assert_bit_identical("input tensor", x, before)
 
 
+@pytest.mark.parametrize("outlier", [1000.0, -1000.0])
+@pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+def test__call__low_precision_outlier_does_not_overflow(
+    outlier: float, dtype: torch.dtype
+) -> None:
+    # Both low-precision dtypes take the upcast path, so both need the cover.
+    scaler = TorchSquashingScaler()
+    x = torch.tensor(
+        [0, 1, 1, 1, 2, outlier],
+        dtype=dtype,
+    ).unsqueeze(-1)
+
+    out = scaler(x, num_train_rows=5)
+
+    assert out.dtype == dtype
+    assert torch.isfinite(out).all()
+    assert 2.5 < abs(out[-1, 0].item()) <= 3.0
+    assert out[-1, 0].item() * outlier > 0
+
+
 
 ================================================
 FILE: tests/test_torch_preprocessing/test_torch_standard_scaler.py
@@ -107166,7 +108434,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@cfc3eb22bfed5c26ef66e3223c982af27e4524de  # v1
+        uses: anthropics/claude-code-action@8ce9314fa9a404564fa7e954cd84f25bcba2b829  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
@@ -107247,7 +108515,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@cfc3eb22bfed5c26ef66e3223c982af27e4524de  # v1
+        uses: anthropics/claude-code-action@8ce9314fa9a404564fa7e954cd84f25bcba2b829  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 

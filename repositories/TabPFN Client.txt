@@ -2,6 +2,7 @@ Directory structure:
 └── priorlabs-tabpfn-client/
     ├── README.md
     ├── CHANGELOG.md
+    ├── CLAUDE.md
     ├── LICENSE
     ├── pyproject.toml
     ├── pyrightconfig.json
@@ -10,9 +11,7 @@ Directory structure:
     ├── uv.lock
     ├── changelog/
     │   ├── README.md
-    │   ├── 396.fixed.md
-    │   ├── 398.added.md
-    │   └── 399.added.md
+    │   └── 403.fixed.md
     ├── examples/
     │   └── sagemaker/
     │       └── tabpfn-3-sample.ipynb
@@ -123,6 +122,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-28
+
+### Added
+
+- Add simple and advanced text handling options to the classifier and regressor, with advanced as the default. ([#398](https://github.com/PriorLabs/tabpfn-client/pull/398))
+- When the server returns a prediction through a signed download URL, the client now fetches it transparently. ([#399](https://github.com/PriorLabs/tabpfn-client/pull/399))
+
+### Fixed
+
+- Validate training uploads against the server-advertised upload cap and defer subsampled context limits to the server. ([#396](https://github.com/PriorLabs/tabpfn-client/pull/396))
+
+
 ## [0.6.0] - 2026-09-15
 
 ### Added
@@ -193,6 +204,33 @@ No significant changes.
 - Added `interactive_login()`, an opt-in browser or terminal login that verifies the resulting API key and caches it for later runs. ([#352](https://github.com/PriorLabs/tabpfn-client/pull/352))
 - The self-hosted client accepts `payload_format="parquet"`, which sends datasets as Parquet files instead of inline JSON. Encoding is faster on large tables, and missing values and datetimes survive the round trip, which JSON cannot represent. ([#359](https://github.com/PriorLabs/tabpfn-client/pull/359))
 - `tabpfn_client.__version__` reports the installed package version. ([#361](https://github.com/PriorLabs/tabpfn-client/pull/361))
+
+
+
+================================================
+FILE: CLAUDE.md
+================================================
+# CLAUDE.md
+
+## Docstrings
+
+Every public module, class, function and method in `src/` needs a Google-style
+docstring (`Args:`, `Returns:`, `Raises:` sections; no NumPy-style
+`Parameters` / `----------` blocks). Document constructor arguments in the
+`__init__` docstring. Types live in the signature's annotations, never in the
+docstring: write `name: description`, not `name (type): description`, and
+annotate the parameter if it isn't yet. Follow the style of the
+[TabPFN](https://github.com/PriorLabs/TabPFN) repo, which exposes largely the
+same API.
+
+Ruff enforces this via the `D` rules with `convention = "google"` in `ruff.toml`
+(tests and scripts are exempt). Check before pushing:
+
+```bash
+uv run ruff check . && uv run ruff format --check .
+```
+
+CI runs the same check through `trunk check`.
 
 
 
@@ -413,7 +451,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tabpfn-client"
-version = "0.6.0"
+version = "0.6.1"
 requires-python = ">=3.10"
 
 description = "API access for TabPFN: Foundation model for tabular data"
@@ -577,6 +615,25 @@ extend-exclude = [
     "examples/*"
 ]
 force-exclude = true
+
+[lint]
+extend-select = ["D"]
+ignore = [
+    "D104", # Missing docstring in public package
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in __init__
+    "D205", # 1 blank line between summary and description
+    "D401", # First line of docstring should be in imperative mood
+]
+
+[lint.pydocstyle]
+convention = "google"
+ignore-decorators = ["typing.overload", "typing_extensions.override"]
+
+[lint.per-file-ignores]
+"tests/**" = ["D"]
+"scripts/**" = ["D"]
+".trunk/**" = ["D"]
 
 
 
@@ -2984,23 +3041,9 @@ A PR that needs no entry â€” a version bump, a CI-only change â€” can 
 
 
 ================================================
-FILE: changelog/396.fixed.md
+FILE: changelog/403.fixed.md
 ================================================
-Validate training uploads against the server-advertised upload cap and defer subsampled context limits to the server.
-
-
-
-================================================
-FILE: changelog/398.added.md
-================================================
-Add simple and advanced text handling options to the classifier and regressor, with advanced as the default.
-
-
-
-================================================
-FILE: changelog/399.added.md
-================================================
-When the server returns a prediction through a signed download URL, the client now fetches it transparently.
+Treat a successful response with an empty final payload (only keepalive pings) as an internal server error instead of surfacing a confusing validation error; fit status polling retries it like an HTTP 500.
 
 
 
@@ -3229,6 +3272,8 @@ FILE: src/tabpfn_client/__init__.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
+
+"""TabPFN client: scikit-learn-style estimators backed by the TabPFN cloud service."""
 
 from importlib.metadata import PackageNotFoundError, version
 
@@ -3723,6 +3768,8 @@ FILE: src/tabpfn_client/client.py
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
 
+"""Low-level HTTP client for the TabPFN API."""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -3754,6 +3801,7 @@ from tabpfn_client.models import (
 from tabpfn_client.errors import (
     RetryableServerError,
     CappedRetryableServerError,
+    EmptyResponseError,
     FittedModelNotFoundError,
 )
 
@@ -3808,7 +3856,8 @@ class PredictResponseWithDownloadURI(BaseModel):
     """A predict answered with a signed download URL for the prediction.
 
     Not among the generated API models: the server doesn't return this shape
-    today, but the client follows it if it ever does."""
+    today, but the client follows it if it ever does.
+    """
 
     prediction_uri: str
     prediction_uri_expires_in_secs: int
@@ -3851,6 +3900,7 @@ def _on_giveup(details: Mapping[str, Any]):
 
 
 def _contains_none(value: Any) -> bool:
+    """Return whether ``value`` is None or a (nested) list containing None."""
     if value is None:
         return True
     if isinstance(value, list):
@@ -3866,6 +3916,7 @@ SERVER_CONFIG = cast(DictConfig, OmegaConf.load(SERVER_CONFIG_FILE))
 
 
 def get_client_version() -> str:
+    """Return the installed package version, or ``"5.5.5"`` if not installed."""
     try:
         return version("tabpfn_client")
     except PackageNotFoundError:
@@ -3875,12 +3926,17 @@ def get_client_version() -> str:
 
 
 def _get_crc32c_hash(data: bytes) -> str:
-    """Computes the CRC32C checksum and returns it as a base64 encoded string."""
+    """Compute the CRC32C checksum of ``data`` as a base64-encoded string."""
     crc32c_value = google_crc32c.value(data)
     return base64.b64encode(struct.pack(">I", crc32c_value)).decode("ascii")
 
 
 def _serialize_to_parquet(df: pd.DataFrame) -> tuple[bytes, str]:
+    """Serialize ``df`` to zstd-compressed parquet.
+
+    Returns:
+        The parquet bytes and their base64-encoded CRC32C checksum.
+    """
     buf = io.BytesIO()
     df.to_parquet(buf, index=False, compression="zstd")
     parquet_bytes = buf.getvalue()
@@ -3897,8 +3953,8 @@ _MIN_RETRY_INTERVAL_SECS = 0.3
 
 
 class ServiceClient(Singleton):
-    """
-    Singleton class for handling communication with the server.
+    """Singleton class for handling communication with the server.
+
     It encapsulates all the API calls to the server.
     """
 
@@ -3934,14 +3990,17 @@ class ServiceClient(Singleton):
 
     @classmethod
     def get_access_token(cls):
+        """Return the access token set by ``authorize``, or None."""
         return cls._access_token
 
     @classmethod
     def get_settings(cls) -> GetSettingsResponse | None:
-        """Fetch and cache dataset limits. The cache expires after 1 hour.
+        """Fetch and cache dataset limits.
 
-        Not thread-safe, but concurrent calls are benign: duplicates fetch the
-        same data and the reference assignment is atomic under the GIL."""
+        The cache expires after 1 hour. If fetching fails, the stale cached value
+        (or None) is returned. Not thread-safe, but concurrent calls are benign: duplicates fetch the
+        same data and the reference assignment is atomic under the GIL.
+        """
         ttl = 3600.0  # 1 hour
         if (
             cls._api_settings is not None
@@ -3960,7 +4019,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def _resolve_async_settings(cls) -> AsyncSettings:
-        """Resolve the async-fit settings: environment > server default > client default.
+        """Resolve async-fit settings: environment > server default > client default.
 
         An option explicitly set via the environment wins; otherwise the
         server-sent value applies; the client default is the fallback when the
@@ -3990,6 +4049,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def authorize(cls, access_token: str):
+        """Store ``access_token`` and send it as bearer token on all requests."""
         get_opts().TABPFN_TOKEN = access_token
         cls._access_token = access_token
         cls.httpx_client.headers.update(
@@ -3998,6 +4058,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def reset_authorization(cls):
+        """Clear the stored access token and the Authorization header."""
         cls._access_token = None
         cls.httpx_client.headers.pop("Authorization", None)
 
@@ -4016,7 +4077,7 @@ class ServiceClient(Singleton):
         description: str | None = None,
         text_handling: TextHandling = "advanced",
     ) -> UUID:
-        """Same as `fit_with_result`, returning only the fitted train set id."""
+        """Same as ``fit_with_result``, returning only the fitted train set ID."""
         return cls.fit_with_result(
             X,
             y,
@@ -4044,33 +4105,26 @@ class ServiceClient(Singleton):
         description: str | None = None,
         text_handling: TextHandling = "advanced",
     ) -> FitResult:
-        """
-        Upload a train set to server and fit it.
+        """Upload a train set to server and fit it.
 
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The training input samples.
-        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
-            The target values.
-        task_config: FitTaskConfig
-            The configuration for the fit task.
-        tabpfn_systems: Sequence[TabPFNSystem], optional
-            The systems to use for the fit method. Defaults to ["preprocessing", "text"].
-        thinking_config: ThinkingConfig, optional
-            The configuration for the thinking mode.
-        api_mode: ApiMode, default=ApiMode.AUTO, optional
-            The API mode to use for the fit method. SYNC, ASYNC, or AUTO.
-        client_options : ClientOptions, optional
-            Client specific options (e.g. timeout, headers).
-        description: str, optional
-            Description of the dataset and task for the server.
+        Args:
+            X: The training input samples, of shape (n_samples, n_features).
+            y: The target values, of shape (n_samples,) or (n_samples, n_outputs).
+            task_config: The configuration for the fit task.
+            tabpfn_systems: The systems to use for the fit method.
+            thinking_config: The configuration for the thinking mode.
+            api_mode: The API mode to use for the fit method: SYNC, ASYNC, or AUTO.
+            client_options: Client specific options (e.g. timeout, headers).
+            description: Description of the dataset and task for the server.
+            text_handling: Text-processing preset, ``"advanced"`` or ``"simple"``.
 
-        Returns
-        -------
-        fit_result: FitResult
+        Returns:
             The unique ID of the fitted train set in the server, and the
             server-reported timings of the fit (None if the server reports none).
+
+        Raises:
+            ValueError: If ``text_handling`` is invalid or the in-memory size of
+                ``X`` or ``y`` exceeds the server limit.
         """
         validate_text_handling(text_handling)
         api_mode = ApiMode(api_mode)
@@ -4220,7 +4274,7 @@ class ServiceClient(Singleton):
         fitted_train_set_id: UUID,
         headers: dict[str, str] | None = None,
     ) -> GetFitStatusResponse:
-        """Poll ``POST /tabpfn/get_fit_status`` until the fit reaches a terminal state.
+        """Poll ``/tabpfn/get_fit_status`` until the fit reaches a terminal state.
 
         The first poll happens immediately; between polls we sleep for the
         server's per-response ``retry_in_secs`` hint (5s until the first hint
@@ -4321,6 +4375,12 @@ class ServiceClient(Singleton):
         timeout: float,
         headers: dict[str, str] | None = None,
     ) -> GetFitStatusResponse:
+        """Fetch the status of a fit once.
+
+        Raises:
+            CappedRetryableServerError: On HTTP 429 or 500, or an empty
+                success body (treated as a 500).
+        """
         res = cls.httpx_client.post(
             url="/tabpfn/get_fit_status",
             json=req.model_dump(mode="json", exclude_none=True),
@@ -4335,11 +4395,14 @@ class ServiceClient(Singleton):
             raise CappedRetryableServerError(
                 f"Fail to call get_fit_status: [HTTP {res.status_code}] {res.text}."
             )
-        return cls._validate_response(
-            res,
-            "get_fit_status",
-            success_model=GetFitStatusResponse,
-        )
+        try:
+            return cls._validate_response(
+                res,
+                "get_fit_status",
+                success_model=GetFitStatusResponse,
+            )
+        except EmptyResponseError as exc:
+            raise CappedRetryableServerError(str(exc)) from exc
 
     @classmethod
     # Every fit call creates a new fit job, no dedup logic exists on the server.
@@ -4363,6 +4426,7 @@ class ServiceClient(Singleton):
         timeout: float,
         headers: dict[str, str] | None = None,
     ) -> SubmitFitJobResponse:
+        """Submit an asynchronous fit job for an uploaded train set."""
         res = cls.httpx_client.post(
             url="/tabpfn/submit_fit_job",
             json=req.model_dump(mode="json", exclude_none=True),
@@ -4398,6 +4462,7 @@ class ServiceClient(Singleton):
         timeout: float,
         headers: dict[str, str] | None = None,
     ) -> FitResponse:
+        """Fit an uploaded train set synchronously."""
         res = cls.httpx_client.post(
             url="/tabpfn/fit",
             json=req.model_dump(mode="json", exclude_none=True),
@@ -4418,28 +4483,21 @@ class ServiceClient(Singleton):
         task_config: ClassifierConfig | RegressorConfig,
         client_options: ClientOptions | None = None,
     ) -> PredictionResult:
-        """
-        Predict the class labels for the provided data (test set).
+        """Upload a test set and predict it with a fitted train set.
 
-        Parameters
-        ----------
-        fitted_train_set_id : UUID
-            The unique ID of the fitted train set in the server.
-        x_test : array-like of shape (n_samples, n_features)
-            The test input.
-        task: PredictionTask, optional
-            Task type: "classification" or "regression"
-        tabpfn_config : dict, optional
-            Configuration used to initialize the the TabPFN model.
-        predict_params: dict, optional
-            Parameters for the predict method.
-        client_options : ClientOptions, optional
-            Client specific options (e.g. timeout, headers).
+        Args:
+            fitted_train_set_id: The unique ID of the fitted train set in the server.
+            x_test: The test input, of shape (n_samples, n_features).
+            task_config: The classification or regression task configuration.
+            client_options: Client specific options (e.g. timeout, headers).
 
-        Returns
-        -------
-        prediction_result : PredictionResult
-            The result from the predict API call containing the prediction and metadata.
+        Returns:
+            The result from the predict API call containing the prediction,
+            metadata, and server-reported timings.
+
+        Raises:
+            ValueError: If the in-memory size of ``x_test`` exceeds the server limit.
+            FittedModelNotFoundError: If the fitted train set is not found.
         """
         client_options = client_options or ClientOptions()
 
@@ -4570,6 +4628,7 @@ class ServiceClient(Singleton):
         timeout: float,
         headers: dict[str, str] | None = None,
     ) -> PredictResponseUnion:
+        """Request a prediction for an uploaded test set."""
         res = cls.httpx_client.post(
             url="/tabpfn/predict",
             json=req.model_dump(mode="json", exclude_none=True),
@@ -4599,6 +4658,7 @@ class ServiceClient(Singleton):
         on_giveup=_on_giveup,
     )
     def _download_prediction(cls, uri: str, timeout: float) -> Prediction:
+        """Download a prediction from a signed URL."""
         # The signed URL is the credential here, so the API bearer token on
         # `httpx_client` has no business reaching the object store; use a bare
         # request instead.
@@ -4621,6 +4681,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def _upload_to_gcs(cls, dataset: str, data: bytes, info: FileUploadInfo) -> None:
+        """Upload ``data`` to the signed URLs in ``info``, one chunk per URL."""
         num_chunks = len(info.signed_urls)
         chunk_size = len(data) // num_chunks
         chunks = []
@@ -4680,6 +4741,7 @@ class ServiceClient(Singleton):
         dataset: str,
         chunk_index: int = 0,
     ) -> None:
+        """Upload one chunk to a signed URL."""
         resp = cls.httpx_client.put(
             url,
             content=chunk,
@@ -4700,6 +4762,7 @@ class ServiceClient(Singleton):
 
     @staticmethod
     def _warn_if_deprecated(response: httpx.Response) -> None:
+        """Emit a ``DeprecationWarning`` if the response marks the client deprecated."""
         if response.headers.get("deprecation", "").lower() != "true":
             return
 
@@ -4719,8 +4782,12 @@ class ServiceClient(Singleton):
 
     @staticmethod
     def _read_json_body(response: httpx.Response) -> tuple[dict[str, Any], str]:
-        """Read the body ({} unless it is a JSON object) and a display message
-        drawn from it, falling back to the HTTP reason phrase or raw text."""
+        """Read the response body and a display message.
+
+        Returns:
+            The body (``{}`` unless it is a JSON object) and a display message
+            drawn from it, falling back to the HTTP reason phrase or raw text.
+        """
         body: dict[str, Any] = {}
         try:
             # Streaming responses must be read explicitly to prevent
@@ -4742,8 +4809,10 @@ class ServiceClient(Singleton):
 
     @staticmethod
     def _check_version(response: httpx.Response) -> None:
-        """Warn if the endpoint is deprecated and raise if the server requires
-        a newer client version (HTTP 426).
+        """Warn if the endpoint is deprecated.
+
+        Raises:
+            RuntimeError: If the server requires a newer client version (HTTP 426).
         """
         ServiceClient._warn_if_deprecated(response)
         if response.status_code == 426:
@@ -4754,6 +4823,12 @@ class ServiceClient(Singleton):
     def _raise_http_error(
         response: httpx.Response, method_name: str, body: dict[str, Any], message: str
     ) -> NoReturn:
+        """Raise the error for a failed response.
+
+        Raises:
+            RetryableServerError: On HTTP 408, 502, 503, or 504.
+            RuntimeError: On any other status.
+        """
         error_message = (
             f"Fail to call {method_name}: [HTTP {response.status_code}] {message}."
         )
@@ -4786,6 +4861,25 @@ class ServiceClient(Singleton):
         success_model: type[SuccessT] | TypeAdapter[SuccessT],
         error_models: dict[int, type[ErrorT]] | None = None,
     ) -> SuccessT | ErrorT:
+        """Parse a response into its success or expected error model.
+
+        Args:
+            response: The HTTP response.
+            method_name: Name of the called method, used in error messages.
+            success_model: Model or adapter the body is validated against on success.
+            error_models: Models to parse error bodies into, keyed by status code.
+
+        Returns:
+            The validated success model, or the matching error model instance.
+
+        Raises:
+            RuntimeError: On a streamed error, or an error status without a
+                matching error model.
+            RetryableServerError: On HTTP 408, 502, 503, or 504 without a
+                matching error model.
+            EmptyResponseError: On a success status whose body is empty
+                (keepalive whitespace only).
+        """
         error_models = error_models or {}
 
         ServiceClient._check_version(response)
@@ -4803,6 +4897,15 @@ class ServiceClient(Singleton):
 
         # Success with expected schema.
         if is_success:
+            # Long-running endpoints stream whitespace keepalive pings before
+            # the final payload. A success body with nothing else means the
+            # stream ended without a result, e.g. the server died mid-request
+            # without emitting a `_streamed_error` envelope.
+            if not response.text.strip():
+                raise EmptyResponseError(
+                    f"Fail to call {method_name}: [HTTP {status_code}] the "
+                    "server ended the response without a final payload."
+                )
             if isinstance(success_model, TypeAdapter):
                 return success_model.validate_python(body)
             return success_model.model_validate(body)
@@ -4819,9 +4922,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def try_connection(cls) -> bool:
-        """
-        Check if server is reachable and accepts the connection.
-        """
+        """Check if server is reachable and accepts the connection."""
         found_valid_connection = False
         try:
             response = cls.httpx_client.get(cls.server_endpoints.root.path)
@@ -4836,9 +4937,15 @@ class ServiceClient(Singleton):
         return found_valid_connection
 
     @classmethod
-    def is_auth_token_outdated(cls, access_token) -> bool | None:
-        """
-        Check if the provided access token is valid and return True if successful.
+    def is_auth_token_outdated(cls, access_token: str) -> bool | None:
+        """Check if the provided access token is valid.
+
+        Args:
+            access_token: The access token to check.
+
+        Returns:
+            True if the token is valid, None if the user is not verified,
+            False otherwise.
         """
         is_authenticated = False
         response = cls.httpx_client.get(
@@ -4856,19 +4963,11 @@ class ServiceClient(Singleton):
 
     @classmethod
     def validate_email(cls, email: str) -> tuple[bool, str]:
-        """
-        Send entered email to server that checks if it is valid and not already in use.
+        """Check with the server that an email is valid and not already in use.
 
-        Parameters
-        ----------
-        email : str
-
-        Returns
-        -------
-        is_valid : bool
-            True if the email is valid.
-        message : str
-            The message returned from the server.
+        Returns:
+            Whether the email is valid, and the message returned from the server
+            (empty if valid).
         """
         response = cls.httpx_client.post(
             cls.server_endpoints.validate_email.path, params={"email": email}
@@ -4893,25 +4992,19 @@ class ServiceClient(Singleton):
         validation_link: str,
         additional_info: dict,
     ):
+        """Register a new user with the provided credentials.
+
+        Args:
+            email: The user's email.
+            password: The password.
+            password_confirm: The password, repeated.
+            validation_link: Link sent to the user to verify the email.
+            additional_info: Extra fields merged into the request body.
+
+        Returns:
+            Whether the user was created, the message returned from the server,
+            and the access token (None if not created).
         """
-        Register a new user with the provided credentials.
-
-        Parameters
-        ----------
-        email : str
-        password : str
-        password_confirm : str
-        validation_link: str
-        additional_info : dict
-
-        Returns
-        -------
-        is_created : bool
-            True if the user is created successfully.
-        message : str
-            The message returned from the server.
-        """
-
         response = cls.httpx_client.post(
             cls.server_endpoints.register.path,
             json={
@@ -4936,22 +5029,12 @@ class ServiceClient(Singleton):
 
     @classmethod
     def verify_email(cls, token: str, access_token: str) -> tuple[bool, str]:
+        """Verify the email with the provided token.
+
+        Returns:
+            Whether the email was verified, and the message returned from the
+            server.
         """
-        Verify the email with the provided token.
-
-        Parameters
-        ----------
-        token : str
-        access_token : str
-
-        Returns
-        -------
-        is_verified : bool
-            True if the email is verified successfully.
-        message : str
-            The message returned from the server.
-        """
-
         response = cls.httpx_client.get(
             cls.server_endpoints.verify_email.path,
             params={"token": token, "access_token": access_token},
@@ -4968,15 +5051,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def get_password_policy(cls) -> list[str]:
-        """
-        Get the password policy from the server.
-
-        Returns
-        -------
-        password_policy : {}
-            The password policy returned from the server.
-        """
-
+        """Get the password policy requirements from the server."""
         response = cls.httpx_client.get(
             cls.server_endpoints.password_policy.path,
         )
@@ -4986,8 +5061,10 @@ class ServiceClient(Singleton):
 
     @classmethod
     def send_verification_email(cls, access_token: str) -> tuple[bool, str]:
-        """
-        Let the server send an email for verifying the email.
+        """Let the server send an email for verifying the email.
+
+        Returns:
+            Whether the email was sent, and the message returned from the server.
         """
         response = cls.httpx_client.post(
             cls.server_endpoints.send_verification_email.path,
@@ -5003,9 +5080,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def retrieve_greeting_messages(cls) -> list[str]:
-        """
-        Retrieve greeting messages that are new for the user.
-        """
+        """Retrieve greeting messages that are new for the user."""
         response = cls.httpx_client.get(
             cls.server_endpoints.retrieve_greeting_messages.path
         )
@@ -5019,14 +5094,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def get_data_summary(cls) -> dict:
-        """
-        Get the data summary of the user from the server.
-
-        Returns
-        -------
-        data_summary : dict
-            The data summary returned from the server.
-        """
+        """Get the data summary of the user from the server."""
         response = cls.httpx_client.get(
             cls.server_endpoints.get_data_summary.path,
         )
@@ -5036,16 +5104,14 @@ class ServiceClient(Singleton):
 
     @classmethod
     def download_all_data(cls, save_dir: Path) -> Path | None:
+        """Download all data uploaded by the user from the server.
+
+        Args:
+            save_dir: Directory to save the downloaded file to.
+
+        Returns:
+            The path to the downloaded file.
         """
-        Download all data uploaded by the user from the server.
-
-        Returns
-        -------
-        save_path : Path | None
-            The path to the downloaded file. Return None if download fails.
-
-        """
-
         save_path = None
 
         full_url = cls.base_url + cls.server_endpoints.download_all_data.path
@@ -5069,20 +5135,15 @@ class ServiceClient(Singleton):
 
     @classmethod
     def delete_dataset(cls, dataset_uid: str) -> list[str]:
-        """
-        Delete the dataset with the provided UID from the server.
-        Note that deleting a train set with lead to deleting all associated test sets.
+        """Delete the dataset with the provided UID from the server.
 
-        Parameters
-        ----------
-        dataset_uid : str
-            The UID of the dataset to be deleted.
+        Deleting a train set also deletes all associated test sets.
 
-        Returns
-        -------
-        deleted_dataset_uids : [str]
-            The list of deleted dataset UIDs.
+        Args:
+            dataset_uid: The UID of the dataset to be deleted.
 
+        Returns:
+            The UIDs of all deleted datasets.
         """
         response = cls.httpx_client.delete(
             cls.server_endpoints.delete_dataset.path,
@@ -5095,13 +5156,10 @@ class ServiceClient(Singleton):
 
     @classmethod
     def delete_all_datasets(cls) -> list[str]:
-        """
-        Delete all datasets uploaded by the user from the server.
+        """Delete all datasets uploaded by the user from the server.
 
-        Returns
-        -------
-        deleted_dataset_uids : list[str]
-            The list of deleted dataset UIDs.
+        Returns:
+            The UIDs of the deleted datasets.
         """
         response = cls.httpx_client.delete(
             cls.server_endpoints.delete_all_datasets.path,
@@ -5113,6 +5171,7 @@ class ServiceClient(Singleton):
 
     @classmethod
     def delete_user_account(cls) -> None:
+        """Delete the user's account on the server."""
         response = cls.httpx_client.delete(
             cls.server_endpoints.delete_user_account.path,
         )
@@ -5133,9 +5192,10 @@ class ServiceClient(Singleton):
 
     @classmethod
     def get_api_usage(cls, access_token: str):
-        """
-        Retrieve current API usage data of the user from the server.
-        Returns summary: str
+        """Retrieve current API usage data of the user from the server.
+
+        Returns:
+            The usage data as parsed from the JSON response.
         """
         response = cls.httpx_client.post(
             cls.server_endpoints.get_api_usage.path,
@@ -5154,6 +5214,8 @@ FILE: src/tabpfn_client/config.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
+
+"""Client initialization, authentication and access-token management."""
 
 import shutil
 
@@ -5174,10 +5236,18 @@ CONNECTION_ERROR = RuntimeError(
 
 
 class Config:
+    """Process-wide client state; used through its class attributes only.
+
+    Attributes:
+        is_initialized: Whether `init()` has completed authentication.
+        use_server: Whether inference runs on the TabPFN cloud service.
+    """
+
     def __new__(cls, *args, **kwargs):
-        """
-        This class is a singleton and should not be instantiated directly.
-        Only use class methods.
+        """Refuse instantiation; the class is a singleton used through its attributes.
+
+        Raises:
+            TypeError: Always.
         """
         raise TypeError("Cannot instantiate this class")
 
@@ -5185,9 +5255,8 @@ class Config:
     use_server = False
 
 
-def init(use_server=True):
-    """
-    Initializes the TabPFN client and authenticates with the TabPFN cloud service.
+def init(use_server: bool = True):
+    """Initializes the TabPFN client and authenticates with the TabPFN cloud service.
 
     Authentication is token-based and never interactive. The token comes from
     `set_access_token()` or the TABPFN_TOKEN environment variable, or from a
@@ -5197,10 +5266,13 @@ def init(use_server=True):
     Generate a token at https://platform.priorlabs.ai/account/api-keys, or call
     `tabpfn_client.interactive_login()` to log in through the browser.
 
-    :param use_server: Whether to use the TabPFN cloud service. Currently, only
-                       True is supported.
-    :raises RuntimeError: If local inference is requested, if the server is
-                          unreachable, or if no valid access token is available.
+    Args:
+        use_server: Whether to use the TabPFN cloud service. Currently, only
+            True is supported.
+
+    Raises:
+        RuntimeError: If local inference is requested, if the server is
+            unreachable, or if no valid access token is available.
     """
     # initialize config
     Config.use_server = use_server
@@ -5253,8 +5325,7 @@ def init(use_server=True):
 
 
 def reset():
-    """
-    Resets the client state and clears local authentication caches.
+    """Resets the client state and clears local authentication caches.
 
     Use this function if you need to log out or clear stored session data
     from the local machine.
@@ -5269,12 +5340,15 @@ def reset():
 
 
 def get_access_token() -> str:
-    """
-    Retrieves the current active access token.
+    """Retrieves the current active access token.
 
     If the client is not yet initialized, this will trigger the `init()` login flow.
 
-    :return: The access token string used for API requests.
+    Returns:
+        The access token string used for API requests.
+
+    Raises:
+        RuntimeError: If no access token is available after initialization.
     """
     init()
     access_token = ServiceClient.get_access_token()
@@ -5284,26 +5358,26 @@ def get_access_token() -> str:
 
 
 def set_access_token(access_token: str):
-    """
-    Manually sets the access token for the session.
+    """Manually sets the access token for the session.
 
     Use this in non-interactive environments (e.g. CI/CD, notebooks) as an
     alternative to the TABPFN_TOKEN environment variable.
 
     Generate a token at https://platform.priorlabs.ai/account/api-keys
 
-    :param access_token: A valid TabPFN access token string.
+    Args:
+        access_token: A valid TabPFN access token string.
     """
     UserAuthenticationClient.set_token(access_token)
     Config.is_initialized = True
 
 
 def get_api_usage() -> str:
-    """
-    Fetches and formats the current API usage statistics for the user.
+    """Fetches and formats the current API usage statistics for the user.
 
-    :return: A human-readable string detailing current credit usage,
-             the total limit, and when the limit resets.
+    Returns:
+        A human-readable string detailing current credit usage, the total limit,
+        and when the limit resets.
     """
     access_token = get_access_token()
     response = ServiceClient.get_api_usage(access_token)
@@ -5316,6 +5390,8 @@ FILE: src/tabpfn_client/constants.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
+
+"""Package-wide constants: cache location and public URLs."""
 
 from pathlib import Path
 
@@ -5350,6 +5426,11 @@ from tabpfn_client.config import get_access_token
 
 
 def _shape(X: np.ndarray | pd.DataFrame, name: str) -> tuple[int, int]:
+    """Return the (rows, columns) of a two-dimensional input, validating both.
+
+    Raises:
+        ValueError: If the input is not two-dimensional or its counts are invalid.
+    """
     shape = getattr(X, "shape", None)
     if shape is None or len(shape) != 2:
         raise ValueError(f"{name} must be a two-dimensional array or DataFrame")
@@ -5383,6 +5464,23 @@ def estimate_cost(
     per-base-estimator count. ``cache_predict`` assumes a cache hit; fallback
     or different fitted estimator counts can change the final charge.
     A quote does not guarantee model access or dataset eligibility.
+
+    Args:
+        X_train: Training data; only its shape is used.
+        X_test: Test data; only its shape is used. Omit for ``thinking_fit``.
+        model_version: Model version to price. Resolved by the server if None.
+        operation: Operation to price.
+        n_estimators: Number of estimators. Resolved by the server if None.
+        thinking_effort: Effort level for thinking operations.
+
+    Returns:
+        The server's cost estimate.
+
+    Raises:
+        ValueError: If an input is not two-dimensional or has invalid row or
+            feature counts, if X_train and X_test differ in feature count, if
+            X_test is given for ``thinking_fit``, or if ``n_estimators`` is not a
+            positive integer.
     """
     train_rows, raw_columns = _shape(X_train, "X_train")
     test_rows = 0
@@ -5414,18 +5512,27 @@ def estimate_cost(
 ================================================
 FILE: src/tabpfn_client/errors.py
 ================================================
+"""Exceptions raised by the TabPFN client."""
+
+
 class RetryableServerError(Exception):
-    """
-    Base exception for retryable server-side HTTP errors (typically 5xx).
-    """
+    """Base exception for retryable server-side HTTP errors (typically 5xx)."""
 
     pass
 
 
 class CappedRetryableServerError(Exception):
-    """
-    An error that is retryable, but with a capped number of retries given
-    consecutive errors of the same type.
+    """Retryable error, with retries capped over consecutive errors of this type."""
+
+    pass
+
+
+class EmptyResponseError(RuntimeError):
+    """A success response ended without a final payload.
+
+    Long-running endpoints stream whitespace keepalive pings before the result.
+    A body holding nothing else means the server ended the request without a
+    result, so it is treated like an internal server error (HTTP 500).
     """
 
     pass
@@ -5449,6 +5556,8 @@ FILE: src/tabpfn_client/estimator.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
+
+"""Hosted TabPFN estimators with a scikit-learn-compatible interface."""
 
 from __future__ import annotations
 
@@ -5531,6 +5640,7 @@ class TabPFNModelSelection:
 
     @classmethod
     def list_available_models(cls) -> list[str]:
+        """Return the model names accepted as `model_path`."""
         return cls._AVAILABLE_MODELS
 
     @classmethod
@@ -5540,6 +5650,16 @@ class TabPFNModelSelection:
         """Construct an estimator that uses the given version of the model.
 
         Any kwargs will override the default settings, except for `model_path`.
+
+        Args:
+            version: The model version to use.
+            **overrides: Constructor arguments other than `model_path`.
+
+        Returns:
+            The constructed estimator.
+
+        Raises:
+            ValueError: If `version` is not a known model version.
         """
         try:
             version = ModelVersion(version)
@@ -5669,129 +5789,166 @@ class TabPFNClassifier(
 
         This constructs a classifier using the latest model and settings. If you would
         like to use a previous model version, use `create_default_for_version()`
-        instead. You can also use `model_path` to specify a particular model
+        instead. You can also use `model_path` to specify a particular model.
 
-        Parameters
-        ----------
-        model_path: str, default="auto"
-            The name of the model to use. "auto" lets the server pick the
-            latest default model; "default" is accepted as a backward-compatible
-            alias. Use `create_default_for_version()` to pin to a specific
-            major version.
-        n_estimators: int, default=8
-            The number of estimators in the TabPFN ensemble. We aggregate the
-             predictions of `n_estimators`-many forward passes of TabPFN. Each forward
-             pass has (slightly) different input data. Think of this as an ensemble of
-             `n_estimators`-many "prompts" of the input data.
-        softmax_temperature: float, default=0.9
-            The temperature for the softmax function. This is used to control the
-            confidence of the model's predictions. Lower values make the model's
-            predictions more confident. This is only applied when predicting during a
-            post-processing step. Set `softmax_temperature=1.0` for no effect.
-        balance_probabilities: bool, default=False
-            Whether to balance the probabilities based on the class distribution
-            in the training data. This can help to improve predictive performance
-            when the classes are highly imbalanced. This is only applied when predicting
-            during a post-processing step.
-        average_before_softmax: bool, default=False
-             Only used if `n_estimators > 1`. Whether to average the predictions of the
-             estimators before applying the softmax function. This can help to improve
-             predictive performance when there are many classes or when calibrating the
-             model's confidence. This is only applied when predicting during a
-             post-processing.
-        ignore_pretraining_limits: bool, default=True
-            Whether to ignore the pre-training limits of the model. The TabPFN models
-            have been pre-trained on a specific range of input data. If the input data
-            is outside of this range, the model may not perform well. You may ignore
-            our limits to use the model on data outside the pre-training range.
-            Defaults to True (vs False in the OSS package): the server enforces its
-            own capacity limits, so the OSS check is redundant and stricter.
-        inference_precision: "autocast" or "auto", default="auto"
-            The precision to use for inference. This can dramatically affect the
-            speed and reproducibility of the inference.
-        random_state: int or RandomState or RandomGenerator or None, default=0
-            Controls the randomness of the model. Pass an int for reproducible
-            results; pass `None` to use a fresh random seed each run.
-        inference_config: dict or None, default=None
-            Additional advanced arguments for model interface. See the doc of InferenceConfig
-            in the tabpfn package for more details. For the client, the inference_config and the
-            preprocess transforms need to be dictionaries.
-        categorical_features_indices: list[int] or None, default=None
-            The indices of the columns that should be treated as categorical.
-            If None, the model infers which columns are categorical.
-        fit_mode: {"fit_preprocessors", "fit_with_cache"} or None, default=None
-            Controls what the server persists at fit time. None defers to the
-            server default, which is "fit_preprocessors".
-            "fit_preprocessors" fits only the preprocessing state, so every
-            predict re-runs the forward pass from the uploaded train set.
-            "fit_with_cache" additionally builds and persists a server-side KV
-            cache keyed by the resulting fitted-train-set id; later predicts
-            against that id (stored on the estimator as `model_id_`, and
-            persisted across runs by `save_model()`) are served from the cache
-            instead of re-fitting.
-        text_handling: {"advanced", "simple"}, default="advanced"
-            Text-processing preset. Both choices support text. Advanced preserves
-            the default processing; simple is an alternative whose accuracy depends
-            on the dataset. Applies when preprocessing is enabled.
-        paper_version: bool, default=False
-            If True, will use the model described in the paper, instead of the newest
-            version available on the API, which e.g handles text features better.
-        thinking_mode: bool, default=False
-            If True, spend extra fit-time compute for higher precision.
-            Equivalent to passing `thinking_effort="medium"` â€” setting any
-            `thinking_effort` value also enables thinking, so this flag is
-            optional when you've set the level explicitly.
-        thinking_effort: {"medium", "high"} or None, default=None
-            Effort level for thinking mode. When set, thinking is enabled
-            (you don't also need `thinking_mode=True`). When None and
-            `thinking_mode=True`, defaults to "medium".
-        thinking_timeout_s: float or None, default=None
-            Budget for the fit, in seconds. Only consulted when thinking is
-            enabled. Capped at 2400.
-        thinking_metric: str or None, default=None
-            Optimization metric for the fit. Only consulted when thinking
-            is enabled.
+        Args:
+            model_path:
+                The name of the model to use. "auto" (or None) lets the server pick
+                the latest default model; "default" is accepted as a backward-compatible
+                alias. Use `create_default_for_version()` to pin to a specific major
+                version, and `list_available_models()` for the accepted names.
 
-            Binary classification:
-                "accuracy", "balanced_accuracy", "mcc", "log_loss",
-                "pac", "quadratic_kappa", "roc_auc", "average_precision",
-                "precision", "precision_macro", "precision_micro",
-                "precision_weighted", "recall", "recall_macro",
-                "recall_micro", "recall_weighted", "f1", "f1_macro",
-                "f1_micro", "f1_weighted".
-            Multiclass classification:
-                "accuracy", "balanced_accuracy", "mcc", "log_loss",
-                "pac", "quadratic_kappa", "precision_macro",
-                "precision_micro", "precision_weighted", "recall_macro",
-                "recall_micro", "recall_weighted", "f1_macro",
-                "f1_micro", "f1_weighted", "roc_auc_ovo",
-                "roc_auc_ovo_macro", "roc_auc_ovr", "roc_auc_ovr_macro",
-                "roc_auc_ovr_micro", "roc_auc_ovr_weighted".
+            n_estimators:
+                The number of estimators in the TabPFN ensemble. We aggregate the
+                predictions of `n_estimators`-many forward passes of TabPFN. Each
+                forward pass has (slightly) different input data. Think of this as an
+                ensemble of `n_estimators`-many "prompts" of the input data. The
+                server accepts at most 8. If None, it applies the model's default:
 
-            Aliases "acc", "nll", "pac_score" are also accepted.
-        group_col: str or list[str] or None, default=None
-            New since 0.6.0. Column(s) of `X` that identify groups of related
-            rows, e.g. a patient or a session id. During the fit, the rows of
-            one group are never split between training and validation. The fit
-            may also use the other rows of a group to predict a row of it.
-            Requires thinking mode, and `X` passed to `fit` and `predict` must
-            be a pandas DataFrame that holds the column(s).
-        time_col: str or None, default=None
-            New since 0.6.0. Column of `X` that holds time, as datetimes or
-            numbers. During the fit, validation uses contiguous blocks of time.
-            Cannot be combined with `group_col`. Requires thinking mode, and
-            `X` must be a pandas DataFrame that holds the column.
-        group_time_col: str or None, default=None
-            New since 0.6.0. Column of `X` that orders the rows within a group.
-            Requires `group_col` and thinking mode, and `X` must be a pandas
-            DataFrame that holds the column.
-        api_mode: ApiMode, default=ApiMode.AUTO
-            Controls how the client calls the server.
-            SYNC: the client waits for the server to complete the request before returning.
-            ASYNC: the client returns immediately and the server completes the request in the background.
-            AUTO: the client automatically determines the best mode to use based on the request.
-        client_options : ClientOptions, default=None
-            Client specific options (e.g. timeout, headers).
+                - v3.5 (`"v3.5_default"`, the default model): 8.
+                - v3.5-fast (`"v3.5-fast_default"`): 4.
+                - v3 (`"v3_default"`): 8, raised on wide datasets until every
+                  feature is seen by at least one estimator, up to 32.
+
+                These are server defaults and may change with server releases.
+
+            softmax_temperature:
+                The temperature for the softmax function. This is used to control the
+                confidence of the model's predictions. Lower values make the model's
+                predictions more confident. This is only applied when predicting during
+                a post-processing step. Set `softmax_temperature=1.0` for no effect. If
+                None, the server default is used.
+
+            balance_probabilities:
+                Whether to balance the probabilities based on the class distribution
+                in the training data. This can help to improve predictive performance
+                when the classes are highly imbalanced. This is only applied when
+                predicting during a post-processing step.
+
+            average_before_softmax:
+                Only used if `n_estimators > 1`. Whether to average the predictions of
+                the estimators before applying the softmax function. This can help to
+                improve predictive performance when there are many classes or when
+                calibrating the model's confidence. This is only applied when predicting
+                during a post-processing step. If None, the server default is used.
+
+            ignore_pretraining_limits:
+                Whether to ignore the pre-training limits of the model. The TabPFN
+                models have been pre-trained on a specific range of input data. If the
+                input data is outside of this range, the model may not perform well. You
+                may ignore our limits to use the model on data outside the pre-training
+                range.
+
+            inference_precision:
+                The precision to use for inference. This can dramatically affect the
+                speed and reproducibility of the inference. `"autocast"` enables
+                mixed-precision autocast; `"auto"` decides based on the device. If None,
+                the server default is used.
+
+            random_state:
+                Controls the randomness of the model. Pass an int for reproducible
+                results; pass `None` to use a fresh random seed each run.
+
+            inference_config:
+                For advanced users, additional advanced arguments that adjust the
+                behavior of the model interface. See `InferenceConfig` in the tabpfn
+                package for details and options. For the client, the inference_config
+                and the preprocess transforms need to be dictionaries.
+
+            categorical_features_indices:
+                The indices of the columns that should be treated as categorical.
+                If None, the model infers which columns are categorical.
+
+            fit_mode:
+                Controls what the server persists at fit time. None defers to the
+                server default, which is "fit_preprocessors".
+
+                - If `"fit_preprocessors"`, only the preprocessing state is fitted, so
+                  every predict re-runs the forward pass from the uploaded train set.
+                - If `"fit_with_cache"`, a server-side KV cache is additionally built
+                  and persisted, keyed by the resulting fitted-train-set id. Later
+                  predicts against that id (stored on the estimator as `model_id_`, and
+                  persisted across runs by `save_model()`) are served from the cache
+                  instead of re-fitting.
+
+            paper_version:
+                If True, will use the model described in the paper, instead of the
+                newest version available on the API, which e.g. handles text features
+                better. Cannot be combined with thinking mode.
+
+            thinking_mode:
+                If True, spend extra fit-time compute for higher precision.
+                Equivalent to passing `thinking_effort="medium"`; setting any
+                `thinking_effort` value also enables thinking, so this flag is
+                optional when you've set the level explicitly.
+
+            thinking_effort:
+                Effort level for thinking mode. When set, thinking is enabled
+                (you don't also need `thinking_mode=True`). When None and
+                `thinking_mode=True`, defaults to "medium".
+
+            thinking_timeout_s:
+                Budget for the fit, in seconds. Only consulted when thinking is
+                enabled. Capped at 2400.
+
+            thinking_metric:
+                Optimization metric for the fit. Only consulted when thinking
+                is enabled.
+
+                Binary classification:
+                    "accuracy", "balanced_accuracy", "mcc", "log_loss",
+                    "pac", "quadratic_kappa", "roc_auc", "average_precision",
+                    "precision", "precision_macro", "precision_micro",
+                    "precision_weighted", "recall", "recall_macro",
+                    "recall_micro", "recall_weighted", "f1", "f1_macro",
+                    "f1_micro", "f1_weighted".
+
+                Multiclass classification:
+                    "accuracy", "balanced_accuracy", "mcc", "log_loss",
+                    "pac", "quadratic_kappa", "precision_macro",
+                    "precision_micro", "precision_weighted", "recall_macro",
+                    "recall_micro", "recall_weighted", "f1_macro",
+                    "f1_micro", "f1_weighted", "roc_auc_ovo",
+                    "roc_auc_ovo_macro", "roc_auc_ovr", "roc_auc_ovr_macro",
+                    "roc_auc_ovr_micro", "roc_auc_ovr_weighted".
+
+                Aliases "acc", "nll", "pac_score" are also accepted.
+
+            group_col:
+                New since 0.6.0. Column(s) of `X` that identify groups of related
+                rows, e.g. a patient or a session id. During the fit, the rows of
+                one group are never split between training and validation. The fit
+                may also use the other rows of a group to predict a row of it.
+                Requires thinking mode, and `X` passed to `fit` and `predict` must
+                be a pandas DataFrame that holds the column(s).
+
+            time_col:
+                New since 0.6.0. Column of `X` that holds time, as datetimes or
+                numbers. During the fit, validation uses contiguous blocks of time.
+                Cannot be combined with `group_col`. Requires thinking mode, and
+                `X` must be a pandas DataFrame that holds the column.
+
+            group_time_col:
+                New since 0.6.0. Column of `X` that orders the rows within a group.
+                Requires `group_col` and thinking mode, and `X` must be a pandas
+                DataFrame that holds the column.
+
+            api_mode:
+                Controls how the client calls the server.
+
+                - `SYNC`: the client waits for the server to complete the request
+                  before returning.
+                - `ASYNC`: the client returns immediately and the server completes the
+                  request in the background.
+                - `AUTO`: the client determines the best mode based on the request.
+
+            client_options:
+                Client specific options (e.g. timeout, headers).
+
+            text_handling:
+                Text-processing preset. Both choices support text. Advanced preserves
+                the default processing; simple is an alternative whose accuracy depends
+                on the dataset. Applies when preprocessing is enabled.
         """
         self.model_path = model_path
         self.categorical_features_indices = categorical_features_indices
@@ -5827,6 +5984,22 @@ class TabPFNClassifier(
         y: pd.Series | np.ndarray,
         description: str | None = None,
     ):
+        """Fit the model.
+
+        Uploads the training data to the server, which fits the model on it.
+
+        Args:
+            X: The input data.
+            y: The target variable.
+            description: Description of the dataset and task for the server.
+
+        Returns:
+            self
+
+        Raises:
+            ValueError: If the data or the estimator's parameters are invalid,
+                or the data exceeds the model limits.
+        """
         text_handling = validate_text_handling(self.text_handling)
         # assert init() is called
         init()
@@ -5889,24 +6062,25 @@ class TabPFNClassifier(
         return self
 
     def predict(self, X):
-        """Predict class labels for samples in X.
+        """Predict the class labels for the provided input samples.
 
         Args:
-            X: The input samples.
+            X: The input data for prediction.
 
         Returns:
-            The predicted class labels.
+            The predicted class labels as a NumPy array.
         """
         return self._predict(X, output_type="preds")
 
     def predict_proba(self, X):
-        """Predict class probabilities for X.
+        """Predict the probabilities of the classes for the provided input samples.
 
         Args:
-            X: The input samples.
+            X: The input data for prediction.
 
         Returns:
-            The class probabilities of the input samples.
+            The predicted probabilities of the classes as a NumPy array.
+            Shape (n_samples, n_classes).
         """
         return self._predict(X, output_type="probas")
 
@@ -5915,6 +6089,7 @@ class TabPFNClassifier(
         X,
         output_type: Literal["probas", "preds"],
     ) -> np.ndarray:
+        """Validate `X` and request `output_type` predictions from the server."""
         # IMPORTANT: self._get_predict_params() should be called first to make sure
         # we capture the original user-provided values.
         predict_params = self._get_predict_params(locals())
@@ -5967,6 +6142,7 @@ class TabPFNClassifier(
         return cast("np.ndarray", result.y_pred)
 
     def _get_tabpfn_config(self) -> ClassifierTabPFNConfig:
+        """Build the model config from the constructor parameters that are not None."""
         init_params = self.get_params()
         cfg = {
             k: v
@@ -5977,16 +6153,23 @@ class TabPFNClassifier(
         return ClassifierTabPFNConfig.model_validate(cfg)
 
     def _get_predict_params(self, kwargs: dict[str, Any]) -> ClassifierPredictParams:
+        """Build the predict parameters from the matching entries of `kwargs`."""
         params = {
             k: v for k, v in kwargs.items() if k in ClassifierPredictParams.model_fields
         }
         return ClassifierPredictParams.model_validate(params)
 
     def _validate_targets_and_classes(self, y) -> np.ndarray:
-        """Validate the targets and return their classes without committing
-        them to ``classes_`` â€” `fit()` assigns fitted state only once the
-        server fit succeeded, so a failed re-fit can't leave the old
-        ``model_id_`` paired with the new targets' classes."""
+        """Validate the targets and return their classes without setting ``classes_``.
+
+        `fit()` assigns fitted state only once the server fit succeeded, so a
+        failed re-fit can't leave the old ``model_id_`` paired with the new
+        targets' classes.
+
+        Raises:
+            ValueError: If `y` contains NaN, is not a valid classification
+                target, or has more classes than the server supports.
+        """
         y_ = column_or_1d(y, warn=True)
         if sum(pd.isnull(y_)) > 0:
             raise ValueError("Input y contains NaN.")
@@ -6080,111 +6263,149 @@ class TabPFNRegressor(
         like to use a previous model version, use `create_default_for_version()`
         instead. You can also use `model_path` to specify a particular model.
 
-        Parameters
-        ----------
-        model_path: str, default="auto"
-            The name of the model to use. "auto" lets the server pick the
-            latest default model; "default" is accepted as a backward-compatible
-            alias. Use `create_default_for_version()` to pin to a specific
-            major version.
-        n_estimators: int, default=8
-            The number of estimators in the TabPFN ensemble. We aggregate the
-             predictions of `n_estimators`-many forward passes of TabPFN. Each forward
-             pass has (slightly) different input data. Think of this as an ensemble of
-             `n_estimators`-many "prompts" of the input data.
-        softmax_temperature: float, default=0.9
-            The temperature for the softmax function. This is used to control the
-            confidence of the model's predictions. Lower values make the model's
-            predictions more confident. This is only applied when predicting during a
-            post-processing step. Set `softmax_temperature=1.0` for no effect.
-        average_before_softmax: bool, default=False
-            Only used if `n_estimators > 1`. Whether to average the predictions of the
-            estimators before applying the softmax function. This can help to improve
-            predictive performance when calibrating the model's confidence. This is only
-            applied when predicting during a post-processing step.
-        ignore_pretraining_limits: bool, default=False
-            Whether to ignore the pre-training limits of the model. The TabPFN models
-            have been pre-trained on a specific range of input data. If the input data
-            is outside of this range, the model may not perform well. You may ignore
-            our limits to use the model on data outside the pre-training range.
-        inference_precision: "autocast" or "auto", default="auto"
-            The precision to use for inference. This can dramatically affect the
-            speed and reproducibility of the inference.
-        random_state: int or RandomState or RandomGenerator or None, default=0
-            Controls the randomness of the model. Pass an int for reproducible
-            results; pass `None` to use a fresh random seed each run.
-        inference_config: dict or None, default=None
-            Additional advanced arguments for model interface. See the doc of InferenceConfig
-            in the tabpfn package for more details. For the client, the inference_config and the
-            preprocess transforms need to be dictionaries.
-        categorical_features_indices: list[int] or None, default=None
-            The indices of the columns that should be treated as categorical.
-            If None, the model infers which columns are categorical.
-        fit_mode: {"fit_preprocessors", "fit_with_cache"} or None, default=None
-            Controls what the server persists at fit time. None defers to the
-            server default, which is "fit_preprocessors".
-            "fit_preprocessors" fits only the preprocessing state, so every
-            predict re-runs the forward pass from the uploaded train set.
-            "fit_with_cache" additionally builds and persists a server-side KV
-            cache keyed by the resulting fitted-train-set id; later predicts
-            against that id (stored on the estimator as `model_id_`, and
-            persisted across runs by `save_model()`) are served from the cache
-            instead of re-fitting.
-        text_handling: {"advanced", "simple"}, default="advanced"
-            Text-processing preset. Both choices support text. Advanced preserves
-            the default processing; simple is an alternative whose accuracy depends
-            on the dataset. Applies when preprocessing is enabled.
-        paper_version: bool, default=False
-            If True, will use the model described in the paper, instead of the newest
-            version available on the API, which e.g handles text features better.
-        thinking_mode: bool, default=False
-            If True, spend extra fit-time compute for higher precision.
-            Equivalent to passing `thinking_effort="medium"` â€” setting any
-            `thinking_effort` value also enables thinking, so this flag is
-            optional when you've set the level explicitly.
-        thinking_effort: {"medium", "high"} or None, default=None
-            Effort level for thinking mode. When set, thinking is enabled
-            (you don't also need `thinking_mode=True`). When None and
-            `thinking_mode=True`, defaults to "medium".
-        thinking_timeout_s: float or None, default=None
-            Budget for the fit, in seconds. Only consulted when thinking is
-            enabled. Capped at 2400.
-        thinking_metric: str or None, default=None
-            Optimization metric for the fit. Only consulted when thinking
-            is enabled.
+        Args:
+            model_path:
+                The name of the model to use. "auto" (or None) lets the server pick
+                the latest default model; "default" is accepted as a backward-compatible
+                alias. Use `create_default_for_version()` to pin to a specific major
+                version, and `list_available_models()` for the accepted names.
 
-            Regression:
-                "r2", "mean_squared_error", "root_mean_squared_error",
-                "mean_absolute_error", "median_absolute_error",
-                "mean_absolute_percentage_error",
-                "symmetric_mean_absolute_percentage_error", "spearmanr",
-                "pearsonr".
+            n_estimators:
+                The number of estimators in the TabPFN ensemble. We aggregate the
+                predictions of `n_estimators`-many forward passes of TabPFN. Each
+                forward pass has (slightly) different input data. Think of this as an
+                ensemble of `n_estimators`-many "prompts" of the input data. The
+                server accepts at most 8. If None, it applies the model's default:
 
-            Aliases "mse", "rmse", "mae", "mape", "smape" are also
-            accepted.
-        group_col: str or list[str] or None, default=None
-            New since 0.6.0. Column(s) of `X` that identify groups of related
-            rows, e.g. a patient or a session id. During the fit, the rows of
-            one group are never split between training and validation. The fit
-            may also use the other rows of a group to predict a row of it.
-            Requires thinking mode, and `X` passed to `fit` and `predict` must
-            be a pandas DataFrame that holds the column(s).
-        time_col: str or None, default=None
-            New since 0.6.0. Column of `X` that holds time, as datetimes or
-            numbers. During the fit, validation uses contiguous blocks of time.
-            Cannot be combined with `group_col`. Requires thinking mode, and
-            `X` must be a pandas DataFrame that holds the column.
-        group_time_col: str or None, default=None
-            New since 0.6.0. Column of `X` that orders the rows within a group.
-            Requires `group_col` and thinking mode, and `X` must be a pandas
-            DataFrame that holds the column.
-        api_mode: ApiMode, default=ApiMode.AUTO
-            Controls how the client calls the server.
-            SYNC: the client waits for the server to complete the request before returning.
-            ASYNC: the client returns immediately and the server completes the request in the background.
-            AUTO: the client automatically determines the best mode to use based on the request.
-        client_options : ClientOptions, default=None
-            Client specific options (e.g. timeout, headers).
+                - v3.5 (`"v3.5_default"`, the default model): 8.
+                - v3.5-fast (`"v3.5-fast_default"`): 4.
+                - v3 (`"v3_default"`): 8, raised on wide datasets until every
+                  feature is seen by at least one estimator, up to 32.
+
+                These are server defaults and may change with server releases.
+
+            softmax_temperature:
+                The temperature for the softmax function. This is used to control the
+                confidence of the model's predictions. Lower values make the model's
+                predictions more confident. This is only applied when predicting during
+                a post-processing step. Set `softmax_temperature=1.0` for no effect. If
+                None, the server default is used.
+
+            average_before_softmax:
+                Only used if `n_estimators > 1`. Whether to average the predictions of
+                the estimators before applying the softmax function. This can help to
+                improve predictive performance when calibrating the model's confidence.
+                This is only applied when predicting during a post-processing step. If
+                None, the server default is used.
+
+            ignore_pretraining_limits:
+                Whether to ignore the pre-training limits of the model. The TabPFN
+                models have been pre-trained on a specific range of input data. If the
+                input data is outside of this range, the model may not perform well. You
+                may ignore our limits to use the model on data outside the pre-training
+                range.
+
+            inference_precision:
+                The precision to use for inference. This can dramatically affect the
+                speed and reproducibility of the inference. `"autocast"` enables
+                mixed-precision autocast; `"auto"` decides based on the device. If None,
+                the server default is used.
+
+            random_state:
+                Controls the randomness of the model. Pass an int for reproducible
+                results; pass `None` to use a fresh random seed each run.
+
+            inference_config:
+                For advanced users, additional advanced arguments that adjust the
+                behavior of the model interface. See `InferenceConfig` in the tabpfn
+                package for details and options. For the client, the inference_config
+                and the preprocess transforms need to be dictionaries.
+
+            categorical_features_indices:
+                The indices of the columns that should be treated as categorical.
+                If None, the model infers which columns are categorical.
+
+            fit_mode:
+                Controls what the server persists at fit time. None defers to the
+                server default, which is "fit_preprocessors".
+
+                - If `"fit_preprocessors"`, only the preprocessing state is fitted, so
+                  every predict re-runs the forward pass from the uploaded train set.
+                - If `"fit_with_cache"`, a server-side KV cache is additionally built
+                  and persisted, keyed by the resulting fitted-train-set id. Later
+                  predicts against that id (stored on the estimator as `model_id_`, and
+                  persisted across runs by `save_model()`) are served from the cache
+                  instead of re-fitting.
+
+            paper_version:
+                If True, will use the model described in the paper, instead of the
+                newest version available on the API, which e.g. handles text features
+                better. Cannot be combined with thinking mode.
+
+            thinking_mode:
+                If True, spend extra fit-time compute for higher precision.
+                Equivalent to passing `thinking_effort="medium"`; setting any
+                `thinking_effort` value also enables thinking, so this flag is
+                optional when you've set the level explicitly.
+
+            thinking_effort:
+                Effort level for thinking mode. When set, thinking is enabled
+                (you don't also need `thinking_mode=True`). When None and
+                `thinking_mode=True`, defaults to "medium".
+
+            thinking_timeout_s:
+                Budget for the fit, in seconds. Only consulted when thinking is
+                enabled. Capped at 2400.
+
+            thinking_metric:
+                Optimization metric for the fit. Only consulted when thinking
+                is enabled.
+
+                Regression:
+                    "r2", "mean_squared_error", "root_mean_squared_error",
+                    "mean_absolute_error", "median_absolute_error",
+                    "mean_absolute_percentage_error",
+                    "symmetric_mean_absolute_percentage_error", "spearmanr",
+                    "pearsonr".
+
+                Aliases "mse", "rmse", "mae", "mape", "smape" are also
+                accepted.
+
+            group_col:
+                New since 0.6.0. Column(s) of `X` that identify groups of related
+                rows, e.g. a patient or a session id. During the fit, the rows of
+                one group are never split between training and validation. The fit
+                may also use the other rows of a group to predict a row of it.
+                Requires thinking mode, and `X` passed to `fit` and `predict` must
+                be a pandas DataFrame that holds the column(s).
+
+            time_col:
+                New since 0.6.0. Column of `X` that holds time, as datetimes or
+                numbers. During the fit, validation uses contiguous blocks of time.
+                Cannot be combined with `group_col`. Requires thinking mode, and
+                `X` must be a pandas DataFrame that holds the column.
+
+            group_time_col:
+                New since 0.6.0. Column of `X` that orders the rows within a group.
+                Requires `group_col` and thinking mode, and `X` must be a pandas
+                DataFrame that holds the column.
+
+            api_mode:
+                Controls how the client calls the server.
+
+                - `SYNC`: the client waits for the server to complete the request
+                  before returning.
+                - `ASYNC`: the client returns immediately and the server completes the
+                  request in the background.
+                - `AUTO`: the client determines the best mode based on the request.
+
+            client_options:
+                Client specific options (e.g. timeout, headers).
+
+            text_handling:
+                Text-processing preset. Both choices support text. Advanced preserves
+                the default processing; simple is an alternative whose accuracy depends
+                on the dataset. Applies when preprocessing is enabled.
         """
         self.model_path = model_path
         self.categorical_features_indices = categorical_features_indices
@@ -6219,6 +6440,22 @@ class TabPFNRegressor(
         y: pd.Series | np.ndarray,
         description: str | None = None,
     ):
+        """Fit the model.
+
+        Uploads the training data to the server, which fits the model on it.
+
+        Args:
+            X: The input data.
+            y: The target variable.
+            description: Description of the dataset and task for the server.
+
+        Returns:
+            self
+
+        Raises:
+            ValueError: If the data or the estimator's parameters are invalid,
+                or the data exceeds the model limits.
+        """
         text_handling = validate_text_handling(self.text_handling)
         # assert init() is called
         init()
@@ -6280,26 +6517,37 @@ class TabPFNRegressor(
     ) -> np.ndarray | list[np.ndarray] | dict[str, np.ndarray]:
         """Predict regression target for X.
 
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input samples.
-        output_type : str, default="mean"
-            The type of prediction to return:
-            - "mean": Return mean prediction
-            - "median": Return median prediction
-            - "mode": Return mode prediction
-            - "quantiles": Return predictions for specified quantiles
-            - "full": Return full prediction details
-            - "main": Return main prediction metrics
-        quantiles : list[float] or None, default=None
-            Quantiles to compute when output_type="quantiles".
-            Default is [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        Args:
+            X: The input data, of shape (n_samples, n_features).
+            output_type: Determines the type of output to return.
 
-        Returns
-        -------
-        array-like or dict
-            The predicted values.
+                - If `"mean"`, we return the mean over the predicted distribution.
+                - If `"median"`, we return the median over the predicted
+                  distribution.
+                - If `"mode"`, we return the mode over the predicted distribution.
+                - If `"quantiles"`, we return the quantiles of the predicted
+                  distribution. The parameter `quantiles` determines which
+                  quantiles are returned.
+                - If `"main"`, we return all the output types above in a dict.
+                - If `"full"`, we return the full output of the model, including
+                  the logits, the borders and all the output types from "main".
+                  The criterion is included when the optional `tabpfn` and
+                  `torch` packages are installed.
+
+            quantiles: The quantiles to return if `output_type="quantiles"`.
+                By default, the `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
+                quantiles are returned.
+
+        Returns:
+            An array of predictions for `"mean"`, `"median"` and `"mode"`; a
+            list with one array per quantile for `"quantiles"`; a dict of arrays
+            for `"main"` and `"full"`.
+
+        Raises:
+            ValueError: If `X` exceeds the model limits or the group columns are
+                invalid.
+            RuntimeError: If a `"full"` prediction split across several requests
+                returns fields that cannot be combined.
         """
         # IMPORTANT: self._get_predict_params() should be called first to make sure
         # we capture the original user-provided values.
@@ -6410,6 +6658,7 @@ class TabPFNRegressor(
         return output
 
     def _get_tabpfn_config(self) -> RegressorTabPFNConfig:
+        """Build the model config from the constructor parameters that are not None."""
         init_params = self.get_params()
         cfg = {
             k: v
@@ -6420,6 +6669,7 @@ class TabPFNRegressor(
         return RegressorTabPFNConfig.model_validate(cfg)
 
     def _get_predict_params(self, kwargs: dict[str, Any]) -> RegressorPredictParams:
+        """Build the predict parameters from the non-None entries of `kwargs`."""
         params = {
             k: v
             for k, v in kwargs.items()
@@ -6429,6 +6679,11 @@ class TabPFNRegressor(
         return RegressorPredictParams.model_validate(params)
 
     def _validate_targets(self, y) -> None:
+        """Check that `y` is one-dimensional and free of NaN.
+
+        Raises:
+            ValueError: If `y` contains NaN.
+        """
         y_ = column_or_1d(y, warn=True)
         if sum(pd.isnull(y_)) > 0:
             raise ValueError("Input y contains NaN.")
@@ -6439,8 +6694,17 @@ def validate_train_set(
     y: pd.Series | np.ndarray | None = None,
     model_path: str | None = None,
 ) -> None:
-    """Check the integrity of the training data."""
+    """Check the integrity of the training data.
 
+    Args:
+        X: The training input data.
+        y: The training targets, if available.
+        model_path: The model the data is fitted with; selects the limits.
+
+    Raises:
+        ValueError: If `X` and `y` differ in length, or `X` exceeds the model's
+            row, column or upload-cell limits.
+    """
     # check if the number of samples is consistent (ValueError)
     if y is not None:
         if X.shape[0] != y.shape[0]:
@@ -6493,10 +6757,19 @@ def validate_test_set(
 ):
     """Check the integrity of the test data.
 
-    `split_full_output` marks that the caller will honour the full-output row
-    cap by splitting the request, so that cap is not enforced here.
-    """
+    Args:
+        X: The test input data.
+        output_type: The requested prediction output type.
+        model_path: The model the data is predicted with; selects the limits.
+        train_rows: Rows of the fitted train set. Caps the test rows through the
+            server's row-pairs budget unless `inference_config` subsamples.
+        split_full_output: Whether the caller honours the full-output row cap by
+            splitting the request, so that cap is not enforced here.
+        inference_config: The estimator's inference config.
 
+    Raises:
+        ValueError: If `X` exceeds the model's row, column or cell limits.
+    """
     limit = _limit_for_model_path(model_path)
     if limit is None:
         return
@@ -6587,10 +6860,11 @@ def _clean_text_features(X: pd.DataFrame) -> pd.DataFrame: ...
 @overload
 def _clean_text_features(X: np.ndarray) -> np.ndarray: ...
 def _clean_text_features(X):
-    """
-    Clean text features in the input data. This is used to avoid
-    serialization errors, which happens when the input data contains
-    commas or weird spaces, and to limit the length of the text features.
+    """Clean text features in the input data.
+
+    Removes commas and collapses whitespace in text columns so the data
+    serializes cleanly, and truncates text to 2500 characters. Numeric arrays
+    are returned unchanged and torch tensors are converted to numpy.
     """
     # Convert numpy array to pandas DataFrame if necessary
     # not necessary if numpy array of numbers
@@ -6633,6 +6907,7 @@ def _clean_text_features(X):
 
 
 def _build_fit_task_config(tabpfn_config: TabPFNConfig) -> FitTaskConfig:
+    """Wrap a classifier or regressor model config in its fit task config."""
     match tabpfn_config:
         case ClassifierTabPFNConfig():
             return ClassifierFitTaskConfig(
@@ -6647,6 +6922,11 @@ def _build_fit_task_config(tabpfn_config: TabPFNConfig) -> FitTaskConfig:
 def _build_tabpfn_systems(
     paper_version: bool, thinking_mode: bool
 ) -> list[TabPFNSystem]:
+    """Return the server-side systems to run for the given mode.
+
+    Raises:
+        ValueError: If both `paper_version` and `thinking_mode` are set.
+    """
     if paper_version and thinking_mode:
         raise ValueError(
             "Paper version and thinking mode cannot be enabled at the same time"
@@ -6659,6 +6939,7 @@ def _build_tabpfn_systems(
 
 
 def _resolve_thinking_mode(enabled: bool, effort: str | None = None) -> bool:
+    """Return whether thinking is enabled, either explicitly or by setting an effort."""
     # To honour previous contract, setting effort alone is enough to enable thinking.
     if enabled:
         return True
@@ -6678,6 +6959,7 @@ def _build_thinking_config(
     time_col: str | None = None,
     group_time_col: str | None = None,
 ) -> ThinkingConfig | None:
+    """Validate the group columns and build the thinking config, or None if disabled."""
     _validate_group_columns(
         X,
         enabled=enabled,
@@ -6797,7 +7079,7 @@ class InteractiveLoginError(RuntimeError):
 
 
 def _has_display() -> bool:
-    """Heuristic: is a graphical display likely available for opening a browser?"""
+    """Return whether a graphical display is likely available for opening a browser."""
     if sys.platform == "win32":
         return True
     if sys.platform == "darwin":
@@ -6863,7 +7145,16 @@ def _create_callback_server(
     auth_event: threading.Event,
     received_token: list[str | None],
 ) -> tuple[socketserver.TCPServer, int]:
-    """Serve the login callback on an ephemeral port. Returns ``(httpd, port)``."""
+    """Serve the login callback on an ephemeral loopback port.
+
+    Args:
+        gui_url: Base URL of the web frontend, used for the success redirect.
+        auth_event: Set once a request delivers a token.
+        received_token: Single-element list the handler writes the token into.
+
+    Returns:
+        The server, not yet serving, and the port it is bound to.
+    """
 
     class _CallbackHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -6927,7 +7218,16 @@ def _poll_for_token(
     received_token: list[str | None],
     timeout: float,
 ) -> str | None:
-    """Read a token from stdin or the browser callback, whichever arrives first."""
+    """Read a token from stdin or the browser callback, whichever arrives first.
+
+    Args:
+        auth_event: Set by the callback server once it has received a token.
+        received_token: Single-element list holding the callback's token.
+        timeout: Seconds to wait before giving up.
+
+    Returns:
+        The pasted or received token, or None on timeout or EOF.
+    """
     prompt = "API key (or press Enter to keep waiting): "
 
     if sys.platform == "win32":
@@ -7087,7 +7387,11 @@ def _browser_login(gui_url: str, timeout: float) -> str | None:
 
 
 def _prompt_menu() -> str:
-    """Ask whether to log in or create an account. Returns 'login'/'signup'/'q'."""
+    """Ask whether to log in or create an account.
+
+    Returns:
+        'login', 'signup', or 'q' to quit.
+    """
     sys.stdout.write(
         "\n  [1] Log in to your TabPFN account"
         "\n  [2] Create a TabPFN account"
@@ -7126,18 +7430,22 @@ def interactive_login(
     On success the token is verified, cached for future runs, and installed as
     the active token, so a subsequent `init()` needs no further input.
 
-    :param force_relogin: Run the login flow even when a working token is
-                          already available, for example to switch accounts.
-                          By default an existing token is returned as-is.
-    :param open_browser: Open the login page in a browser. When False (or when
-                         no display is detected) the URL is printed and you
-                         paste the API key instead. Does not affect signup,
-                         which never needs a browser.
-    :param timeout: Seconds to wait for the browser callback. The paste prompt
-                    stays available throughout.
-    :returns: The access token.
-    :raises InteractiveLoginError: If no terminal is available, the flow was
-                                   aborted, or the resulting token was rejected.
+    Args:
+        force_relogin: Run the login flow even when a working token is already
+            available, for example to switch accounts. By default an existing
+            token is returned as-is.
+        open_browser: Open the login page in a browser. When False (or when no
+            display is detected) the URL is printed and you paste the API key
+            instead. Does not affect signup, which never needs a browser.
+        timeout: Seconds to wait for the browser callback. The paste prompt
+            stays available throughout.
+
+    Returns:
+        The access token.
+
+    Raises:
+        InteractiveLoginError: If no terminal is available, the flow was
+            aborted, or the resulting token was rejected.
     """
     if not force_relogin:
         from tabpfn_client.service_wrapper import UserAuthenticationClient
@@ -7238,6 +7546,8 @@ def interactive_login(
 ================================================
 FILE: src/tabpfn_client/models.py
 ================================================
+"""Data classes and type aliases shared by the client and estimators."""
+
 from enum import Enum
 from dataclasses import dataclass, field
 import numpy as np
@@ -7258,6 +7568,8 @@ FitModeLiteral = Literal["fit_preprocessors", "fit_with_cache"]
 
 
 class ApiMode(str, Enum):
+    """Server API mode: synchronous, asynchronous, or chosen by the client."""
+
     AUTO = "auto"
     SYNC = "sync"
     ASYNC = "async"
@@ -7265,6 +7577,14 @@ class ApiMode(str, Enum):
 
 @dataclass(frozen=True)
 class FitResult:
+    """Outcome of a fit request.
+
+    Attributes:
+        fitted_train_set_id: Server-side id of the fitted train set.
+        timings: Seconds per stage as reported by the server, or None when it
+            reports none.
+    """
+
     fitted_train_set_id: UUID
     # Seconds per stage as reported by the server; None when it reports none.
     timings: dict[str, Any] | None = None
@@ -7272,6 +7592,16 @@ class FitResult:
 
 @dataclass(frozen=True)
 class PredictionResult:
+    """Outcome of a predict request.
+
+    Attributes:
+        y_pred: Predictions; an array, a list of arrays, or a dict of arrays
+            depending on the output type requested.
+        metadata: Additional metadata returned by the server.
+        timings: Seconds per stage as reported by the server, or None when it
+            reports none.
+    """
+
     y_pred: np.ndarray | list[np.ndarray] | dict[str, np.ndarray]
     metadata: dict[str, Any] = field(default_factory=dict)
     # Seconds per stage as reported by the server; None when it reports none.
@@ -7280,16 +7610,13 @@ class PredictionResult:
 
 @dataclass
 class ClientOptions:
-    """
-    Options for the client.
+    """Options for the client.
+
     Can be used to override default client behavior for a single request.
 
-    Parameters
-    ----------
-    timeout : float, optional
-        Timeout for the request in seconds.
-    headers : dict[str, str], optional
-        Headers for the request overriding the default headers.
+    Attributes:
+        timeout: Timeout for the request in seconds.
+        headers: Headers for the request overriding the default headers.
     """
 
     # Note: timeout=None does not fallback to the client default, rather it disables
@@ -7305,10 +7632,31 @@ FILE: src/tabpfn_client/options.py
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
 
+"""Client settings read from environment variables."""
+
 from pydantic_settings import BaseSettings
 
 
 class Options(BaseSettings):
+    """Client settings, each overridable by the environment variable of the same name.
+
+    Attributes:
+        TABPFN_TOKEN: Access token used for authentication.
+        TABPFN_CLIENT_API_URL: Override for the server URL.
+        TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD: Maximum threads used per upload.
+        TABPFN_CLIENT_TIMEOUT: Default request timeout in seconds.
+        TABPFN_CLIENT_UPLOAD_TIMEOUT: Upload timeout in seconds.
+        TABPFN_CLIENT_FORCE_REUPLOAD: Whether to re-upload datasets the server
+            already holds.
+        TABPFN_CLIENT_DEDUP_DATASETS: Whether to deduplicate dataset uploads.
+        TABPFN_CLIENT_ASYNC_USE_ABOVE_TRAINSET_SIZE: Train-set size in bytes above
+            which the asynchronous API is used. Overridden by the server default
+            unless set in the environment.
+        TABPFN_CLIENT_ASYNC_POLL_TIMEOUT: Timeout in seconds when polling an
+            asynchronous job. Overridden by the server default unless set in the
+            environment.
+    """
+
     TABPFN_TOKEN: str | None = None
     TABPFN_CLIENT_API_URL: str | None = None
     TABPFN_CLIENT_MAX_THREAD_PER_UPLOAD: int = 8
@@ -7329,11 +7677,13 @@ _opts: Options | None = None
 # TODO(refactor): Some opts are used in the http client which is initialized as a class
 # variable of the ServiceClient singleton. These cannot be updated after importing.
 def reload_opts() -> None:
+    """Re-read the options from the environment."""
     global _opts
     _opts = Options()
 
 
 def get_opts() -> Options:
+    """Return the current options, reading them from the environment on first use."""
     # Constructed on first use rather than at import time, so that environment
     # variables set after `import tabpfn_client` are still picked up.
     global _opts
@@ -7442,8 +7792,19 @@ def _jsonable(value: Any) -> Any:
 
 
 def _read_record(source: str | Path | dict[str, Any]) -> _ModelRecord:
-    """Parse a record from a `save_model()` dict or JSON file, failing with a
-    message that names the source rather than a bare validation error."""
+    """Parse a record from a `save_model()` dict or JSON file.
+
+    Args:
+        source: The dict returned by `save_model()`, or the path of the JSON
+            file it wrote.
+
+    Returns:
+        The validated record.
+
+    Raises:
+        ValueError: If `source` is not a valid record; the message names the
+            source rather than showing a bare validation error.
+    """
     if isinstance(source, dict):
         raw: Any = source
         origin = "The given dict"
@@ -7501,14 +7862,11 @@ class ModelPersistenceMixin(BaseEstimator):
         with the same account, and they stay usable for as long as the training
         data remains on the server (see `UserDataClient` to delete it).
 
-        Parameters
-        ----------
-        path : str or Path, optional
-            Where to write the record as JSON. Nothing is written when omitted.
+        Args:
+            path: Where to write the record as JSON. Nothing is written when
+                omitted.
 
-        Returns
-        -------
-        dict
+        Returns:
             The record as a JSON-serialisable dict, whether or not `path` was
             given, so it can also be kept elsewhere (a database, an experiment
             tracker) and handed to `load_model()` directly.
@@ -7541,19 +7899,18 @@ class ModelPersistenceMixin(BaseEstimator):
         here; the first `predict()` authenticates (like `fit()` would) and
         raises `FittedModelNotFoundError` if the server no longer has the model.
 
-        Parameters
-        ----------
-        source : str, Path or dict
-            The path of a file written by `save_model(path)`, or the dict it
-            returned.
+        Args:
+            source: The path of a file written by `save_model(path)`, or the
+                dict it returned.
 
-        Raises
-        ------
-        ValueError
-            If `source` is not a record written by `save_model()`, holds a model
-            of the other task (a regression model loaded into a classifier),
-            or has parameters this class does not accept, for instance because
-            a newer tabpfn-client saved it.
+        Returns:
+            A fitted estimator of this class.
+
+        Raises:
+            ValueError: If `source` is not a record written by `save_model()`,
+                holds a model of the other task (a regression model loaded into
+                a classifier), or has parameters this class does not accept,
+                for instance because a newer tabpfn-client saved it.
         """
         record = _read_record(source)
         task = _task_of(cls)
@@ -7606,6 +7963,8 @@ FILE: src/tabpfn_client/prompt_agent.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
+"""Interactive terminal prompts for welcome, signup, and account management."""
+
 from __future__ import annotations
 
 import getpass
@@ -7648,6 +8007,7 @@ ROLES = [
 
 
 def maybe_graceful_exit() -> None:
+    """Exit with status 1 if IPython is not installed; otherwise return."""
     try:
         from IPython import get_ipython  # type: ignore
 
@@ -7659,19 +8019,24 @@ def maybe_graceful_exit() -> None:
 
 
 class PromptAgent:
+    """Namespace of classmethods that drive the interactive terminal prompts."""
+
     def __new__(cls):
+        """Refuse instantiation; use the classmethods directly."""
         raise RuntimeError(
             "This class should not be instantiated. Use classmethods instead."
         )
 
     @staticmethod
     def indent(text: str):
+        """Indent every line of `text` by two spaces."""
         indent_factor = 2
         indent_str = " " * indent_factor
         return textwrap.indent(text, indent_str)
 
     @classmethod
     def prompt_welcome(cls):
+        """Print the logo, a development notice, and the issue-tracker link."""
         # Large Prior Labs ASCII logo with a short tagline
         print_logo("Thanks for being part of the journey")
         console.print(
@@ -7686,10 +8051,14 @@ class PromptAgent:
 
     @classmethod
     def token_instructions(cls, rejected: bool = False) -> str:
-        """The message shown when no usable access token is available.
+        """Build the message shown when no usable access token is available.
 
-        `rejected` distinguishes a token that the server turned down from no
-        token having been supplied at all.
+        Args:
+            rejected: True if the server turned down a supplied token, False if
+                no token was supplied at all.
+
+        Returns:
+            Instructions for obtaining and setting an access token.
         """
         headline = (
             "Your TabPFN access token was rejected by the server."
@@ -7713,9 +8082,7 @@ class PromptAgent:
 
     @staticmethod
     def password_req_to_policy(password_req: list[str]):
-        """
-        Convert password requirement strings like "Length(8)" into a PasswordPolicy.
-        """
+        """Convert password requirement strings like "Length(8)" into a PasswordPolicy."""
         requirements = {}
         for req in password_req:
             word_part, number_part = req.split("(")
@@ -7727,7 +8094,13 @@ class PromptAgent:
     def display_requirement_status(
         cls, password: str, password_req: list[str], password_policy: PasswordPolicy
     ) -> None:
-        """Display check marks for met/unmet requirements."""
+        """Display check marks for met/unmet requirements.
+
+        Args:
+            password: The password to check; nothing is printed if empty.
+            password_req: Requirement strings like "Length(8)", as displayed.
+            password_policy: Policy built from `password_req`.
+        """
         if not password:
             return
 
@@ -7745,7 +8118,15 @@ class PromptAgent:
 
     @classmethod
     def prompt_multi_select(cls, options: list[str], prompt: str) -> str:
-        """Creates an interactive single-choice menu over `options`."""
+        """Show a lettered single-choice menu over `options` until one is picked.
+
+        Args:
+            options: Choices to display, labelled a, b, c, ...
+            prompt: Question printed above the options.
+
+        Returns:
+            The chosen option.
+        """
         console.print(f"\n[bold]{prompt}[/bold]")
         for i, option in enumerate(options):
             console.print(f"[bold cyan]\\[{chr(ord('a') + i)}][/bold cyan] {option}")
@@ -7767,7 +8148,15 @@ class PromptAgent:
 
     @classmethod
     def prompt_and_retry(cls, prompt: str, min_length: int = 2) -> str:
-        """Prompt with a minimum-length check."""
+        """Prompt repeatedly until the stripped input has at least `min_length` characters.
+
+        Args:
+            prompt: Question to print.
+            min_length: Minimum accepted length.
+
+        Returns:
+            The stripped input.
+        """
         console.print(f"\n{prompt}:")
         while True:
             value = console.input("â†’ ").strip()
@@ -7779,7 +8168,12 @@ class PromptAgent:
 
     @classmethod
     def _prompt_account_details(cls) -> tuple[str, str]:
-        """Step 1: email and password. Returns (email, password)."""
+        """Prompt for email and password (signup step 1).
+
+        Returns:
+            The validated email and the confirmed password that meets the
+            server's password policy.
+        """
         console.print("\n[bold cyan]Step 1/3[/bold cyan] - Account details")
 
         # Replaces the separate Terms and Data Privacy steps. Printed before the
@@ -7833,7 +8227,12 @@ class PromptAgent:
 
     @classmethod
     def _prompt_profile(cls) -> dict:
-        """Step 2: profile and the marketing opt-in."""
+        """Prompt for profile details and the marketing opt-in (signup step 2).
+
+        Returns:
+            Registration fields: name, company, role, email opt-in, and the
+            terms/privacy acceptance flags.
+        """
         console.print("\n[bold cyan]Step 2/3[/bold cyan] - Complete your profile")
 
         while True:
@@ -7877,11 +8276,16 @@ class PromptAgent:
 
     @classmethod
     def prompt_signup(cls) -> str | None:
-        """Run the three-step signup. Returns an access token, or None if aborted.
+        """Run the three-step signup.
 
-        The token is only returned once the email is verified: an unverified
-        account cannot authenticate, so handing the token back earlier would
-        just fail downstream.
+        The token is only returned once the email is verified, since an
+        unverified account cannot authenticate.
+
+        Returns:
+            The access token, or None if email verification was aborted.
+
+        Raises:
+            RuntimeError: If the server rejects the registration.
         """
         email, password = cls._prompt_account_details()
         additional_info = cls._prompt_profile()
@@ -7912,6 +8316,15 @@ class PromptAgent:
 
     @classmethod
     def _verify_user_email(cls, access_token: str | None) -> bool:
+        """Prompt for the email verification code, supporting 'resend' and 'quit'.
+
+        Args:
+            access_token: Token of the newly registered account.
+
+        Returns:
+            True once the email is verified; False if no token was given or the
+            user quit.
+        """
         if access_token is None:
             fail("No access token available for email verification.")
             return False
@@ -7962,6 +8375,7 @@ class PromptAgent:
 
     @classmethod
     def prompt_retrieved_greeting_messages(cls, greeting_messages: list[str]):
+        """Print each server-provided greeting message, indented."""
         for message in greeting_messages:
             notify(cls.indent(message))
 
@@ -7969,6 +8383,11 @@ class PromptAgent:
 
     @classmethod
     def confirm_user_account_deletion(cls) -> bool:
+        """Warn about account deletion and ask the user to type the confirmation phrase.
+
+        Returns:
+            True if the user typed `CONFIRM_DELETION_PHRASE` (case-insensitive).
+        """
         warn(
             "You are about to delete your account. This is permanent and "
             "cannot be undone."
@@ -7980,6 +8399,7 @@ class PromptAgent:
 
     @classmethod
     def prompt_account_deleted(cls):
+        """Report that the account has been deleted."""
         success("Your account has been deleted.")
 
 
@@ -8103,6 +8523,8 @@ FILE: src/tabpfn_client/service_wrapper.py
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
 
+"""Classmethod wrappers around `ServiceClient` for auth, user data and inference."""
+
 from __future__ import annotations
 
 import logging
@@ -8132,28 +8554,34 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceClientWrapper:
+    """Base class of the `ServiceClient` wrappers."""
+
     pass
 
 
 # Singleton class for user authentication
 class UserAuthenticationClient(ServiceClientWrapper, Singleton):
-    """
-    Wrapper of ServiceClient to handle user authentication, including:
-    - user registration and login
-    - access token caching
+    """Wrapper of ServiceClient to handle user authentication.
 
-    This is implemented as a singleton class with classmethods.
+    Covers user registration and login, and access token caching. Implemented
+    as a singleton class with classmethods.
     """
 
     CACHED_TOKEN_FILE = constants.CACHE_DIR / "config"
 
     def __new__(cls):
+        """Refuse instantiation; use the classmethods instead.
+
+        Raises:
+            TypeError: Always.
+        """
         raise TypeError(
             "This class should not be instantiated. Use classmethods instead."
         )
 
     @classmethod
     def is_accessible_connection(cls) -> bool:
+        """Return whether the server is reachable and accepts the connection."""
         return ServiceClient.try_connection()
 
     @classmethod
@@ -8187,18 +8615,34 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def validate_email(cls, email: str) -> tuple[bool, str]:
+        """Check with the server that an email is valid and not already in use.
+
+        Returns:
+            Whether the email is valid, and the message returned by the server.
+        """
         return ServiceClient.validate_email(email)
 
     @classmethod
     def get_password_policy(cls):
+        """Return the password policy from the server."""
         return ServiceClient.get_password_policy()
 
     @classmethod
     def send_verification_email(cls, access_token: str) -> tuple[bool, str]:
+        """Ask the server to send an email-verification email.
+
+        Returns:
+            Whether the email was sent, and the message returned by the server.
+        """
         return ServiceClient.send_verification_email(access_token)
 
     @classmethod
     def verify_email(cls, token: str, access_token: str) -> tuple[bool, str]:
+        """Verify the user's email with the token from the verification email.
+
+        Returns:
+            Whether the email was verified, and the message returned by the server.
+        """
         return ServiceClient.verify_email(token, access_token)
 
     @classmethod
@@ -8210,6 +8654,12 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
         validation_link: str,
         additional_info: dict,
     ) -> tuple[bool, str, str | None]:
+        """Register a new user and, on success, set and cache the returned token.
+
+        Returns:
+            Whether the user was created, the message returned by the server, and
+            the access token, which is None if registration failed.
+        """
         is_created, message, access_token = ServiceClient.register(
             email, password, password_confirm, validation_link, additional_info
         )
@@ -8233,6 +8683,10 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
         The source matters when a token turns out to be bad: only the source
         that produced it may be discarded.
+
+        Returns:
+            The token and its source (``"process"``, ``"env"`` or ``"cache"``),
+            or ``(None, None)`` if no token is found.
         """
         access_token = ServiceClient.get_access_token()
         if access_token:
@@ -8256,6 +8710,15 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def try_reuse_existing_token(cls) -> tuple[bool, str | None]:
+        """Validate the resolved token with the server and use it if valid.
+
+        A rejected token is discarded from the source that produced it.
+
+        Returns:
+            Whether the token is valid, and the token. The token is None when none
+            was found or it was rejected; it is returned with False when the
+            account's email is unverified.
+        """
         access_token, source = cls.resolve_token_with_source()
         if access_token is None:
             return False, None
@@ -8277,6 +8740,7 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def reset_cache(cls):
+        """Drop the process token, the cached token and the TABPFN_TOKEN option."""
         cls._reset_token()
 
     @classmethod
@@ -8292,6 +8756,7 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def _reset_token(cls):
+        """Drop the process token, the cached token and the TABPFN_TOKEN option."""
         ServiceClient.reset_authorization()
         cls.CACHED_TOKEN_FILE.unlink(missing_ok=True)
         # The TABPFN_TOKEN var is always set externally in the environment, in
@@ -8302,22 +8767,35 @@ class UserAuthenticationClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def retrieve_greeting_messages(cls):
+        """Return greeting messages from the server that are new for the user."""
         return ServiceClient.retrieve_greeting_messages()
 
 
 class UserDataClient(ServiceClientWrapper, Singleton):
-    """
-    Wrapper of ServiceClient to handle user data, including:
-    - query, or delete user account data
-    - query, download, or delete uploaded data
+    """Wrapper of ServiceClient to handle user data.
+
+    Queries or deletes user account data, and queries, downloads or deletes
+    uploaded data.
     """
 
     @classmethod
     def get_data_summary(cls) -> dict:
+        """Return the summary of the user's data from the server."""
         return ServiceClient.get_data_summary()
 
     @classmethod
     def download_all_data(cls, save_dir: Path = Path(".")) -> Path:
+        """Download all data uploaded by the user.
+
+        Args:
+            save_dir: Directory to save the download into.
+
+        Returns:
+            The path to the downloaded file.
+
+        Raises:
+            RuntimeError: If the download fails.
+        """
         saved_path = ServiceClient.download_all_data(save_dir)
         if saved_path is None:
             raise RuntimeError("Failed to download data.")
@@ -8327,18 +8805,32 @@ class UserDataClient(ServiceClientWrapper, Singleton):
 
     @classmethod
     def delete_dataset(cls, dataset_uid: str) -> list[str]:
+        """Delete a dataset; deleting a train set also deletes its test sets.
+
+        Args:
+            dataset_uid: The UID of the dataset to delete.
+
+        Returns:
+            The UIDs of the deleted datasets.
+        """
         deleted_datasets = ServiceClient.delete_dataset(dataset_uid)
         logger.info(f"Deleted datasets: {deleted_datasets}")
         return deleted_datasets
 
     @classmethod
     def delete_all_datasets(cls) -> list[str]:
+        """Delete all datasets uploaded by the user.
+
+        Returns:
+            The UIDs of the deleted datasets.
+        """
         deleted_datasets = ServiceClient.delete_all_datasets()
         logger.info(f"Deleted datasets: {deleted_datasets}")
         return deleted_datasets
 
     @classmethod
     def delete_user_account(cls):
+        """Delete the user account after the user confirms it interactively."""
         # local import to avoid circular import
         from tabpfn_client.prompt_agent import PromptAgent
 
@@ -8351,13 +8843,14 @@ class UserDataClient(ServiceClientWrapper, Singleton):
 
 
 class InferenceClient(ServiceClientWrapper, Singleton):
-    """
-    Wrapper of ServiceClient to handle inference, including:
-    - fitting
-    - prediction
-    """
+    """Wrapper of ServiceClient to handle inference (fitting and prediction)."""
 
     def __new__(cls):
+        """Refuse instantiation; use the classmethods instead.
+
+        Raises:
+            TypeError: Always.
+        """
         raise TypeError(
             "This class should not be instantiated. Use classmethods instead."
         )
@@ -8375,6 +8868,7 @@ class InferenceClient(ServiceClientWrapper, Singleton):
         description: str | None,
         text_handling: TextHandling = "advanced",
     ) -> UUID:
+        """Same as `fit_with_result`, returning only the fitted train set id."""
         return ServiceClient.fit(
             X,
             y,
@@ -8400,6 +8894,10 @@ class InferenceClient(ServiceClientWrapper, Singleton):
         description: str | None,
         text_handling: TextHandling = "advanced",
     ) -> FitResult:
+        """Upload a train set to the server and fit it.
+
+        See `ServiceClient.fit_with_result`.
+        """
         return ServiceClient.fit_with_result(
             X,
             y,
@@ -8420,6 +8918,10 @@ class InferenceClient(ServiceClientWrapper, Singleton):
         task_config: ClassifierConfig | RegressorConfig,
         client_options: ClientOptions | None = None,
     ) -> PredictionResult:
+        """Predict on a test set with a fitted train set.
+
+        See `ServiceClient.predict`.
+        """
         return ServiceClient.predict(
             x_test=X,
             fitted_train_set_id=fitted_train_set_id,
@@ -8447,7 +8949,6 @@ from rich.console import Console
 
 def _should_use_color() -> bool:
     """Determine whether color output should be used."""
-
     if os.environ.get("NO_COLOR"):
         return False
     if not sys.stdout.isatty():
@@ -8461,7 +8962,7 @@ logger = logging.getLogger(__name__)
 
 
 def notify(message: str) -> None:
-    """Status text for a human at a terminal, a log record anywhere else.
+    """Print status text at a terminal; log it at INFO level anywhere else.
 
     Output that is not part of an interactive prompt goes through here, so a
     script or batch job gets a quiet stdout it can redirect and parse.
@@ -8473,19 +8974,23 @@ def notify(message: str) -> None:
 
 
 def success(message: str) -> None:
+    """Print `message` in bold green."""
     console.print(f"[bold green]{message}[/bold green]")
 
 
 def warn(message: str) -> None:
+    """Print `message` in yellow."""
     console.print(f"[yellow]{message}[/yellow]")
 
 
 def fail(message: str) -> None:
+    """Print `message` in bold red."""
     console.print(f"[bold red]{message}[/bold red]")
 
 
 @contextmanager
 def status(message: str) -> Generator[None]:
+    """Show a spinner with `message` while the block runs."""
     with console.status(f"[bold]{message}[/bold]"):
         yield
 
@@ -8503,8 +9008,12 @@ _PRIOR_LABS_ASCII = r"""
 """
 
 
-def print_logo(subtitle=None) -> None:
-    """Print the large Prior Labs ASCII logo with optional subtitle."""
+def print_logo(subtitle: str | None = None) -> None:
+    """Print the large Prior Labs ASCII logo.
+
+    Args:
+        subtitle: Dimmed line printed below the logo, if given.
+    """
     console.print(_PRIOR_LABS_ASCII, style="bold blue")
     if subtitle:
         console.print(f"[dim]{subtitle}[/dim]", end="\n\n")
@@ -8528,6 +9037,8 @@ FILE: src/tabpfn_client/utils.py
 #  Copyright (c) Prior Labs GmbH 2025.
 #  Licensed under the Apache License, Version 2.0
 
+"""Helpers for model version resolution and argument validation."""
+
 from typing import Any
 from tabpfn_client.api_models import ModelLimit, ModelVersion, TextHandling
 
@@ -8536,6 +9047,14 @@ def model_limit_from_version(
     model_version: ModelVersion, model_limits: dict[Any, ModelLimit]
 ) -> ModelLimit:
     """Resolve limit of a model to the same or closest previous version limit.
+
+    Args:
+        model_version: Version whose limits to look up.
+        model_limits: Limits keyed by model version.
+
+    Returns:
+        The limits registered for the model version, or for the closest version
+        below it.
 
     Raises:
         ValueError: If no model limits are registered at or below the model version.
@@ -8555,6 +9074,12 @@ def model_version_from_path(model_path: str) -> ModelVersion:
     version marker are the v2 hash names (e.g. `gn2p4bpt`), so they resolve to
     v2. The server is the authority on what a name means; this only picks the
     limits used for client-side pre-flight checks.
+
+    Args:
+        model_path: Checkpoint filename or short model name.
+
+    Returns:
+        The model version the name refers to, or V2 when it has no version marker.
     """
     for version in ModelVersion:
         # "v3" cannot shadow "v3.5" here: both patterns need the separator that
@@ -8566,7 +9091,17 @@ def model_version_from_path(model_path: str) -> ModelVersion:
 
 
 def validate_text_handling(value: object) -> TextHandling:
-    """Reject unsupported text-processing presets before authentication or upload."""
+    """Reject unsupported text-processing presets before authentication or upload.
+
+    Args:
+        value: Requested text-handling preset.
+
+    Returns:
+        The value unchanged.
+
+    Raises:
+        ValueError: If the value is neither "advanced" nor "simple".
+    """
     if value not in ("advanced", "simple"):
         raise ValueError("text_handling must be 'advanced' or 'simple'")
     return value
@@ -8706,6 +9241,7 @@ def _to_jsonable(X: Any) -> list:
 
 
 def _contains_none(value: Any) -> bool:
+    """Return whether `value` is None or a (nested) list containing None."""
     if value is None:
         return True
     if isinstance(value, list):
@@ -8823,8 +9359,15 @@ class _FoundryBase(BaseEstimator):
         self._validate_args()
 
     def _validate_args(self) -> None:
-        """Reject settings that would silently disable caching for a
-        configuration that plainly asked for it."""
+        """Validate constructor arguments.
+
+        Rejects settings that would silently disable caching for a
+        configuration that plainly asked for it, and out-of-range thinking-mode
+        values.
+
+        Raises:
+            ValueError: If the arguments conflict or are out of range.
+        """
         if self.fit_mode == "fit_preprocessors":
             if self.use_kv_cache:
                 raise ValueError(
@@ -8900,7 +9443,7 @@ class _FoundryBase(BaseEstimator):
         return cfg
 
     def _build_thinking_block(self) -> Dict[str, Any]:
-        """Top-level wire fields for thinking-mode. Empty when inactive.
+        """Build the top-level wire fields for thinking mode; empty when inactive.
 
         The endpoint only accepts these keys at the top level of the request
         body â€” nesting them under `task_config` / `tabpfn_config` /
@@ -8949,6 +9492,18 @@ class _FoundryBase(BaseEstimator):
         return state
 
     def fit(self, X: Any, y: Any) -> "_FoundryBase":
+        """Store the training data; the endpoint fits on the next `predict*` call.
+
+        Args:
+            X: Training features.
+            y: Training targets.
+
+        Returns:
+            The estimator itself.
+
+        Raises:
+            ValueError: If `X` and `y` have different numbers of samples.
+        """
         X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
         y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
         if X_arr.shape[0] != y_arr.shape[0]:
@@ -8970,6 +9525,13 @@ class _FoundryBase(BaseEstimator):
         output_type: str,
         predict_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """POST a predict request to the endpoint and return the JSON response.
+
+        Captures the returned `model_id` for reuse when caching is active.
+
+        Raises:
+            FoundryEndpointError: If the endpoint answers with a non-2xx status.
+        """
         check_is_fitted(self, ["X_train_", "y_train_"])
         params: Dict[str, Any] = {"output_type": output_type}
         if predict_params:
@@ -9014,10 +9576,12 @@ class TabPFNClassifier(_FoundryBase, ClassifierMixin):
         super().__init__(*args, task=task, **kwargs)
 
     def predict(self, X: Any) -> np.ndarray:
+        """Predict class labels for `X`."""
         result = self._invoke(X, output_type="preds")
         return np.asarray(result["prediction"])
 
     def predict_proba(self, X: Any) -> np.ndarray:
+        """Predict class probabilities for `X`."""
         result = self._invoke(X, output_type="probas")
         return np.asarray(result["prediction"])
 
@@ -9047,6 +9611,19 @@ class TabPFNRegressor(_FoundryBase, RegressorMixin):
         ] = "mean",
         quantiles: Optional[list] = None,
     ) -> Union[np.ndarray, list, Dict[str, np.ndarray]]:
+        """Predict regression targets for `X`.
+
+        Args:
+            X: Test features.
+            output_type: Which prediction to return.
+            quantiles: Quantile levels to compute when `output_type` is
+                "quantiles".
+
+        Returns:
+            An array for point predictions; a list with one array per quantile
+            for "quantiles"; a dict of arrays for dict-shaped outputs such as
+            "full" and "main".
+        """
         predict_params: Dict[str, Any] = {}
         if quantiles is not None:
             predict_params["quantiles"] = quantiles
@@ -9282,6 +9859,20 @@ class _HostedBase(BaseEstimator):
         return state
 
     def fit(self, X: Any, y: Any) -> "_HostedBase":
+        """Store the training data; the endpoint fits on the next `predict*` call.
+
+        Clears any `model_id_` captured from an earlier fit.
+
+        Args:
+            X: Training features.
+            y: Training targets.
+
+        Returns:
+            The estimator itself.
+
+        Raises:
+            ValueError: If `X` and `y` have different numbers of samples.
+        """
         X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
         y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
         if X_arr.shape[0] != y_arr.shape[0]:
@@ -9306,6 +9897,18 @@ class _HostedBase(BaseEstimator):
         output_type: str,
         predict_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """Send a predict request to the endpoint and return the JSON response.
+
+        Sends the cached or constructor `model_id` in place of the training
+        data when applicable, and records a returned `model_id` on
+        `model_id_`.
+
+        Raises:
+            sklearn.exceptions.NotFittedError: If neither training data nor a
+                `model_id` is available.
+            httpx.HTTPStatusError: If the endpoint answers with a non-2xx
+                status.
+        """
         params: Dict[str, Any] = {"output_type": output_type}
         if predict_params:
             params.update(predict_params)
@@ -9406,10 +10009,12 @@ class TabPFNClassifier(ClassifierMixin, _HostedBase):
     _TASK = "classification"
 
     def predict(self, X: Any) -> np.ndarray:
+        """Predict class labels for `X`."""
         result = self._invoke(X, output_type="preds")
         return np.asarray(result["prediction"])
 
     def predict_proba(self, X: Any) -> np.ndarray:
+        """Predict class probabilities for `X`."""
         result = self._invoke(X, output_type="probas")
         return np.asarray(result["prediction"])
 
@@ -9436,6 +10041,18 @@ class TabPFNRegressor(RegressorMixin, _HostedBase):
         output_type: str = "mean",
         quantiles: Optional[list] = None,
     ) -> np.ndarray:
+        """Predict regression targets for `X`.
+
+        Args:
+            X: Test features.
+            output_type: Which prediction to return, e.g. "mean", "median" or
+                "quantiles".
+            quantiles: Quantile levels to compute when `output_type` is
+                "quantiles".
+
+        Returns:
+            The endpoint's prediction as an array.
+        """
         predict_params: Dict[str, Any] = {}
         if quantiles is not None:
             predict_params["quantiles"] = quantiles
@@ -9503,6 +10120,7 @@ ThinkingEffort = Literal["medium", "high"]
 
 
 def _require_boto3() -> None:
+    """Raise ImportError if boto3 is not installed."""
     if not _BOTO3_AVAILABLE:
         raise ImportError(
             "boto3 is required for tabpfn_client.sagemaker. "
@@ -9610,7 +10228,7 @@ class _SagemakerBase(BaseEstimator):
         return cfg
 
     def _build_thinking_block(self) -> Dict[str, Any]:
-        """Top-level wire fields for thinking-mode. Empty when inactive."""
+        """Build the top-level wire fields for thinking mode; empty when inactive."""
         if not self._thinking_active:
             return {}
         block: Dict[str, Any] = {
@@ -9663,6 +10281,18 @@ class _SagemakerBase(BaseEstimator):
         return state
 
     def fit(self, X: Any, y: Any) -> "_SagemakerBase":
+        """Store the training data; the endpoint fits on the next `predict*` call.
+
+        Args:
+            X: Training features.
+            y: Training targets.
+
+        Returns:
+            The estimator itself.
+
+        Raises:
+            ValueError: If `X` and `y` have different numbers of samples.
+        """
         X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
         y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
         if X_arr.shape[0] != y_arr.shape[0]:
@@ -9683,6 +10313,11 @@ class _SagemakerBase(BaseEstimator):
         output_type: str,
         predict_params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
+        """Invoke the endpoint with a predict request and return the JSON response.
+
+        Sends the cached `model_id` in place of the training data when caching
+        is active, and captures a returned `model_id` for the next call.
+        """
         check_is_fitted(self, ["X_train_", "y_train_"])
         params: Dict[str, Any] = {"output_type": output_type}
         if predict_params:
@@ -9721,9 +10356,22 @@ class _SagemakerBase(BaseEstimator):
         return payload
 
     def _invoke_async(self, body_bytes: bytes) -> Dict[str, Any]:
-        """Async Inference path: stage input through S3, invoke_endpoint_async,
-        poll the OutputLocation S3 object. Required for payloads > 6 MB or
-        compute > 60 s; the endpoint must be created with AsyncInferenceConfig.
+        """Run the request through SageMaker Async Inference.
+
+        Stages the input in S3, calls `invoke_endpoint_async`, and polls the
+        OutputLocation S3 object. Required for payloads > 6 MB or compute
+        > 60 s; the endpoint must be created with AsyncInferenceConfig.
+
+        Args:
+            body_bytes: The JSON-encoded request body.
+
+        Returns:
+            The decoded JSON response.
+
+        Raises:
+            RuntimeError: If `s3_bucket` is unset or the endpoint reports a
+                failure.
+            TimeoutError: If no output appears within `async_timeout_s`.
         """
         if not self.s3_bucket:
             raise RuntimeError(
@@ -9796,10 +10444,12 @@ class TabPFNClassifier(_SagemakerBase, ClassifierMixin):
     _TASK = "classification"
 
     def predict(self, X: Any) -> np.ndarray:
+        """Predict class labels for `X`."""
         result = self._invoke(X, output_type="preds")
         return np.asarray(result["prediction"])
 
     def predict_proba(self, X: Any) -> np.ndarray:
+        """Predict class probabilities for `X`."""
         result = self._invoke(X, output_type="probas")
         return np.asarray(result["prediction"])
 
@@ -9815,6 +10465,18 @@ class TabPFNRegressor(_SagemakerBase, RegressorMixin):
         output_type: str = "mean",
         quantiles: Optional[list] = None,
     ) -> np.ndarray:
+        """Predict regression targets for `X`.
+
+        Args:
+            X: Test features.
+            output_type: Which prediction to return, e.g. "mean", "median" or
+                "quantiles".
+            quantiles: Quantile levels to compute when `output_type` is
+                "quantiles".
+
+        Returns:
+            The endpoint's prediction as an array.
+        """
         predict_params: Dict[str, Any] = {}
         if quantiles is not None:
             predict_params["quantiles"] = quantiles
@@ -9872,7 +10534,12 @@ def _validated_arrays(
     zoom_quantile: float | None,
     smooth: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Check the arguments and return the logits and borders as float arrays."""
+    """Check the arguments and return the logits and borders as float arrays.
+
+    Raises:
+        ValueError: If any argument is invalid or the arrays have inconsistent
+            shapes.
+    """
     if not {"logits", "borders"} <= prediction.keys():
         raise ValueError(
             'prediction must be the output of predict(..., output_type="full").'
@@ -9960,35 +10627,29 @@ def plot_regression_distribution(
 ) -> Axes:
     """Plot the predicted target distribution for a single sample.
 
-    Parameters
-    ----------
-    prediction : mapping
-        Output of ``regressor.predict(X, output_type="full")``. It may hold
-        several samples; pick the one to plot with ``sample_idx``.
-    sample_idx : int, default=0
-        Index of the sample to plot within ``prediction``.
-    statistics : sequence of str, default=("mean", "median", "mode")
-        Point statistics to mark with a vertical line. Each one must be present
-        in ``prediction``.
-    quantile_interval : tuple of float or None, default=(0.1, 0.9)
-        Central interval to shade. Pass ``None`` to disable.
-    zoom_quantile : float or None, default=0.99
-        Fraction of probability mass to keep in view, centred on the median.
-        Pass ``None`` to show the full support.
-    smooth : float, default=0.005
-        Width of the display-only moving average over the density, as a
-        fraction of the number of bars. Pass ``0`` to show the raw bar density.
-    ax : matplotlib.axes.Axes or None, default=None
-        Existing axes to draw on. A new figure is created if omitted. When the
-        axes already holds a curve, the limits, labels and legend of that curve
-        are preserved so several distributions can be overlaid.
-    color : str, default="#1f77b4"
-        Base colour of the density curve.
+    Args:
+        prediction: Output of ``regressor.predict(X, output_type="full")``. It
+            may hold several samples; pick the one to plot with ``sample_idx``.
+        sample_idx: Index of the sample to plot within ``prediction``.
+        statistics: Point statistics to mark with a vertical line. Each one
+            must be present in ``prediction``.
+        quantile_interval: Central interval to shade. Pass ``None`` to disable.
+        zoom_quantile: Fraction of probability mass to keep in view, centred on
+            the median. Pass ``None`` to show the full support.
+        smooth: Width of the display-only moving average over the density, as
+            a fraction of the number of bars. Pass ``0`` to show the raw bar
+            density.
+        ax: Existing axes to draw on. A new figure is created if omitted. When
+            the axes already holds a curve, the limits, labels and legend of
+            that curve are preserved so several distributions can be overlaid.
+        color: Base colour of the density curve.
 
-    Returns
-    -------
-    matplotlib.axes.Axes
+    Returns:
         The axes containing the plot.
+
+    Raises:
+        ValueError: If ``prediction`` or the other arguments are invalid.
+        ModuleNotFoundError: If matplotlib is not installed.
     """
     logits, borders = _validated_arrays(
         prediction, sample_idx, statistics, quantile_interval, zoom_quantile, smooth
@@ -10989,11 +11650,13 @@ from tabpfn_client.client import (
     RetryableServerError,
     ServiceClient,
 )
+from tabpfn_client.errors import CappedRetryableServerError, EmptyResponseError
 from tabpfn_client.api_models import (
     ClassifierConfig,
     DuplicateTrainSetErrorResponse,
     FitResponse,
     FitStatus,
+    GetFitStatusRequest,
     GetFitStatusResponse,
     RegressorConfig,
     RegressorOutputType,
@@ -11297,6 +11960,39 @@ class TestServiceClient(unittest.TestCase):
                 success_model=FitResponse,
             )
         self.assertEqual(str(cm.exception), "Fail to call fit with error: streamed, OK")
+
+    def test_validate_response_empty_success_body_raises_empty_response_error(self):
+        # A chunked 200 that only carried keepalive pings and no final
+        # payload means the request failed, even without `_streamed_error`.
+        for content in (b"", b" ", b"\n \n  \n"):
+            with self.subTest(content=content):
+                with self.assertRaises(EmptyResponseError) as cm:
+                    ServiceClient._validate_response(
+                        self._http_response(200, content=content),
+                        "fit",
+                        success_model=FitResponse,
+                    )
+                self.assertIn("without a final payload", str(cm.exception))
+
+    def test_get_fit_status_empty_body_is_capped_retryable(self):
+        with patch.object(
+            ServiceClient.httpx_client,
+            "post",
+            return_value=self._http_response(200, content=b"\n \n"),
+        ):
+            with self.assertRaises(CappedRetryableServerError):
+                ServiceClient._get_fit_status(
+                    req=GetFitStatusRequest(fitted_train_set_id=UUID(int=0)), timeout=1
+                )
+
+    def test_validate_response_keepalive_then_payload_succeeds(self):
+        with patch.object(FitResponse, "model_validate") as model_validate:
+            ServiceClient._validate_response(
+                self._http_response(200, content=b'  \n {"a": 1}'),
+                "fit",
+                success_model=FitResponse,
+            )
+        model_validate.assert_called_once_with({"a": 1})
 
     def test_check_version(self):
         response = Mock()

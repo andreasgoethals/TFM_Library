@@ -125,7 +125,17 @@ Directory structure:
     │   │   ├── manage_volumes.md
     │   │   ├── shares.md
     │   │   ├── terraform.md
-    │   │   └── windows.md
+    │   │   ├── windows.md
+    │   │   └── pilot/
+    │   │       ├── access.md
+    │   │       ├── accessing_vms.md
+    │   │       ├── advanced_usage.md
+    │   │       ├── custom_images.md
+    │   │       ├── GPUs.md
+    │   │       ├── index.rst
+    │   │       ├── networking.md
+    │   │       ├── opentofu.md
+    │   │       └── shares.md
     │   ├── compute/
     │   │   ├── index.rst
     │   │   ├── infrastructure.rst
@@ -318,11 +328,9 @@ Directory structure:
     │   │   └── using_globus_via_web.rst
     │   └── leuven/
     │       ├── credits.rst
-    │       ├── genius_quick_start.rst
     │       ├── mindwell_quick_start.rst
     │       ├── slurm_accounting.rst
     │       ├── slurm_specifics.rst
-    │       ├── tier2_genius.rst
     │       ├── tier2_hardware.rst
     │       ├── tier2_mindwell.rst
     │       ├── tier2_storage.rst
@@ -353,7 +361,6 @@ Directory structure:
     │       │       ├── thinking_node_map_v2.xlsx
     │       │       └── thinking_node_map_v2_centos7.xlsx
     │       └── tier2_hardware/
-    │           ├── genius_hardware.rst
     │           ├── icelake_mlc.txt
     │           ├── kuleuven_storage.rst
     │           ├── kuleuven_storage_quota_table.rst
@@ -2525,6 +2532,11 @@ information about the services provided by the `Vlaams Supercomputer Centrum
             :text-align: center
             :link: cloud/terraform
             :link-type: doc
+         .. grid-item-card:: New Cloud Pilot
+            :class-item: nested-card-top service-card-pilot
+            :text-align: center
+            :link: cloud/pilot/index
+            :link-type: doc
 
    .. grid-item-card:: :fas:`question-circle` FAQs
        :columns: 12
@@ -3451,6 +3463,10 @@ html[data-theme="dark"] a.nav-link:hover img.icon-link-image {
     background: #FFCC29;  /* fallback for old browsers */
     background: linear-gradient(to bottom, #FFCC2933, #FFCC2966);
 }
+.service-card-pilot .sd-card .sd-card-body {
+    background: #40B3D9;  /* fallback for old browsers */
+    background: linear-gradient(to bottom, #40B3D933, #40B3D966);
+}
 
 /* sofia badge custom color */
 html[data-theme="light"] .sd-bg-sofia {
@@ -3666,52 +3682,56 @@ Location Access Restrictions
       :sync: kuluh
 
       Since March 2026, the firewall access to the HPC cluster is resolved by the global KU Leuven firewall rules. This impacts connections to the Tier-2 cluster.
-     
+
       There is a difference between connecting from a managed KU Leuven laptop and unmanaged laptops.
 
       KU Leuven managed laptops
-            Use MFA (certificate) for connections both from Belgium and from abroad. No need to request :ref:`additional firewall login <additional_firewall>`.
+         Use MFA (certificate) for connections both from Belgium and from abroad. No need to request :ref:`additional firewall login <additional_firewall>`.
 
       Non-managed laptops
-            There are several possibilities to connect to the KU Leuven VSC clusters:
-                  *  From all locations (connecting from VPN B zone, from other VSC universities, from other Belgian IP addresses and from abroad): open the firewall page (https://firewall.vscentrum.be) and request a certificate. The firewall page only needs to be active when making new connections to the cluster.
-                  *  Exception for connections from within VSC network (_i.e._ other VSC clusters) - certificate is sufficient 
+         There are several possibilities to connect to the KU Leuven VSC clusters:
 
- 
+         * From all locations (connecting from VPN B zone, from other VSC universities, from other Belgian IP addresses and from abroad): open the firewall page (https://firewall.vscentrum.be) and request a certificate. The firewall page only needs to be active when making new connections to the cluster.
+         * Exception for connections from within VSC network (*i.e.* other VSC clusters) - certificate is sufficient
+
    .. tab-item:: UAntwerpen
       :sync: ua
 
-      All VSC clusters are behind a firewall, which is configured by default to block all traffic from abroad.
+      All UAntwerpen clusters are behind a firewall, which is configured by default to block all traffic from abroad.
       If you want to access any VSC cluster from abroad, it is necessary that you first authorize your own connection on the `VSC Firewall`_.
       Once your connection is authorized, you can proceed as usual.
 
       .. note::
 
-             Keep the `VSC Firewall`_ page open for the duration of your session on the VSC cluster. 
-
+         The `VSC Firewall`_ page only needs to be active when making new connections to the VSC cluster.
 
    .. tab-item:: UGent
       :sync: ug
 
-      All VSC clusters are behind a firewall, which is configured by default to block all traffic from abroad.
+      All UGent clusters are behind a firewall, which is configured by default to block all traffic from abroad.
       If you want to access any VSC cluster from abroad, it is necessary that you first authorize your own connection on the `VSC Firewall`_.
       Once your connection is authorized, you can proceed as usual.
 
       .. note::
 
-             Keep the `VSC Firewall`_ page open for the duration of your session on the VSC cluster. 
-
+         The `VSC Firewall`_ page only needs to be active when making new connections to the VSC cluster.
 
    .. tab-item:: VUB
       :sync: vub
 
-      All VSC clusters are behind a firewall, which is configured by default to block all traffic from abroad.
-      If you want to access any VSC cluster from abroad, it is necessary that you first authorize your own connection on the `VSC Firewall`_.
+      .. rubric:: SSH access
+
+      All VUB-HPC Tier-2 clusters are gated behind a firewall, which is configured by default to block all SSH traffic from abroad.
+      If you want to access a VSC cluster via SSH from abroad, you must first authorize your own connection on the `VSC Firewall`_.
       Once your connection is authorized, you can proceed as usual.
 
       .. note::
 
-             Keep the `VSC Firewall`_ page open for the duration of your session on the VSC cluster. 
+         The `VSC Firewall`_ page only needs to be active when making new connections to the VSC cluster.
+
+      .. rubric:: Portal access
+
+      The VUB-HPC Tier-2 OnDemand portal can be accessed from abroad without authorization on the VSC Firewall.
 
 
 
@@ -3723,17 +3743,23 @@ FILE: source/accounts/clusters_mfa.rst
 
     .. grid-item-card:: |KULUH|
        :columns: 12 4 4 4
-    
-       * Tier-2 :ref:`Genius <Genius hardware>`
+
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
-    .. grid-item-card:: |vub|
+    .. grid-item-card:: |VUB|
        :columns: 12 4 4 4
-       
-       |sofia|
 
-       * Tier-1 :ref:`sofia <sofia cluster>`
+       * Tier-2 :ref:`Anansi <Anansi cluster>`
+       * Tier-2 :ref:`Hydra <Hydra cluster>`
+
+       .. div:: sd-mb-0
+
+          |sofia|
+
+       .. div:: sd-mt-2
+
+          * Tier-1 :ref:`sofia <sofia cluster>`
 
 
 
@@ -3762,9 +3788,13 @@ FILE: source/accounts/clusters_ssh_key.rst
        * Tier-2 :ref:`Hydra <Hydra cluster>`
        * Tier-2 :ref:`Anansi <Anansi cluster>`
 
-       |sofia|
+       .. div:: sd-mb-0
 
-       * Tier-1 :ref:`sofia <sofia cluster>`
+          |sofia|
+
+       .. div:: sd-mt-2
+
+          * Tier-1 :ref:`sofia <sofia cluster>`
 
 
 
@@ -4718,18 +4748,34 @@ VSC clusters:
 Login to Open OnDemand
 ----------------------
 
-|KULUH|
-Users from all VSC sites can access the Open OnDemand portal at KU Leuven site.
-For that, proceed to the :ref:`Open OnDemand portal <ood>`.
-If you are affiliated with KU Leuven, click on the KU Leuven logo.
-Otherwise, click on the VSC logo to choose your institute.
-You will be then forwarded to the Identity Provider (IdP) of your institute to
-complete the authentication procedure.
-Once that succeeds, you will automatically login to the Open OnDemand homepage.
+.. tab-set::
+   :sync-group: vsc-sites
+
+   .. tab-item:: KU Leuven/UHasselt
+      :sync: kuluh
+
+      Users from all VSC sites can access the Open OnDemand portal at KU
+      Leuven site. For that, proceed to the
+      :ref:`Open OnDemand portal <ood>`. If you are affiliated with KU
+      Leuven, click on the KU Leuven logo. Otherwise, click on the VSC
+      logo to choose your institute. You will then be forwarded to the
+      Identity Provider (IdP) of your institute to complete the
+      authentication procedure. Once that succeeds, you will
+      automatically log into the Open OnDemand homepage.
+
+   .. tab-item:: VUB
+      :sync: vub
+
+      Users from all VSC sites can access the VUB Open OnDemand portal.
+      For that, proceed to the :ref:`Open OnDemand portal <ood>`.
+      Select your institute from the dropdown menu. You will then be
+      forwarded to the Identity Provider (IdP) of your institute to
+      complete the authentication procedure. Once that succeeds, you
+      will automatically log into the Open OnDemand homepage.
 
 .. _mfa-with-ssh-agent:
 
-Connecting with an SSH agent
+Obtaining an SSH certificate
 ----------------------------
 
 .. note::
@@ -4743,6 +4789,7 @@ Using an :ref:`ssh agent` allows to store so-called SSH certificates which then
 are made available to any other client program needing to use that same connection.
 Getting an SSH certificate involves MFA but this only needs to be performed
 once since a certificate can be used multiple times as long as it remains valid.
+Agentless options are possible in some cases, see the certificate methods below.
 
 There are two ways to acquire such an SSH certificate:
 
@@ -4778,7 +4825,6 @@ VSC clusters that accept these certificates:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <genius hardware>`
        * Tier-2 :ref:`wICE <wice hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -4810,37 +4856,6 @@ SSH Client name                        Purpose              Operating System
 :ref:`FileZilla <FileZilla>`           file transfer        Windows, Linux, macOS
 ====================================== ==================== =====================
 
-.. _mfa quick start:
-
-Connecting without an SSH agent
--------------------------------
-
-Most clients (such as PuTTY or MobaXterm) can also be made to work *without*
-an :ref:`ssh agent`. Keep in mind, however, that this approach tends to be
-less convenient since each new connection will require multi-factor
-authentication.
-
-Certain clients (such as :ref:`FileZilla <FileZilla>` or ``sshfs``)
-furthermore do not show you the firewall
-link needed for the MFA and hence can only function in combination with an SSH
-agent holding an SSH certificate.
-
-This being said, the agentless procedure runs as follows:
-
-* Connect to a :ref:`Tier-2 login node <tier2_login_nodes>`
-  using your chosen client application (e.g. MobaXterm).
-
-* The application is then supposed to show the link to complete the MFA procedure
-  (similar to the previous section).
-
-* After passing the MFA challenge, you should now be connected to a login node.
-  In plain SSH connections a successful login is rewarded with a welcome message:
-
-  .. _login_node:
-  .. figure:: mfa_login/login_node.PNG
-     :alt: login_node
-
-
 
 
 
@@ -4854,7 +4869,7 @@ Firewall-based certificate
 ##########################
 
 This is one of the two ways to obtain an SSH certificate described in
-:ref:`Connecting with an SSH agent <mfa-with-ssh-agent>`.
+:ref:`Obtaining an SSH certificate <mfa-with-ssh-agent>`.
 
 * Start up your SSH agent.
 
@@ -4964,6 +4979,37 @@ This is one of the two ways to obtain an SSH certificate described in
 
 That's it! You can continue doing your HPC work as usual.
 
+.. _mfa quick start:
+
+Connecting without an SSH agent
+===============================
+
+|KUL|
+Most clients (such as PuTTY or MobaXterm) can also be made to work *without*
+an :ref:`ssh agent`. Keep in mind, however, that this approach tends to be
+less convenient since each new connection will require multi-factor
+authentication.
+
+Certain clients (such as :ref:`FileZilla <FileZilla>` or ``sshfs``)
+furthermore do not show you the firewall
+link needed for the MFA and hence can only function in combination with an SSH
+agent holding an SSH certificate.
+
+This being said, the agentless procedure runs as follows:
+
+* Connect to a :ref:`Tier-2 login node <tier2_login_nodes>`
+  using your chosen client application (e.g. MobaXterm).
+
+* The application is then supposed to show the link to complete the MFA procedure
+  (similar to the previous section).
+
+* After passing the MFA challenge, you should now be connected to a login node.
+  In plain SSH connections a successful login is rewarded with a welcome message:
+
+  .. _login_node:
+  .. figure:: mfa_login/login_node.PNG
+     :alt: login_node
+
 
 
 ================================================
@@ -4976,7 +5022,7 @@ Smallstep certificate
 #####################
 
 This is one of the two ways to obtain an SSH certificate described in
-:ref:`Connecting with an SSH agent <mfa-with-ssh-agent>`.
+:ref:`Obtaining an SSH certificate <mfa-with-ssh-agent>`.
 
 .. note::
 
@@ -5063,17 +5109,19 @@ This is one of the two ways to obtain an SSH certificate described in
       Match User vsc98765
           ProxyCommand step ssh proxycommand %r %h %p --context VSC
 
-.. note::
+Obtaining a certificate without an agent
+========================================
 
-   Smallstep can also issue a certificate without using an agent:
+Smallstep can also issue a certificate without using an agent:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      step ssh certificate <email> ~/.ssh/smallstep --context VSC --no-agent
+   step ssh certificate <email> ~/.ssh/smallstep --context VSC --no-agent
 
-   This creates a private key and certificate in your ``~/.ssh`` folder.
-   You will need to pass ``-i ~/.ssh/smallstep`` to ``ssh``, or configure it
-   in your :ref:`SSH config file <ssh_config>`, to use it. This key is also valid for 16 hours.
+This creates a private key and certificate in your ``~/.ssh`` folder. You
+will need to pass ``-i ~/.ssh/smallstep`` to ``ssh``, or configure it in
+your :ref:`SSH config file <ssh_config>`, to use it. This key is also valid
+for 16 hours.
 
 
 
@@ -8588,7 +8636,8 @@ Web portal
 
 The Tier-1 cluster **sofia** has its own :ref:`OnDemand Web Portal<compute
 portal>`. Users with an active project on **sofia** can access it at `sofia
-OnDemand`_.
+OnDemand`_. The portal can be accessed from abroad without authorization on the
+VSC firewall.
 
 .. card::
    :width: 50%
@@ -8610,7 +8659,8 @@ Terminal interface
 ------------------
 
 You can use SSH to connect to the :ref:`terminal interface<terminal interface>`
-of the Tier-1 cluster **sofia** with your VSC account. 
+of the Tier-1 cluster **sofia** with your VSC account. **sofia** can be
+accessed via SSH from abroad without authorization on the VSC firewall.
 
 .. card::
    :width: 50%
@@ -8875,7 +8925,8 @@ Job submission
 ==============
 
 The Tier-1 cluster **sofia** uses the :ref:`Slurm job scheduler<running jobs>`.
-Only Slurm-native commands are supported for managing your jobs.
+Only Slurm-native commands are supported for managing your jobs. ``#PBS`` and ``#BSUB``
+directives in job scripts are ignored.
 
 Users must specify one of the available :ref:`partitions <sofia_hardware>` when submitting jobs.
 Loading a ``cluster`` module is not required.
@@ -8976,6 +9027,25 @@ FILE: source/brussel/tier1_sofia_changelog.rst
 Tier-1 sofia changelog
 ######################
 
+2026-10-01
+----------
+* Roll-out of core system upgrades to all compute and login nodes. This
+  update includes Linux kernel version 5.14.0-687.42.1.el9_8, GPFS storage
+  driver version 5.2.3.9, DOCA-OFED network driver version 3.5.0 and NVIDIA GPU
+  driver version 610.57.04.
+
+2026-09-16
+----------
+* IOMMU pass-through enabled on zen5-dense and zen5-himem nodes for improved
+  MPI performance.
+* Added specific QoS for zen5-vis to limit user allocation of resources on the
+  visualization nodes.
+
+2026-09-07
+----------
+* Slurm updated to version 25.11.8.
+* Enabled support for GDR Copy on all GPU nodes.
+
 2026-08-12
 ----------
 * Insulation of the main cooling loop completed.
@@ -8993,17 +9063,15 @@ Tier-1 sofia changelog
 ----------
 * Updated Open OnDemand to version 4.2.3.
 
-
 2026-07-21
 ----------
 * Updated the kernel to version 5.14.0-687.26.1.
-
+* EESSI made available to all users.
 
 2026-07-15
 ----------
 * Planned intervention on cooling: firmware upgrade of the CDU and fix the CDU
   monitoring.
-
 
 2026-07-13
 ----------
@@ -9012,18 +9080,15 @@ Tier-1 sofia changelog
   absolute paths to not work. The previous is marked as legacy and will be
   removed by October 1.
 
-
 2026-07-09
 ----------
 * Planned intervention on the cooling system.
 * Compute nodes shut down for 6 hours (unscheduled) to fix a water leak in
   the cooling system.
 
-
 2026-07-07
 ----------
 * **sofia** enters production.
-
 
 2026-07-06
 ----------
@@ -10111,7 +10176,7 @@ the OpenStack VSC Tutorial.
    gpus
    windows
    appendix
-
+   pilot/index
 
 
 ================================================
@@ -11677,6 +11742,584 @@ Make sure to set `is_windows = true` in your VM definition if you're using the t
 
 
 ================================================
+FILE: source/cloud/pilot/access.md
+================================================
+# Access to the VSC Cloud
+
+Access to the VSC Cloud is linked to the central VSC account system
+([account.vscentrum.be](https://account.vscentrum.be)), so you do not
+need a separate login or password. In order to use the cloud services,
+
+-   you need an active VSC account and
+
+-   your account must be a member of one or more Opennebula groups.
+
+New users can obtain a VSC account by following [the procedure described
+here](/accounts/vsc_account.rst).
+Once you have a VSC account, contact us via cloud@vscentrum.be if you want to start a new Opennebula
+project, or join an existing one.
+
+You can interact with the VSC Cloud using the VSC Cloud Dashboard, a web
+interface, or the "one" command line interface, which you can use
+from any system, and which is installed for you on the HPC-UGent Tier-2 login nodes
+ at `login.hpc.ugent.be`. You can log in to the VSC Cloud Dashboard using the VSC
+accountpage, as illustrated in the next section. To get access from the
+command line interface, you'll need to obtain a login token,
+as explained in section [Login Token](#login-token).
+
+These restrictions do not apply to someone who simply wishes to access
+an existing VM running in the cloud. VSC Cloud projects can decide
+themselves who gets access to their VM's, and how.
+
+## Dashboard Login
+
+You can access the VSC Cloud Dashboard via [cloudpr4.ugent.be](https://cloudpr4.ugent.be).
+
+To log in, choose the (default) authentication method **VSC Accountpage**
+and click "Connect".
+
+
+![image](../img/cloud_login_1.png)
+
+
+From here on, follow the standard procedure to log in to your VSC
+account, using your home institution's single sign-on system.
+The following chapters explain how to accomplish basic tasks using the
+VSC Cloud Dashboard.
+
+## Login Token
+
+If you want to use the opennebula CLI (one), or interact with its API (with [OpenTofu](./opentofu.md), for example) you need a "Login token".
+To obtain a login token, follow these steps:
+
+1) Log in on [cloudpr4.ugent.be](https://cloudpr4.ugent.be/)
+2) Click on your username in the bottom lef corner
+3) Click "Profile Settings"
+4) In this new screen, click "Security".
+5) Scroll to the bottom, to the "Login Token" section.
+6) Fill in an expiration time in seconds, and select the group for which this token should apply
+7) Click "Get a new Token"
+
+The token will now appear on this page until it has expired. Proceed with [instructions on where to store the token](./opentofu.md#create-credentials-for-opentofu).
+
+
+
+================================================
+FILE: source/cloud/pilot/accessing_vms.md
+================================================
+# Accessing VMs
+## SSH key pairs
+When a VM is instantiated, OpenNebula will inject any SSH keys associated with your user.
+These keys will be synced to your OpenNebula user from the [VSC account page](https://account.vscentrum.be).
+You may also add keys to OpenNebula manually in the [user settings](https://cloudpr4.ugent.be/fireedge/sunstone/settings) of the VSC Cloud Dashboard.
+For general instructions on SSH keys, see: [Security Keys](/accounts/generating_keys.rst).
+
+You can of course add more keys to individual VMs via the appropriate method for your OS.
+:::{note}
+The SSH keys are injected **only** when the VM is created. Adding or removing a key in VSC account page or in OpenNebula will not change the authorized keys in existing VMs.
+:::
+
+## Windows
+UGent Firewall blocks RDP connections for security reasons. 
+You can however, connect to our Windows image with SSH. The [Tofu module](./opentofu.md) will give you the credentials.
+
+Many RDP clients (excluding Windows' own RDP client) support SSH tunneling. This way you can securely access your VM with RDP.
+
+
+================================================
+FILE: source/cloud/pilot/advanced_usage.md
+================================================
+# Advanced usage
+We highly recommend using the [OpenTofu](./opentofu.md) module for deploying your infrastructure.
+There is limited support for workflows that do not use it.
+If there is some functionality you need, feel free to contact the VSC Cloud admins via email at
+<cloud@vscentrum.be> or submit a Merge Request on the [Github Repository](https://github.com/hpcugent/terraform-vsc-opennebula).
+
+## Restrictions
+### VM Size
+In order to facilitate migrations between different hypervisors, VMs have resource limits. 
+A VM may not exceed:
+* `368640` Mib of RAM
+* `20` CPU
+
+VMs that exceed this size **will** be shut down.
+
+### Templates
+All VMs must use the provided templates. It is not possible to use custom OpenNebula templates. 
+
+
+
+
+================================================
+FILE: source/cloud/pilot/custom_images.md
+================================================
+# Upload and manage images
+
+A virtual machine image is a single file that contains a virtual disk that has a bootable
+operating system installed on it. Images are used to create virtual
+machine instances within the cloud. The image files themselves are never
+modified, but you can copy the image into a persistent instance.
+
+As a user of the VSC cloud, you can upload and manage your own virtual
+machine images. For information about creating image files, see the
+[Opennebula Docs](https://docs.opennebula.io/7.2/product/virtual_machines_operation/virtual_machines/images/).
+
+You can upload your own image on the [VSC Cloud Dashboard](https://cloudpr4.ugent.be/fireedge/sunstone/image/create).
+You can also import images from the [Marketplace] (recommended).
+
+:::{warning}
+Your custom image must include the opennebula [contextualization packages](https://github.com/OpenNebula/one-apps/wiki/linux_installation).
+:::
+
+
+## Uploading images
+
+### Uploading
+1) Go to [VSC Cloud Dashboard](https://cloudpr4.ugent.be/fireedge/sunstone/image/create).
+2) Fill in the name, description, **Turn off** "make persistant".
+3) Click "upload" and select the image file on your filesystem (you can also enter a direct download URL).
+4) Click "Next".
+5) Select the "ceph.steelix" datastore.
+6) Click "Next". Skip the advanced options by clicking "Next" again.
+7) Click "Finish".
+
+### Setting permissions
+After uploading, you will see the images overview.
+By default an image can only be used by the user that created it. You can change this by clicking on the image and going to the "info" tab. You likely want to allow your group to "use" the image.
+
+
+================================================
+FILE: source/cloud/pilot/GPUs.md
+================================================
+# GPUs
+For GPU workloads, VSC Cloud provides NVIDIA L40S GPUs.
+
+## Attaching a GPU to your instance
+In order to deploy a VM with a GPU, you must use a different template from the default.
+With the OpenTofu Module, this can be accomplished by setting `template = "UserL40"`.
+
+## Restrictions and limitations
+* A VM may only have 1 GPU at a time
+* If we have to migrate your VM due to regular maintenance of the platform, it will have to be shut down and restarted
+
+
+
+================================================
+FILE: source/cloud/pilot/index.rst
+================================================
+.. _pilot:
+
+##############################
+:fas:`vial` Tier-1 Cloud Pilot
+##############################
+.. warning::
+
+   This section of the documentation is WIP and intended for users that signed up for the pilot.
+   If you are using OpenStack and did not sign up for the pilot, this documentation does not apply. You can find the regular documentation here: :doc:`../index`
+
+The VSC cloud platform uses the open-source software
+`OpenNebula <https://opennebula.io>`_. This
+guide explains the specifics of the VSC environment, and provides a
+hands-on introduction to OpenNebula. For reference, you should consult
+OpenNebula's own documentation at
+`docs.opennebula.io <https://docs.opennebula.io>`_.
+
+For all questions concerning the VSC cloud computing platform,
+please contact `cloud@vscentrum.be <mailto:cloud@vscentrum.be>`_.
+
+We welcome your feedback, comments and suggestions for improving
+the documentation.
+
+.. toctree::
+   :maxdepth: 2
+
+   access
+   accessing_vms
+   networking
+   opentofu
+   custom_images
+   shares
+   GPUs
+   advanced_usage
+
+
+
+================================================
+FILE: source/cloud/pilot/networking.md
+================================================
+# Networking
+Each project will get a private network that connects your virtual machines together.
+The gateway for this network will be a Virtual Router, which has a public IP address that is randomly assigned upon deployment of the router.
+A project with VSC access enabled will also have a private network to connect the virtual machines to the VSC Virtual Router.
+
+Each project will need **exactly one** public router to access the internet.
+This router will be created for you if you use the [OpenTofu module](opentofu.md).
+Through this router you can set up port-forwarding rules to your VMs.
+
+:::{danger}
+If your router is deleted (via `tofu destroy`, for example) your **public IP address** might change.
+Avoid deleting your router(s), as we cannot manually assign/restore a specific IP to your project.
+:::
+
+:::{note}
+By default, the UGent firewall blocks most IP addresses and ports on the public router.
+Only the port (TCP) range **50000-60000** and ports **80** and **443** 
+are open by default for the public floating IP addresses. Contact <cloud@vscentrum.be> if you need to access other ports from
+the outside world.
+:::
+
+## Firewall
+In the previous cloud, OpenStack offered security groups. These are not supported with our new networking model in Opennebula.
+Your VMs will thus not be firewalled from each other, and you may have to configure a firewall on OS level.
+Of course, your VM is isolated from other projects and the internet, except for any port-forwarding you configure.
+
+For reference, here is some documentation for common firewall software:
+* [UFW (Ubuntu and others)](https://ubuntu.com/server/docs/how-to/security/firewalls/)
+* [Firewalld (Rocky)](https://docs.rockylinux.org/10/guides/security/firewalld-beginners/)
+* [Windows firewall](https://support.microsoft.com/en-us/windows/security/windows-security/firewall-and-network-protection-in-the-windows-security-app)
+
+
+
+================================================
+FILE: source/cloud/pilot/opentofu.md
+================================================
+# Creating VMs Using OpenTofu
+
+OpenTofu <https://opentofu.org/> is an
+infrastructure as code tool (IaC). It is a fork of [Terraform](https://developer.hashicorp.com/terraform).
+Opentofu is currently one of the most popular infrastructure automation tools
+available. VSC Cloud provides an [OpenTofu module](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest) to simplify VM provisioning.
+
+
+## Installing OpenTofu
+
+The client is available for different Operating Systems like Windows, Linux
+or macOS (<https://opentofu.org/docs/intro/install/>).
+If you cannot install it locally, `tofu` is also available from the HPC-UGent Tier-2 login nodes at `login.hpc.ugent.be`.
+
+If you are using OpenTofu on your local machine, the [VSCode Extension](https://github.com/opentofu/vscode-opentofu) is also recommended.
+
+## Create credentials for OpenTofu
+
+Tofu requires a username and a login token to authenticate to the Opennebula API. Obtaining a login token is explained in: [application credentials](access.md#login-token).
+After obtaining the token, place it in `~/.one/one_auth` on the HPC-UGent Tier-2 login node (`login.hpc.ugent.be`) or on your local machine if you have installed OpenTofu and/or the One CLI.
+The file should be in this format (replace `vscxxx` with your username and `token` with your login token):
+```
+vscxxx:token
+```
+For additional security, change the file permissions so only you can access it:
+```shell
+chmod 600 ~/.one/one_auth
+```
+:::{danger}
+Do not share your credential file (`~/.one/one_auth`) or put this
+file in a public place.
+:::
+
+:::{tip}
+You can easily access and edit the files on the login node by going to the [HPC-UGent Tier-2 web portal](https://login.hpc.ugent.be/pun/sys/dashboard/files/). 
+**Enable "Show Dotfiles"** to see the `.one` directory. If it is not there, you may have to create it.
+
+You can also access the a shell session on one of the login nodes in the HPC-UGent Tier-2 web portal (under `Clusters` dropdown).
+:::
+
+## Using the OpenTofu module
+
+If you haven't installed OpenTofu locally, you can connect via SSH to a HPC-UGent login node `login.hpc.ugent.be` to use
+OpenTofu. Login to the login node with your VSC account first:
+
+```shell
+ssh -A vscxxxxx@login.hpc.ugent.be
+```
+:::{important}
+It is important to forward your ssh agent with `-A` when SSH-ing to the login node.
+:::
+
+You can use the [examples on Github](https://github.com/hpcugent/terraform-vsc-opennebula/tree/0.0.9/examples) as a starting point.
+Make sure to copy the `providers.tf` and the `main.tf` files into your project directory.
+On linux you can use this snippet:
+```bash
+mkdir -p MyVSCCloudProject
+cd MyVSCCloudProject
+wget https://raw.githubusercontent.com/hpcugent/terraform-vsc-opennebula/0.0.9/examples/simple-server/main.tf
+wget https://raw.githubusercontent.com/hpcugent/terraform-vsc-opennebula/0.0.9/examples/simple-server/providers.tf
+```
+:::{tip}
+Make sure you have created the *`~/.one/one_auth`* file. (see previous [section](#create-credentials-for-opentofu)).
+:::
+
+## Basic VM configuration
+
+:::{tip}
+If you are **not** using the HPC-UGent Tier-2 login nodes, you need to make sure to:
+1) [Install OpenTofu](https://opentofu.org/docs/intro/install/)
+2) {bdg-primary}`Optional` Install Opennebula client:
+    1) [Add the repository for your linux distro](https://docs.opennebula.io/7.2/software/installation_process/frontend_installation/opennebula_repository_configuration_ce/)
+    2) Install `opennebula-tools` with your package manager
+    3) Set the environment variable `export ONE_XMLRPC="https://cloudpr4.ugent.be:2633/RPC2"` to point the Opennebula client to the VSC Cloud infrastructure
+:::
+
+In the previous [section](#using-the-opentofu-module) we created a `MyVSCCloudProject` directory and copied some tofu files into it.
+Let's take a look at the [Simple Server](https://github.com/hpcugent/terraform-vsc-opennebula/tree/0.0.9/examples/simple-server) example's `main.tf`.
+
+This file contains the most basic configuration for a virtual machine.
+It consists of two **modules**. A module is convenient grouping of OpenTofu resources. 
+A module has a **source** and a **version**. The source points to the [VSC module on the OpenTofu Registry](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest).
+The version determines the version of the module you are using. You can view the documentation specific to the version you're using on the OpenTofu registry.
+
+We need three things for our basic setup:
+
+### The Router
+
+```{tip}
+Full router module documentation can be found [here](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest/submodule/router)
+```
+```
+module "router" {
+  source  = "hpcugent/opennebula/vsc//modules/router"
+  version = "0.0.9"
+  # VM Which we can ssh to by default
+  access_vm = module.SimpleVM.router_access
+}
+```
+This will provide network connectivity for all the VMs in your project.
+With the router, you can specify the **access VM**, being the VM exposed to the internet through SSH. It will also be the default target for [port forwarding rules](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest/submodule/router/inputs#port_forwards)
+
+```{note}
+There can only be **one** regular router per Opennebula group, except an optional VSC router.
+```
+:::{danger}
+If your router is deleted (via `tofu destroy`, for example) your **public IP address** might change.
+Avoid deleting your router(s), as we cannot manually assign/restore a specific IP to your project.
+:::
+
+#### Port Forwarding
+
+You can open ports with the port-forwards block:
+```
+  port_forwards = {
+    "http" = {
+      external_port = 80
+    }
+    "https" = {
+      external_port = 443
+    }
+  }
+```
+By default these will target the `access_vm`, but you can override `internal_ip`. For example, to add an ssh port for a second VM:
+```
+    "http_secondary" = { # Define a port forward rule for the second VM
+      external_port = 51001
+      internal_port = 22
+      internal_ip   = module.Secondary.ip # For a VM module named "Secondary".
+    }
+```
+```{tip}
+`external_port` must be between 51001 and 59999 (Except for the vsc router)
+```
+```{warning}
+Changing the port-forwarding rules will re-create the router VMs, so there may be a network interruption when the changes are applied.
+```
+
+### The VM
+
+```{tip}
+Full module documentation can be found [here](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest/)
+```
+```
+module "SimpleVM" {
+  source     = "hpcugent/opennebula/vsc"
+  version    = "0.0.9"
+  vm_name    = "SimpleExample"
+  image_name = "Rocky Linux 9"
+  is_windows = false
+  cpu           = 4
+  memory        = 8 #Gib
+  rootdisk_size = 30
+}
+```
+This code will create a virtual machine with the `Rocky Linux 9` OS image provided by VSC Cloud. You can see which other images are available either with the `oneimage list` command (if you installed the Opennebula client locally) or in the [VSC Cloud Dashboard](https://cloudpr4.ugent.be/fireedge/sunstone/image/) if you're using the HPC-UGent Tier-2 login nodes.
+
+## Advanced configuration
+
+### Windows
+
+```{tip}
+We strongly encourage you to consider linux-based alternatives. Our support for Windows is more limited.
+```
+Setting `is_windows = true` will configure the VM slightly differently for Windows images.
+
+### Full documentation
+
+```{warning}
+Be sure to match the version of the documentation/examples to the version of the module that you are using
+```
+The module has some examples which can be found on [Github](https://github.com/hpcugent/terraform-vsc-opennebula/tree/0.0.9/examples) 
+
+You can also find documentation on all of the variables on the [OpenTofu Registry](https://search.opentofu.org/module/hpcugent/opennebula/vsc/latest)
+
+## Deploying your VM
+
+If you have followed the previous steps now you can initialize and deploy your
+infrastucture to VSC Tier-1 cloud.
+
+If you haven't deployed anything yet, you must first initialize the modules.
+
+Move to your project directory first:
+
+```shell
+cd ~/MyVSCCloudProject
+```
+Edit the file as necessary (change the VM name to something descriptive, for example.):
+```shell
+nano main.tf
+```
+```{tip}
+You can also edit the files through the [HPC-UGent Tier-2 web portal](https://login.hpc.ugent.be/pun/sys/dashboard/files/)
+```
+
+Now you can run
+```shell
+tofu init
+```
+This command performs several different initialization steps in order to
+prepare the current working directory for use with the module.
+
+Next, we can inspect which changes tofu will apply:
+```shell
+tofu plan
+```
+
+You will see a list of the resources required to deploy your
+infrastructure. Tofu also checks if there is any syntax error in
+your code. Your infrastructure is not deployed yet, review the plan
+and then just deploy it to VSC Tier-1 Cloud running:
+
+```shell
+tofu apply
+```
+
+OpenTofu will show your plan again and you will see this message:
+
+```console
+..
+..
+Do you want to perform these actions?
+OpenTofu will perform the actions described above.
+Only â€™yesâ€™ will be accepted to approve.
+Enter a value:
+```
+
+Type **yes** and press enter and wait a few minutes. If
+everything is correct and if you have enough quota OpenTofu will show
+you a message after creating all the required resources.
+
+```console
+..
+..
+Apply complete! Resources: 6 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+services = {
+  "Primary VM" = [
+    "ssh root@193.190.80.2",
+  ]
+}
+```
+
+Your cloud infrastructure is ready to be used.
+
+:::{tip}
+If you forgot your VM's details, just run `tofu output`
+If you make any changes to the template, just run `tofu apply` again.
+If you add any new VMs, tofu will ask you to run `tofu init` again.
+:::
+
+:::{important}
+It is important to keep a backup of opentofu files.
+
+Opentofu generates several files in this directory to keep track of any
+change in your infrastructure. If for some reason you lose these files, it will be very difficult to import them into a new OpenTofu configuration.
+:::
+
+## Special considerations for multi-user workflows
+
+If multiple people need to interact with the project independently, there are some additional things to consider.
+Because only one (or two, with VSC access) router can exist per project, the management of the router instance needs to be centralized in some way.
+
+### Tofu state
+
+OpenTofu uses a [statefile](https://opentofu.org/docs/v1.12/language/state/) to keep track of which resources have been created and their properties. This way, if you add another port forwarding to your router, OpenTofu knows which router to change and what changes to apply. This has the downside that anyone that needs to change the port forwarding rules, needs to have access to the statefile. The statefile may also contain sensitive information (like a password, in the case of a Windows VM), so it is important to keep this file secret. 
+
+### Suggested workflows
+
+#### One tofu project for all users
+
+In this workflow, you share the tofu code and the statefile. You could do this on a shared filesystem, for example, if you are careful to avoid collisions (working on the files at the same time).
+A safer way to do this is with a [Remote Backend](https://opentofu.org/docs/v1.12/language/settings/backends/configuration/) or [Cloud provider](https://opentofu.org/docs/v1.12/language/settings/tf-cloud/), that stores your backend remotely in a way that ensures no conflicts occur. This is often paired with git, to track changes to the code. There is a list of Remote state providers further down this article.
+:::{note}
+We recommend keeping your OpenTofu code in Git, but **do not put the statefile in a public repository**.
+:::
+
+#### One "router manager"
+
+Alternatively, if you do not wish to use a remote state, you could have one person responsible for managing the router and the port-forwarding.
+In that case, the "router manager" creates an OpenTofu project with just the router defintion. Other users in the team can then create VMs in their own local OpenTofu projects. The "router manager" will then have to add any port-forwardings to the router project, using the private IP address of the VMs created by other users in the team. 
+
+### Remote State Providers
+
+These online services offer [Remote state](https://opentofu.org/docs/v1.12/language/state/remote/) storage.
+At the time of writing they offer free tiers. This list is non-exhaustive.
+You can also use self-hosted options, s3, a postgres db etc. See the [OpenTofu Docs](https://opentofu.org/docs/v1.12/language/settings/backends/configuration/) for more information.
+
+Some of these should be configured with the [Cloud block](https://opentofu.org/docs/v1.12/language/settings/tf-cloud/) and others with the [Backend block](https://opentofu.org/docs/v1.12/language/settings/backends/configuration/).
+:::{Note}
+(WIP) Of these I've only tested Gitlab so far.
+:::
+
+#### [Gitlab](https://docs.gitlab.com/user/infrastructure/iac/terraform_state/)
+
+Gitlab offers free tofu state management with their repositories. There are also [CI/CD Components](https://gitlab.com/components/opentofu) if you want to integrate CI/CD into your workflow.
+
+#### [HCP Terraform / Terraform Cloud](https://app.terraform.io/)
+
+Hashicorp offers a free tier up to 500 managed resources, which should be enough for an average usecase. You can find the documentation on their pricing/limits [Here](https://developer.hashicorp.com/terraform/cloud-docs/overview).
+:::{warning}
+Terraform Cloud does not officially support OpenTofu, so we recommend only using it as a state provider and to not use any of their automation features (set execution mode to `remote`).
+:::
+
+#### [Scalr](https://scalr.com/)
+
+Scalr also offers a free tier, limited to 50 runs per month (which can be avoided by setting the run mode to local).
+Scalr is also compatible with OpenTofu, so their additional features can be used.
+
+## Further customization
+
+You can also use your own OpenTofu code to deploy your infrastructure.
+This task is out of the scope of this document, please refer to the official
+OpenTofu documentation to add you own changes
+<https://opentofu.org/docs/> or ask the VSC Cloud admins via email at
+<cloud@vscentrum.be>.
+
+
+
+
+================================================
+FILE: source/cloud/pilot/shares.md
+================================================
+# NFS Shares
+Unfortunately, OpenNebula does not have a NFS service.
+If you need shared storage, you can create a VM dedicated to that purpose.
+
+Many Linux Distributions will have documentation on how to configure NFS:
+* [Rocky Linux](https://docs.rockylinux.org/10/guides/file_sharing/nfsserver/)
+* [Ubuntu](https://ubuntu.com/server/docs/how-to/networking/install-nfs/)
+
+
+
+
+================================================
 FILE: source/compute/index.rst
 ================================================
 .. _compute:
@@ -11854,8 +12497,7 @@ FILE: source/compute/tier2.rst
 
     .. grid-item-card:: |KUL| |UH|
        :columns: 6 6 3 3
-    
-       * :ref:`Genius <Genius hardware>`
+
        * :ref:`wICE <wICE hardware>`
        * :ref:`Mindwell <mindwell hardware>`
 
@@ -12062,8 +12704,7 @@ FILE: source/compute/jobs/clusters_slurm.rst
 
     .. grid-item-card:: |KULUH|
        :columns: 12 4 4 4
-    
-       * Tier-2 :ref:`Genius <Genius hardware>`
+
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -12132,8 +12773,6 @@ consult the respective documentation sources:
 
    .. tab-item:: KU Leuven/UHasselt
       :sync: kuluh
-
-      Genius: :ref:`Submit to a GPU node <submit_genius_gpu>`
 
       wICE: :ref:`Submit to a GPU node <submit to wice GPU node>`
 
@@ -15906,7 +16545,6 @@ VSC clusters that support an Open OnDemand web portal:
 
        :fas:`circle-play` `KU Leuven OnDemand`_
 
-       | Tier-2 :ref:`Genius <Genius hardware>`
        | Tier-2 :ref:`wICE <wICE hardware>`
        | Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -15937,11 +16575,15 @@ VSC clusters that support an Open OnDemand web portal:
        | Tier-2 :ref:`Anansi <Anansi cluster>`
        | Tier-2 :ref:`Hydra <Hydra cluster>`
 
-       |sofia|
+       .. div:: sd-mb-0
 
-       :fas:`circle-play` `sofia OnDemand`_
+          |sofia|
 
-       | Tier-1 :ref:`sofia <sofia cluster>`
+       .. div:: sd-mt-2
+
+          :fas:`circle-play` `sofia OnDemand`_
+
+          | Tier-1 :ref:`sofia <sofia cluster>`
 
 
 You can log in using the credentials of your home institution or your VSC
@@ -16039,7 +16681,6 @@ VSC clusters that support the Desktop app:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <genius hardware>`
        * Tier-2 :ref:`wICE <wice hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -16263,7 +16904,6 @@ The VSC clusters that support the Fluent app are:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <genius hardware>`
        * Tier-2 :ref:`wICE <wice hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -16350,7 +16990,6 @@ VSC clusters that support this app are:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <genius hardware>`
        * Tier-2 :ref:`wICE <wice hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -16592,9 +17231,8 @@ your job resources:
    .. tab-item:: KU Leuven/UHasselt
       :sync: kuluh
 
-      Documentation on resources is available for :ref:`Genius
-      <running_jobs_on_genius>`, :ref:`wICE <running jobs on wice>` and
-      :ref:`Mindwell <running jobs on mindwell>`.
+      Documentation on resources is available for :ref:`wICE <running jobs on wice>`
+      and :ref:`Mindwell <running jobs on mindwell>`.
 
       In most cases we recommend using the ``interactive`` partitions for the
       interactive apps.  This partition is meant for lighter work, like code
@@ -17151,7 +17789,6 @@ VSC clusters that support the Bash kernel extension:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -17199,7 +17836,6 @@ support this extension are:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -17229,7 +17865,6 @@ this extension is supported are:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -17249,7 +17884,6 @@ Python iRODS Client
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -17274,6 +17908,36 @@ two lines of code:
 
 For details about the broad functionalities of the PRC in your Python or Jupyter notebook environment,
 please refer to the :ref:`Python iRODS client <python-client>` documentation.
+
+
+.. _jupyter-nbconvert:
+
+Exporting Jupyter Notebooks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. grid:: 3
+    :gutter: 4
+
+    .. grid-item-card:: |KUL|
+       :columns: 12 4 4 4
+
+       * Tier-2 :ref:`wICE <wICE hardware>`
+       * Tier-2 :ref:`Mindwell <mindwell hardware>`
+
+In addition to the native ``.ipynb`` format, Jupyter notebooks can be
+`exported to a variety of formats <https://jupyterlab.readthedocs.io/en/stable/user/export.html#exporting-notebooks>`_.
+
+Specifically, exporting to PDF format can be carried out in two steps.
+First, export the notebook to the native ``LaTex`` format, for example as ``notebook.tex``.
+Next, execute
+
+.. code-block:: bash
+
+   xelatex notebook.tex
+
+
+in a terminal, which will produce the corresponding PDF file.
+You may need to first load a ``texlive`` module in order to make ``xelatex`` available.
 
 
 
@@ -17468,7 +18132,6 @@ VSC clusters that support the ParaView app:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -17526,7 +18189,6 @@ VSC clusters that support this app are:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <genius hardware>`
        * Tier-2 :ref:`wICE <wice hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -18069,7 +18731,6 @@ VSC clusters that support the VS Code Tunnel app:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <mindwell hardware>`
 
@@ -29979,7 +30640,6 @@ This page only concerns the following clusters:
     .. grid-item-card:: |KUL|
        :columns: 12 4 4 4
 
-       * Tier-2 :ref:`Genius <Genius hardware>`
        * Tier-2 :ref:`wICE <wICE hardware>`
        * Tier-2 :ref:`Mindwell <Mindwell hardware>`
 
@@ -32772,7 +33432,7 @@ On this page, you get an overview of all members in the project:
 After making one or multiple of these changes, a button *apply changes in iRODS* will appear.
 Click on this button to finalize your changes. 
 
-
+.. _portal-group-administration:
 
 ******************
 Managing subgroups
@@ -32809,9 +33469,126 @@ Likewise, to remove users from the group, select their checkbox and click on 'Re
   You may need to log out and login again before you see changes you made in groups reflected when editing permissions. 
 
 
+**************************************
+Automated management of large projects
+**************************************
 
+As alternative to manually adding/removing users and managing groups,
+it is possible to provide a YAML file listing all the users and the groups they belong to.
+This file will then be enforced regularly:
+if users are added or removed manually, or the groups are modified manually,
+this file will generally override that after a few hours.
+This is particularly useful when a project has a large number of members and/or groups
+and regular movement,
+or when the distribution of users has to be matched to the organization in a different system,
+e.g. subgroups within a lab.
+
+.. warning::
+
+  This is meant for continuous enforcement, not for a one-shot starting setup to be
+  manually overriden later.
+
+Creating the YAML
+=================
+
+The `YAML file <https://yaml.org/>`_ is simply a plain text file
+(which you can write in any plain text editor)
+and it needs the names of groups (with or without project prefix)
+and a list of valid usernames underneath, e.g.:
+
+.. code:: yaml
+
+  # /zone/mango/myproject/user_management/user_groups.yaml
+  myproject_manager:
+      - vsc34567
+      - vsc33333
+      - vsc31234
+  myproject_custom_group1:
+      - vsc31234
+      - vsc33221
+  myproject_custom_group2:
+      - vsc30000
+      - vsc30001
+
+All the user names in the file, and **only** the members in this file,
+will be members of the project, with two exceptions:
+
+- The responsible is not touched by this flow, regardless of whether it is mentioned in the file or not.
+  Only admins can edit the responsible.
+- Managers are only managed if the ``<realm>_manager`` group is present in the file;
+  if it is absent, the current manager members remain managers.
+  If the ``<realm>_manager`` group is present, the users in it and only the users in it
+  will have the "manager" role.
+
+If any group name lacks the ``<realm>_`` prefix, it will be added.
+So having groups ``manager``, ``custom_group1``..., will be enough.
+Note that the final names of the groups will always be prefixed with the project name,
+e.g. ``myproject_manager``, ``myproject_custom_group1``...,
+and those are the names to which access can be provided.
+For nested custom group names, it is also possible to nest them in the YAML:
+
+.. code:: yaml
+  
+  # /zone/mango/myproject/user_management/user_groups.yaml
+  myproject_manager:
+      - vsc34567
+      - vsc33333
+      - vsc31234
+  myproject_analysts:
+    wp1: # becomes myproject_analysts_wp1
+        - vsc31234
+        - vsc33221
+    wp2: # becomes myproject_analysts_wp2
+        - vsc30000
+        - vsc30001
+
+If an existing custom group in the project is absent from the file, it will be ignored.
+This feature still does not support removing groups.
+However, as with any specified group: if a member of an ignored custom group is not mentioned in the file,
+the user will be removed from the project.
+Adding users without a custom group can be done by setting up a group with the name of the realm.
+
+Providing and updating the YAML
+===============================
+
+In order to update YAML, a user needs to be part of the ``<realm>_user_management`` group.
+This group can be created and filled in in the :ref:`Group administration page of the ManGO Portal<portal-group-administration>`.
+
+.. image:: ../images/group_administration/user_management_group.png
+  :alt: Choose the user_management group.
+
+A member of this group will be able to see in that page
+(1) whether there is a YAML file for the project,
+(2) whether it is valid and, if so,
+(3) what its contents are.
+
+If there is no YAML file yet, the first time it is uploaded it must be done manually
+via the :ref:`Group administration tab of the ManGO Portal<portal-group-administration>`
+by a member of the ``<realm>_user_management`` group.
+
+.. image:: ../images/group_administration/upload_file.png
+  :alt: View of the option to uplaod the YAML file in the ManGO portal.
+
+Once the file exists, it can be updated by anyone from this group with any client (even machine accounts).
+The YAML file will always be saved with the same name: ``/<zone>/mango/<realm>/user_management/user_groups.yaml``.
+Any other path will be ignored.
+The file is applied every day at 06:00UTC, 12:00UTC and 18:00UTC.
+
+.. image:: ../images/group_administration/automatic_user_management.png
+  :alt: View of the uploaded YAML file in the ManGO portal.
+
+Everyone else in the project has read (and only read) permissions to ``/<zone>/mango/<realm>/user_management/``,
+but none to its parent collections (e.g. ``/<zone>/mango/<realm>``).
+
+Removing the YAML
+=================
+
+To undo the automation, users must contact the service desk to remove the file.
+Uploading an empty file will result in errors for the flow.
+
+**********************************************
 How to collaborate with an external researcher
--------------------------------------------------------
+**********************************************
 
 As demonstrated earlier, you can add collaborators to your group if they have a VSC account.  
 If you want to work together with someone who doesn't have a VSC account, there are two options:
@@ -35068,10 +35845,6 @@ The VSC hosts a number of collections:
      - `VSC KU Leuven data directories <https://app.globus.org/file-manager/collections/38948f53-d4f5-4e94-afa5-ad364c7a66b8/overview>`_
      - No
      - Yes
-   * - KU Leuven Tier-2 (archive directories)  
-     - `VSC KU Leuven archive directories <https://app.globus.org/file-manager/collections/64cb7bf2-492b-4489-ab7f-f80c252a7d92/overview>`_
-     - No  
-     - No  
 
 .. list-table:: Overview of collections for Tier-1 Compute
    :header-rows: 1
@@ -35987,7 +36760,7 @@ Where
 
     The Tier-2 cluster has several types of compute nodes.
     Hence, different ``TRESBillingWeights`` apply to
-    different resources on different partitions of Genius, wICE and Mindwell.
+    different resources on different partitions of wICE and Mindwell.
     The difference in cost between different machines/processors reflects
     the performance difference between those types of nodes.
     For additional information, you may refer to the
@@ -36024,129 +36797,45 @@ not stop before reaching its time limit.
 Charge rates
 ------------
 
-The table below shows the charge rates for each CPU and GPU type on Genius
-and wICE. These values correspond to the number of Slurm credits needed
+The table below shows the charge rates for each CPU and GPU type on wICE
+and Mindwell. These values correspond to the number of Slurm credits needed
 to allocate one core or GPU during one minute.
 
-+---------+-----------------------+----------+------------------------+
-| Cluster | Resource              | Type     | ``TRESBillingWeights`` |
-+=========+=======================+==========+========================+
-| Genius  | P100                  | GPU      | 41.6667                |
-+         +-----------------------+----------+------------------------+
-|         | V100                  | GPU      | 59.5833                |
-+---------+-----------------------+----------+------------------------+
-| wICE    | Icelake               | CPU core | 2.54630                |
-+         +-----------------------+----------+------------------------+
-|         | Icelake (bigmem)      | CPU core | 4.39815                |
-+         +-----------------------+----------+------------------------+
-|         | Icelake (hugemem)     | CPU core | 4.39815                |
-+         +-----------------------+----------+------------------------+
-|         | Sapphire Rapids       | CPU core | 3.47222                |
-+         +-----------------------+----------+------------------------+
-|         | Zen4 Genoa            | CPU core | 3.47222                |
-+         +-----------------------+----------+------------------------+
-|         | A100                  | GPU      | 141.667                |
-+         +                       +----------+------------------------+
-|         |                       | CPU      | 2.546296296            |
-+         +-----------------------+----------+------------------------+
-|         | H100                  | GPU      | 569.444                |
-+         +                       +----------+------------------------+
-|         |                       | CPU      | 3.472222222            |
-+---------+-----------------------+----------+------------------------+
-| Mindwell| Graniterapids         | CPU core | 2.60416667             |
-+         +-----------------------+----------+------------------------+
-|         | Graniterapids (bigmem)| CPU core | 3.03819444             |
-+         +-----------------------+----------+------------------------+
-|         | B200                  | GPU      | 437.50                 |
-+         +                       +----------+------------------------+
-|         |                       | CPU      | 3.03819444             |
-+---------+-----------------------+----------+------------------------+
++----------+-------------------------+----------+------------------------+
+| Cluster  | Resource                | Type     | ``TRESBillingWeights`` |
++==========+=========================+==========+========================+
+| wICE     | Skylake                 | CPU core | 4.630                  |
++          +-------------------------+----------+------------------------+
+|          | Cascadelake             | CPU core | 4.630                  |
++          +-------------------------+----------+------------------------+
+|          | Icelake                 | CPU core | 2.546                  |
++          +-------------------------+----------+------------------------+
+|          | Icelake (bigmem)        | CPU core | 4.398                  |
++          +-------------------------+----------+------------------------+
+|          | Icelake (hugemem)       | CPU core | 18.519                 |
++          +-------------------------+----------+------------------------+
+|          | Sapphire Rapids         | CPU core | 3.472                  |
++          +-------------------------+----------+------------------------+
+|          | Zen4 Genoa              | CPU core | 3.472                  |
++          +-------------------------+----------+------------------------+
+|          | P100                    | GPU      | 41.667                 |
++          +-------------------------+----------+------------------------+
+|          | V100                    | GPU      | 59.583                 |
++          +-------------------------+----------+------------------------+
+|          | A100                    | GPU      | 141.667                |
++          +-------------------------+----------+------------------------+
+|          | H100                    | GPU      | 569.444                |
++----------+-------------------------+----------+------------------------+
+| Mindwell | Granite Rapids          | CPU core | 2.604                  |
++          +-------------------------+----------+------------------------+
+|          | Granite Rapids (bigmem) | CPU core | 3.038                  |
++          +-------------------------+----------+------------------------+
+|          | B200                    | GPU      | 437.500                |
++----------+-------------------------+----------+------------------------+
 
 
 .. _Geert Jan Bex: mailto:geertjan.bex@uhasselt.be
 .. _credit request form:  https://admin.kuleuven.be/icts/onderzoek/hpc/request-project-credits
-
-
-
-================================================
-FILE: source/leuven/genius_quick_start.rst
-================================================
-.. _genius_t2_leuven:
-
-Genius quick start guide
-========================
-
-:ref:`Genius <genius hardware>` is a KU Leuven/UHasselt Tier-2 cluster
-which entered production in 2018. Currently only its login nodes and most of
-its GPU nodes remain in production.
-
-Access to the cluster
----------------------
-
-Genius can be accessed from the :ref:`Genius login nodes <tier2_login_nodes>`,
-or from your web browser via the :ref:`Open OnDemand <ood>` service.
-
-For example, you can log in to any of the login node using SSH::
-
-   $ ssh vscXXXXX@login.hpc.kuleuven.be
-
-.. _running_jobs_on_genius:
-
-Running jobs on Genius
-----------------------
-The `Slurm Workload Manager <https://slurm.schedmd.com>`_ is the scheduler,
-resource manager and credit accounting manager on Genius (and wICE).
-
-In case you are not yet familiar with Slurm and/or the Genius hardware,
-you can find more information on the following pages:
-
-- :ref:`Genius hardware <Genius hardware>`
-- Slurm jobs (basics): :ref:`running jobs` and :ref:`job_types`
-- :ref:`Slurm jobs (advanced) <job advanced>`
-- :ref:`Site-specific Slurm info <leuven_slurm_specifics>`
-
-.. note::
-
-   The examples given on this page only serve as illustrations.
-   We expect that you adapt the number of nodes, tasks, cores, memory,
-   walltime, ... depending on what your compute task requires.
-
-.. _submit_genius_gpu:
-
-Submitting to a GPU node
-~~~~~~~~~~~~~~~~~~~~~~~~
-The GPU nodes are accessible via the following partitions:
-
-+---------------+----------+----------------------------------------+-------------+
-| Partition     | Walltime | Resources                              | CPU model   |
-+===============+==========+========================================+=============+
-| gpu_p100      | 3 days   | 13 nodes, 4x Nvidia P100 GPUs per node | Skylake     |
-+---------------+----------+                                        |             |
-| gpu_p100_long | 7 days   |                                        |             |
-+---------------+----------+----------------------------------------+-------------+
-| gpu_v100      | 3 days   | 2 nodes, 8x Nvidia V100 GPUs per node  | Cascadelake |
-+---------------+----------+                                        |             |
-| gpu_v100_long | 7 days   |                                        |             |
-+---------------+----------+----------------------------------------+-------------+
-
-As usual, GPU nodes can be shared by different jobs from different users.
-However, every user will have exclusive access to its allocated GPUs.
-
-If you e.g. want to get one P100 GPU and two CPU cores::
-
-   $ sbatch --account=lp_myproject --clusters=genius --partition=gpu_p100 \
-            --nodes=1 --ntasks=2 --gpus-per-node=1 myjobscript.slurm
-
-For a V100 GPU, select the `gpu_v100` partition instead. Note that these nodes
-also offer :ref:`a much larger amount of CPU memory <Genius hardware>`.
-
-You are free to request more GPU devices and/or CPU cores if needed,
-but take note of the :ref:`limits on CPU resources per allocated GPU
-<cpu_resource_limits_in_gpu_jobs>`).
-
-For easier development and testing, also a ``gpu_p100_debug`` partition is
-available which accepts jobs with walltimes up to 1 hour. Note that you can
-only have a single debug job in the queue at any time.
 
 
 
@@ -36164,7 +36853,7 @@ nodes, nodes intended for interactive work and GPU nodes. The regular credit
 accounts can be used on all clusters, including Mindwell.
 
 Mindwell does not have separate login nodes and can be accessed from the
-:ref:`Genius login nodes <tier2_login_nodes>`.
+:ref:`wICE login nodes <tier2_login_nodes>`.
 
 .. _running jobs on mindwell:
 
@@ -36179,7 +36868,7 @@ In general, the maximum walltime for Mindwell jobs is 3 days (72 hours).
 Only jobs submitted to the ``*_long`` partitions are allowed to have
 walltimes up to 7 days (168 hours), as will be illustrated below.
 
-Similar to Genius and wICE, Mindwell uses Slurm as the workload manager.
+Similar to wICE, Mindwell uses Slurm as the workload manager.
 A Slurm jobscript for Mindwell will typically look like this:
 
 ::
@@ -36311,9 +37000,8 @@ FILE: source/leuven/slurm_accounting.rst
 Slurm Accounting
 ================
 
-To run jobs on :ref:`Genius <genius_t2_leuven>`, :ref:`wICE <wice_t2_leuven>`
-and :ref:`Mindwell <mindwell_quick_start>` clusters, you will need a valid Slurm
-credit account with sufficient credits.
+To run jobs on the :ref:`wICE <wice_t2_leuven>` and :ref:`Mindwell <mindwell_quick_start>`
+clusters, you will need a valid Slurm credit account with sufficient credits.
 To make it easier to e.g. see your current credit balance and past credit usage,
 we have developed a set of ``sam-*`` tools (``sam-balance``, ``sam-list-usagerecords``,
 ``sam-list-allocations`` and ``sam-statement``).
@@ -36442,12 +37130,10 @@ Cluster choice
 --------------
 Many Slurm commands (like `sbatch`, `srun`, `scontrol`, `squeue`, `scancel`,
 ...) accept a ``-M/--clusters`` option which selects one or more clusters.
-The default value depends on where the command is executed (``genius`` for the
-Genius compute nodes and login nodes, ``wice`` for the wICE compute nodes, and
-``mindwell`` for the Mindwell compute nodes).
-This means that if you are connected to a (Genius) login node, you will need
-to add ``-M wice`` in order to select wICE instead of Genius. Similarly for Mindwell,
-you need to specify ``-M mindwell``.
+The default value depends on where the command is executed (``wice`` for the
+login nodes and wICE compute nodes, and ``mindwell`` for the Mindwell compute nodes).
+This means that if you are connected to a login node, you will need
+to add ``-M mindwell`` in order to select Mindwell instead of wice.
 Also note that some of these commands (such as `squeue` and `sacct`) accept
 ``-M all`` which selects all available clusters.
 
@@ -36685,11 +37371,11 @@ per GPU is provided in the table below.
      -
      -
      - (MiB)
-   * - Genius
+   * - wICE
      - ``gpu_p100*``
      - 9
      - 45000
-   * - Genius
+   * - wICE
      - ``gpu_v100*``
      - 4
      - 84000
@@ -36727,8 +37413,7 @@ Such a job can be submitted as follows:
 In practice, 18 CPU cores and 126000 MiB CPU memory will be allocated per GPU,
 and no warning will be raised.
 
-For more examples of valid GPU jobs, have a look at the
-:ref:`Genius <genius_t2_leuven>`, :ref:`wICE <wice_t2_leuven>`
+For more examples of valid GPU jobs, have a look at the :ref:`wICE <wice_t2_leuven>`
 and :ref:`Mindwell <mindwell_quick_start>` quickstart guides.
 
 Aside from options such as ``--ntasks-per-node`` and ``--cpus-per-task``
@@ -36750,23 +37435,6 @@ using GDB). In such cases we recommend to 'join' the job as follows::
 
 
 
-
-================================================
-FILE: source/leuven/tier2_genius.rst
-================================================
-#############
-Tier-2 Genius
-#############
-
-
-.. toctree::
-   :maxdepth: 3
-
-   tier2_hardware/genius_hardware
-   genius_quick_start
-
-
-
 ================================================
 FILE: source/leuven/tier2_hardware.rst
 ================================================
@@ -36782,7 +37450,6 @@ KU Leuven/UHasselt Tier-2 clusters
    tier2_hardware/tier2_login_nodes
    tier2_mindwell
    tier2_wice
-   tier2_genius
    tier2_storage
    slurm_specifics
 
@@ -36852,9 +37519,9 @@ wICE advanced guide
 Compiling software
 ------------------
 
-Compared to the SkyLake and CascadeLake CPUs on Genius, the wICE nodes
-feature more recent CPU models such as Intel IceLake, Intel Sapphire Rapids
-and AMD Genoa. While architectural differences between SkyLake and CascadeLake
+The wICE nodes feature a range of CPU generations, from older SkyLake and
+CascadeLake models to more recent Intel IceLake, Intel Sapphire Rapids and AMD
+Genoa processors. While architectural differences between SkyLake and CascadeLake
 CPUs can be neglected, the differences with newer CPU models are more
 substantial. When it comes to GPUs there are also significant differences in
 the capabilities of P100, V100, A100 and H100 GPUs.
@@ -36916,8 +37583,7 @@ For software which also uses GPUs, this would be:
 
 Unless mentioned otherwise, the ``${VSC_ARCH_SUFFIX}`` corresponds to an
 empty string. You can check which CPU and GPU models are present in which
-partitions on the :ref:`genius hardware`, :ref:`wice hardware` and
-:ref:`mindwell hardware` pages.
+partitions on the :ref:`wice hardware` and :ref:`mindwell hardware` pages.
 
 Many dependencies you might need are centrally installed. The modules
 that are optimized for wICE are available when the appropriate
@@ -36975,14 +37641,14 @@ Memory hierarchy
 When running applications in parallel it is often a good idea to take the
 memory hierarchy into account (for example when pinning MPI processes
 in :ref:`hybrid MPI/OpenMP calculations <hybrid_mpi_openmp_programs>`).
-The Genius GPU nodes and wICE CPU nodes are the simpler ones
-with a single NUMA domain and L3 cache per CPU, with the usual core-private
-L1 and L2 caches. Other node types may feature more than one NUMA domain per
-CPU and (in the case of AMD CPUs) more than one L3 cache per CPU.
-The 48 cores in a Sapphire Rapids CPU, for example, share a large L3 cache
-but are organized in 4 groups of 12 cores, each group associated with one
-NUMA domain. For a complete overview, please consult the
-:ref:`genius hardware`, :ref:`wice hardware` and :ref:`mindwell hardware` pages.
+The wICE CPU nodes and the wICE GPU nodes equipped with NVIDIA P100 and V100
+GPUs have a relatively simple memory hierarchy, with a single NUMA domain and
+L3 cache per CPU, in addition to the usual core-private L1 and L2 caches.
+Other node types may feature more than one NUMA domain per CPU and
+(in the case of AMD CPUs) more than one L3 cache per CPU. The 48 cores in
+a Sapphire Rapids CPU, for example, share a large L3 cache but are organized
+in 4 groups of 12 cores, each group associated with one NUMA domain. For a
+complete overview, please consult the :ref:`wice hardware` and :ref:`mindwell hardware` pages.
 
 .. note::
 
@@ -37018,10 +37684,11 @@ supported). Various examples can be found in a `development branch
 Turbo frequency
 ---------------
 
-With wICE running on Rocky Linux 9, the CPU cores are no longer able to reach the maximal
-('turbo') frequency. Compared to wICE nodes running on Rocky 8 (which was the case before
-February 2026), you may therefore see somewhat lower performance if only a few cores are
-active while the other cores are idling. This issue is still being investigated.
+With wICE running on Rocky Linux 9, the Icelake and Sapphire Rapids CPU cores
+are no longer able to reach the maximal ('turbo') frequency. Compared to wICE
+nodes running on Rocky 8 (which was the case before February 2026), you may
+therefore see somewhat lower performance if only a few cores are active while
+the other cores are idling. This issue is still being investigated.
 
 
 
@@ -37037,9 +37704,8 @@ wICE quick start guide
 which entered production in 2022. Aside from regular CPU nodes, wICE also
 contains large memory nodes and GPU nodes.
 
-wICE does not have separate login nodes and can be accessed either from the
-:ref:`Genius login nodes <tier2_login_nodes>`, or from your web browser via the
-:ref:`Open OnDemand <ood>` service.
+wICE can be accessed either from the :ref:`wICE login nodes <tier2_login_nodes>`,
+or from your web browser via the :ref:`Open OnDemand <ood>` service.
 
 .. _running jobs on wice:
 
@@ -37182,9 +37848,25 @@ There is also one IceLake node with even more memory (8 TiB RAM) in the
 Submit to a GPU node
 ~~~~~~~~~~~~~~~~~~~~
 
-The nodes with A100 GPUs are located in the ``gpu_a100`` partition (the
-``gpu`` partition also covers the same nodes). As for the other
-node types, the GPU nodes can be shared by different jobs from different users
+The GPU nodes are accessible via the following partitions:
+
++----------------+----------+----------------------------------------+-------------+
+| Partition      | Walltime | Resources                              | CPU model   |
++================+==========+========================================+=============+
+| gpu_p100       | 3 days   | 13 nodes, 4x Nvidia P100 GPUs per node | Skylake     |
++----------------+----------+                                        |             |
+| gpu_p100_long  | 7 days   |                                        |             |
++----------------+----------+----------------------------------------+-------------+
+| gpu_v100       | 3 days   | 2 nodes, 8x Nvidia V100 GPUs per node  | Cascadelake |
++----------------+----------+                                        |             |
+| gpu_v100_long  | 7 days   |                                        |             |
++----------------+----------+----------------------------------------+-------------+
+| gpu_a100 / gpu | 3 days   | 4 nodes, 4x Nvidia A100 GPUs per node  | Icelake     |
++----------------+----------+----------------------------------------+-------------+
+| gpu_h100       | 3 days   | 5 nodes, 4x Nvidia H100 GPUs per node  | Genoa       |
++----------------+----------+----------------------------------------+-------------+
+
+The GPU nodes can be shared by different jobs from different users
 but each job has exclusive access to its allocated cores and GPU(s).
 
 If you e.g. need one A100 GPU and two CPU cores::
@@ -37196,15 +37878,9 @@ You are free to request more GPU devices and/or CPU cores if needed,
 but take note of the :ref:`limits on CPU resources per allocated GPU
 <cpu_resource_limits_in_gpu_jobs>`.
 
-There are also nodes with H100 GPUs and AMD Genoa CPUs (4 GPUs and 64 cores
-per node) which you can select via the ``gpu_h100`` partition, e.g.::
-
-   $ sbatch --account=lp_myproject --clusters=wice --partition=gpu_h100 \
-            --nodes=1 --gpus-per-node=1 myjobscript.slurm
-
-For easier development and testing with a full GPU, also a ``gpu_a100_debug``
-partition is available which accepts jobs with walltimes up to 1 hour,
-e.g.::
+For easier development and testing with a full GPU, two debug partitions
+are available: ``gpu_a100_debug`` and  ``gpu_p100_debug``.
+Both partitions accept jobs with walltimes up to 1 hour, e.g.::
 
    $ sbatch --account=lp_myproject --clusters=wice --partition=gpu_a100_debug \
             --nodes=1 --gpus-per-node=1 --time=00:10:00 \
@@ -37596,9 +38272,10 @@ Genius
 
 .. note::
 
-   Genius is a KU Leuven/UHasselt Tier-2 cluster which is still in operation,
-   but most of its hardware has already been decommissioned. This page is only
-   for possible future reference.
+   The KU Leuven / UHasselt Tier-2 cluster *Genius* has been in production
+   from 2018 till end of September 2026, at which point the remaining GPU
+   resources were moved to :ref:`wICE <wICE hardware>`.
+   This page is only for possible future reference.
 
 .. toctree::
    :hidden:
@@ -38068,50 +38745,6 @@ FILE: source/leuven/old_hardware/thinking/thinking_node_map_v2_centos7.xlsx
 
 
 ================================================
-FILE: source/leuven/tier2_hardware/genius_hardware.rst
-================================================
-.. _genius hardware:
-
-Genius hardware
-===============
-
-The KU Leuven / UHasselt Tier-2 cluster *Genius* has been in production
-since 2018. Currently only its login nodes and most of its GPU nodes remain in
-operation.
-
-
-Hardware details
-----------------
-
-- 16 GPU nodes, 72 GPU devices
-
-  - 14 P100 nodes
-
-    - 2 Xeon Gold 6140 CPUs\@2.3 GHz (Skylake),
-      18 cores each :raw-html:`<br />`
-      (1 NUMA domain and 1 L3 cache per CPU)
-    - 192 GiB RAM
-    - default memory per core is 5000 MiB
-    - 4 NVIDIA P100 SXM2\@1.3 GHz, 16 GiB GDDR, connected with NVLink
-    - 200 GB SSD local disk
-    - partition ``gpu_p100|gpu_p100_long|gpu_p100_debug``, specific Slurm :ref:`options <submit_genius_gpu>` apply
-
-  - 2 V100 nodes
-
-    - 2 Xeon Gold 6240 CPUs\@2.6 GHz (Cascadelake),
-      18 cores each :raw-html:`<br />`
-      (1 NUMA domain and 1 L3 cache per CPU)
-    - 768 GiB RAM
-    - default memory per core is 21000 MiB
-    - 8 NVIDIA V100 SXM2\@1.5 GHz, 32 GiB GDDR, connected with NVLink
-    - 200 GB SSD local disk
-    - partition ``gpu_v100|gpu_v100_long``, specific Slurm :ref:`options <submit_genius_gpu>` apply
-
-The nodes are connected using an Infiniband EDR network (bandwidth 25 Gb/s).
-
-
-
-================================================
 FILE: source/leuven/tier2_hardware/icelake_mlc.txt
 ================================================
 Intel(R) Memory Latency Checker - v3.10
@@ -38240,27 +38873,27 @@ For workflows requiring frequent read or write operations (especially those
 involving intermediate files), it is recommended to use scratch storage.
 Compared to NFS, the GPFS and Lustre filesystems are better designed to handle
 intensive serial and parallel input/output (IO) operations.
-:ref:`Genius <genius hardware>` and :ref:`wICE <wice hardware>` share the same
-(Lustre based) scratch storage, while :ref:`Mindwell <mindwell hardware>` comes
-with its own (GPFS based) scratch storage:
+:ref:`wICE <wice hardware>` uses Lustre-based scratch storage, while
+:ref:`Mindwell <mindwell hardware>` comes with GPFS-based scratch
+storage.
 
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
 | Variable              | Path                             | Type   | Access        |Backup | Default quota |
 +=======================+==================================+========+===============+=======+===============+
-|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | Genius, wICE  | No    | 500 GiB       |
+|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | wICE          | No    | 500 GiB       |
 |                       |                                  +--------+---------------+-------+---------------+
 |                       |                                  | GPFS   | Mindwell      | No    | 500 GiB       |
 +-----------------------+----------------------------------+--------+---------------+-------+---------------+
 
 On each node, the ``$VSC_SCRATCH`` environment variable will point to the
 scratch storage associated with the node (GPFS scratch on the Mindwell nodes,
-Lustre scratch on the nodes of Genius and wICE).
+Lustre scratch on the wICE nodes).
 
 .. warning::
 
    It is *crucial* that intensive IO operations in your compute jobs are done
    on the scratch storage associated with the cluster where the job is running.
-   In other words, compute jobs running on Genius and wICE have to use Lustre
+   In other words, compute jobs running on wICE have to use Lustre
    and jobs running on Mindwell have to use GPFS. Compute jobs that do not
    comply can be cancelled by the system administrators without prior notice.
    If you are looking for more information on this, please read the page on
@@ -38279,8 +38912,8 @@ Transferring data between Lustre and GPFS
 
 To facilitate data transfers between the Lustre and GPFS storage,
 Lustre is accessible from Mindwell and GPFS is accessible from wICE
-and from the (Genius) login nodes. Note that GPFS is not reachable
-from the Genius *compute* nodes.
+and from the (wICE) login nodes. Note that GPFS is not reachable
+from the wICE P100 and V100 nodes.
 
 Two more environment variables (``$VSC_SCRATCH_LUSTRE1`` and
 ``$VSC_SCRATCH_GPFS1``) have been defined for this purpose, so that you can
@@ -38292,7 +38925,7 @@ you could go about it as follows:
 
 .. code-block:: bash
 
-   # If initiating the transfer from Genius or wICE:
+   # If initiating the transfer from wICE:
    cp ${VSC_SCRATCH}/myfile ${VSC_SCRATCH_GPFS1}
 
    # If initiating the transfer from Mindwell:
@@ -38303,7 +38936,7 @@ through 'transfer' jobs submitted to, for example, the ``interactive``
 partition of :ref:`wICE <submit to wice interactive node>` or
 :ref:`Mindwell <submit to mindwell interactive node>`.
 Short transfers which don't take more than a couple of minutes can also
-be performed from a Genius login node. For more advanced examples, please read
+be performed from a wICE login node. For more advanced examples, please read
 the :ref:`recommendations for managing data on multiple filesystems <kuluh_pfs_practical>`.
 
 Globus endpoints have been defined on both Lustre and GPFS filesystems,
@@ -38335,15 +38968,15 @@ Node scratch
 If your jobs require temporary storage that does not need to be shared across
 compute nodes, you may also consider using the local node disks:
 
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|Variable               | Path                             | Type   | Access        |Backup | Default quota |
-+=======================+==================================+========+===============+=======+===============+
-|``$VSC_SCRATCH_NODE``  | ``/tmp``                         | ext4   | Genius        | No    | 200 GiB       |
-|                       |                                  |        +---------------+       +---------------+
-|                       |                                  |        | wICE          |       | 600 GiB       |
-|                       |                                  |        +---------------+       +---------------+
-|                       |                                  |        | Mindwell      |       | 600 GiB       |
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
+|Variable               | Path                             | Type   | Access           |Backup | Default quota |
++=======================+==================================+========+==================+=======+===============+
+|``$VSC_SCRATCH_NODE``  | ``/tmp``                         | ext4   | wICE P100 & V100 | No    | 200 GiB       |
+|                       |                                  |        +------------------+       +---------------+
+|                       |                                  |        | wICE             |       | 600 GiB       |
+|                       |                                  |        +------------------+       +---------------+
+|                       |                                  |        | Mindwell         |       | 600 GiB       |
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
 
 Though limited in storage capacity, ``$VSC_SCRATCH_NODE`` has the advantage
 that no network traffic is involved. The contents of this temporary storage
@@ -38355,23 +38988,23 @@ copied elsewhere if needed.
 ================================================
 FILE: source/leuven/tier2_hardware/kuleuven_storage_quota_table.rst
 ================================================
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|Variable               | Path                             | Type   | Access        |Backup | Default quota |
-+=======================+==================================+========+===============+=======+===============+
-|``$VSC_HOME``          | ``/user/leuven/xxx/vscxxxxx``    | NFS    | VSC           |Yes    | 3 GiB         |
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|``$VSC_DATA``          | ``/data/leuven/xxx/vscxxxxx``    | NFS    | VSC           |Yes    | 75 GiB        |
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | Genius, wICE  | No    | 500 GiB       |
-|                       |                                  +--------+---------------+-------+---------------+
-|                       |                                  | GPFS   | Mindwell      | No    | 500 GiB       |
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
-|``$VSC_SCRATCH_NODE``  | ``/tmp``                         | ext4   | Genius        | No    | 200 GiB       |
-|                       |                                  |        +---------------+       +---------------+
-|                       |                                  |        | wICE          |       | 600 GiB       |
-|                       |                                  |        +---------------+       +---------------+
-|                       |                                  |        | Mindwell      |       | 600 GiB       |
-+-----------------------+----------------------------------+--------+---------------+-------+---------------+
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
+|Variable               | Path                             | Type   | Access           |Backup | Default quota |
++=======================+==================================+========+==================+=======+===============+
+|``$VSC_HOME``          | ``/user/leuven/xxx/vscxxxxx``    | NFS    | VSC              |Yes    | 3 GiB         |
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
+|``$VSC_DATA``          | ``/data/leuven/xxx/vscxxxxx``    | NFS    | VSC              |Yes    | 75 GiB        |
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
+|``$VSC_SCRATCH``       | ``/scratch/leuven/xxx/vscxxxxx`` | Lustre | wICE             | No    | 500 GiB       |
+|                       |                                  +--------+------------------+-------+---------------+
+|                       |                                  | GPFS   | Mindwell         | No    | 500 GiB       |
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
+|``$VSC_SCRATCH_NODE``  | ``/tmp``                         | ext4   | wICE P100 & V100 | No    | 200 GiB       |
+|                       |                                  |        +------------------+       +---------------+
+|                       |                                  |        | wICE             |       | 600 GiB       |
+|                       |                                  |        +------------------+       +---------------+
+|                       |                                  |        | Mindwell         |       | 600 GiB       |
++-----------------------+----------------------------------+--------+------------------+-------+---------------+
 
 
 
@@ -38552,7 +39185,7 @@ Setup of parallel filesystems
 -----------------------------
 
 Since mid 2026, there are two parallel file systems in use on the KU Leuven/
-UHasselt Tier-2 clusters Mindwell and wICE (for Genius the wICE information applies):
+UHasselt Tier-2 clusters Mindwell and wICE:
 
 - The ``Lustre1`` file system
 
@@ -38767,11 +39400,11 @@ FILE: source/leuven/tier2_hardware/tier2_login_nodes.rst
 Tier-2 access
 -------------
 
-Currently, Genius, wICE and Mindwell are the Tier-2 clusters in production at KU Leuven.
+Currently, wICE and Mindwell are the Tier-2 clusters in production at KU Leuven.
 Both clusters run on the Rocky Linux 9.6 operating system. The access to both
 machines is possible
 
-- either via the Genius login nodes (see below), as wICE and Mindwell have no
+- either via the wICE login nodes (see below), as Mindwell has no
   dedicated login nodes
 
 - or via the :ref:`Open OnDemand <ood>` portal in your web browser
@@ -38785,9 +39418,8 @@ Login infrastructure
    section on :ref:`access restrictions <location_access_restrictions>`
    before proceeding.
 
-You can access the KU Leuven Tier-2 either through ``login.hpc.kuleuven.be`` or
-``login-genius.hpc.kuleuven.be``. This will loadbalance your connection to one
-of the 4 Genius login nodes.
+You can access the KU Leuven Tier-2 through ``login.hpc.kuleuven.be``. 
+This will loadbalance your connection to one of the 4 wICE login nodes.
 
 
 
@@ -38860,7 +39492,32 @@ Hardware details
   - partition ``hugemem``,
     :ref:`submit options <submit to wice big memory node>`
 
-- 9 GPU nodes
+- 25 GPU nodes
+
+  - 14 P100 nodes
+
+    - 2 Xeon Gold 6140 CPUs\@2.3 GHz (Skylake),
+      18 cores each :raw-html:`<br />`
+      (1 NUMA domain and 1 L3 cache per CPU)
+    - 192 GiB RAM
+    - default memory per core is 5000 MiB
+    - 4 NVIDIA P100 SXM2\@1.3 GHz, 16 GiB GDDR, connected with NVLink
+    - 200 GB SSD local disk
+    - partition ``gpu_p100|gpu_p100_long|gpu_p100_debug``,
+      :ref:`submit options <submit to wice GPU node>`
+
+
+  - 2 V100 nodes
+
+    - 2 Xeon Gold 6240 CPUs\@2.6 GHz (Cascadelake),
+      18 cores each :raw-html:`<br />`
+      (1 NUMA domain and 1 L3 cache per CPU)
+    - 768 GiB RAM
+    - default memory per core is 21000 MiB
+    - 8 NVIDIA V100 SXM2\@1.5 GHz, 32 GiB GDDR, connected with NVLink
+    - 200 GB SSD local disk
+    - partition ``gpu_v100|gpu_v100_long``,
+      :ref:`submit options <submit to wice GPU node>`
 
   - 4 nodes with 16 A100 GPUs in total
 
