@@ -2,9 +2,9 @@
 
 This module is the canonical way to bring every ``repositories/*.txt``
 file back in sync with its upstream GitHub source. Each entry in the
-:data:`REPOSITORIES` mapping below pairs a **filename that already
-exists in** ``repositories/`` with the GitHub URL it was originally
-dumped from. Running this script overwrites every listed file with a
+:data:`REPOSITORIES` mapping below pairs a **stable filename in**
+``repositories/`` with its upstream GitHub URL. Running this script
+creates new registered snapshots and overwrites existing files with a
 fresh `gitingest <https://github.com/coderamp-labs/gitingest>`_ dump
 **of the exact same filename** — so existing grep paths in the rest of
 the codebase keep resolving.
@@ -233,6 +233,10 @@ REPOSITORIES: dict[str, str | dict] = {
         # Vendors complete copies of ~13 other TFMs under tabtune/models/ —
         # see the note in REPOSITORIES.md before adding any new TFM dump.
         "https://github.com/Lexsi-Labs/TabTune",
+    "Test-Time Compute for Tabular Foundation Models.txt":
+        # Ning et al.'s evaluation, DiagScale, aggregation and retrieval code.
+        # Keep the full text source, including .patch/.sh files and licenses.
+        "https://github.com/kanghui-learning/test-time-compute-for-tabular-foundation-models",
     "TransformersCanDoBayesianInference.txt":
         # The ORIGINAL (unmaintained) code release of the 2021 PFN paper —
         # NOT the maintained successor (SamuelGabriel/PFNs, see PFNS.txt).

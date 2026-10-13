@@ -14,8 +14,9 @@ fresh dump of a public GitHub repo, the upstream URL is linked.
 
 ## Overview table
 
-Line counts are as of the 2026-08-04 refresh, except VSC Documentation,
-recounted on 2026-10-12. They drift on every refresh; treat them as rough sizes.
+Line counts are as of the 2026-08-04 refresh, except VSC Documentation
+(2026-10-12) and Test-Time Compute for Tabular Foundation Models (2026-10-13).
+They drift on every refresh; treat them as rough sizes.
 
 | File | Lines | GitHub | Paper | What it gives us |
 |------|-------|--------|-------|------------------|
@@ -39,6 +40,7 @@ recounted on 2026-10-12. They drift on every refresh; treat them as rough sizes.
 | `TabSTAR.txt` | 8,743 | [alanarazi7/TabSTAR](https://github.com/alanarazi7/TabSTAR) | [Arazi 2025](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) | Text-aware TFM, end to end: `pretraining/` (`pretrainer.py`, `unfreezing.py`), `training/` (`lora.py`, `checkpoint_averaging.py`), `preprocessing/verbalize.py`, and baseline adapters for tabpfnv2/tabicl/tabdpt/carte. Default branch is `master`; 401 metadata stubs excluded. |
 | `TabPFN Wide.txt` | 2,279,103 | [not-a-feature/TabPFN-Wide](https://github.com/not-a-feature/TabPFN-Wide) | [Kolberg 2026](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) | Continued-pretraining for extreme-feature-count regimes via a feature-widening prior (it argues *against* feature reduction, and uses FeatureAgglomeration only as a baseline). Gitignored (~366 MB); regenerate locally. |
 | `TabTune.txt` | 168,086 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. A convenient source of non-TabPFN eval baselines; it does **not** natively support Real-TabPFN-style multi-dataset continued pretraining. |
+| `Test-Time Compute for Tabular Foundation Models.txt` | 17,152 | [kanghui-learning/test-time-compute-for-tabular-foundation-models](https://github.com/kanghui-learning/test-time-compute-for-tabular-foundation-models) | [Ning 2026](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) | DiagScale/full-FT adapters, configuration aggregation and attention-guided retrieval for TabPFN-3, TabICLv2 and TabFM; evaluation protocol, experiment configs, pinned-backbone patches and installer. |
 | `TransformersCanDoBayesianInference.txt` | 12,325 | [automl/TransformersCanDoBayesianInference](https://github.com/automl/TransformersCanDoBayesianInference) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | The original (unmaintained) code release of the 2021 PFN paper. Historical; useful for explaining what a PFN is. |
 | `VSC Documentation.txt` | 39,613 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | VSC user documentation: **wICE P100/V100/A100/H100 and Mindwell B200**, Slurm selection and limits, Lustre/GPFS storage, software modules, credits and OnDemand. See the [current usage guide](#vsc-usage). |
 
@@ -79,7 +81,7 @@ paper is dead as a literal string.
 ## Layout
 
 This file lives at the repo root; the dumps live in
-[`repositories/`](repositories/) — 22 flat `.txt` files, one per
+[`repositories/`](repositories/) — 23 flat `.txt` files, one per
 upstream source, named exactly as in the table above (`TabPFN .txt`
 keeps its intentional trailing space). Line counts are in the table;
 the only file not tracked by git is `TabPFN Wide.txt` (~366 MB,
@@ -867,6 +869,60 @@ would otherwise need its own model-specific wrapper. The
 how each non-TabPFN model expects its inputs preprocessed
 (integer-encoded categoricals for TabPFN vs. text-tokenised columns
 for ContextTab vs. column-attention masks for TabICL, …).
+
+---
+
+<a id="test-time-compute-code"></a>
+
+## `Test-Time Compute for Tabular Foundation Models.txt`
+
+**Upstream:** [kanghui-learning/test-time-compute-for-tabular-foundation-models](https://github.com/kanghui-learning/test-time-compute-for-tabular-foundation-models).
+
+**Related paper:** Ning et al. 2026, *Test-Time Compute for Tabular Foundation Models:
+Mechanisms, Gains, and Limits* ([summary](SUMMARIES.md#test-time-compute),
+[PDF](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf)).
+
+**What it is.** The paper's implementation of adaptation, aggregation and context
+construction on TabPFN-3, TabICLv2 and TabFM. The full text snapshot keeps Python,
+YAML/JSON configs, shell scripts, patch series and licence notices. It contains the
+methods and evaluation machinery; pretrained backbones are installed separately from
+pinned upstream commits by the included installer.
+
+**Where to grep:**
+
+- **Adaptation:** `src/ttc/models.py` exposes `FinetunedTabPFN3Model`,
+  `FinetunedTabICLModel` and `FinetunedTabFMModel`; `patches/` contains the actual
+  DiagScale injection and parameter-selection hooks (`inject_diagscale`,
+  `select_trainable`). The patch series also records finetuning fallback and cache fixes.
+- **Aggregation:** `src/ttc/aggregation/search_space.py` defines configuration sampling;
+  `configs/aggregation_pool/` holds the released pools. Reducers in
+  `src/ttc/aggregation/reduce.py` include `uniform_weights`, `argmax_weights` and
+  `caruana_weights`. `AggregationTabPFN3Model` and `FinetunedAggregationTabPFN3Model`
+  implement the pool and adaptation-plus-pool workflows.
+- **Retrieval:** `src/ttc/benchmarks/row_modelaware.py` and `docs/retrieval.md` describe
+  attention-guided row selection, query grouping and handling source pools or context
+  unions that exceed memory limits.
+- **Evaluation:** `src/ttc/run.py` drives YAML-configured experiments;
+  `src/ttc/benchmarks/tabarena.py`, `src/ttc/eval/elo.py`, `src/ttc/eval/paired.py`
+  and `docs/evaluation.md` specify the benchmark, reference field and paired-error
+  comparisons. `configs/smoke/` and `tests/` provide smaller examples and focused checks.
+
+**Reproducibility and scope.** `envs/environment.yml` specifies the Python environment.
+`scripts/install_forks.sh` pins the three backbones and TabArena, applies the patches,
+and verifies the expected source-tree hashes. Reading this dump does not install those
+dependencies. The repository's Apache-2.0 licence covers its own code; third-party
+patches and model weights have separate terms documented in `THIRD_PARTY_NOTICES.md`.
+
+**Refresh:** registered in the default repository mapping, so both
+`python scripts/dumps/refresh_repositories.py` and the repository stage of
+`python scripts/maintain.py` update it automatically. To refresh only this snapshot:
+
+```bash
+python scripts/dumps/refresh_repositories.py --only "Test-Time Compute for Tabular Foundation Models.txt"
+```
+
+**When to grep this file:** comparing adaptation and ensemble recipes, reproducing
+the paper's evaluation protocol, or implementing retrieval with matched context controls.
 
 ---
 

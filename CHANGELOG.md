@@ -4,6 +4,14 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-13
+
+- Added **`Test-Time Compute for Tabular Foundation Models.txt`** from Ning et al.'s
+  upstream repository: 17,152 lines covering methods, configs, evaluation, patches,
+  installer and licence notices; registered it for automatic updates during normal refresh.
+- Updated `REPOSITORIES.md`, README and the paper's `SUMMARIES.md` entry with the
+  source map and refresh command so consumers can trace the paper's results to its code.
+
 ## 2026-10-12
 
 - **Owner-requested live Zotero mirror: 57 → 59 papers.** Two collection items were

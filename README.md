@@ -471,6 +471,14 @@ python scripts/dumps/refresh_repositories.py
 python scripts/dumps/refresh_repositories.py --only NanoTabPFN
 ```
 
+The default refresh includes Ning et al.'s test-time-compute implementation,
+documented in the [repository guide](REPOSITORIES.md#test-time-compute-code).
+To update only that snapshot:
+
+```bash
+python scripts/dumps/refresh_repositories.py --only "Test-Time Compute for Tabular Foundation Models.txt"
+```
+
 Two warnings from this script are **permanent and expected**. The shrink
 guard on `On Finetuning Tabular Foundation Models.txt` fails *correctly*:
 upstream deleted its entire `exp/` directory including all 342

@@ -2770,6 +2770,11 @@ no publication venue recorded in Zotero · **University of Connecticut / Morgan 
 
 **Citation key:** `2026.NING.testtimecomputetabularfoundationmodelsmechanismsgainslimits`.
 
+**Code reference:** [upstream implementation](https://github.com/kanghui-learning/test-time-compute-for-tabular-foundation-models),
+mirrored in `Test-Time Compute for Tabular Foundation Models.txt` with automatic refresh;
+the [repository guide](REPOSITORIES.md#test-time-compute-code) maps adaptation,
+aggregation, retrieval and evaluation to the corresponding source files.
+
 **Where it fits.** Revisits Rubachev 2025 (*On Finetuning Tabular Foundation Models*,
 [summary](#on-finetuning)) on newer backbones and separates mechanisms that Thomas 2024
 (*Retrieval & Fine-Tuning for In-Context Tabular Models*, [LoCalPFN summary](#localpfn))
