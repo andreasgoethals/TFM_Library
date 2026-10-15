@@ -1,0 +1,1908 @@
+TABULARFOUNDATIONMODELSAREEFFECTIVELY
+SHALLOW
+Irene Cannistraci, Julia E. Vogt
+Department of Computer Science
+ETH Zurich
+Switzerland
+irene.cannistraci@inf.ethz.ch
+ABSTRACT
+In-context-learning Tabular Foundation Models (TFMs) are uniquely suited to
+scenarios with limited resources or privacy constraints, as they solve new tasks
+without additional training. However, their architecture consists of multiple
+transformer blocks, resulting in high computational and memory footprints.
+Meanwhile, traditional alternatives like Gradient-Boosted Decision Trees (GB-
+DTs) remain highly competitive and run efficiently on CPUs, suggesting that
+tabular tasks may not inherently require deep architectures. This contrast raises
+a fundamental question:can TFMs be simplified by removing architectural
+redundancies without sacrificing performance?To answer this, we introduce
+a closed-form, label-free affine translator that replaces a contiguous window of
+up to 96% of the blocks, leaving the rest unchanged. Evaluating eight frontier
+TFMs on 171 classification datasets, we reveal that tabular transformers are
+vastly overparameterized: replacing half of a model’s blocks costs at most0.002
+median AUROC across all architectures, with the half-depth TabFM still outper-
+forming every other full-depth TFM and tuned GBDTs. Furthermore, different
+model families are overparameterized in different ways: TabPFN-3 relies on its
+encoders, maintaining performance regardless of which single block is retained.
+Other single-axis models spread computation thinly, needing only their first
+block, while dual-axis models concentrate it in one critical block. Ultimately,
+removing depth saves up to 1.5B parameters, speeds up GPU inference by up
+to6×at a median cost of0.03AUROC, while a single-block TabPFN-3 serves
+cached queries2.4×faster using6×less memory at negligible cost.
+1 INTRODUCTION
+0% 25% 50% 75% 96%
+Blocks Replaced
+−0.02
+−0.01
+0.00
+∆AUROC
+TabPFN-3
+1× 2× 2.5×
+Cached Query Speed-Up (GPU)
+1× 2× 3× 4× 6×
+Serving Memory Reduction
+Figure 1:TabPFN-3 at different levels of compression.Change in the classification AUROC
+using MIMIC-III vs. (left) % of replaced blocks, (middle) cached-query GPU speed-up, and (right)
+serving-memory reduction. Keeping only one transformer block (96% of blocks replaced) costs
+−0.009AUROC for a2.4×speed-up and6.1×less memory.
+1
+arXiv:2610.13253v1  [cs.LG]  9 Oct 2026
+
+In-context-learning (ICL) TFMs offer a powerful approach for tabular prediction: they solve new
+tasks with no additional training, handle heterogeneous data, and require no preprocessing or hyper-
+parameter tuning. Recent models such as TabPFN (Hollmann et al., 2025; Grinsztajn et al., 2026),
+TabICL (Qu et al., 2025), and TabDPT (Ma et al., 2025) achieve strong performance across diverse
+benchmarks. However, this zero-shot convenience comes at a high computational cost. Current
+TFMs stack 12 to 24 identical transformer blocks on top of their encoders. This depth imposes
+heavy memory footprints and high inference latency, limiting deployment on resource-constrained
+hardware such as local clinical servers. Meanwhile, traditional alternatives like GBDTs remain
+highly competitive on these same tasks while running efficiently on CPUs (Grinsztajn et al., 2022;
+McElfresh et al., 2023). The success of these shallower, tree-based models suggests that typical tab-
+ular tasks do not inherently require deep hierarchical composition. If that is true, much of the deep
+architecture inside current TFMs may be computationally redundant. This contrast raises a funda-
+mental question:can we retain the zero-shot convenience of TFMs while approaching the efficiency
+of simpler models by removing architectural redundancy?
+To answer this, we must first understand how these models utilize their depth. While observational
+metrics such as pairwise representation similarity and attention profiling reveal signs of architec-
+tural redundancy, the correspondence between these signals and actual replaceability is inconsistent
+across models. We therefore locate redundancy by intervening on the architecture itself: we intro-
+duce a closed-form, label-free affine translator that bypasses a contiguous window of transformer
+blocks. If the output distribution remains stable, the skipped blocks were performing computations
+that a simple linear map can absorb; if the output collapses, they were performing necessary non-
+linear composition. We design this translator with a per-feature parameterization to support dual-
+axis attention, and select the optimal bypass window by minimizing the forward KL divergence on
+a small calibration split1.
+Evaluating 8 TFMs from 6 model families across 171 classification datasets, we show that current
+tabular architectures are overparameterized. Replacing half the blocks across all models results in a
+minimal median drop of at most0.002AUROC, with up to 97% of datasets staying within one point
+of the full model’s performance. Pushing compression to a single block maintains high performance
+for TabPFN-3, Orion-Bix, and TabICL, which stay within a median0.007AUROC of their full-
+depth counterparts. The savings translate directly to hardware efficiency: halving the depth doubles
+the throughput of the transformer stack, and with a cached context, per-query GPU latency drops
+by1.5×–1.9×at Half and2.4×–5.1×with one block kept. We show that naively dropping blocks
+causes model collapse, and early exit performs worse than the label-free translator in most configu-
+rations. The translator can also be reused across similar datasets. For example, a half-depth TabICL
+translator fitted on MIMIC-III (Johnson et al., 2016) transfers to the eICU (Pollard et al., 2018)
+dataset with an AUROC penalty of just0.004(against0.003for a local fit), though transferability
+diminishes between datasets with different schemas (e.g., Heart and Diabetes, Section B.14).
+Finally, through a controlled pre-training study on nanoTabPFN (Pfefferle et al., 2025), we inves-
+tigate whether compression matches natively shallow training. We observe that a 12-layer model
+compressed toklayers matches the performance of a model trained from scratch at depthk(within
+0.011AUROC). Furthermore, a natively trained 6-layer model matches the AUROC of the full 12-
+layer baseline, indicating that depth is over-provisioned in this specific setting. Whether this struc-
+tural redundancy scales to significantly deeper architectures remains an open question for future
+work. For existing models, our proposed approach offers a practical method to achieve the inference
+efficiency of a shallow architecture without the computational cost of retraining from scratch.
+2 RELATED WORK
+Tabular Transformers.The development of tabular transformers began with task-specific archi-
+tectures. Early adaptations like FT-Transformer (Gorishniy et al., 2021) and SAINT (Somepalli
+et al., 2021) apply standard attention mechanisms to supervised learning, while TabNet (Arik &
+Pfister, 2021) uses sequential sparse routing for step-wise feature selection. Since then, the field
+has moved toward general-purpose foundation models, with a strong focus on in-context learning
+TFMs. TabPFNv2 (Hollmann et al., 2025) and TabPFN-3 (Grinsztajn et al., 2026) scale prior-data
+fitted networks to handle heterogeneous columns and mixed data types. TabICL (Qu et al., 2025;
+1code is available athttps://github.com/icannistraci/shallow-tfm
+2
+
+2026) processes tabular structures via set-transformers. TabDPT (Ma et al., 2025) pre-trains on real
+data, while TabFM (Kong et al., 2026) is pre-trained on synthetic data, and Mitra (Zhang et al.,
+2025b) mixes diverse synthetic priors. Finally, the Orion family (Bouadi et al., 2025; 2026) and
+LimiX (Zhang et al., 2025a) vary the attention pattern of the same in-context recipe (multi-scale
+sparse, bi-axial and dual-axis cell attention).
+Transformer Redundancy.Over-parameterization is a well-documented trait of vision and
+language transformers, where dropping layers, attention heads, or tokens often yields minimal per-
+formance degradation (Gromov et al., 2025; Men et al., 2025; Michel et al., 2019; Bolya et al., 2023;
+Venkataramanan et al., 2024). In vision, Jacobs et al. (2026) replace deep transformers with a small
+number of recurrent blocks, while Bolya et al. (2023) explicitly exploit token-level redundancy.
+More closely related to our approach, Shopkhoev et al. (2025) and Cannistraci et al. (2026) show
+that training-free linear maps can accurately bridge skipped block representations. Following the
+recent emergence of ICL TFMs, several concurrent works have begun exploring depth and context
+redundancy in the tabular domain. However, concurrent approaches fundamentally differ from
+ours by requiring either additional pre-training or dataset-specific gradient updates. For instance,
+Balef et al. (2026) pre-train a single-layer model from scratch to loop at inference, while Zab ¨ergja
+et al. (2026) pre-train a predictor-compressor pair to condense context rows into latent vectors.
+Among post-training approaches, TACTICL (Koshil et al., 2026) replaces transformer layers with
+lightweight MLP adapters trained via gradient descent on the downstream task. Similarly, (Tanna
+et al., 2026) relies on labeled data to train task-specific student models, while early-exit methods
+(K¨uken et al., 2025) pre-train new layer-wise decoders on prior data. In contrast, our approach uses
+a single, closed-form affine map, requiring no non-linear adapters, gradient updates, or labeled data
+3 METHOD
+LetH l ∈R N×d denote the latent representations at depthl∈ {0, . . . , L}, whereH0 represents
+the output of the input embedding layer andH L is the output of the final transformer block. For a
+contiguous window of blocks0≤s < e≤L, we bypass blockssthroughe−1entirely. We replace
+this bypassed window with an affine map(W ∗,b ∗), fitted via ridge regression on an unlabeled
+calibration set:
+(W∗,b ∗) = arg min
+W,b
+∥He −(H sW+b)∥ 2
+F +λ∥W∥ 2
+F .(1)
+The hidden statesH s andH e are extracted using a single forward pass over the in-context support
+set and the unlabeled calibration queries. To bound the solve time independently of context size, we
+fit the map on a fixed random subset ofN= min(500, n support +n cal)of these sequence positions.
+The regularization parameterλ∈ {0,10 −3,10 −2,10 −1}is scaled relative to the mean diagonal
+of the Gram matrix. We evaluate the fitting residual on a 25% held-out validation split of these
+calibration rows to selectλ ∗, then refit the map on the full subset.
+At inference, this closed-form map acts as a linear module projectingH s directly toH e, while the
+remaining blockse, . . . , L−1and the original classification head operate entirely unchanged. The
+closed-form fit adds negligible overhead to context encoding. Additionally, refining the map by
+gradient descent does not improve it (Section A.3).
+Per-Architecture Parameterization.Single-axis self-attention architectures such as TabFM and
+TabPFN-3 operate on sequence tensors where items are processed independently, requiring a single
+shared transformation matrix(W,b). Conversely, dual-axis models such as TabPFNv2 and LimiX
+attend across both rows and features, producing hidden tensors of shape(·, n features, d). Applying
+a single shared matrix across this tensor would mix feature representations and disrupt axis align-
+ment. Thus, for dual-axis architectures, we fit a distinct affine map(W f ,b f )for each feature index
+f∈ {1, . . . , nfeatures}(additional details in Section A.3). This expands the total translator param-
+eterization ton features(d2+d), which scales dynamically with the dataset’s feature dimensionality.
+However, in some cases (e.g., TabPFNv2), these parameters can be largely absorbed.
+Absorbing the Map.Because the map is affine, it can be absorbed into an adjacent affine layer.
+However, since transformer blocks contain non-linear operations, this operation is restricted to the
+network boundaries. If the window ends at the final block and the classification head applies a linear
+3
+
+projectionx7→xA ⊤ +c, the map folds exactly asH s(W∗A⊤) + (b∗A⊤ +c). Symmetrically, if
+the window starts at block0, the map folds into the encoder’s final linear layer. In these cases, the
+compressed model strictly reduces to a standardk-block architecture with no additional parameters.
+Additional details are provided in Section B.16.
+Label-Free Window Selection.To determine which block window to bypass, we evaluate can-
+didate window bounds(s, e)on the calibration splitX cal. Because our bypass retains the original
+pre-trained classification head, candidate models produce directly comparable probability distribu-
+tions. Inspired by the KL-guided layer selection of Li et al. (2026), for a target widthk, we select
+the optimal window(s ∗, e∗)by minimizing the forward KL divergence between the uncompressed
+model’s output distributionp full and the compressed model’s distributionp (s,e):
+(s∗, e∗) = arg min
+(s,e):e−s=k
+Ex∈Xcal
+
+KL
+
+pfull(y|x)||p (s,e)(y|x)
+
+.(2)
+Minimizing output KL divergence rather than the latent residual (e.g.,∥He − ˆHe∥2
+F ) is advantageous
+for two reasons. First, latent distances weigh all error directions equally, whereas the KL divergence
+weighs each error by its effect on the final predictions, after the remaining blocks and the classifica-
+tion head have amplified or suppressed it. Second, hidden-state scales differ across depths, so latent
+residuals of windows ending at different blocks are not comparable; the KL divergence scores every
+candidate in the same output probability space, across window positions and widths.
+Window selection is executed as a one-time pre-computation during context encoding. Candidate
+windows share a single hooked forward pass overX cal to cache intermediate states. For each candi-
+date(s, e), fitting the affine map and scoring the resulting distribution requires only a closed-form
+matrix solve and a fast pass through the remainingL−elayers. Once selected, the affine map is
+frozen for all subsequent queries. Single-axis models permit a static default selection, whereas dual-
+axis ones exhibit dataset-specific layer sensitivities that benefit from dynamic selection (Table 7).
+The same criterion can also choose how many blocks to replace. Given a divergence toleranceϵ >0,
+we select the widest window whose calibration drift stays withinϵ:
+max
+s,e
+(e−s)s.t.E x∈Xcal
+
+KL
+
+pfull ||p (s,e)
+
+≤ϵ.(3)
+Atϵ= 0.01, this rule removes 52–70% of the blocks of the single-axis models at a mean cost of at
+most0.004AUROC (Section B.4).
+4 LOCATINGCOMPUTATIONALREDUNDANCY
+Before evaluating the performance of compressed models, we investigate how computation is dis-
+tributed across the transformer blocks. We first examine representation and attention dynamics, then
+we perform a per-block intervention to accurately locate redundant blocks to replace.
+Experimental Setup.We evaluate 8 pre-trained TFMs from 6 model families (TabPFN, TabICL,
+TabDPT, TabFM, Orion and LimiX) with frozen weights across 171 classification datasets: 163
+from four deduplicated benchmark suites (OpenML-CC18 (Bischl et al., 2021), TabZilla (McElfresh
+et al., 2023), TabArena (Erickson et al., 2025), Grinsztajn (Grinsztajn et al., 2022)) and eight clinical
+datasets including MIMIC-III (Johnson et al., 2016) and eICU-CRD (Pollard et al., 2018). Each
+dataset is split into train, calibration, and test, and run at 3 seeds. For deterministic extraction,
+where possible, prediction-time ensembling is reduced to a single member, and LimiX-16M’s input
+preprocessing is fitted once on the support rows and then frozen (Section A.3). Additional details,
+including datasets and models details, are in Section A, while additional results are in Section B.
+Representation Similarity.Figure 2 shows the full pairwise cosine similarity between every pair
+of block representations on a single forward pass using MIMIC-III. The resulting matrices vary
+drastically across architectures. For example, from block 3 on, consecutive TabFM representations
+have cosine similarity≥0.99, consistent with the concurrent findings of Balef et al. (2026) that
+other TFMs representations stabilize early. In contrast, TabDPT shows broad similarity in its middle
+blocks and Orion-MSP in its last ones, while TabPFN-3 exhibits a smooth transition with no sharp
+boundaries. Finally, TabICL’s final block is the most dissimilar from every other block, while results
+in Figure 11 show that it is fully replaceable by the affine translator. Representation similarity
+therefore does not accurately predict replaceability.
+4
+
+0 4 8 12 16 20 24
+0
+4
+8
+12
+16
+20
+24
+T abPFN-3
+0 2 4 6 8 10 12
+0
+2
+4
+6
+8
+10
+12
+T abICL
+0 4 8 12 16 20 24
+0
+4
+8
+12
+16
+20
+24
+T abFM
+0 4 8 12 16
+0
+4
+8
+12
+16
+T abDPT
+0 2 4 6 8 10 12
+0
+2
+4
+6
+8
+10
+12
+Orion-MSP
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0
+Figure 2:Pairwise Cosine Similarity.Layerwise cosine similarity between all block representa-
+tions using MIMIC-III across different TFMs. Except for TabFM, models show architecture-specific
+structure that does not reliably predict which blocks are replaceable.
+Attention Patterns.If the depth of a tabular TFM is redundant, one might expect later blocks to
+simply stop specializing and repeatedly retrieve the same context rows. However, attention statistics
+on two diverse datasets, MIMIC-III and Higgs, show a different behaviour: the five most-attended
+keys per query overlap by a Jaccard index of only0.10–0.19between consecutive blocks (vs.0.005
+randomly). Additionally, TabPFN-3’s first block shares almost no keys with later ones (Section B.1).
+Nor does attention specialize with depth as in language models. TFMs attend almost uniformly
+over their context at every block (averaging 81–95% of maximum entropy, and≥70% at every
+block except TabFM’s read-out block), whereas Qwen3-4B’s attention is sharply peaked and highly
+variable (Figure 3 and Section B.1). Ultimately, although each block retrieves a distinct set of
+rows, the entropy profile remains persistently flat. Consequently, we must look beyond attention
+mechanisms or embedding similarities to understand when the network becomes redundant.
+0.0 0.5 1.0
+0
+25
+50
+75
+100
+TabPFN-3
+0.0 0.5 1.0
+Relative Depth
+TabICL
+0.0 0.5 1.0
+TabDPT
+Attention Entropy (% of lnS)
+TFM, MIMIC-III TFM, Higgs Qwen3-4B, WikiText-2 Qwen3-4B, IMDB
+Figure 3:Per-block Attention Entropy.Normalized attention entropy (percentage of maximum
+lnS) for three representative TFMs (on MIMIC-III and Higgs) vs. Qwen3-4B. While tabular models
+attend near-uniformly to all tokens, Qwen3-4B displays more peaked attention.
+Per-Block Sensitivity.To locate the redundant blocks directly, we use the affine translator itself
+as diagnostic tool. Specifically, we intervene by replacing individual blocks with the translator and
+measuring the resulting change in AUROC (Figure 4). Notably, the surviving blocks behave just as
+they do in the full model (attention entropy shifts by≤2%; Section B.1). For single-axis models,
+no single block is critical and every replacement stays within0.007AUROC of the full model. In
+contrast, dual-axis models each have exactly one critical block (i.e., block 0 for TabPFNv2 and
+block 3 for LimiX-16M), while every other block stays within0.043and0.009, respectively. In
+short, evaluated one block at a time, almost the entire stack is affine-replaceable and the non-affine
+computation that remains sits in a single block of the dual-axis models. More results in Figure 11.
+5 EVALUATION OFCOMPRESSEDMODELS
+Building on Section 4, we now evaluate the predictive performance of our compressed models.
+Although we analyze the impact of replacing contiguous block windows of varying widths ranging
+from 0% to 96% of the network (Figures 1 and 12), for clarity we focus our discussion on two
+primary configurations: (i)Half, a safe, deployable setting that replaces 50% of the blocks with the
+5
+
+0 3 6 9 12 15 18 21 24
+Block index
+−0.002
+0.000
+0.002
+0.004
+TabPFN-3
+0 2 4 6 8 10 12 14
+Block index
+−0.002
+0.000
+0.002
+0.004
+TabDPT
+0 2 4 6 8 10
+Block index
+−0.005
+0.000
+0.005
+ Orion-MSP
+∆AUROC
+Figure 4:Per-block Sensitivity.∆AUROC when a single block is replaced by the translator. Mean
+across 8 clinical datasets and 3 seeds. Full results in Figure 11.
+affine translator, and (ii)One-block, an extreme setting that retains only a single block alongside the
+translator. Additional results are in Tables 9 and 10.
+5.1 CLASSIFICATION
+Figure 5 shows the change in AUROC (compressed−full) on each of the 163 suite datasets, av-
+eraged over three seeds, for every model at Half, at One-block, and at One-block with the identity
+in place of the translator. In the left panel (Half), replacing 50% of the transformer stack with the
+single affine translator causes practically no performance loss. Across all architectures and dataset
+scales, the mean AUROC drops by a negligible0.001to0.005, with median losses of at most0.002.
+The stability holds on the larger datasets too, and the ranking of the models, among themselves
+and against tuned GBDTs, is unchanged (Section B.7). Discrete metrics reflect the same stability:
+accuracy and balanced accuracy drop by at most0.010and0.018across all tasks (Section B.9).
+−0.8
+−0.6
+−0.4
+−0.2
+0.0
+∆AUROC
+Half
+ One-block
+ One-block (Identity)
+LimiX-16M Orion-BiX Orion-MSP TabDPT TabFM TabICL TabPFNv2 TabPFN-3
+Figure 5:Classification Performance at Varying Compression Levels.Per-dataset∆AUROC
+(compressed−full) over 163 datasets at half-depth (left), reduced to a single block using our trans-
+lator (center), and a single-block baseline using an identity mapping (right). Additional results in
+Tables 9 and 10.
+With a single block kept (center), the models separate into three groups. TabPFN-3 and Orion-
+Bix remain nearly lossless, while TabICL, Orion-MSP, TabFM, and TabDPT suffer negligible mean
+losses (0.015to0.026) with some visible outliers, and dual-axis models degrade more, particularly
+on large datasets and long contexts (Section B.13). TabPFNv2 suffers the most (mean drop0.101),
+and LimiX-16M degrades more mildly (mean drop0.052).
+Additionally, this extreme compression isolates exactly where different architectures perform their
+core computations (Table 17). Single-axis models strongly prefer retaining their first block, relying
+on it for the initial non-linear attention pass over the context rows. Conversely, dual-axis models
+must retain their last block to ensure the final representations match the exact distribution expected
+by the classification head. With a single contiguous window, the kept block is either the first or the
+last. For TabPFNv2, keeping its critical block 0 costs0.281AUROC, while replacing it and keeping
+the last block costs only0.071AUROC. LimiX-16M’s critical block 3 is neither first nor last. The
+map must therefore absorb the critical block’s computation, which is why the dual-axis models lose
+6
+
+the most atOne-block; keeping the critical block between two maps would require two windows,
+which we leave as feature work. TabPFN-3 remains indifferent, as its core computation is already
+localized in its encoders. Finally, the failures ofOne-blockindicate when depth is needed. The cost
+grows with dataset size (Spearmanρ=−0.22; Section B.13), and the largest loss averaged over the
+six single-axis models is onmonks-2(−0.128), whose label is a logical rule over its features.
+Ablations.One could argue that the skipped blocks are simply inactive, making our translator
+unnecessary. To test this, we evaluate dropping the same blocks without applying the affine map,
+effectively treating the skipped section as an identity function (Figure 5,right). Under this baseline,
+performance collapses for most models down to chance level (Table 9). The skipped blocks are
+therefore not idle, but the closed-form map recovers their computation.
+Because an affine approximation suffices, we also evaluate a standard early-exit baseline: fitting
+a supervised logistic regression classifier directly to the representations right before the skipped
+window, thereby discarding the remaining blocks and the original head. Despite having access to
+the support labels, this shortcut underperforms in most configurations. It loses≈0.02AUROC at
+every depth, whereas our label-free translator matches or outperforms it in 81% of the 2,664 tested
+configurations (Table 16). Finally, repeatedly looping the retained block also fails to substitute the
+affine map (Table 17). Mapping intermediate representations into the space the remaining blocks
+and the frozen head expect therefore beats training a new head from scratch, even though the new
+head sees labels.
+5.2 REGRESSION
+Since Section 5.1 shows that up to 96% of a tabular transformer’s depth can be safely removed,
+we now investigate whether this extreme redundancy is a general property of tabular models or
+specific to classification. We evaluate the regressor variants of our architectures across 41 continuous
+datasets. For these experiments, we select the skip window using calibrationR 2, as regressors lack
+the output distributions necessary for the KL divergence criterion. Additional results in Table 20.
+−6
+−5
+−4
+−3
+−2
+−1
+0
+∆R2
+Half
+↓2
+One-block
+↓1 ↓1 ↓9
+One-block (Identity)
+LimiX-16M TabDPT TabFM TabICL TabPFNv2 TabPFN-3
+Figure 6:Regression Performance at Varying Compression Levels.Per-dataset∆R 2 (com-
+pressed−full) over 41 regression datasets at half-depth (left), reduced to a single block using our
+translator (center), and a single-block baseline using an identity mapping (right).
+Regression shows the same redundancy atHalf(Figure 6): replacing half of the blocks costs only
+0.001to0.026in medianR 2, whereas dropping them without the map costs far more (right). With
+one block kept, however, most regressors degrade sharply (e.g., TabPFN-3 loses0.132R 2), with
+TabFM the exception (−0.022despite going from 24 blocks to 1). Two effects contribute. The pre-
+dictions shrink toward the mean (standard deviation0.48–0.72of the full model’s;0.22for LimiX-
+16M), which an affine recalibration on the calibration split partly repairs (Table 21). The samples
+are also ranked less accurately (Spearmanρfrom0.93to0.86for TabICL and from0.91to0.57for
+TabDPT). The late blocks of a regressor therefore refine the ordering of its outputs, which regres-
+sion needs but classification does not, as long as the decision boundary is preserved. This is why
+classifiers survive a single block while most regressors need about half of their depth.
+7
+
+6 EFFICIENCY
+Finally, we analyze how this compression affects computational cost. Table 1 summarizes the hard-
+ware impact of compression on a single RTX 5090. Because the transformer stack accounts for
+93%–98% of total weights in most TFMs (except Orion-MSP, at 57%), dropping blocks removes
+most of the weights. For single-axis models, the affine translator adds negligible overhead (e.g.,
+262k parameters replacing 23.6M in TabICL), allowingOne-blockcompression to eliminate 91%–
+96% of stack weights. At this extreme depth, TabFM sheds roughly 1.5B parameters. Dual-axis
+models present an exception: because their affine map scales with the number of feature tokens,
+the translator overhead grows on wider datasets, moderating the net parameter reductions (yielding
+70%–71% stack savings atOne-blockon MIMIC-III). This map overhead can often be absorbed
+by adjacent components (Section 3). For example, TabPFNv2 folds itsOne-blockmap exactly into
+the encoder, shrinking it from 1.45M to 43k parameters (boosting stack savings from 71% to 91%),
+while TabDPT folds its 0.59M-parameter map into the classification head. Other models require nor-
+malization at these boundaries, retaining their already small maps. For LimiX-16M, whose encoder
+ends in a LayerNorm, the map cannot be absorbed and grows by 37k parameters per feature token, so
+on very wide datasetsOne-blockLimiX-16M measures redundancy rather than saving parameters.
+Table 1:Hardware Impact.MIMIC-III, single RTX 5090. Blocks params: parameters of the
+transformer blocks kept, translator included.∆FLOPs: forward-pass FLOPs removed. Re-encode:
+batch of 512 queries, context re-encoded on every call. Cached: one query against a cached context
+(three models); memory = weights + cache.
+Blocks params (M)∆FLOPs Re-encode speed-up Cached query speed-up Cached memory reduction
+Model Full Half One-block Half One-block Half One-block Half One-block Half One-block
+TabPFNv2 7.1 5.0 2.0−50%−91% 1.7×4.6×1.9×5.1×1.9×10.0×
+TabPFN-3 51.4 25.9 2.4−26%−51% 1.1×1.2×1.5×2.4×1.8×6.1×
+TabICL 25.7 13.1 2.4−23%−42% 1.0×1.1×1.7×4.0×1.7×4.3×
+TabDPT 75.6 38.4 5.3−49%−92% 1.5×3.3×— — — —
+TabFM 1,611 810 71.3−31%−59% 1.2×1.4×— — — —
+Orion-MSP 25.2 12.9 2.4−22%−37% 1.1×1.2×— — — —
+Orion-Bix 25.2 12.9 2.4−21%−40% 1.2×1.3×— — — —
+LimiX-16M 15.9 11.4 4.8−50%−91% 1.8×6.1×— — — —
+While the compressed blocks run up to23×faster (Table 24), the end-to-end speed-up is limited
+by the time spent outside them, mostly in the encoders (Amdahl’s law). AtOne-block, models with
+lightweight encoders (TabPFNv2, TabDPT, LimiX-16M) accelerate by3.3×–6.1×, whereas heavy
+encoders (TabICL, TabFM) limit gains to1.1×–1.4×; for these models the main gain is memory,
+e.g.One-blockTabFM drops about 6 GB of fp32 weights. Context caching removes this bottleneck,
+yielding query speed-ups of up to5.1×. On CPUs, where the blocks dominate the run time, end-
+to-end speed-ups reach12.4×(Table 23). The same gains apply to regression, which uses the same
+backbones: atHalf, where regression is near-lossless, the lightweight models accelerate by1.5×–
+1.8×on GPU, and atOne-blockTabFM sheds 1.5B parameters for a median∆R 2 of only−0.022.
+7 COMPRESSION VS. PRE-TRAININGSHALLOWARCHITECTURES
+If up to 96% of a tabular transformer’s layers can be safely approximated, a natural follow up
+question would be: why not simply pre-train a shallow model from scratch? To analyze this, we
+test whether compressing a model matches the performance of a natively shallow one using the
+nanoTabPFN reference implementation (Pfefferle et al., 2025)2. We train the model across varying
+depthsL∈ {1,2,3,6,12}, each with an embedding dimension of 96 and 4 attention heads, for 5,000
+steps across three random seeds (see Section B.17 for configurations). We evaluate these models
+on four binary clinical datasets (Diabetes, Heart, Breast Cancer, SUPPORT2), strictly operating in
+the prior-fitting regime (100 support rows, top 5 F-score features, 1,000 test rows). We compare
+these natively shallow models against the 12-layer model compressed tokblocks using our per-
+feature translator. Although scaled down (1.4M parameters), this proxy model provides a controlled
+environment to study the architectural origins of redundancy.
+2github.com/automl/nanoTabPFN
+8
+
+1 2 3 6 12
+Kept Blocks k
+0.84
+0.86
+0.88
+0.90AUROC
+1 2 3 6 12
+Kept Blocks k
+0.2
+0.4
+0.6
+0.8
+1.0AUROC
+ chance
+Trained at depth k Trained, compressed topology Compressed 12 → k Compressed 12 → k, prior-fitted map
+Figure 7:Pre-training Redundancies.nanoTabPFN test AUROC, averaged over four clinical
+datasets. Compressing 12 blocks tokmatches native training at depthk, but only when the translator
+is fitted on the target’s (unlabelled) rows rather than on prior tasks (right). Exact values in Table 25.
+Within this controlled experimental setting, results in Figure 7 suggest three properties of TFMs.
+First, compressing a pre-trained model performs on par with pre-training a shallow one: AUROC
+matches within0.011at every depth, including a single block. Second, this parity does not come
+from the translator’s extra parameters: training the compressed architecture from scratch, i.e.,k
+blocks plus an identity-initializedd×dlayer (“trained, compressed topology”), does not reliably
+beat the plaink-block model (0.888vs.0.902atk= 2;0.900vs.0.894atk= 3). It does, however,
+require fitting the map to the target: fitting the map on 20 unseen prior tasks instead of the target’s
+rows drops AUROC to0.43–0.83(Figure 7, right), consistent with the transfer study (Section B.14).
+Third, depth is over-provisioned: a natively trained 6-block model matches the 12-block one, and
+deeper models are harder to train, collapsing at the default learning rate (Section B.17). With 1,000
+support rows, about7×the pre-training task size, extra depth still does not help, although shallow
+models trained from scratch lead compressed ones by0.016–0.027atk= 2(Section B.18).
+8 CONCLUSION
+We introduced a closed-form, label-free affine translator to show that TFMs are overparameterized.
+Across eight models from six families and 171 classification datasets, replacing half the transformer
+blocks with a single affine map costs at most0.002median AUROC, and isolating a single block
+remains competitive on most datasets. Per-block analysis shows why this is possible: in single-
+axis models no individual block is critical, and in dual-axis models the non-affine computation
+sits in a single block, while attention remains diffuse across depth. Unlike early-exit methods that
+discard the network’s tail and require labeled data to train a new classifier, our translator succeeds
+by preserving the pre-trained head and accurately projecting intermediate states into its expected
+input space. Furthermore, at half-depth, a fitted map can be reused as-is across similar datasets (e.g.,
+MIMIC-III and eICU), and for TabICL and TabPFN-3 it keeps most of its benefit even on unrelated
+datasets. These reductions remove up to 96% of the parameters with one block kept (1.5B for
+TabFM), speed up end-to-end GPU inference by up to6×at a median cost of0.03AUROC, and let
+a single-block TabPFN-3 serve cached queries2.4×faster with6×less memory at negligible cost.
+Limitations and future work.Beyond demonstrating architectural redundancy, our analysis iden-
+tifies specific conditions where extreme compression to a single block fails, such as maintaining
+continuous target rankings in regression, and for dual-axis models whose map cannot be absorbed
+(i.e., LimiX-16M), the per-feature map outweighs the removed blocks on very wide datasets. Ad-
+ditionally, our comparison between compression and shallow pre-training is currently limited to a
+1.4M-parameter nanoTabPFN. Whether this performance parity holds at production scale, where
+pre-training shallow models from scratch is prohibitively expensive, remains an open question.
+These limitations motivate the design of adaptive architectures that allocate network depth only
+when strictly required. Given how replaceable most blocks are, a recurrent transformer that reuses
+one block’s weights could supply that depth without the parameter count of current models. Finally,
+the window could be selected under a hardware budget instead of a fixed width, minimizing the
+calibration KL subject to a target memory or latency that also accounts for the cost of the map.
+9
+
+REFERENCES
+Sercan ¨O Arik and Tomas Pfister. Tabnet: Attentive interpretable tabular learning. InProceedings
+of the AAAI conference on artificial intelligence, volume 35, pp. 6679–6687, 2021.
+Amir Rezaei Balef, Mykhailo Koshil, and Katharina Eggensperger. Is one layer enough? under-
+standing inference dynamics in tabular foundation models. InInternational Conference on Ma-
+chine Learning (ICML), 2026. arXiv:2605.06510.
+Bernd Bischl, Giuseppe Casalicchio, Matthias Feurer, Pieter Gijsbers, Frank Hutter, Michel Lang,
+Rafael G. Mantovani, Jan N. van Rijn, and Joaquin Vanschoren. OpenML benchmarking suites.
+InProceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks,
+2021.
+Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and
+Judy Hoffman. Token merging: Your vit but faster. InThe Eleventh International Confer-
+ence on Learning Representations, 2023. URLhttps://openreview.net/forum?id=
+JroZRaRw7Eu.
+Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu. Orion-MSP: Multi-
+scale sparse attention for tabular in-context learning.arXiv preprint arXiv:2511.02818, 2025.
+Mohamed Bouadi, Pratinav Seth, Aditya Tanna, and Vinay Kumar Sankarapu. Orion-Bix: Bi-axial
+attention for tabular in-context learning. InProceedings of the ACM Web Conference 2026, pp.
+8673–8676, 2026.
+D. Campos and J. Bernardes. Cardiotocography. UCI Machine Learning Repository, 2000. DOI:
+https://doi.org/10.24432/C51S4N.
+Irene Cannistraci, Simone Antonelli, Emanuele Palumbo, Thomas M Sutter, Emanuele Rodol`a, Bas-
+tian Rieck, and Julia E V ogt. Toast: Transformer optimization using adaptive and simple transfor-
+mations.Transactions on Machine Learning Research, 2026. URLhttps://openreview.
+net/forum?id=fSwMCsBtTG.
+Fahim Dalvi, Hassan Sajjad, Nadir Durrani, and Yonatan Belinkov. Analyzing redundancy in pre-
+trained transformer models. InProceedings of the 2020 Conference on Empirical Methods in
+Natural Language Processing (EMNLP), pp. 4908–4926, 2020.
+Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzm ¨uller, Prateek Mutalik Desai,
+David Salinas, and Frank Hutter. TabArena: A living benchmark for machine learning on tabular
+data. InAdvances in Neural Information Processing Systems (NeurIPS), Datasets and Bench-
+marks Track, 2025. arXiv:2506.16791.
+Sebastian Felix Fischer, Liana Harutyunyan, Matthias Feurer, and Bernd Bischl. OpenML-CTR23 –
+a curated tabular regression benchmarking suite. InAutoML Conference 2023 (Workshop), 2023.
+Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. Revisiting deep learning
+models for tabular data.Advances in neural information processing systems, 34:18932–18943,
+2021.
+L´eo Grinsztajn, Edouard Oyallon, and Ga¨el Varoquaux. Why do tree-based models still outperform
+deep learning on typical tabular data?Advances in neural information processing systems, 35:
+507–520, 2022.
+L´eo Grinsztajn, Klemens Fl ¨oge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Mihir Ma-
+nium, Shi Bin Hoo, Magnus B ¨uhler, Anurag Garg, et al. TabPFN-3: Technical report.arXiv
+preprint arXiv:2605.13986, 2026.
+Andrey Gromov, Kushal Tirumala, Hassan Shapourian, Paolo Glorioso, and Daniel A. Roberts.
+The unreasonable ineffectiveness of the deeper layers. InInternational Conference on Learning
+Representations, 2025.
+Noah Hollmann, Samuel M¨uller, Lennart Purucker, Arjun Krishnakumar, Max K¨orfer, Shi Bin Hoo,
+Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data with a tabular
+foundation model.Nature, 637(8045):319–326, 2025.
+10
+
+Mozes Jacobs, Thomas Fel, Richard Hakim, Alessandra Brondetta, Demba E. Ba, and T. Anderson
+Keller. Block recurrent dynamics in vision transformers. InThe Fourteenth International Confer-
+ence on Learning Representations, 2026. URLhttps://openreview.net/forum?id=
+gH3HhnfWLC.
+Alistair EW Johnson, Tom J Pollard, Lu Shen, Li-wei H Lehman, Mengling Feng, Mohammad
+Ghassemi, Benjamin Moody, Peter Szolovits, Leo Anthony Celi, and Roger G Mark. Mimic-iii,
+a freely accessible critical care database.Scientific data, 3(1):160035, 2016.
+Weihao Kong, Erez Louidor Ilan, Shuxin Nie, Taman Narayan, Rajat Sen, Yichen Zhou, Deqing
+Fu, Samet Oymak, and Abhimanyu Das. Tabfm: A zero-shot foundation model for tabular data.
+arXiv preprint arXiv:2609.37959, 2026.
+Mykhailo Koshil, Matthias Feurer, and Katharina Eggensperger. TACTICL: Task-aware compres-
+sion of tabular ICL models. InInternational Conference on Automated Machine Learning (Au-
+toML), 2026. arXiv:2608.10837.
+Jaris K ¨uken, Lennart Purucker, and Frank Hutter. Early stopping tabular in-context learning. In
+ICML Workshop on Foundation Models for Structured Data, 2025. arXiv:2506.21387.
+Yanhong Li, Songlin Yang, Shawn Tan, Mayank Mishra, Rameswar Panda, Jiawei Zhou, and Yoon
+Kim. Distilling to hybrid attention models via KL-guided layer selection. InThe Fourteenth
+International Conference on Learning Representations, 2026. URLhttps://openreview.
+net/forum?id=RzbsHcFqIf.
+Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Alex Labach, Jesse C. Cresswell, Keyvan
+Golestan, Guangwei Yu, Anthony L. Caterini, and Maksims V olkovs. TabDPT: Scaling tabular
+foundation models on real data. InThe Thirty-ninth Annual Conference on Neural Information
+Processing Systems, 2025. URLhttps://openreview.net/forum?id=pIZxEOZCId.
+Duncan McElfresh, Sujay Khandagale, Jonathan Valverde, Vishak Prasad C, Ganesh Ramakrishnan,
+Micah Goldblum, and Colin White. When do neural nets outperform boosted trees on tabular
+data? InAdvances in Neural Information Processing Systems (NeurIPS), Datasets and Bench-
+marks Track, volume 36, pp. 76336–76369, 2023.
+Xin Men, Mingyu Xu, Qingyu Zhang, Qianhao Yuan, Bingning Wang, Hongyu Lin, Yaojie Lu,
+Xianpei Han, and Weipeng Chen. ShortGPT: Layers in large language models are more redundant
+than you expect. InFindings of the Association for Computational Linguistics: ACL 2025, pp.
+20192–20204, 2025.
+Paul Michel, Omer Levy, and Graham Neubig. Are sixteen heads really better than one? InAdvances
+in Neural Information Processing Systems, 2019.
+Donald Michie, David J. Spiegelhalter, and Charles C. Taylor.Machine Learning, Neural and
+Statistical Classification. Ellis Horwood, 1994. Statlog (Heart) data: UCI Machine Learning
+Repository, DOI: https://doi.org/10.24432/C57303.
+Alexander Pfefferle, Johannes Hog, Lennart Purucker, and Frank Hutter. nanoTabPFN: A
+lightweight and educational reimplementation of TabPFN.arXiv preprint arXiv:2511.03634,
+2025.
+Tom J Pollard, Alistair EW Johnson, Jesse D Raffa, Leo A Celi, Roger G Mark, and Omar Badawi.
+The eicu collaborative research database, a freely available multi-center database for critical care
+research.Scientific data, 5(1):180178, 2018.
+Jingang Qu, David Holzm¨uller, Ga¨el Varoquaux, and Marine Le Morvan. TabICL: A tabular founda-
+tion model for in-context learning on large data. InProceedings of the 42nd International Confer-
+ence on Machine Learning (ICML), volume 267 ofProceedings of Machine Learning Research,
+pp. 50817–50847, 2025. URLhttps://openreview.net/forum?id=0VvD1PmNzM.
+Jingang Qu, David Holzm¨uller, Ga¨el Varoquaux, and Marine Le Morvan. TabICLv2: A better, faster,
+scalable, and open tabular foundation model. InInternational Conference on Machine Learning
+(ICML), 2026. arXiv:2602.11139.
+11
+
+Ross Quinlan. Thyroid Disease. UCI Machine Learning Repository, 1986. DOI:
+https://doi.org/10.24432/C5D010.
+Dmitriy Shopkhoev, Ammar Ali, Magauiya Zhussip, Valentin Malykh, Stamatios Lefkimmiatis,
+Nikos Komodakis, and Sergey Zagoruyko. ReplaceMe: Network simplification via depth prun-
+ing and transformer block linearization. InAdvances in Neural Information Processing Systems
+(NeurIPS), 2025. arXiv:2505.02819.
+Jack W. Smith, J. E. Everhart, W. C. Dickson, W. C. Knowler, and R. S. Johannes. Using the
+ADAP learning algorithm to forecast the onset of diabetes mellitus. InProceedings of the Annual
+Symposium on Computer Application in Medical Care, pp. 261–265, 1988.
+Gowthami Somepalli, Micah Goldblum, Avi Schwarzschild, C Bayan Bruss, and Tom Goldstein.
+SAINT: Improved neural networks for tabular data via row attention and contrastive pre-training.
+arXiv preprint arXiv:2106.01342, 2021.
+Aditya Tanna, Nassim Bouarour, Mohamed Bouadi, Vinay Kumar Sankarapu, and Pratinav Seth.
+Distilling tabular foundation models for structured health data.arXiv preprint arXiv:2605.18702,
+2026.
+The SUPPORT Principal Investigators. A controlled trial to improve care for seriously ill hospi-
+talized patients: The study to understand prognoses and preferences for outcomes and risks of
+treatments (SUPPORT).JAMA, 274(20):1591–1598, 1995.
+Shashank Venkataramanan, Amir Ghodrati, Yuki Asano, Fatih Porikli, and Amirhossein Habibian.
+Skip-attention: Improving vision transformers by paying less attention. InInternational Confer-
+ence on Learning Representations, volume 2024, pp. 29654–29672, 2024.
+William Wolberg. Breast Cancer Wisconsin (Original). UCI Machine Learning Repository, 1990.
+DOI: https://doi.org/10.24432/C5HP4Z.
+An Yang, Anfeng Li, Baosong Yang, Beichen Zhang, Binyuan Hui, Bo Zheng, Bowen Yu,
+Chang Gao, Chengen Huang, Chenxu Lv, et al. Qwen3 technical report.arXiv preprint
+arXiv:2505.09388, 2025.
+Guri Zab ¨ergja, Rafziq Kamel, Arlind Kadra, Christian M. M. Frey, and Josif Grabocka. End-
+to-end compression for tabular foundation models. InProceedings of the 43rd International
+Conference on Machine Learning (ICML), Proceedings of Machine Learning Research, 2026.
+arXiv:2602.05649.
+Xingxuan Zhang, Gang Ren, Han Yu, Hao Yuan, Hui Wang, Jiansheng Li, Jiayun Wu, Lang Mo,
+Li Mao, Mingchao Hao, Ningbo Dai, Renzhe Xu, Shuyang Li, Tianyang Zhang, Yue He, Yuanrui
+Wang, Yunjia Zhang, Zijing Xu, Dongzhe Li, Fang Gao, Hao Zou, Jiandong Liu, Jiashuo Liu,
+Jiawei Xu, Kaijie Cheng, Kehan Li, Linjun Zhou, Qing Li, Shaohua Fan, Xiaoyu Lin, Xinyan
+Han, Xuanyue Li, Yan Lu, Yuan Xue, Yuanyuan Jiang, Zimu Wang, Zhenlei Wang, and Peng Cui.
+LimiX: Unleashing structured-data modeling capability for generalist intelligence.arXiv preprint
+arXiv:2509.03505, 2025a.
+Xiyuan Zhang, Danielle C. Maddix, Junming Yin, Nick Erickson, Abdul Fatir Ansari, Boran Han,
+Shuai Zhang, Leman Akoglu, Christos Faloutsos, Michael W. Mahoney, Cuixiong Hu, Huzefa
+Rangwala, George Karypis, and Bernie Wang. Mitra: Mixed synthetic priors for enhancing tab-
+ular foundation models. InAdvances in Neural Information Processing Systems, 2025b. URL
+https://openreview.net/forum?id=t8YRsWY6HM.
+A IMPLEMENTATIONDETAILS
+A.1 DATASETS
+Table 2 lists the classification and regression datasets.
+12
+
+Table 2: Dataset summary. Suite rows aggregate benchmarks deduplicated by OpenML ID, each
+dataset counted once under one suite; clinical rows list each dataset individually.
+Name #Datasets #Instances #Features #Classes
+Benchmark suites (classification)
+OpenML-CC18 (Bischl et al., 2021) 56 500–96K 4–3,072 2–46
+TabZilla (McElfresh et al., 2023) 44 148–1.0M 4–4,296 2–100
+Grinsztajn (Grinsztajn et al., 2022) 25 3.4K–940K 7–419 2
+TabArena (Erickson et al., 2025) 38 748–150K 4–1,776 2–8
+Clinical (classification)
+Diabetes (Smith et al., 1988) 1 768 8 2
+Heart (Michie et al., 1994) 1 270 13 2
+Breast Cancer (Wolberg, 1990) 1 699 9 2
+SUPPORT2 (The SUPPORT Principal Investigators, 1995) 1 9,105 46 2
+MIMIC-III (Johnson et al., 2016) 1 26,538 74 2
+eICU-CRD (Pollard et al., 2018) 1 30,000 74 2
+Cardiotocography (Campos & Bernardes, 2000) 1 2,126 35 3
+Thyroid (Quinlan, 1986) 1 3,772 21 3
+Benchmark suites (regression)
+MIMIC-III length of stay (Johnson et al., 2016) 1 26,538 74 —
+TabArena (Erickson et al., 2025) 13 907–54K 5–1,024 —
+OpenML-CTR23 (Fischer et al., 2023) 27 517–72K 5–116 —
+Total 212
+We use 68/12/20% train/calibration/test splits and three seeds (0, 1, 2) for every dataset, clinical
+and suite alike. Train, calibration and test splits are disjoint by index (test first, then calibra-
+tion off the remainder), and patient-disjoint for the clinical cohorts (MIMIC-III, eICU-CRD) via
+GroupShuffleSpliton patient identifiers; encoders and scalers are fitted on the training rows
+only. A few standard benchmark datasets (e.g., Breast Cancer, Thyroid) contain a small number of
+intrinsically identical rows that can straddle splits by chance; these natural duplicates are exposed
+identically to the full and the compressed model, so they do not bias the relative compression cost.
+Numerical features are standardised on the training set; categoricals are integer-encoded; missing
+numericals are imputed with zero after scaling. The calibration split is also the set on which the
+translator is fitted. Not every model runs on every dataset. TabPFNv2, TabFM, both Orions and
+LimiX-16M support at most 10 classes and skip the six suite datasets with more classes, and Orion-
+MSP and LimiX-16M run out of GPU memory on a few large high-dimensional datasets (Orion-
+MSP and Orion-Bix also miss single seeds on a few of them for the same reason). These models
+therefore run on 152–157 of the 163 suite datasets; all models run on the eight clinical datasets, and
+every comparison is between a model and its own full version on the same datasets.
+A.2 MODELS
+A.2.1 GBDTSHYPERPARAMETERS
+XGBoost and LightGBM are tuned per dataset and seed by a 30-configuration random search
+on the calibration split over a discrete grid —n estimators∈ {300,500,800,1200},
+max depth∈ {4,6,8,10}(LightGBM:{−1,6,8,12},num leaves∈ {31,63,127,255},
+min child samples∈ {10,20,40}),learning rate∈ {0.01,0.03,0.05,0.1,0.2},
+subsampleandcolsample bytree∈ {0.6,0.8,1.0}— with early stopping after 20 rounds,
+selected by calibration AUROC; they share test splits and seeds with the foundation-model rows.
+The default-hyperparameter variants are reported alongside in the suite rank tables.
+A.2.2 TABULARFOUNDATIONMODELS
+Table 3 summarizes the architecture of each model.
+13
+
+Table 3: Architecture of the eight evaluated models. The translator replaces blocks of the transformer
+stack only; encoders and head run unchanged. Params are the encoder and stack parameters (stack
+share of total), while context is the support-set cap in our experiments, not the model’s limit.
+Encoders (never replaced) Transformer stack (probed)
+Model Tokenisation Encoder Params (M) Blocks×dParams (share) Cached mode Context
+TabPFNv2 cell, dual-axis linear (xandy) 0.01 12×192 7.1 M (98%) yes 3,000
+TabPFN-3 row feature-distribution
+embedder + column
+aggregator
+1.3 24×512 51.4 M (97%) yes 3,000
+TabICL row set transformer per column
++ 3-layer row transformer
+1.3 12×512 25.7 M (93%) yes 3,000
+TabDPT row linear 0.08 16×768 75.6 M (98%) no (retrieval per query) 1,500
+TabFM row cell embedder + 2 column
+set transformers + 2 row
+interactors
+19.5 24×2048 1,611 M (98%) no 3,000
+Orion-MSP row as TabICL + multi-scale
+row interactor + Perceiver
+memory
+18.1 12×512 25.2 M (57%) no 3,000
+Orion-Bix row as TabICL 1.3 12×512 25.2 M (93%) no 3,000
+LimiX-16M cell, dual-axis mask-embedding linear 0.13 12×192 15.9 M (96%) no 3,000
+Ensembling.Prediction-time ensembling averages independent forward passes, which would mix
+per-block residuals across passes, so we reduce it to a single member where possible. TabPFNv2,
+TabPFN-3, Orion and TabFM run with one estimator (library defaults: four, automatic, 32 and 32).
+TabICL (v2 checkpoint) is the exception: its default 8-member ensemble runs in a single forward
+pass, so we keep it. TabDPT runs at its default configuration and LimiX at its default with a single
+inference-configuration member. Full and compressed models use the same setting, so this choice
+does not affect any∆. To measure its cost, we refit each model with its library default on the eight
+clinical datasets, three seeds. Full AUROC rises by a mean of0.002(TabPFNv2, TabPFN-3),0.001
+(TabFM) and0.006(Orion-MSP, Orion-Bix); medians are at most0.003. The largest gains are for
+the Orion models on the two ICU datasets (+0.014to+0.020).
+Effect of calibration rows on the full baseline.The compressed model uses the calibration split
+to fit the translator and to select the window, thus the full model never sees it. To analyze the
+impact we refit every full model on train∪calibration (same support cap) and re-score the test
+split on the clinical datasets, three seeds. Only the five datasets below the cap can change (Diabetes,
+Heart, Breast Cancer, Cardiotocography, Thyroid): 117 runs (five datasets, eight models, three seeds;
+TabDPT on Thyroid already exceeds its 1,500-row cap). The median AUROC change is0.000for
+every model, per-model means range from−0.002to+0.003, and the 16 runs that move by more
+than0.01split evenly (8 gains, 8 losses). Withholding the calibration rows does not impact the
+baseline.
+A.3 TRANSLATOR IMPLEMENTATION AND ABLATIONS
+The following section provides additional details regarding Section 3.
+Dual-axis models.For the dual-axis models (i.e., TabPFNv2, LimiX-16M), block outputs have
+shape(n items, nfeatures, d)and the map for feature indexfis applied asH ′[·, f,·] =H[·, f,·]Wf +bf .
+Withn features = 1, the per-feature variant reduces exactly to the single-(W, b)case, so this is a
+generalisation of the shared linear translator rather than a different method. The number of feature
+tokens is set by each model’s preprocessing (for LimiX, the frozen preprocessing below), sonfeatures
+is the token count, not the column count.
+LimiX.LimiX refits its preprocessing on everypredict()call on the concatenated rows, so
+the feature count and column identity drift between the calibration and evaluation passes, and a
+per-feature map would be applied to mismatched columns. We therefore fit the preprocessing once
+on the support rows and freeze it: categorical detection, the categorical encoder and the constant-
+column filter are fitted on the support set and only applied to the query rows, so the column layout is
+identical in every pass. With the frozen preprocessing the full model’s predictions are identical on 7
+of the 8 clinical datasets (−0.006on Heart) and the per-feature map applies unchanged. On the 153
+14
+
+suite datasets both run, it loses0.005on average at Half (median0.002, 83% of datasets within one
+point) and0.052at One-block (median0.029), against0.003and0.098for TabPFNv2. A shared
+(W, b), which does not need the freezing, is near-lossless at width 3–4 but collapses with one block
+kept (−0.151on the clinical datasets): the collapse reflects an incompatibility between the map and
+the preprocessing, not evidence that LimiX needs its depth.
+Conditioning.Each ridge solve hasd+1unknowns per output column. Its rows are sequence
+positions from one forward pass over the support and calibration sets, capped at 500 (all 216 on
+Heart, the smallest dataset). The cap applies to positions only. TabPFNv2 and LimiX-16M fit one
+solve per feature token, each over the same≤500positions. TabICL fits one(W, b)across all
+8 ensemble members (up to 4,000 correlated rows). The solve is therefore over-determined for
+TabPFNv2, LimiX-16M (d=192) and TabICL (d=512), slightly under-determined for TabPFN-3
+and Orion (d=512), and under-determined for TabDPT (d=768) and TabFM (d=2,048). In the
+under-determined cases the ridge penalty makes the fit well-posed, and the training residualεbe-
+comes optimistic because the fit interpolates. All claims therefore rest on test AUROC, not onε.
+The translator never sees test data or labels. Extraction and solve take 33–109 ms per window on
+one GPU.
+Calibration budget.The translator is fitted on at most 500 positions of one forward pass. To test
+whether this is enough, we refit at the KL-selected windows onN∈ {15,30,50,100,250,500}ran-
+dom subsets (three draws each,λchosen label-free as always) on five clinical datasets and compare
+with the capped fit. For mild compression the budget is small: at width 3 every model is within0.005
+of the capped fit byN=100, TabFM (d=2,048) and Orion-Bix fromN=15, TabICL, TabPFNv2,
+Orion-MSP and LimiX-16M fromN=50, TabPFN-3 and TabDPT fromN=100, because the KL-
+selected mild windows sit late in the stack, where representations change little. With one block kept
+the budget matters: TabDPT, TabFM and Orion-Bix needN=250and TabPFNv2 the full 500, and at
+N=15the one-block models fall0.014–0.16below the capped fit. Fitting on all positions of the pass
+still helps Orion-MSP (+0.022) and TabFM (+0.010), and at most0.006for the others. About 100
+unlabelled positions therefore suffice for mild compression and 250–500 for extreme compression,
+far below the context the model already consumes (Figure 8).
+15 50 100 250 500 all
+0.20
+0.15
+0.10
+0.05
+0.00
+AUROC vs. Full
+TabPFNv2 (d = 192)
+Width 3
+One Block Kept
+15 50 100 250 500 all
+TabPFN-3 (d = 512)
+15 50 100 250 500 all
+TabICL (d = 512)
+15 50 100 250 500 all
+TabDPT (d = 768)
+15 50 100 250 500 all
+Fit Positions N
+0.20
+0.15
+0.10
+0.05
+0.00
+AUROC vs. Full
+TabFM (d = 2048)
+15 50 100 250 500 all
+Fit Positions N
+Orion-MSP (d = 512)
+15 50 100 250 500 all
+Fit Positions N
+Orion-BiX (d = 512)
+15 50 100 250 500 all
+Fit Positions N
+LimiX-16M (d = 192)
+Figure 8: Calibration budget:∆AUROC vs. number of fitting positionsN(seed 0, five clinical
+datasets, three draws, KL-selected windows). Solid: width 3; dotted: one block kept. Mild com-
+pression needs at most 100 positions; with one block kept the knee moves to 250–500.
+Per-feature vs. shared translator.The per-feature translator has oned×dmap per feature token,
+37,056parameters per token for TabPFNv2, against589,824per TabPFNv2 block; the map therefore
+exceeds the blocks it replaces once the dataset has more than16wfeature tokens for a window of
+widthw(64 tokens at width 4, 175 at one block kept). On MIMIC-III (39 tokens for 74 columns) the
+translator is already 61% of the four blocks it replaces at width 4, although the net parameter change
+at one block kept remains−71%; on the 14 suite datasets with more than 100 columns (61–302
+15
+
+tokens) it exceeds the four removed blocks on 12 of 14 and the eleven removed blocks on 6 of 14.
+A sharedd 2+dmap would remove this dependence on the feature count, but it does not preserve
+accuracy (Table 4): at width 4 the per-feature map is within0.02of the full model on every dataset
+(median−0.002), whereas the shared map loses up to0.15(median−0.014; per-feature better on
+10 of 14, worse on 1), and with one block kept the medians are−0.082and−0.301(per-feature
+better on 13 of 14). On wide datasets the dual-axis translator therefore measures redundancy but
+saves parameters only when the window starts at block0, where the map folds into the encoder; the
+single-axis models, where the map is a singled 2+dregardless of the dataset, have no such limit
+(262k parameters for TabICL against 23.6M removed at one block kept).
+Table 4: Per-feature vs. shared translator for TabPFNv2 on 14 suite datasets.
+translator width 4 one block kept
+Dataset columns tokens params (M) per-feat. shared per-feat. shared
+cc18 1485 500 252 9.3 -0.018 -0.152 -0.321 -0.427
+grin 45019 419 211 7.8 +0.003 -0.047 -0.080 -0.289
+philippine 308 156 5.8 -0.009 -0.091 -0.154 -0.261
+cc18 1501 256 184 6.8 -0.001 -0.021 -0.085 -0.416
+cc18 40979 240 302 11.2 +0.000 -0.007 -0.056 -0.408
+cc18 12 216 272 10.1 -0.000 -0.006 -0.090 -0.461
+ta 46939 212 106 3.9 -0.013 +0.013 -0.047 -0.269
+cc18 40670 180 92 3.4 -0.001 -0.003 -0.012 -0.472
+volkert 180 185 6.9 -0.002 -0.068 -0.127 -0.322
+ta 46908 170 86 3.2 -0.001 -0.001 -0.103 -0.012
+jasmine 144 74 2.7 -0.016 -0.025 -0.024 -0.085
+tz 40536 120 62 2.3 -0.002 -0.002 -0.013 -0.073
+cc18 1486 118 61 2.3 -0.004 -0.004 -0.015 -0.121
+ta 46980 111 101 3.7 -0.003 -0.056 -0.131 -0.313
+median -0.002 -0.014 -0.082 -0.301
+Gradient refinement of the translator.To test whether the closed-form translator can be im-
+proved with additional training, we refine it with 500 Adam steps of label-free final-representation
+matching through the frozen kept blocks. At width 4 this moves∆AUROC by at most0.003and
+calibration KL by at most0.005on any model (111 runs on the eight clinical datasets, three seeds);
+with one block kept the median change is0.000and the largest0.036(TabPFNv2 on Thyroid, where
+refinement moves further from Full). On regression at one block kept (MIMIC-III length of stay and
+the 13 TabArena regression sets, seed 0,R 2), refinement changes little for TabPFNv2, TabICL and
+TabFM (median gain≤0.006) and matters only for TabDPT, recovering a median0.07of a median
+0.45loss. The residual gap is therefore not an optimization artifact of the closed-form estimator:
+gradient descent on the same objective leaves it essentially unchanged, which attributes it to ap-
+proximation error, i.e., to the part of the removed blocks’ computation that no affine map of the
+kept representation reproduces. Supervised fine-tuning on the task loss, as in TACTICL, optimizes
+a different objective with labeled data and falls outside the training-free setting studied here.
+B ADDITIONALRESULTS
+B.1 ATTENTION ANALYSIS
+Measuring entropy.We measure attention diversity via per-head entropy:H(a) =
+− P
+j aj loga j, averaged across heads, queries, and samples. An entropy nearlog(S)(whereS
+is the number of keys) signals uniform attention, while low entropy signals specialization. Because
+foundation models compute attention inside fused kernels that do not return weights, we recompute
+the softmax from the model’s own projected queries and keys. We intercept the scaled-dot-product
+kernel during one forward pass and attribute each call to the block executing it. This interception
+includes the kernel’s mask and scale, and applies TabFM’s query-key normalization where relevant.
+We use the 500 unlabelled calibration rows as queries and all support rows as keys. We exclude the
+16
+
+dual-axis models (TabPFNv2, LimiX) from this specific analysis because they interleave item and
+feature attention.
+Top-koverlap between blocks.During the same forward pass, we record the five keys with the
+largest attention weight for every head across the 500 calibration queries. We then compare blocks
+using the Jaccard index of these key sets. We evaluate this on MIMIC-III and Higgs (seed 0),
+yielding 3,000 candidate rows (1,500 for TabDPT).
+Matching heads by index across blocks yields a Jaccard index of just0.02–0.04for all evaluated
+models. Pooling the heads of a block (roughly 33 distinct keys per query) yields overall overlaps of
+0.11–0.12(TabICL),0.09(TabDPT),0.11–0.12(TabFM), and0.06–0.08(TabPFN-3). Consecutive
+blocks share slightly more (0.10–0.19), but this remains vastly different from the0.005expected
+from random sets. Notably, block 0 in TabPFN-3 shares almost no keys (0.01) with later blocks.
+Ultimately, the attended neighborhoods change at every block.
+Comparison with a language model.For the NLP comparison in Figure 3, we evaluate six tabular
+TFMs on MIMIC-III and Higgs (using 3,000 support rows; 1,500 for TabDPT). We compare these
+against Qwen3-4B (Yang et al., 2025), a 36-layer language model with grouped-query attention (32
+query / 8 KV heads), evaluated on WikiText-2 and IMDB. This 2-vs-2 dataset design ensures the
+contrast is not an artifact of any single dataset. Figure 9 shows all six models; the main text shows
+the three most representative.
+0.0 0.5 1.0
+0
+20
+40
+60
+80
+100
+TabICL
+0.0 0.5 1.0
+TabPFN-3
+0.0 0.5 1.0
+TabFM
+0.0 0.5 1.0
+0
+20
+40
+60
+80
+100
+TabDPT
+0.0 0.5 1.0
+Relative Depth
+Orion-MSP
+0.0 0.5 1.0
+Orion-BiX
+Attention Entropy (% of lnS)
+TFM, MIMIC-III TFM, Higgs Qwen3-4B, WikiText-2 Qwen3-4B, IMDB
+Figure 9: Per-block attention entropy as a percentage of the maximum possible entropy (lnS) for
+all six tabular TFMs on MIMIC-III (solid) and Higgs (dotted) vs. Qwen3-4B (dashed). All models
+maintain near-uniform attention (70–99% outside TabFM’s read-out block) compared to Qwen3-
+4B’s sharply peaked attention (16–62%). TabFM’s read-out block drops to 2–8%.
+To compare models with different context lengths on one scale, we plot each block’s entropy as a
+percentage of its maximum,lnSforSattended keys. The difference is not in the absolute entropy,
+which scales with sequence length, but in its profile across depth. Tabular models stay near-uniform
+at every block, whereas Qwen3-4B starts high, dips around layers 7–9, recovers in the middle, and
+falls again in the last quarter.
+17
+
+0 2 4 6 8 10
+Block Index
+5
+6
+7Attention Entropy (nats)
+Diabetes
+Mean |∆ |=0.019
+0 2 4 6 8 10
+Block Index
+Heart Disease
+Mean |∆ |=0.004
+Skipped
+Pre-Skip
+Post-Skip
+0 2 4 6 8 10
+Block Index
+Breast Cancer
+Mean |∆ |=0.029
+0 2 4 6 8 10
+Block Index
+SUPPORT2
+Mean |∆ |=0.027
+Figure 10: TabICL per-block attention entropy before vs. after replacing blocks 4–8 with the affine
+translator (shaded). Surviving blocks do not reorganise their attention to compensate.
+Attention does not compensate for bypassed blocks.A direct test of the redundancy interpreta-
+tion is whether surviving blocks reorganize their attention to compensate for the bypassed sub-stack.
+Figure 10 shows the per-block mean attention entropy before and after replacing a canonical window
+(blocks 4–8) in TabICL. A detailed per-dataset breakdown is provided in Table 5.
+Table 5: TabICL attention stability: per-block entropy on surviving blocks before vs. after replacing
+a contiguous window.ε= translator residual;|∆H|= absolute entropy change (nats). Shifts are
+<0.03nats on average.
+Dataset Skip WindowεMean|∆H|Max|∆H|Pre HPost H
+Diabetes 4–8 .197 .019 .114 5.80 5.82
+Heart 4–8 .149 .004 .017 4.90 4.90
+Br. Cancer 4–8 .122 .029 .097 5.48 5.45
+SUPPORT2 4–8 .246 .027 .068 6.95 6.94
+Diabetes (early) 2–6 .190 .028 .110 5.75 5.76
+Heart (late) 6–10 .097 .001 .005 4.89 4.89
+Across datasets, the per-block entropy changes by less than0.03nats on average, and at most0.11
+nats on any single surviving block (roughly 1–2% of the total entropy value). This indicates that
+the approximated sub-stack contributed negligibly to the downstream attention dynamics. Unsur-
+prisingly, the shift is slightly larger for an early skip window (e.g., blocks 2–6 on Diabetes) because
+intervening closer to block 0 perturbs the input distribution to all subsequent blocks more heavily.
+Conversely, a late skip window (blocks 6–10 on Heart) causes almost zero shift (max∆ = 0.005
+nats). The surviving blocks therefore do not reorganize their attention, unlike the final layers of
+language transformers, which are thought to specialize to the training objective (Dalvi et al., 2020).
+B.2 PER-BLOCK SENSITIVITY,ALL MODELS
+Figure 11 extends Figure 4 to every reported model.
+B.3 EVALUATION
+B.4 WINDOW SELECTION
+Window selection needs no labels.Every classification window is the one whose compressed
+model is closest in KL to the full model on the calibration split. No label is needed (the ridgeλ
+is also chosen label-free), and because the head is kept, the KL costs nothing to compute. Table 6
+compares this choice with the labelled one (best calibration AUROC), with the translator’s residual
+ε, and with the test-set oracle. At Half, the KL matches or beats the labelled choice for every model
+except Orion-Bix (−0.001vs.+0.000).εnever beats the KL: it is worse for six models and ties
+for the two Orions, because it ignores how the head amplifies errors and is not comparable across
+depths. At One-block, where the only choice is keeping the first or the last block, the single-axis
+models stay within0.002of the labelled choice; for the two dual-axis models, the KL sometimes
+keeps the costlier block (Table 17).
+KL-selected depth.The calibration KL can also choose how many blocks to replace. Table 8
+applies the tolerance rule of Equation (3) (ϵ= 0.01) on all 171 datasets, over the five swept widths,
+18
+
+0 2 4 6 8 10
+Block index
+−0.10
+−0.05
+0.00
+TabPFNv2
+0 3 6 9 12 15 18 21 24
+Block index
+−0.002
+0.000
+0.002
+0.004
+TabPFN-3
+0 2 4 6 8 10
+Block index
+−0.004
+−0.002
+0.000
+0.002
+0.004
+TabICL
+0 2 4 6 8 10
+Block index
+−0.10
+−0.05
+0.00
+LimiX-16M
+0 2 4 6 8 10
+Block index
+−0.005
+0.000
+0.005
+ Orion-MSP
+0 2 4 6 8 10
+Block index
+−0.0025
+0.0000
+0.0025
+0.0050
+Orion-BiX
+0 2 4 6 8 10 12 14
+Block index
+−0.002
+0.000
+0.002
+0.004
+TabDPT
+0 3 6 9 12 15 18 21 24
+Block index
+−0.0050
+−0.0025
+0.0000
+0.0025
+0.0050
+ TabFM
+∆AUROC
+Figure 11: Per-block sensitivity of every reported model:∆AUROC when a single block is replaced
+by the ridge translator (mean over the eight clinical datasets and three seeds).
+Table 6: Window selection on the full sweep. Mean over datasets of the test∆AUROC (averaged
+over seeds) (compressed−full) of the window chosen by each criterion, per (model, dataset, seed):
+the smallest calibration KLKL(p full ∥p c)(ours, no labels; every result in the paper), the highest
+calibration AUROC (labelled), the smallest translator fit residualε, and the highest test AUROC
+(oracle, an upper bound). All suite and clinical datasets the model runs on (n), three seeds, ridge
+translators.
+Half: mean∆AUROC One-block: mean∆AUROC
+Model KL (ours) LabelledεOracle KL (ours) LabelledεOraclen
+TabPFN-3−.001−.001−.003+.001−.006−.006−.007−.005 171
+TabICL−.003−.003−.004−.001−.015−.015−.016−.014 171
+TabDPT−.003−.004−.005−.000−.024−.025−.025−.023 171
+TabFM−.004−.005−.007−.002−.025−.026−.025−.025 165
+Orion-MSP−.002−.003−.002+.001−.018−.018−.018−.016 160
+Orion-Bix−.001+.000−.001+.004−.008−.008−.008−.006 165
+TabPFNv2−.003−.005−.010−.000−.098−.073−.097−.070 165
+LimiX-16M−.005−.005−.011+.000−.051−.037−.111−.034 161
+and on the eight clinical datasets, growing one window a block at a time. On all 171 datasets it
+removes 52–70% of the blocks of the single-axis models (42% for TabPFNv2, 22% for LimiX-
+16M) at a mean cost of0.001–0.004AUROC, with 85–97% of datasets within one point. Block
+by block on the clinical datasets it removes more for all models but TabPFNv2 (70–81% for the
+single-axis models, 50% for LimiX-16M, but 32% for TabPFNv2) at a similar cost, although greedy
+growth does not always find the lowest-KL window of each width.
+B.5 CLASSIFICATION RESULTS
+Figure 12 extends the left panel of Figure 1 to every model.
+B.6 PER-DATASET RESULTS AND THE IDENTITY CONTROL
+Table 10 gives the per-dataset clinical results behind the clinical column of Table 9, with theId
+rows: the One-block window with the translator replaced by the identity (naive layer dropping),
+which isolates the translator’s contribution.
+19
+
+Table 7: Half depth needs no window selection for the single-axis models. Mean over the suite
+datasets of the∆AUROC (averaged over seeds) at Half (widthL/2) with the window chosen by
+the calibration KL (no labels), with two fixed windows that need no selection at all (replace the
+last half of the stack; keep block 0 and replace the nextL/2blocks), and with the test-set oracle
+as the bound; in parentheses the share of datasets losing more than one point. Three seeds, ridge
+translators. TabPFNv2 (per-feature map) needs the selection.
+Model KL-selected Fixed: last half Fixed: keep block 0, replace nextL/2Test oraclen
+TabPFN-3−.001 (4%)−.003 (13%)−.007 (26%)+.001 163
+TabICL−.003 (10%)−.004 (17%)−.008 (27%)−.001 163
+TabDPT−.003 (9%)−.006 (23%)−.009 (31%)−.000 163
+TabFM−.005 (13%)−.006 (13%)−.007 (23%)−.002 157
+Orion-MSP−.002 (7%)−.002 (7%)−.012 (33%)+.000 152
+Orion-Bix−.001 (3%)−.001 (4%)−.005 (20%)+.004 157
+TabPFNv2−.003 (9%)−.029 (64%)−.124 (79%)−.000 157
+Table 8: Label-free depth from a drift tolerance. For each dataset and seed, the deepest compression
+whose calibration KL to the full model stays at most 0.01: on the 171 suite and clinical datasets
+among the swept widths{3,4, L/2, L−2, L−1}(KL-selected window per width), and on the eight
+clinical datasets along the greedy path that grows one window block by block. Removed = mean
+share of blocks replaced;∆AUROC = mean test cost (compressed−full);≥ −0.01= share of
+datasets within one point; greedy = min-KL = share of path steps where the greedy window is the
+lowest-KL window of that width. No label is used at any step. Three seeds.
+All datasets (5 widths) Clinical (8 datasets, greedy)
+Model removed∆AUROC≥ −0.01removed∆AUROC≥ −0.01greedy = min-KL
+TabPFN-3 63% -0.001 95% 70% -0.001 100% 22%
+TabICL 61% -0.003 94% 81% -0.002 100% 64%
+TabDPT 52% -0.003 91% 74% -0.000 100% 46%
+TabFM 53% -0.002 95% 79% -0.003 75% 81%
+Orion-MSP 60% -0.002 93% 73% -0.001 100% 92%
+Orion-Bix 70% -0.004 85% 73% +0.003 100% 74%
+TabPFNv2 42% -0.002 95% 32% +0.001 100% 65%
+LimiX-16M 22% -0.001 97% 50% -0.000 100% 56%
+B.7 SUITE-SCALE RANK TABLES
+Table 11 ranks every model over the suite datasets, with its full and Half versions ranked together
+(left) and the Half versions against tuned GBDTs (right). Replacing half the stack leaves the order-
+ing of the models unchanged: the Half models rank in the same order as the full ones. The Half
+TabFM (average rank 3.53) is outranked only by the full TabFM (2.26) and beats every other full
+model. Against the trees, the Half versions of TabFM, TabICL and TabPFN-3 all rank above tuned
+LightGBM and XGBoost. Removing half the depth therefore changes neither which model is best
+nor how the models compare with trees.
+Table 12 counts, per model, the datasets on which the compressed version wins, ties or loses against
+its own full version (a tie is|∆AUROC| ≤0.001).
+B.8 CHECK AGAINSTTABARENA
+Since our protocol differs from the models’ own evaluations (a single ensemble member where
+possible, a support set capped at 3,000 rows (1,500 for TabDPT), a 68/12/20 split per seed, and
+no bagging), in Table 13 we compare our Full AUROC (mean over three seeds) with the default-
+configuration entries of the public TabArena leaderboard (Erickson et al., 2025) on the 30 binary
+TabArena datasets, where the metric is the same and every dataset matches by name. TabArena
+evaluates each configuration on 3-fold outer cross-validation (repeated ten times below 2,500 rows,
+20
+
+0% 25% 50% 75% 100%
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+∆AUROC
+TabPFN-3 (24 blocks)
+0% 25% 50% 75% 100%
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+TabFM (24 blocks)
+0% 25% 50% 75% 100%
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+TabICL (12 blocks)
+0% 25% 50% 75% 100%
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+TabDPT (16 blocks)
+0% 25% 50% 75% 100%
+Blocks Replaced
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+∆AUROC
+Orion-MSP (12 blocks)
+0% 25% 50% 75% 100%
+Blocks Replaced
+−0.020
+−0.015
+−0.010
+−0.005
+0.000
+Orion-BiX (12 blocks)
+0% 25% 50% 75% 100%
+Blocks Replaced
+−0.06
+−0.04
+−0.02
+0.00
+TabPFNv2 (12 blocks)
+0% 25% 50% 75% 100%
+Blocks Replaced
+−0.04
+−0.02
+0.00
+LimiX-16M (12 blocks)
+Figure 12:∆AUROC vs. share of blocks replaced on MIMIC-III for every model, at every swept
+width (three seeds, KL-selected windows, ridge translator).
+three times above) with the full training portion and cross-validation ensembling. Our numbers track
+the leaderboard per dataset (Pearsonr0.93–0.97) and sit0.4–1.2points below it on the datasets with
+at most 3,000 rows, where only the split protocol and ensembling differ, and0.7–2.9points below
+on the larger datasets, where our support cap also binds. Neither gap affects any claim in the paper,
+which compares each model with its own Full baseline under an identical protocol.
+B.9 DECISION METRICS BEYONDAUROC
+AUROC measures how well a model ranks examples, so we also check the decisions the compressed
+models make. Table 14 reports accuracy and balanced accuracy at both operating points. At Half,
+the compressed models make essentially the same decisions as the full ones: both metrics stay
+within about0.01of the full model on binary tasks and within0.02on multi-class tasks. With one
+block kept, an extreme setting, the decision metrics drop more than AUROC, mostly on multi-class
+tasks, where a small shift between the probabilities of similar classes can change the predicted class
+without changing the ranking. TabPFN-3 is the most robust (at most0.03balanced accuracy lost),
+and the largest drops come from the two dual-axis models, which are also the most affected in
+AUROC.
+B.10 SUBGROUP ANALYSIS ON THE CLINICAL COHORTS
+Does compression move the predictions of some patients more than others? We compare the per-
+row test predictions of the full and the compressed model on MIMIC-III and eICU (patient-disjoint
+splits, three seeds) at Half and One-block, at the KL-selected windows, along two axes a clinical
+deployment cares about: the completeness of a patient’s record (the fraction of the 74 raw features
+observed before imputation; quartiles of the test rows, Q1 the least complete) and the outcome
+(Table 15). Decisions are compared at a common threshold, the full model’s Youden-Jthreshold
+on the calibration split, so that a change in sensitivity or specificity reflects the compressed model’s
+probabilities and not a re-tuned cut-off. At Half the change is small and uniform: for the six single-
+axis models and the two dual-axis models the∆AUROC of every completeness quartile is within
+0.007of the overall value, sensitivity on the patients who died and specificity on those who survived
+move by at most0.07for the single-axis models (0.05for TabPFNv2), and the mean absolute change
+of the predicted probability is0.01–0.06for the patients who died against0.005–0.03for those who
+survived. At One-block the cost lands where the tail of Section 5 predicts. Across completeness
+quartiles the single-axis models stay within0.02of their overall cost, while TabPFNv2 loses most
+on themostcomplete records (Q4−0.048against Q1−0.015on eICU,−0.057against−0.035on
+MIMIC-III). Across outcomes, the probabilities of the patients who died move about2.5×more than
+those of the survivors (0.03–0.10against0.02–0.04for TabICL, TabFM, TabPFN-3 and TabDPT),
+21
+
+Table 9: Classification results (AUROC). Clinical and benchmark suites, mean±std over datasets
+and 3 seeds. Half:L/2blocks replaced. One-block:L−1blocks replaced. Ridge translators;
+windows selected by calibration KL (no labels). Id: the One-block window with the translator
+replaced by the identity (naive dropping). Per-dataset clinical results in Table 10.
+Model Clinical (8) TabArena TabZilla CC-18 Grinsztajn
+XGBoost .911 ±.084 .860±.100 .907±.086 .911±.123 .856±.096
+LightGBM .909 ±.086 .859±.100 .907±.086 .911±.124 .857±.097
+TabPFNv2
+Full .904 ±.099 .852±.112 .901±.091 .913±.122 .834±.099
+Half (6/12) .904 ±.097 .850±.113 .896±.093 .911±.122 .829±.099
+One-block (11/12) .862 ±.103 .792±.113 .793±.137 .777±.158 .758±.091
+Id (11/12) .481 ±.083 .503±.097 .489±.080 .521±.070 .498±.065
+TabPFN-3
+Full .908 ±.093 .861±.105 .907±.089 .913±.122 .841±.098
+Half (12/24) .907 ±.093 .860±.105 .905±.089 .913±.122 .839±.098
+One-block (23/24) .906 ±.094 .856±.105 .898±.094 .910±.123 .834±.098
+Id (23/24) .880 ±.112 .808±.105 .823±.115 .866±.130 .775±.099
+TabICL
+Full .912 ±.089 .863±.105 .914±.087 .919±.118 .844±.096
+Half (6/12) .912 ±.090 .860±.104 .910±.087 .918±.118 .837±.098
+One-block (11/12) .909 ±.092 .852±.102 .891±.089 .910±.120 .822±.097
+Id (11/12) .839 ±.098 .768±.109 .763±.132 .773±.130 .745±.091
+TabDPT
+Full .902 ±.097 .846±.113 .887±.101 .905±.125 .823±.100
+Half (8/16) .903 ±.097 .843±.113 .881±.105 .904±.126 .819±.100
+One-block (15/16) .898 ±.098 .821±.106 .855±.101 .887±.132 .799±.101
+Id (15/16) .485 ±.071 .496±.096 .481±.115 .497±.082 .550±.083
+TabFM
+Full .914 ±.088 .867±.102 .926±.081 .921±.116 .875±.089
+Half (12/24) .912 ±.090 .865±.103 .919±.086 .920±.118 .865±.086
+One-block (23/24) .908 ±.092 .852±.103 .891±.089 .910±.119 .817±.109
+Id (23/24) .799 ±.097 .688±.105 .699±.122 .710±.117 .685±.098
+Orion-MSP
+Full .883 ±.100 .837±.112 .872±.108 .899±.133 .813±.106
+Half (6/12) .880 ±.099 .834±.111 .871±.106 .897±.135 .810±.106
+One-block (11/12) .870 ±.094 .823±.108 .848±.108 .886±.134 .795±.105
+Id (11/12) .755 ±.146 .732±.133 .722±.129 .770±.117 .741±.116
+Orion-Bix
+Full .886 ±.111 .823±.129 .858±.123 .889±.143 .796±.123
+Half (6/12) .888 ±.110 .820±.134 .859±.123 .889±.142 .795±.124
+One-block (11/12) .891 ±.106 .810±.140 .851±.119 .883±.140 .789±.123
+Id (11/12) .775 ±.151 .704±.132 .701±.146 .737±.148 .692±.139
+LimiX-16M
+Full .904 ±.095 .855±.108 .902±.099 .914±.125 .842±.095
+Half (6/12) .904 ±.095 .852±.110 .895±.102 .912±.125 .831±.100
+One-block (11/12) .888 ±.109 .823±.105 .826±.114 .857±.132 .806±.102
+Id (11/12) .565 ±.130 .515±.097 .498±.088 .510±.092 .499±.084
+and at the common threshold this is a loss of sensitivity at a gain of specificity:−0.17and−0.12
+(TabFM),−0.03and−0.08(TabICL),−0.02and−0.05(TabPFN-3) on eICU and MIMIC-III,
+against+0.01to+0.09specificity; the Orions and TabDPT move by at most0.05. TabPFNv2’s One-
+block predictions shift wholesale on MIMIC-III (sensitivity+0.24, specificity−0.64), a calibration
+change rather than a ranking one. LimiX-16M’s One-block model loses0.054AUROC on both
+cohorts and its probabilities fall below the full model’s threshold, costing0.28–0.37sensitivity for
+0.11–0.19specificity. The redundancy is therefore not paid for by a subgroup at Half, and at One-
+block the patients it costs are the ones with the rarer outcome, which is the clinical argument for
+Half as the deployable point. The outcome is the minority class (11–14% of rows).
+B.11 ABLATIONS: EARLY EXIT VS.TRANSLATOR
+Since an affine map suffices to bridge the removed blocks, one could ask whether the class is already
+linearly decodable at the window start, so that the later blocks and the head add nothing a linear
+readout could not. We test this with an early-exit probe: the later blocks and the pre-trained head are
+discarded, and a logistic regression is fitted on the intermediate representationsH s with the support
+labels. If decodability atswere the whole story, this supervised probe should match the label-
+free translator. However, across 2,664 configurations over seven models (all but LimiX-16M) on the
+eight clinical datasets, the translator matches or beats the probe in 81% of cases. The probe’s median
+cost stays near−0.02at every depth (−0.023early,−0.019late), while the translator’s shrinks from
+−0.003to+0.000. The two exceptions are consistent with Section 5: TabPFNv2’s probe wins at
+early exits (−0.048vs.−0.082), and Orion-Bix has the lowest win rate (63%) because its probe is
+22
+
+Table 10: Clinical datasets. AUROC for tuned GBDT baselines and eight tabular foundation models.
+Full= pre-trained model unchanged; Half =L/2blocks replaced by the translator; One-block =L−1
+ofLblocks replaced; Id = the same maximal window with the translator replaced by the identity
+(naive layer dropping), isolating the translator’s contribution. Translators: ridge with label-freeλ
+selection; all skip windows selected label-free by the smallest calibration-split KL to the full model;
+subscripts±std over seeds, where each seed is a different train/calibration/test split (patient-disjoint
+on MIMIC-III and eICU) and support subsample, so the Full rows vary with the seed as well. GBDTs
+are tuned (30-config random search on the calibration split) and share test splits and seeds with the
+foundation-model rows. All entries are raw AUROC.
+Model Diabetes Heart Br. Cancer SUPPORT2 MIMIC eICU CTG † Thyroid†
+XGBoost .828 ±.022 .885±.041 .988±.008 .981±.001 .819±.005 .792±.002 .997±.001 1.00±.000
+LightGBM .819 ±.012 .880±.036 .990±.007 .981±.001 .817±.009 .789±.004 .997±.001 1.00±.000
+TabPFNv2
+Full .844 ±.024 .900±.030 .995±.004 .980±.000 .773±.011 .741±.004 .998±.000 1.00±.000
+Half (6/12) .841 ±.027 .903±.036 .994±.003 .976±.001 .774±.014 .750±.003 .996±.001 .998±.001
+One-block (11/12) .826 ±.021 .842±.047 .995±.003 .931±.005 .716±.018 .708±.007 .979±.008 .901±.014
+Id (11/12) .624 ±.047 .314±.082 .547±.026 .503±.010 .452±.007 .455±.004 .466±.023 .488±.064
+TabPFN-3
+Full .842 ±.028 .901±.029 .995±.005 .979±.001 .792±.010 .759±.005 .998±.002 .999±.000
+Half (12/24) .841 ±.028 .899±.032 .995±.005 .977±.001 .789±.009 .760±.005 .998±.001 .999±.000
+One-block (23/24) .840 ±.023 .905±.032 .995±.005 .975±.003 .783±.009 .758±.004 .998±.002 .999±.001
+Id (23/24) .797 ±.022 .911±.037 .991±.007 .942±.005 .715±.011 .715±.006 .974±.009 .993±.002
+TabICL
+Full .845 ±.027 .904±.035 .994±.004 .983±.001 .800±.008 .771±.007 .999±.001 1.00±.000
+Half (6/12) .846 ±.027 .908±.037 .994±.005 .982±.001 .797±.008 .769±.007 .999±.000 1.00±.000
+One-block (11/12) .844 ±.023 .911±.038 .994±.004 .975±.001 .788±.010 .764±.005 .999±.000 .998±.000
+Id (11/12) .799 ±.030 .897±.042 .988±.007 .923±.002 .708±.024 .692±.033 .893±.013 .809±.102
+TabDPT
+Full .841 ±.027 .898±.032 .994±.005 .969±.003 .772±.003 .750±.006 .996±.005 .997±.002
+Half (8/16) .844 ±.026 .900±.035 .995±.003 .968±.003 .769±.005 .752±.006 .998±.002 .996±.002
+One-block (15/16) .842 ±.030 .908±.036 .995±.004 .953±.005 .763±.006 .738±.012 .995±.002 .989±.002
+Id (15/16) .432 ±.031 .611±.014 .442±.027 .456±.013 .505±.012 .471±.003 .578±.011 .386±.017
+TabFM
+Full .844 ±.020 .909±.028 .992±.006 .984±.001 .811±.009 .771±.006 .999±.001 1.00±.000
+Half (12/24) .840 ±.024 .912±.029 .992±.004 .983±.001 .802±.008 .765±.006 .998±.003 1.00±.000
+One-block (23/24) .840 ±.026 .913±.025 .992±.004 .975±.001 .792±.010 .757±.008 .998±.001 .995±.001
+Id (23/24) .707 ±.033 .864±.045 .971±.026 .885±.006 .689±.010 .690±.010 .819±.038 .766±.010
+Orion-MSP
+Full .831 ±.036 .870±.053 .995±.005 .888±.007 .756±.005 .733±.005 .999±.000 .995±.002
+Half (6/12) .830 ±.035 .871±.055 .994±.006 .875±.005 .753±.003 .732±.005 .999±.001 .987±.001
+One-block (11/12) .832 ±.033 .875±.049 .995±.004 .859±.004 .748±.004 .730±.007 .995±.000 .928±.007
+Id (11/12) .809 ±.036 .856±.038 .987±.005 .498±.029 .673±.026 .659±.012 .881±.029 .676±.019
+Orion-Bix
+Full .778 ±.044 .870±.014 .993±.006 .973±.002 .752±.007 .727±.002 .998±.000 .997±.002
+Half (6/12) .790 ±.041 .876±.013 .994±.005 .972±.002 .751±.008 .727±.004 .998±.000 .996±.002
+One-block (11/12) .816 ±.031 .901±.032 .994±.005 .958±.004 .750±.008 .722±.006 .998±.000 .988±.001
+Id (11/12) .772 ±.023 .873±.042 .988±.006 .618±.196 .547±.058 .619±.006 .885±.010 .896±.025
+LimiX-16M
+Full .837 ±.033 .872±.017 .995±.005 .982±.001 .789±.007 .760±.006 .999±.001 .999±.000
+Half (6/12) .836 ±.021 .881±.035 .994±.005 .979±.001 .785±.006 .760±.004 .999±.000 .999±.000
+One-block (11/12) .842 ±.020 .885±.010 .988±.004 .977±.001 .735±.055 .707±.031 .980±.005 .988±.004
+Id (11/12) .541 ±.023 .540±.061 .875±.022 .528±.005 .588±.073 .510±.115 .550±.012 .385±.021
+†Macro-averaged OVR AUROC (CTG, Thyroid 3-class).
+already near-lossless (−0.010to−0.005). The later blocks therefore do not refine an already-linear
+decision boundary; they move representations into the coordinates the pre-trained head reads, and
+the translator reproduces that move without labels.
+B.12 ONE-BLOCKABLATIONS
+Which block is kept.At One-block, the window keeps either the first or the last block, and the
+calibration KL chooses between them (Table 17). The single-axis models mostly keep the first
+block, which is also the cheaper option for them. TabPFN-3 costs the same either way, since its
+encoders do most of the work. The dual-axis models mostly keep the last block: keeping the first
+costs TabPFNv20.281and LimiX-16M0.230AUROC, against0.071and0.034for the last. In the
+8–25% of cases where the KL keeps their first block, it picks the costlier option.
+Looping the kept block.To test whether the kept block contributes computation or only bridges
+to the head, we apply itr∈ {1,2,3,6,12}times, with the translator refitted on the looped output
+or removed (Table 18). With the translator, repetition brings no gain: the cost stays within0.003
+23
+
+Table 11: Average rank over the shared suite datasets (lower is better,±std; Friedmanp <10 −100).
+Left: Full and Half versions jointly ranked. Right: Half models vs. tuned GBDTs. Half-depth
+TabFM outranks every other full model.
+Method Avg. rank±Best Mean AUROC
+TabFM 2.26 2.48 101 0.9017
+TabFM (Half) 3.53 2.54 6 0.8971
+TabICL 3.88 2.35 10 0.8912
+TabICL (Half) 5.29 2.26 4 0.8883
+TabPFN-3 5.54 2.58 5 0.8868
+TabPFN-3 (Half) 6.26 2.64 6 0.8858
+LimiX-16M 7.74 3.38 1 0.8845
+TabPFNv2 7.95 2.91 3 0.8814
+LimiX-16M (Half) 9.67 2.95 2 0.8794
+TabDPT 9.80 3.10 3 0.8720
+TabPFNv2 (Half) 9.86 3.00 1 0.8781
+TabDPT (Half) 11.50 2.95 0 0.8686
+Orion-MSP 12.46 2.78 1 0.8622
+Orion-Bix 13.23 2.89 1 0.8488
+Orion-MSP (Half) 13.31 2.61 0 0.8603
+Orion-Bix (Half) 13.72 2.86 0 0.8484
+Method Avg. rank±Best Mean AUROC
+TabFM (Half) 2.63 1.84 66 0.8971
+TabICL (Half) 3.88 2.07 17 0.8883
+TabPFN-3 (Half) 4.61 2.37 13 0.8858
+LightGBM (tuned) 5.29 3.35 26 0.8882
+XGBoost (tuned) 5.44 3.17 11 0.8882
+LimiX-16M (Half) 6.91 2.44 2 0.8794
+LightGBM 6.96 3.16 1 0.8820
+TabPFNv2 (Half) 7.02 2.59 2 0.8781
+XGBoost 7.73 3.17 2 0.8802
+TabDPT (Half) 8.19 2.94 0 0.8686
+Orion-MSP (Half) 9.59 2.49 1 0.8603
+Orion-Bix (Half) 9.76 2.78 2 0.8484
+Table 12: Per-model win/tie/loss of the compressed model (Half window, ridge) against its own full
+version over the suite datasets, with the median∆AUROC.
+Model Win Tie Loss Median∆AUROC
+TabPFNv2 14 48 95 -0.0017
+TabPFN-3 19 77 67 -0.0004
+TabICL 7 70 86 -0.0011
+TabDPT 13 55 95 -0.0018
+TabFM 10 47 100 -0.0021
+Orion-MSP 22 44 86 -0.0014
+Orion-Bix 27 72 58 -0.0004
+LimiX-16M 23 33 97 -0.0019
+for TabICL and0.006for TabDPT, and grows from0.006to0.016for TabFM. Without it, no num-
+ber of repetitions recovers the model (TabDPT stays near−0.4). The affine map, not additional
+computation from the kept block, is what makes One-block work.
+B.13 CONTEXT SIZE
+Figure 13 shows the context-size experiment behind Section 5. Across the suite, the same trend
+appears with dataset size: larger datasets lose more at One-block (Spearmanρ=−0.22between
+the number of rows and the One-block cost, over the 163 suite datasets and eight models,p <10−14;
+−0.09(LimiX-16M) to−0.34per model).
+B.14 ZERO-SHOT MAP TRANSFER ACROSS DATASETS
+Because the shared affine map acts on the schema-freed-dimensional residual stream, a transforma-
+tion fitted on one dataset can theoretically generalize to another. To evaluate this zero-shot transfer,
+we fit the map on a source dataset’s unlabeled activations at the source’s own KL-selected window
+and apply it unchanged to the target at that same window, so no target row is used to place or fit it.
+In Figure 14 we compare this transferred map against both a locally fitted map at the same window
+and a naive identity baseline that drops the blocks without a map.
+For cohorts sharing an identical feature schema (e.g., the MIMIC-III and eICU intensive-care
+datasets), the affine map transfers well. At half-depth, a TabICL map fitted on one hospital cohort
+serves the other with an AUROC penalty of0.004, against0.003for a local fit, so it keeps over 90%
+24
+
+Table 13: Our Full baselines vs. the TabArena leaderboard (default configurations, ROC AUC, 30
+binary TabArena datasets): per-dataset Pearson correlation and the mean difference, split at 3,000
+rows.
+≤3,000 rows>3,000 rows
+Model datasets Pearsonr nours−TabArenanours−TabArena
+TabPFN-3 30 0.951 9 -0.004 21 -0.022
+TabICL 30 0.962 9 -0.005 21 -0.018
+TabDPT 30 0.935 9 -0.004 21 -0.029
+TabFM 30 0.968 9 -0.007 21 -0.018
+LimiX-16M 30 0.933 9 -0.012 21 -0.007
+Table 14: AUROC, accuracy and balanced accuracy at both operating points. Mean over datasets of
+Full / Half / One-block (KL-selected windows, ridge translator, three seeds; decisions by the most
+probable class, no recalibration), for the binary and the multi-class datasets (suite and clinical);n
+= datasets. At Half every metric stays close to Full; with one block kept the threshold-dependent
+metrics fall more than AUROC, most on multi-class tasks.
+AUROC Accuracy Balanced accuracy
+ModelnFull Half One Full Half One Full Half One
+Binary tasks
+TabPFNv2 114 .858 .856 .797 .840 .837 .771 .753 .749 .626
+TabPFN-3 114 .865 .864 .860 .846 .844 .839 .761 .756 .746
+TabICL 114 .868 .865 .853 .849 .846 .832 .765 .760 .733
+TabDPT 114 .849 .847 .828 .833 .830 .813 .741 .734 .691
+TabFM 114 .880 .876 .854 .859 .854 .829 .780 .767 .712
+Orion-MSP 111 .838 .836 .822 .824 .822 .807 .730 .725 .682
+Orion-Bix 114 .827 .826 .819 .818 .818 .811 .720 .717 .694
+LimiX-16M 113 .864 .858 .831 .845 .839 .800 .762 .750 .662
+Multi-class tasks
+TabPFNv2 51 .928 .925 .748 .826 .817 .479 .765 .747 .334
+TabPFN-3 57 .940 .938 .932 .844 .840 .825 .789 .781 .759
+TabICL 57 .947 .944 .932 .862 .855 .817 .811 .803 .747
+TabDPT 57 .929 .924 .897 .823 .813 .725 .764 .750 .620
+TabFM 51 .945 .940 .922 .867 .857 .802 .812 .794 .707
+Orion-MSP 49 .925 .923 .904 .803 .795 .746 .743 .728 .642
+Orion-Bix 51 .896 .895 .889 .780 .778 .753 .705 .700 .651
+LimiX-16M 48 .929 .926 .837 .843 .835 .580 .779 .766 .449
+of the local map’s benefit. However, across 446 disparate dataset pairs (out of 516 total source-target
+configurations), transfer weakens when the schemas differ, even within one domain (e.g., Heart and
+Diabetes, both medical but with different features and outcomes). On these pairs, a transferred half-
+depth map recovers only 60–65% of a local map’s benefit for TabICL and TabPFN-3, about 30%
+for TabDPT, and none for TabFM (Table 19). Domain similarity does not help either: transferring
+maps from either medical or non-medical sources to MIMIC-III yields identical AUROC penalties
+for TabICL (−0.015in both cases). With one block kept, the map transfers weakly, and better
+within a domain: for TabICL, a map borrowed from the same domain halves the loss of dropping
+the blocks (−0.043vs.−0.093), while one from another domain barely improves on it (−0.054vs.
+−0.060; Table 19). At Half, where domain gives no advantage, these results indicate that the skipped
+transformer blocks execute computations tied to specific features and outcomes, rather than general
+domain characteristics. A map can therefore be reused across sites or data versions that share a
+schema; a new schema needs its own local fit, which is fast and label-free. Table 19 reports the three
+quantities of Figure 14 for all four models in the transfer grid, with the synthetic source (a Gaussian
+input with a random two-layer teacher) as a fifth tier. Pairs: MIMIC-III↔eICU 2, same data 48,
+same domain 310 (254 for TabFM), other domain 136, synthetic 20; the other-domain pairs come
+from 9 sources (the clinical and credit datasets and two physics sets). For all four models a borrowed
+Half map transfers between versions of the same data and between MIMIC-III and eICU (TabDPT:
+25
+
+Table 15: Subgroup analysis on MIMIC-III and eICU (patient-disjoint, 3 seeds, windows selected
+by calibration KL). Per model at Half and One-block: overall∆AUROC;∆AUROC by feature-
+completeness quartile (Q1 = least complete);∆sensitivity/∆specificity at the full model’s Youden-J
+threshold; mean|∆p|by outcome group.
+Half One-block
+Model Cohort∆AUROC Q1 Q4∆sens∆spec|∆p|died surv. ∆AUROC Q1 Q4∆sens∆spec|∆p|died surv.
+TabPFNv2MIMIC-III+0.001 +0.000 +0.004 +0.001−0.0110.053 0.029 −0.057−0.035−0.057 +0.243−0.6370.132 0.093
+eICU+0.008 +0.013 +0.007−0.048 +0.0360.058 0.028 −0.033−0.015−0.048−0.015−0.1660.107 0.073
+TabPFN-3 MIMIC-III−0.003 +0.002−0.007−0.022 +0.0190.027 0.014 −0.009−0.002−0.014−0.048 +0.0420.043 0.023
+eICU+0.002−0.001 +0.003−0.020 +0.0180.022 0.010 −0.001−0.006−0.001−0.024 +0.0150.031 0.016
+TabICL MIMIC-III−0.004−0.003−0.004 +0.006−0.0090.019 0.010 −0.012−0.005−0.012−0.077 +0.0380.063 0.025
+eICU−0.003−0.001−0.008 +0.013−0.0140.016 0.008 −0.011−0.007−0.016−0.031 +0.0060.048 0.023
+TabDPT MIMIC-III−0.003−0.002−0.001−0.014−0.0020.025 0.013 −0.009−0.008−0.010−0.031 +0.0160.064 0.027
+eICU+0.002−0.005 +0.001 +0.007−0.0060.029 0.015 −0.013−0.027−0.016−0.021−0.0120.075 0.030
+TabFM MIMIC-III−0.008−0.006−0.010−0.049 +0.0230.045 0.018 −0.019−0.012−0.024−0.122 +0.0630.096 0.035
+eICU−0.006−0.009−0.007−0.071 +0.0370.036 0.015 −0.014−0.020−0.017−0.173 +0.0870.075 0.027
+Orion-MSPMIMIC-III−0.002−0.000−0.002−0.015 +0.0090.028 0.014 −0.007−0.008−0.004−0.045 +0.0270.058 0.027
+eICU−0.001−0.005−0.002 +0.017−0.0110.025 0.013 −0.003−0.021−0.007−0.025 +0.0200.045 0.023
+Orion-Bix MIMIC-III−0.001 +0.001−0.002 +0.009−0.0080.015 0.008 −0.002 +0.008 +0.002 +0.010−0.0070.020 0.011
+eICU−0.000 +0.003−0.002 +0.005−0.0060.007 0.005 −0.005−0.006−0.004 +0.008−0.0200.009 0.007
+LimiX-16MMIMIC-III−0.004−0.004−0.005−0.031 +0.0260.047 0.025 −0.054−0.030−0.052−0.365 +0.1920.175 0.069
+eICU−0.001−0.007−0.000−0.004−0.0050.035 0.018 −0.054−0.108−0.062−0.282 +0.1070.110 0.052
+Table 16: Early-exit probe vs. affine translator: share of configurations where the translator matches
+or beats the probe, and median∆AUROC vs. the full model across three depth bands (8 clinical
+datasets, 3 seeds, all widths).L= total blocks;ℓ= exit layer / translator start.
+early (ℓ≤L/3) mid late (ℓ >2L/3)
+Model runs transl.≥probe probe transl. probe transl. probe transl.
+TabPFNv2 288 67% -0.048 -0.082 -0.035 -0.003 -0.016 +0.000
+TabPFN-3 576 77% -0.017 -0.002 -0.015 -0.002 -0.014 -0.000
+TabICL 288 95% -0.022 -0.001 -0.024 -0.000 -0.018 +0.000
+TabDPT 384 86% -0.032 -0.003 -0.032 -0.002 -0.030 -0.000
+TabFM 552 91% -0.026 -0.004 -0.018 -0.002 -0.031 -0.000
+Orion-MSP 288 80% -0.050 -0.006 -0.041 -0.002 -0.031 +0.000
+Orion-Bix 288 63% -0.010 -0.003 -0.005 -0.001 -0.006 +0.000
+All2664 81% -0.023 -0.003 -0.022 -0.002 -0.019 +0.000
+−0.013from eICU to MIMIC-III, against−0.002local and−0.063for dropping). Across different
+schemas TabICL and TabPFN-3 keep most of the local map’s benefit, while a borrowed map recov-
+ers only part of the benefit for TabDPT (same domain:−0.040vs.−0.050for dropping the blocks)
+and none for TabFM (−0.012vs.−0.011; its Half window costs only0.01–0.02even without a
+map). At One-block, a borrowed map falls far short of a local fit for every model, and the synthetic
+source breaks TabICL outright (−0.536, against−0.059for dropping the blocks). The tiers do not
+share targets, so they differ in target difficulty as well as in similarity (note the different local and
+dropped columns). On the 16 targets that receive both same-domain and other-domain sources, the
+two tiers differ by a median of at most0.002at Half for TabICL and TabPFN-3.
+B.15 REGRESSION
+Table 20 gives the per-width medians behind Figure 6, and Table 21 splits the One-block loss into a
+loss of scale and a loss of ordering.
+For each regression model, dataset and width we re-ran the calibration-selected window of Table 20
+at seed 0 and recorded, besidesR 2, the Spearman rank correlation of the prediction with the target,
+the standard deviation of the compressed predictions relative to the full model’s, andR 2 after an
+affine recalibrationy≈aˆy+bwhose two coefficients are fitted on the compressed predictions of
+the calibration split (the regression analogue of the classifier’s post-hoc scaling; test labels are never
+used). Table 21 gives the medians. At width 4 nothing moves. With one block kept the predictions
+are shrunk, the recalibration recovers a third of the loss where the outputs still carry the ordering
+(TabPFNv2, TabPFN-3, TabICL: on the datasets losing more than0.05R 2, the median fraction
+recovered is0.33,0.36and0.40) and little for TabDPT (0.05), whose ordering collapses, or TabFM
+(0.08), which loses littleR 2 to begin with, and the rank correlation falls in the same order as the
+26
+
+Table 17: Which block is kept at One-block. Share of dataset–seed pairs whose KL-selected window
+keeps the first block rather than the last (suite / clinical datasets), and mean∆AUROC when the first
+or the last block is kept (averaged over seeds;n: datasets with both windows).
+Model Keeps first block (suite / clinical) Cost, first kept Cost, last keptn
+TabPFNv2 14% / 8%−.281−.071 165
+TabPFN-3 43% / 92%−.007−.006 171
+TabICL 86% / 79%−.016−.019 171
+TabDPT 97% / 100%−.025−.049 171
+TabFM 93% / 96%−.025−.036 165
+Orion-MSP 92% / 79%−.017−.023 160
+Orion-Bix 83% / 83%−.008−.012 165
+LimiX-16M 16% / 25%−.230−.034 161
+Table 18: Looping the kept blockrtimes, with the translator refitted on its output (+ map) or
+removed (no map).∆AUROC vs. the full model, eight clinical datasets, three seeds.
+Model Variantr= 1r= 2r= 3r= 6r= 12
+TabICL kept block×r+ map−.002−.002−.002−.003−.003
+kept block×r, no map−.067−.034−.034−.044−.071
+TabDPT kept block×r+ map−.005−.005−.004−.005−.006
+kept block×r, no map−.417−.409−.430−.480−.404
+TabFM kept block×r+ map−.006−.014−.015−.016−.016
+kept block×r, no map−.113−.047−.051−.085−.179
+R2 loss. LimiX-16M is the exception: its compressed predictions shrink to0.22of the full model’s
+spread while the rank correlation falls only from0.92to0.78, and the recalibration recovers three
+quarters of its loss (median∆R 2 −0.556→ −0.139). For the other models the loss is therefore
+mostly a loss of ordering, with the output scale a secondary and repairable part.
+B.16 EXTENDED HARDWARE MEASUREMENTS
+Absorbing the translator into the encoder or the head.Section 3 explains how the map can be
+absorbed by an adjacent linear layer. Encoder side (window starting at block0): in TabPFNv2 each
+feature token ofH 0 is the output of a linear layer, soH 0Wf +b f is again a linear function of that
+layer’s input, and the per-feature map is absorbed into a per-feature copy of the encoder’s last linear
+layer. Head side (window ending at blockL): TabDPT’s head readsHL through a linear layer, which
+absorbs the map with its shape unchanged. Every other model has a normalization at the relevant
+end, which prevents absorption: TabPFN-3, TabICL, TabFM and both Orions normalize the stack
+output before the head, and the encoders of TabPFN-3, LimiX and Orion-Bix end in a LayerNorm
+or RMSNorm. Across the full sweep, the selected One-block window touches the absorbing end in
+86% of dataset–seed pairs for TabPFNv2 and 97% for TabDPT. Table 22 verifies that absorption is
+exact on the eight clinical datasets at three seeds (fp32 on the GPU): predictions with and without
+absorption differ by at most4×10 −6, and every metric (AUROC, AUPRC, accuracy, balanced
+accuracy, F1, Brier, ECE) agrees to within10 −5.
+CPU deployment.Table 23 repeats Table 1 on a desktop CPU (Intel i9-14900K, fp32, batch of
+512 queries, re-encode regime). There the transformer stack takes most of the forward pass for
+the lightweight-encoder models, so their end-to-end speed-up approaches the stack’s (9.5–12.4×at
+One-block), while the heavy-encoder models stay at1.2–1.8×.
+B.17NANOTABPFNTRAINING SETUP
+Figure 15 shows the training dynamics across depths. Table 25 lists the values plotted in Figure 7.
+We use the nanoTabPFN reference code unchanged except for two additions. Every model has
+embedding size 96, 4 attention heads and an MLP hidden size of 192, from 132k parameters atL=1
+27
+
+103 104
+In-Context Support Rows
+−0.4
+−0.3
+−0.2
+−0.1
+0.0
+∆AUROC (Compressed − Full)
+ TabPFNv2
+TabFMTabICLTabPFN-3
+MIMIC-III
+One Block Kept
+Half (L/2)
+103 104
+In-Context Support Rows
+TabPFNv2
+TabFMTabICLTabPFN-3
+eICU
+103 104
+In-Context Support Rows
+TabPFNv2
+TabFM
+TabICL
+TabPFN-3
+Covertype
+103 104
+In-Context Support Rows
+TabPFNv2
+TabFM
+TabICLTabPFN-3
+Higgs
+Figure 13: Context size vs. compression cost:∆AUROC as the support set grows from 500 to
+18,000 rows (3 seeds, shaded±std; windows re-selected at every size). Solid: one block kept;
+dotted: Half (L/2). At Half the mean cost stays within0.009at every size (worst dataset: TabPFNv2
+on Covertype,−0.030); with one block kept it grows with context (TabFM:−0.005at 500 rows to
+−0.043at 18,000).
+MIMIC↔eICU
+(Same Schema)
+Same Data
+(Other Version)
+Same Domain Other Domain
+−0.08
+−0.06
+−0.04
+−0.02
+0.00
+Median ∆AUROC vs. Full
+Half
+MIMIC↔eICU
+(Same Schema)
+Same Data
+(Other Version)
+Same Domain Other Domain
+One-block
+TabICL TabPFN-3 Local Map Transferred Map Blocks Dropped
+Figure 14: Reusing the map across sites and datasets. Median∆AUROC vs. the full model on
+the target for the map fitted on the target itself (♦), a map fitted on another dataset and applied
+unchanged (•, bar: interquartile range over pairs; for the two MIMIC-III↔eICU pairs, the range of
+the two), and dropping the blocks with no map (◦). The closer•lies to♦, the more of the local map
+survives transfer. Pairs are averaged over three seeds; all three maps sit at the source’s KL-selected
+window. TabFM, TabDPT and a synthetic source are in Table 19.
+to 1.37M atL=12. It is trained on a public set of pre-generated prior tasks (300k synthetic binary
+tasks, 150 rows×5 features) for 5,000 steps at batch size 32 with schedule-free AdamW (no weight
+decay, gradient-norm clipping at 1), and the weights are taken at the optimizer’s averaged point. The
+tasks are read in order, so every variant and seed sees the same sequence of prior batches and the
+seed changes only the initialisation. The first addition skips prior batches containing NaNs: the set
+contains five corrupt tasks, and the upstream NaN check is disabled, so a single such batch would
+ruin the weights. The second is a collapse check that uses the training loss alone, so no evaluation
+data is used during training. A run that falls into the uniform-prediction basin stays at the chance
+loss of the binary prior (ln 2≈0.693) for the whole run. If the mean training loss over the last 500
+steps is not belowln 2−0.02, the run is restarted from the same seed at a quarter of the learning rate.
+Starting from4×10 −3, all depthsL≤3train at that rate at every seed, whileL∈ {6,12}collapse
+at every seed and train at10 −3. No run needed a second restart. As a control, we also retrained
+theL∈ {1,2,3}models at10 −3 (the learning rate required for the 12-layer model). Their mean
+AUROC shifts by−0.002,−0.019and+0.007, respectively; thek= 2shift comes from one of the
+three seeds. The compressed models still match or slightly exceed these shallow models (0.854vs.
+0.849atk= 1;0.891vs.0.883atk= 2;0.903vs.0.901atk= 3), so the learning-rate difference
+does not favor compression. The affine variant (“trained, compressed topology”) inserts one96×96
+linear layer, initialised to the identity, after the first⌈L/2⌉blocks of anL-block model and trains it
+jointly. Its learning rates follow the same rule. For evaluation, each dataset is split per seed into a
+100-row support, a calibration set of at most 150 rows and a test set of at most 1,000 rows. The five
+28
+
+Table 19: Reusing the map across datasets, all models. Median∆AUROC vs. the full model on the
+target, at the source’s KL-selected window, for the map fitted on the target (local), a map fitted on
+another dataset (transferred) and no map (dropped), by source–target similarity. Pairs are averaged
+over seeds first: three seeds for TabICL and TabPFN-3, seed 0 for TabFM and TabDPT.
+Model Depth Map MIMIC↔eICU Same data Same domain Other domain Synthetic
+TabICL
+Half
+local−0.003−0.003−0.001−0.001−0.001
+transferred−0.004−0.008−0.006−0.006−0.008
+dropped−0.053−0.032−0.016−0.018−0.010
+One-block
+local−0.014−0.020−0.003−0.002−0.002
+transferred−0.032−0.038−0.043−0.054−0.536
+dropped−0.086−0.091−0.093−0.060−0.059
+TabPFN-3
+Half
+local−0.001−0.002 0.000 0.000 0.000
+transferred−0.005−0.009−0.011−0.009−0.007
+dropped−0.039−0.040−0.022−0.027−0.029
+One-block
+local−0.005−0.006−0.002−0.003−0.002
+transferred−0.032−0.029−0.025−0.030−0.034
+dropped−0.061−0.057−0.037−0.032−0.032
+TabFM
+Half
+local−0.007−0.006−0.001−0.002−0.001
+transferred−0.006−0.008−0.012−0.010−0.013
+dropped−0.015−0.021−0.011−0.004−0.054
+One-block
+local−0.009−0.025−0.005−0.006−0.005
+transferred−0.059−0.081−0.110−0.089−0.219
+dropped−0.105−0.171−0.137−0.126−0.124
+TabDPT
+Half
+local0.000−0.003−0.001−0.002−0.002
+transferred−0.025−0.012−0.040−0.021−0.036
+dropped−0.122−0.055−0.050−0.040−0.024
+One-block
+local−0.013−0.017−0.012−0.012−0.012
+transferred−0.118−0.102−0.260−0.215−0.202
+dropped−0.264−0.264−0.433−0.393−0.398
+Table 20: Regression over 41 datasets (MIMIC-III length of stay, 13 TabArena tasks, OpenML-
+CTR23): median full-modelR 2 and median∆R 2 (compressed−full) at the best of widths 3–4
+(chosen by calibrationR 2), at half depth, and with two and one blocks kept; medians over datasets
+of the mean over 3 seeds.
+Model datasets FullR 2 best of 3–4L/2L−2L−1
+TabPFNv2 (12) 41 0.784 -0.001 -0.019 -0.176 -0.324
+TabPFN-3 (24) 41 0.859 -0.002 -0.012 -0.111 -0.132
+TabICL (12) 41 0.863 -0.003 -0.009 -0.065 -0.105
+TabDPT (16) 41 0.769 -0.006 -0.026 -0.244 -0.401
+TabFM (24) 41 0.873 -0.000 -0.001 -0.016 -0.022
+LimiX-16M (12) 41 0.853 -0.002 -0.020 -0.293 -0.568
+features are the top-5 by F-score on the support. The 12-to-kcompression uses the paper’s ridge
+recipe, with the window selected on the calibration set.
+B.18 CONTEXT EXTRAPOLATION IN NANOTABPFN
+We repeat the comparison on the two large clinical cohorts, MIMIC-III and eICU. At a support of
+100 rows the picture is unchanged. We then raise the support to 1,000 rows, about7×the 150-row
+tasks seen in pre-training, so the model must extrapolate in context length. Depth does not help here
+either: withk≥2kept blocks the compressed models stay within0.008of the full 12-layer model
+on both cohorts (0.651–0.660vs.0.656on eICU,0.674–0.681vs.0.682on MIMIC-III). Only the
+one-block model loses (0.660on MIMIC-III,0.630on eICU). Shallow models trained from scratch
+29
+
+Table 21: Scale vs. ordering decomposition (seed 0, medians over 41 datasets). Recal. =∆R 2 after
+affine recalibration on the calibration split;ρ= Spearman rank correlation; scale = compressed/full
+std ratio. Most models lose ordering, not just scale.
+Model Blocks replaced∆R 2 recal.ρfull→compr. scale
+TabPFNv2 4/12 -.002 -.000 .92→.91 0.99
+11/12 -.333 -.164 .92→.73 0.48
+TabPFN-3 4/24 -.001 -.002 .93→.93 0.98
+23/24 -.139 -.093 .93→.86 0.72
+TabICL 4/12 -.004 -.005 .93→.92 0.98
+11/12 -.095 -.060 .93→.86 0.71
+TabDPT 4/16 -.007 -.005 .91→.91 0.97
+15/16 -.445 -.337 .91→.57 0.71
+TabFM 4/24 -.000 -.000 .94→.93 0.99
+23/24 -.023 -.023 .94→.92 0.94
+LimiX-16M 4/12 -.003 -.003 .92→.92 0.98
+11/12 -.556 -.139 .92→.78 0.22
+Table 22: Absorbing the translator at One-block, eight clinical datasets×3 seeds, fp32 on an RTX
+5090. Pairs: dataset–seed pairs whose KL-selected window reaches the absorbing end (Heart keeps
+TabPFNv2’s block 0 at two seeds).Max|∆p|: largest difference in predicted probability, with vs.
+without absorption.Parameters: translator size before absorption→extra parameters the absorbed
+model carries over the one-block model (TabPFNv2: per-feature copies of the encoder’s last linear
+layer; range over datasets).
+Model Absorbed into Pairs Max|∆p|Parameters
+TabPFNv2 encoder 22/244×10 −6 0.22–1.45M→+5–43k
+TabDPT head 24/244×10 −6 0.59M→+0
+do at least as well as the full model (0.660–0.667on eICU and0.694–0.701on MIMIC-III for
+k≥2), and atk= 2they lead the compressed models by0.016(eICU) and0.027(MIMIC-III).
+30
+
+Table 23:Hardware Impact on a CPU.MIMIC-III on a desktop CPU (Intel i9-14900K, fp32).
+Blocks params: parameters of the transformer blocks kept, translator included.∆FLOPs: forward-
+pass FLOPs removed. End-to-end: batch of 512 queries, context re-encoded on every call.
+Blocks params (M)∆FLOPs End-to-end speed-up
+Model Full Half One-block Half One-block Half One-block
+TabPFNv2 7.1 5.0 2.0−50%−91% 2.2×12.4×
+TabPFN-3 51.4 25.9 2.4−26%−51% 1.2×1.4×
+TabICL 25.7 13.1 2.4−23%−42% 1.1×1.3×
+TabDPT 75.6 38.4 5.3−49%−92% 2.0×11.0×
+TabFM 1,611 810 71.3−31%−59% 1.3×1.8×
+Orion-MSP 25.2 12.9 2.4−22%−37% 1.1×1.3×
+Orion-Bix 25.2 12.9 2.4−21%−40% 1.1×1.2×
+LimiX-16M 15.9 11.4 4.8−50%−91% 2.0×9.5×
+Table 24: Stack-only vs. end-to-end speed-up on GPU (MIMIC-III, 3,000-row context (1,500 for
+TabDPT), one RTX 5090, batch of 512 queries, re-encode regime, median of 10 runs, CUDA syn-
+chronised at the stack boundaries). Stack: speed-up of the transformer stack alone; end-to-end: of
+the whole forward pass. The stack alone still gets close toL/(blocks kept)faster, but on a GPU it is
+a smaller share of the forward pass than on a CPU, so less of that gain reaches the end-to-end time.
+Width 4 Half One-block
+Model Stack share of time stack end-to-end stack end-to-end stack end-to-end
+TabPFNv2 75% 1.5×1.38×2.0×1.73×11.2×4.63×
+LimiX-16M 91% 1.5×1.43×2.0×1.83×11.5×6.10×
+TabDPT 80% 1.2×1.17×1.7×1.52×6.9×3.25×
+TabFM 29% 1.2×1.05×2.0×1.17×23.1×1.38×
+TabPFN-3 19% 1.2×1.02×1.9×1.09×19.7×1.23×
+TabICL 10% 1.5×1.02×2.0×1.04×10.5×1.09×
+Orion-MSP 13% 1.5×1.05×1.9×1.07×9.6×1.15×
+Orion-Bix 26% 1.5×1.09×2.0×1.15×11.1×1.31×
+Table 25:Pre-training shallow vs. compressing deep, values of Figure 7. nanoTabPFN test AU-
+ROC, averaged over four clinical datasets; mean±std over three seeds.
+Kept blocksk1 2 3 6 12
+Trained at depthk .850 ±.009 .902±.008 .894±.005 .902±.001 .903±.003
+Trained, compressed topology.852 ±.008 .888±.008 .900±.004 .900±.002 —
+Compressed12→k .854 ±.012 .891±.001 .903±.005 .902±.007 —
+Compressed12→k, prior-fitted map.428 ±.158 .550±.116 .832±.091 .756±.202 —
+2000 4000
+Training Step
+0.4
+0.5
+0.6
+0.7
+0.8AUROC, Full 12-Block Model
+Full Model Converges
+2000 4000
+Training Step
+0.00
+0.05
+0.10
+0.15
+0.20
+ΔAUROC (Compressed − Full)
+Compression Cost, Whole Run
+Kept Blocks
+k = 1
+k = 2
+k = 3
+k = 6
+3000 3500 4000 4500
+Training Step
+−0.03
+−0.02
+−0.01
+0.00
+ΔAUROC (Compressed − Full)
+k = 1
+k = 2
+k = 3
+k = 6
+After Convergence (Step ≥  3,000)
+Figure 15: nanoTabPFN training dynamics: loss curves, evaluation AUROC and learning-rate
+restarts across depthsL∈ {1,2,3,6,12}(three seeds each). Deeper models (L≥6) collapse
+to uniform predictions at the default learning rate and require an automatic restart at a quarter of the
+rate.
+31

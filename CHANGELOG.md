@@ -4,6 +4,23 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-15
+
+- Added **Zhao et al. 2026-10 — TabReliBench** (arXiv 2610.13654). The first dedicated
+reliability benchmark: eleven TFMs, 241 datasets, accuracy/calibration/marginal coverage/subgroup
+coverage/interval width measured separately. Marginal coverage is near-nominal out of the box;
+**subgroup (worst-slab) coverage is not**, and neither ensembling nor nine conformal variants
+reliably fix it. Resolves the synthesis's long-standing "calibration is claimed everywhere and
+measured almost nowhere" gap in a split verdict — true on average, false locally — which is the
+distinction that matters for a regulated credit model.
+- Added **Cannistraci and Vogt 2026-10 — Tabular Foundation Models Are Effectively Shallow**
+(arXiv 2610.13253), ETH Zurich. A closed-form, label-free affine map replaces half the blocks of
+eight TFMs for ≤0.002 median AUROC; a one-block TabPFN-3 serves cached queries 2.4× faster in 6×
+less memory. The most direct evidence yet for the Nagler/Zheng/Shaheen localisation-retrieval
+account. Classification AUROC only; single-block compression fails for regression.
+- **`Where the papers disagree` gains two rows**: "a PFN's PPD is calibrated by construction"
+(*true on average, false locally*) and "frontier TFMs need their depth" (*over-provisioned, for
+classification ranking*).
 ## 2026-10-13
 
 - Added **`Test-Time Compute for Tabular Foundation Models.txt`** from Ning et al.'s

@@ -89,6 +89,8 @@ this folder and write them there.
 | 2026-09 | Cho et al. | **Causilo** — Technical Report | Refines cells across both axes before row compression; fixed summary tokens make feature-side attention linear, reaching 1785 TabArena Elo at 0.1043 s per 1K queries in the reported snapshot. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
 | 2026-09 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | 40 datasets selected for complementary modalities and gains from target-aware representations; 40 additional joint-signal candidates expose the benchmark's selection boundary. | [pdf](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
 | 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | DiagScale matches much of full finetuning's gain; selective aggregation helps at substantial cost, while retrieval can help or fail and context expansion gives no consistent gain. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
+| 2026-10 | Zhao et al. | **TabReliBench** — Evaluating Tabular Foundation Models Beyond Predictive Accuracy | The first dedicated reliability benchmark across 11 TFMs: marginal coverage is near-nominal, **subgroup coverage is not**, and neither ensembling nor conformal post-processing reliably fixes it. | [pdf](papers/2026/10_Zhao_et_al._TabReliBench_Evaluating_Tabular_Foundation_Models_Beyond_Predictive_Accuracy.pdf) |
+| 2026-10 | Cannistraci and Vogt | **Tabular Foundation Models Are Effectively Shallow** | A closed-form, label-free affine map replaces half of any TFM's blocks for ≤0.002 median AUROC; a one-block TabPFN-3 serves cached queries 2.4× faster in 6× less memory. | [pdf](papers/2026/10_Cannistraci_and_Vogt_Tabular_Foundation_Models_Are_Effectively_Shallow.pdf) |
 
 ---
 
@@ -2828,5 +2830,138 @@ at lower measured total cost, so this is not evidence that extra compute on a fi
 backbone is always the best purchase. The retrieval failure and context-expansion null
 results constrain the tested recipes; they do not prove all retrieval or learned-context
 methods ineffective, nor do these experiments establish probability calibration.
+
+---
+
+<a id="tabrelibench"></a>
+
+## 2026-10 — Zhao et al. — TabReliBench: Evaluating Tabular Foundation Models Beyond Predictive Accuracy
+
+**arXiv:** [2610.13654](https://arxiv.org/abs/2610.13654) · preprint ·
+Renmin University of China, Cerebras, National University of Singapore, MBZUAI · code released ·
+**PDF:** [open](papers/2026/10_Zhao_et_al._TabReliBench_Evaluating_Tabular_Foundation_Models_Beyond_Predictive_Accuracy.pdf)
+
+**Where it fits.** The synthesis has long listed calibration as the paradigm's most glaring
+evaluation gap — claimed everywhere because a PFN approximates a posterior predictive, measured
+almost nowhere. Scattered evidence existed: Brier and log loss in
+[Baesens et al. 2026, *Foundation Models for Credit Risk Prediction: A Game Changer?*](#credit-risk-benchmark),
+CRPS in [Cho et al. 2026, *Causilo*](#causilo), ScoringBench results in the
+[EXAONE](#exaone-tabular-1) and [TabPFN-3.5](#tabpfn-3-5) reports. TabReliBench is the first paper
+here built *for* the question, across eleven TFMs at once, and it separates what a single proper
+score blends together: accuracy, calibration, marginal coverage, subgroup coverage and interval
+width. It also tests the founding promise of
+[Müller et al. 2021, *Transformers Can Do Bayesian Inference*](#pfns-2021) — that calibration
+falls out of the objective — and finds it true on average and false locally.
+
+**What it contains.** A benchmark of **160 classification and 81 regression** OpenML datasets,
+five train–test repetitions each, capped at 10,000 rows so every model stays in its operating
+regime. Eleven TFMs — TabPFN v2, 2.5, 3 and 3.5; TabICL v1 and v2; TabDPT 1.1 and 1.3; Causilo;
+LimiX-2; TabFM — against BART, RealMLP and XGBoost, tuned and untuned. The dataset is the unit of
+analysis, which is why it needs far more datasets than TabArena's 51.
+
+Five findings, each a correction to how this literature usually reads a leaderboard:
+
+| Finding | What it qualifies |
+|---|---|
+| **Rankings move** between TabArena and TabReliBench, and between metrics: LimiX-2 leads accuracy and R², TabPFN-3.5 leads Brier, classwise ECE and CRPS, Causilo leads confidence-ECE and regression calibration | "the best TFM" is not a well-defined object |
+| Regression TFMs reach **near-nominal 90% marginal coverage** with narrow intervals, untouched | the Bayesian promise — on average |
+| **Worst-slab (subgroup) coverage stays heterogeneous**, often poor | the same promise — locally |
+| **Ensembling** improves accuracy and proper scores but does **not** consistently improve calibration | the default 4/8-way ensemble as a calibration device |
+| **Conformal post-processing** — four global and five covariate-adaptive variants — helps BART far more than TFMs, and does not remove subgroup undercoverage | conformal as the standard fix |
+
+A dataset-level analysis adds that most score variation is *between datasets* rather than
+between TFMs, so meta-features predict whether TFMs will do well much better than which TFM
+will. Local class overlap is a warning sign for both classification accuracy and calibration;
+for regression, prediction quality and calibration track *different* dataset properties.
+
+TFMs nonetheless dominate the classical baselines: all eleven rank ahead of every baseline on
+accuracy and Brier, and all seven distributional regression TFMs rank ahead on CRPS and every
+calibration diagnostic.
+
+**Strengths.** Exactly the study the paradigm's selling point required and had not received.
+Separating marginal from worst-slab coverage is the methodological contribution that matters
+most: a model can be perfectly calibrated on average while systematically under-covering a
+subgroup, and that is the failure a credit-risk regulator — and any fairness analysis —
+actually cares about. Using the dataset as the unit of analysis, with enough datasets to make
+that meaningful, is a real advance over leaderboard averaging. Comparing eleven current TFMs in
+one harness also makes it the broadest independent cross-model comparison in this collection.
+
+**Limitations.** The authors note that worst-slab coverage does not guarantee pointwise
+conditional coverage, and that conclusions are bounded by the chosen datasets, configurations
+and criteria. The 10,000-row cap leaves the large-data regime — where TabPFN-3.5 and TabICLv2
+make their strongest claims — untested. Two of the eleven TFMs (LimiX-2, TabFM) emit no
+regression distribution, shrinking the distributional comparison to seven. The data are
+i.i.d. OpenML splits, so how reliability behaves under the temporal and grouped shifts of
+[Beyond IID](#beyond-iid) is an open question, and it is precisely the combination — shift plus
+subgroup coverage — that a lending model faces. It is a preprint.
+
+---
+
+<a id="effectively-shallow"></a>
+
+## 2026-10 — Cannistraci and Vogt — Tabular Foundation Models Are Effectively Shallow
+
+**arXiv:** [2610.13253](https://arxiv.org/abs/2610.13253) · preprint · ETH Zurich · code released ·
+**PDF:** [open](papers/2026/10_Cannistraci_and_Vogt_Tabular_Foundation_Models_Are_Effectively_Shallow.pdf)
+
+**Where it fits.** A compression paper with a theoretical edge. On the deployment side it joins
+[Luo et al. 2026, *Memory Efficient Tabular Foundation Models*](#memory-efficient-tfms), which
+shrinks the *bits* per parameter: this paper removes the *parameters*, and the two compose. On
+the conceptual side it supplies the cleanest evidence yet for what three other papers argued
+from different directions —
+[Nagler 2023, *Statistical Foundations of Prior-Data Fitted Networks*](#nagler-theory) (bias
+vanishes only under localisation),
+[Zheng et al. 2025, *From Tables to Signals*](#spectral-adaptivity) (attention sharpens into
+local neighbourhoods) and
+[Shaheen et al. 2026, *Understanding the Surprising Generalization Properties of Tabular
+Foundation Models*](#shaheen-retrieval) (the learned procedure is retrieval-and-aggregation).
+A retrieve-and-pool procedure does not need twenty-four layers of nonlinear composition, and
+this paper measures that it does not use them.
+
+**What it contains.** The tool is a **closed-form, label-free affine translator**: fit on a small
+unlabelled calibration split, it maps the hidden state *entering* a contiguous window of
+transformer blocks to the state *leaving* it, so the window can be skipped. The window is chosen
+by minimising forward KL divergence of the outputs. Single-axis models get one shared map;
+dual-axis models (TabPFN v2, LimiX) need a separate map per feature index. If the outputs survive,
+those blocks were doing work a linear map can absorb; if they collapse, they were doing
+genuinely nonlinear composition.
+
+Across **8 TFMs from 6 families on 171 classification datasets**:
+
+- Replacing **half** the blocks costs at most **0.002 median AUROC** for every architecture, with
+  up to 97% of datasets within one point of the full model. Half-depth TabFM still beats every
+  other *full-depth* TFM and tuned GBDTs.
+- Pushing to **a single block** keeps TabPFN-3, Orion-BiX and TabICL within a median 0.007
+  AUROC; a one-block TabPFN-3 serves cached queries **2.4× faster in 6× less memory**.
+- Families are over-parameterised **differently**: TabPFN-3 leans on its encoders and survives
+  whichever single block is kept; other single-axis models do most of their work in the first
+  block; dual-axis models concentrate it in one critical block.
+- Naively dropping blocks collapses the model, and early exit is worse than the translator —
+  the map is doing real work.
+- A controlled study at nanoTabPFN scale (Pfefferle et al. 2025, *nanoTabPFN*) shows a 12-layer model compressed to *k*
+  layers matches one trained from scratch at depth *k*, and a natively trained 6-layer model
+  matches the full 12.
+
+Overall: up to **1.5B parameters** removed and up to **6× faster** GPU inference at a median
+cost of 0.03 AUROC.
+
+**Strengths.** Intervention rather than observation: instead of inferring redundancy from
+representation similarity or attention maps — which the paper shows correspond inconsistently
+with actual replaceability — it removes the blocks and measures. The translator is closed-form
+and label-free, so it costs almost nothing and needs no downstream labels, which is what makes
+it usable in the privacy-constrained settings the paper motivates. Breadth (eight models, six
+families) turns a curiosity into a property of the paradigm. And the per-family diagnosis of
+*where* depth lives is new information about architectures that the model papers themselves
+never report.
+
+**Limitations.** Classification only, scored by AUROC — a ranking metric that is blind to
+calibration, which is precisely what [TabReliBench](#tabrelibench) shows can degrade while
+ranking metrics hold. The authors themselves report that single-block compression fails to
+preserve continuous target rankings in regression, so the headline does not transfer to LGD-style
+tasks as stated. Dual-axis models whose per-feature maps grow with width (LimiX-16M) lose the
+memory advantage on very wide tables. The compression-equals-shallow-training result is shown
+only on a 1.4M-parameter nanoTabPFN; whether it holds at production scale is explicitly open. It
+is a preprint, and a closely related ICML 2026 study (*Is one layer enough?*, not in this
+collection) reached a neighbouring conclusion independently.
 
 ---
