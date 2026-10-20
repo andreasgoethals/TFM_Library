@@ -5,7 +5,7 @@ below depends on it.
 
 | Where you are | What you may do |
 |---|---|
-| **In this repository's own checkout** — you were launched *in* the TFM Library, and this file sits at your working-directory root | Read **and** edit. This is the only place the library is ever edited. |
+| **In this repository's own checkout** — the canonical TFM Library is selected directly or from its parent Literature workspace | Read **and** edit. This is the only place the library is ever edited. |
 | **In a downstream project** that contains this library as a folder (e.g. `creditpfn/tfm-library/`) | **READ ONLY. Never create, edit, move, or delete anything inside this folder.** |
 
 ## What this is
@@ -33,23 +33,16 @@ working here**, so use it rather than guessing.
 
 | | How | Can it write? |
 |---|---|---|
-| **Local API** | `http://localhost:23119/api/users/0/…` — mirrors the Zotero Web API, no key, requires Zotero running with Settings → Advanced → *Allow other applications on this computer to communicate with Zotero* | **No.** `501 Method not implemented` |
-| **Web API** | `https://api.zotero.org/users/<id>/…` with header `Zotero-API-Key` | Yes |
-| **`zotero.sqlite`** | direct file read | **Never write.** And reads are unreliable — see below |
+| **Local API** | `http://127.0.0.1:23119/api/users/0` while Zotero is running | Repository maintenance reads only; native writes require separate owner authorization. |
 
-The API key lives in the **`ZOTERO_API_KEY` user environment variable**.
-Read it from the environment; never write it into a file in this
-repository, which is public.
-
-**Do not read `zotero.sqlite` when Zotero is running.** The file lags the
-application by an unbounded amount — it has been observed reporting 26
-collections while the live API reported 16, because the deletions were
-still sitting in an open transaction. Use the Local API and treat the
-SQLite path as a fallback for when Zotero is closed.
+Use the live, paginated Local API. No credential is needed for reads. Never use
+SQLite as a fallback or store credentials here. Preserve records, collections,
+notes, attachments and citation keys; report discrepancies rather than changing
+the collection automatically.
 
 ### Which collection this repository mirrors
 
-**`08. Tabular Foundation Models`.** That collection *is* the definition
+**`Tabular Foundation Models`.** That collection *is* the definition
 of what belongs in `papers/` — one PDF here per item there, and nothing
 else. Three rules follow:
 
@@ -120,7 +113,7 @@ downstream edit can ever reach this repository.
    methods, and domain application papers are **out of scope** even when
    the corpus cites them heavily — and even when you can see them in the
    owner's Zotero, which holds their whole reading list. The operational
-   test is membership of the `08. Tabular Foundation Models` collection;
+   test is membership of the `Tabular Foundation Models` collection;
    see [above](#which-collection-this-repository-mirrors).
 
    VSC infrastructure documentation is maintained in the separate
@@ -131,7 +124,7 @@ downstream edit can ever reach this repository.
 3. **Papers are added ONLY when the owner explicitly says so** (or adds
    one themselves). Never collect papers proactively — the trigger is
    always the owner, and the source of truth for *what* is in scope is
-   the `08. Tabular Foundation Models` collection in Zotero. When the
+   the `Tabular Foundation Models` collection in Zotero. When the
    owner does ask, follow all five steps:
    1. PDF into `papers/<year>/` as `MM_Author_et_al._Title.pdf`, where
       `<year>` and `MM` are the year and **month** of the version being
@@ -193,8 +186,9 @@ downstream edit can ever reach this repository.
    duplicate or future changelog dates, and project-specific material
    that has leaked into a shared document. `python scripts/maintain.py`
    runs it along with everything else.
-8. **Do not push.** Commit locally when asked; pushing this repository —
-   and updating the pin in any consuming project — is the owner's action.
+8. **Publication requires owner authorization.** Commit, push and update consuming
+   pins only when explicitly requested; an authorized workspace-wide migration
+   may do those operations while preserving unrelated consumer changes.
 9. **Large files:** anything >95 MB must be gitignored (see
    `repositories/TabPFN Wide.txt`) and documented as locally
    regenerable.
@@ -236,3 +230,7 @@ containing it is a pinned, read-only snapshot of a shared library.
 - Consuming projects see the **commit they have pinned**, not this
   repository's latest state. An edit made here is invisible downstream
   until that project updates its pin.
+
+## Historical filing provenance
+
+`papers/filing_overrides.json` records the hash-bound exception for the founding PFN conference PDF: its historical 2021-12 path uses the verified first public release; publication is ICLR 2022 and the exact filed PDF revision date is unknown. Do not mistake this path for a PDF version date or add an unverified month. New papers follow the normal filed-version convention.

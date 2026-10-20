@@ -1,233 +1,280 @@
 #!/usr/bin/env python
-"""Push this library's current commit out to every downstream project.
+"""Discover consumers and pin only this library to its exact published HEAD.
 
-**This folder is the ground truth.** The script finds every repository on
-disk that embeds this library as a git submodule, and moves each one's pin
-to the commit that is checked out *here*.
-
-How it finds them
------------------
-It scans the search roots (default: the parent of this repository, i.e.
-the folder holding all your projects) for ``.gitmodules`` files that
-reference this repository's ``origin`` URL, matching on the normalised
-``owner/name`` so that ``https://…/TFM_Library.git``, an SSH remote, and a
-different capitalisation all resolve to the same library.
-
-The safety rule that matters
-----------------------------
-A downstream pin is a **commit id that must exist on the remote**, because
-that is where a collaborator's ``git submodule update --init`` will look
-for it. So the script refuses to run when this repository has uncommitted
-changes or unpushed commits — propagating then would either pin work that
-nobody else can fetch, or silently pin a *stale* commit while your newest
-work sits uncommitted. Override with ``--allow-dirty`` only if you know
-why you want that.
-
-What it does per project
-------------------------
-1. ``git fetch`` inside the submodule, so the target commit is available.
-2. Check out this library's exact HEAD there (not ``--remote``, which
-   would follow the branch tip and could differ from what you have).
-3. Stage and commit **only the submodule path**, so unrelated work in
-   progress in that project is never swept into the commit.
-4. Leave pushing to you, unless ``--push`` is given.
-
-Usage::
-
-    python scripts/propagate_to_downstream.py --dry-run   # show the plan
-    python scripts/propagate_to_downstream.py             # update + commit
-    python scripts/propagate_to_downstream.py --push      # also push
-    python scripts/propagate_to_downstream.py --root "D:/other/projects"
-
-Exit code 0 if every project ends up pinned to this commit.
+Dry-run only reads Git state. Updates require a clean canonical library and an
+origin-advertised commit (or a locally provable ancestor of an advertised ref).
+Only the submodule path is committed; --push explicitly opts into downstream pushes.
 """
-
 from __future__ import annotations
 
 import argparse
+import os
+from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import subprocess
 import sys
-from pathlib import Path
+from urllib.parse import urlsplit
 
+sys.dont_write_bytecode = True
 _ROOT = Path(__file__).resolve().parents[1]
 
 
 def git(*args: str, cwd: Path, check: bool = True) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=str(cwd), check=check,
-                          capture_output=True, text=True,
-                          encoding="utf-8", errors="replace")
+                          capture_output=True, text=True, encoding="utf-8", errors="replace",
+                          env=dict(os.environ, GIT_OPTIONAL_LOCKS="0"))
 
 
 def normalise_remote(url: str) -> str:
-    """``owner/name`` in lower case, from any git remote spelling."""
-    u = url.strip().rstrip("/")
-    u = re.sub(r"\.git$", "", u)
-    u = re.sub(r"^git@([^:]+):", r"https://\1/", u)     # SSH -> HTTPS shape
-    parts = [p for p in u.split("/") if p]
-    return "/".join(parts[-2:]).lower() if len(parts) >= 2 else u.lower()
+    """Match HTTPS/SSH spellings, while retaining host identity and local paths."""
+    value = url.strip().rstrip("/")
+    # Do not treat Windows drives as SSH hosts.
+    if re.match(r"^[A-Za-z]:[\\/]", value):
+        return re.sub(r"\.git$", "", str(Path(value).resolve()).replace("\\", "/"), flags=re.I).casefold()
+    if re.match(r"^(?:[^/@:]+@)?[^/:]+:.+", value) and "://" not in value:
+        value = re.sub(r"^(?:[^/@:]+@)?([^:]+):", r"ssh://\1/", value)
+    parsed = urlsplit(value)
+    if parsed.scheme and parsed.scheme != "file":
+        host = (parsed.hostname or "").casefold()
+        port = f":{parsed.port}" if parsed.port and parsed.port not in (22, 443) else ""
+        return host + port + "/" + re.sub(r"\.git$", "", parsed.path.strip("/"), flags=re.I).casefold()
+    path = parsed.path if parsed.scheme == "file" else value
+    return re.sub(r"\.git$", "", str(Path(path).resolve()).replace("\\", "/"), flags=re.I).casefold()
+
+
+def resolve_submodule_remote(url: str, parent_origin: str) -> str:
+    if not url.startswith(("./", "../")):
+        return url
+    if "://" in parent_origin:
+        parsed = urlsplit(parent_origin)
+        return f"{parsed.scheme}://{parsed.netloc}" + posixpath.normpath(parsed.path.rstrip("/") + "/" + url)
+    if re.match(r"^[^/]+@[^:]+:", parent_origin):
+        prefix, path = parent_origin.split(":", 1)
+        return prefix + ":" + posixpath.normpath(path.rstrip("/") + "/" + url)
+    return str(Path(parent_origin) / url)
 
 
 class Project:
     def __init__(self, repo: Path, sub_path: str) -> None:
-        self.repo = repo
-        self.sub_path = sub_path
-        self.status = "pending"
-        self.detail = ""
+        self.repo, self.sub_path = repo, sub_path
+        self.status, self.detail = "pending", ""
 
     @property
     def sub_dir(self) -> Path:
         return self.repo / self.sub_path
 
     def pinned_sha(self) -> str | None:
-        r = git("ls-tree", "HEAD", self.sub_path, cwd=self.repo, check=False)
-        m = re.search(r"^160000 commit ([0-9a-f]{40})", r.stdout.strip())
-        return m.group(1) if m else None
+        result = git("ls-tree", "HEAD", "--", self.sub_path, cwd=self.repo, check=False)
+        match = re.match(r"^160000 commit ([0-9a-f]{40,64})\t", result.stdout)
+        return match.group(1) if match else None
 
 
 def discover(roots: list[Path], library_key: str, depth: int) -> list[Project]:
-    found: list[Project] = []
-    seen: set[Path] = set()
+    found, seen = [], set()
     for root in roots:
         if not root.is_dir():
             continue
-        # every depth from 0 (the root itself) up to `depth`, not just `depth`
-        patterns = ["/".join(["*"] * d + [".gitmodules"]) for d in range(depth + 1)]
-        for gm in sorted({g for pat in patterns for g in root.glob(pat)}):
-            repo = gm.parent
-            if repo.resolve() == _ROOT.resolve() or repo in seen:
+        patterns = ["/".join(["*"] * level + [".gitmodules"]) for level in range(depth + 1)]
+        for module_file in sorted({path for pattern in patterns for path in root.glob(pattern)}):
+            repo = module_file.parent.resolve()
+            if repo == _ROOT.resolve():
                 continue
-            text = gm.read_text(encoding="utf-8", errors="replace")
-            blocks = re.findall(
-                r'\[submodule "[^"]+"\][^\[]*', text, re.S)
-            for b in blocks:
-                url = re.search(r"url\s*=\s*(\S+)", b)
-                path = re.search(r"path\s*=\s*(\S+)", b)
-                if url and path and normalise_remote(url.group(1)) == library_key:
-                    seen.add(repo)
-                    found.append(Project(repo, path.group(1)))
+            result = git("config", "--file", str(module_file), "--get-regexp", r"^submodule\..*\.(path|url)$", cwd=repo, check=False)
+            records: dict[str, dict[str, str]] = {}
+            for line in result.stdout.splitlines():
+                key, _, value = line.partition(" ")
+                match = re.match(r"^submodule\.(.*)\.(path|url)$", key)
+                if match:
+                    records.setdefault(match.group(1), {})[match.group(2)] = value.strip()
+            parent_origin = git("remote", "get-url", "origin", cwd=repo, check=False).stdout.strip()
+            for record in records.values():
+                if not record.get("url") or not record.get("path"):
+                    continue
+                path = record["path"].replace("\\", "/")
+                # Reject traversal or absolute paths before any later operation.
+                if path in ("", ".") or PurePosixPath(path).is_absolute() or any(part in ("..", ".git") for part in PurePosixPath(path).parts) or re.match(r"^[A-Za-z]:", path):
+                    continue
+                resolved = (repo / path).resolve()
+                if resolved == repo or not resolved.is_relative_to(repo):
+                    continue
+                if normalise_remote(resolve_submodule_remote(record["url"], parent_origin)) != library_key:
+                    continue
+                identity = (repo, path)
+                if identity not in seen:
+                    seen.add(identity)
+                    found.append(Project(repo, path))
     return found
+
+
+def published_on_origin(head: str) -> tuple[bool, str]:
+    """Prove HEAD is reachable from a currently advertised origin ref, read-only."""
+    result = git("ls-remote", "--heads", "--tags", "origin", cwd=_ROOT, check=False)
+    if result.returncode:
+        return False, "cannot query origin: " + result.stderr.strip()
+    refs = [line.split()[0] for line in result.stdout.splitlines() if line.split()]
+    for sha in refs:
+        if sha == head:
+            return True, "HEAD is advertised by origin"
+        result = git("merge-base", "--is-ancestor", head, sha, cwd=_ROOT, check=False)
+        if result.returncode == 0:
+            return True, "HEAD is an ancestor of an advertised origin ref"
+    return False, "HEAD is not provably published on origin; push it, or fetch origin if advertised newer objects are unavailable locally"
+
+
+def readiness() -> tuple[str | None, list[str]]:
+    result = git("rev-parse", "--verify", "HEAD", cwd=_ROOT, check=False)
+    head = result.stdout.strip() if result.returncode == 0 else None
+    issues = []
+    if not head:
+        issues.append("this library has no commit yet")
+    status = git("status", "--porcelain", "--untracked-files=all", cwd=_ROOT, check=False)
+    if status.returncode:
+        issues.append("cannot inspect library status")
+    elif status.stdout.strip():
+        issues.append("this library has uncommitted changes")
+    if head:
+        published, reason = published_on_origin(head)
+        if not published:
+            issues.append(reason)
+    return head, issues
+
+
+def consumer_ready(project: Project) -> None:
+    if not git("branch", "--show-current", cwd=project.repo).stdout.strip():
+        raise ValueError("consumer HEAD is detached; select its intended branch first")
+    if git("diff", "HEAD", "--", ".gitmodules", cwd=project.repo).stdout.strip():
+        raise ValueError("consumer has pending .gitmodules changes; finish registration first")
+    if git("diff", "--cached", "--name-only", "--", project.sub_path, cwd=project.repo).stdout.strip():
+        raise ValueError("submodule path is already staged; preserve the owner's pending pin")
+    if (project.sub_dir / ".git").exists():
+        if git("status", "--porcelain", "--untracked-files=all", cwd=project.sub_dir).stdout.strip():
+            raise ValueError("submodule contains local changes")
+        if project.pinned_sha() != git("rev-parse", "HEAD", cwd=project.sub_dir).stdout.strip():
+            raise ValueError("submodule checkout differs from the committed pin")
+
+
+def push_project(project: Project) -> None:
+    """Never publish unrelated, already-pending consumer commits."""
+    branch = git("branch", "--show-current", cwd=project.repo).stdout.strip()
+    if not branch:
+        raise ValueError("cannot push a detached consumer")
+    head = git("rev-parse", "HEAD", cwd=project.repo).stdout.strip()
+    advertised = git("ls-remote", "--heads", "origin", f"refs/heads/{branch}", cwd=project.repo).stdout.split()
+    if not advertised:
+        raise ValueError("consumer branch is unpublished; publish its initial history explicitly")
+    remote = advertised[0]
+    if remote == head:
+        return
+    git("fetch", "origin", branch, cwd=project.repo)
+    if git("merge-base", "--is-ancestor", remote, head, cwd=project.repo, check=False).returncode:
+        raise ValueError("consumer branch is behind or diverged; reconcile it before pushing")
+    commits = git("rev-list", f"{remote}..{head}", cwd=project.repo).stdout.split()
+    for commit in commits:
+        parents = git("rev-list", "--parents", "-n", "1", commit, cwd=project.repo).stdout.split()
+        paths = set(git("diff-tree", "--no-commit-id", "--name-only", "-r", commit, cwd=project.repo).stdout.splitlines())
+        if len(parents) != 2 or not paths or paths - {project.sub_path}:
+            raise ValueError("unpublished consumer commits include unrelated changes; publish them explicitly")
+    git("push", "origin", f"{head}:refs/heads/{branch}", cwd=project.repo)
+
+
+def update_project(project: Project, head: str, *, message: str | None, push: bool) -> None:
+    consumer_ready(project)
+    sub_dir = project.sub_dir
+    if not (sub_dir / ".git").exists():
+        if sub_dir.exists() and any(sub_dir.iterdir()):
+            raise ValueError("uninitialized submodule directory is not empty")
+        git("submodule", "update", "--init", "--", project.sub_path, cwd=project.repo)
+    library_origin = git("remote", "get-url", "origin", cwd=_ROOT).stdout.strip()
+    submodule_origin = git("remote", "get-url", "origin", cwd=sub_dir).stdout.strip()
+    if normalise_remote(submodule_origin) != normalise_remote(library_origin):
+        raise ValueError("initialized submodule origin differs from the canonical library origin; inspect/sync it first")
+    # A clean submodule protects local edits, untracked work and user-created branches.
+    if git("status", "--porcelain", "--untracked-files=all", cwd=sub_dir).stdout.strip():
+        raise ValueError("submodule contains local changes")
+    if git("diff", "--cached", "--name-only", "--", project.sub_path, cwd=project.repo).stdout.strip():
+        raise ValueError("submodule path is already staged; preserve the owner's pending pin")
+    old = project.pinned_sha()
+    checkout = git("rev-parse", "HEAD", cwd=sub_dir).stdout.strip()
+    if old != checkout:
+        raise ValueError("submodule checkout differs from the committed pin; preserve the owner's pending pin")
+    git("fetch", "origin", cwd=sub_dir)
+    git("cat-file", "-e", head + "^{commit}", cwd=sub_dir)
+    git("checkout", "--quiet", "--detach", head, cwd=sub_dir)
+    git("add", "--", project.sub_path, cwd=project.repo)
+    commit_message = message or f"Bump {project.sub_path} pin to {head[:7]}"
+    # Path-limited commit preserves every unrelated staged/unstaged downstream file.
+    git("commit", "-m", commit_message, "--", project.sub_path, cwd=project.repo)
+    project.status, project.detail = "updated", f"committed {head[:7]}"
+    if push:
+        push_project(project)
+        project.detail += " and pushed"
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--root", action="append", default=None, metavar="DIR",
-                    help="where to look for projects (repeatable; default: "
-                         "the parent folder of this repository)")
-    ap.add_argument("--depth", type=int, default=3, metavar="N",
-                    help="how many directory levels below each root to scan "
-                         "for .gitmodules (default: 3)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="report the plan, change nothing")
-    ap.add_argument("--push", action="store_true",
-                    help="also push each downstream project after committing")
-    ap.add_argument("--allow-dirty", action="store_true",
-                    help="propagate even if this repository is dirty or "
-                         "unpushed (unsafe: the pin may not exist on origin)")
-    ap.add_argument("--message", default=None, metavar="MSG",
-                    help="commit message for the pin bump")
+    ap.add_argument("--root", action="append", metavar="DIR", help="consumer search root (repeatable; default is this repository's parent)")
+    ap.add_argument("--project", action="append", help="exact consumer folder name or absolute path")
+    ap.add_argument("--depth", type=int, default=3)
+    ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--push", action="store_true")
+    ap.add_argument("--message", metavar="MSG")
+    ap.add_argument("--allow-dirty", action="store_true", help="legacy spelling: permits discovery in dry-run only; never bypasses write safety")
     args = ap.parse_args(argv)
-
-    # ---- this repository: identity and readiness -------------------------
-    try:
-        origin = git("remote", "get-url", "origin", cwd=_ROOT).stdout.strip()
-    except subprocess.CalledProcessError:
-        print("ERROR: this repository has no 'origin' remote.", file=sys.stderr)
+    if args.depth < 0:
+        ap.error("--depth must be nonnegative")
+    origin = git("remote", "get-url", "origin", cwd=_ROOT, check=False)
+    if origin.returncode or not origin.stdout.strip():
+        print("ERROR: this repository has no origin remote; consumer identity cannot be inferred.", file=sys.stderr)
         return 2
-    key = normalise_remote(origin)
-    head = git("rev-parse", "HEAD", cwd=_ROOT).stdout.strip()
-    short = head[:7]
-
-    dirty = bool(git("status", "--porcelain", cwd=_ROOT).stdout.strip())
-    unpushed = git("log", "--oneline", "@{u}..HEAD", cwd=_ROOT,
-                   check=False).stdout.strip()
-
-    bar = "=" * 78
-    print(bar)
-    print(f"  Propagating {key} @ {short}")
-    print(f"  {git('log', '-1', '--pretty=%s', cwd=_ROOT).stdout.strip()}")
-    print(bar)
-
-    if (dirty or unpushed) and not args.allow_dirty:
-        if dirty:
-            print("  REFUSING: this repository has uncommitted changes.")
-            print("  Commit them first — otherwise you would pin a commit that")
-            print("  does not include your newest work.")
-        if unpushed:
-            print("  REFUSING: this repository has unpushed commits:")
-            for line in unpushed.splitlines():
-                print(f"    {line}")
-            print("  Push first — a pin must exist on origin, or collaborators")
-            print("  cannot fetch it.")
-        print("  (override with --allow-dirty if you are sure)")
+    if args.allow_dirty and not args.dry_run:
+        print("ERROR: --allow-dirty is only supported with --dry-run; dirty/unpublished library updates are refused.", file=sys.stderr)
         return 2
-
-    # ---- find the consumers ---------------------------------------------
-    roots = [Path(r) for r in args.root] if args.root else [_ROOT.parent]
+    key = normalise_remote(origin.stdout.strip())
+    head, issues = readiness()
+    print(f"Library origin: {key}; target: {head or '(no commit yet)'}")
+    for issue in issues:
+        print(("[DISCOVERY ONLY] " if args.dry_run else "[REFUSING] ") + issue)
+    if issues and not args.dry_run:
+        return 2
+    default_root = _ROOT.parent.parent if (_ROOT.parent / "scripts/workspace.py").is_file() else _ROOT.parent
+    roots = [Path(root) for root in args.root] if args.root else [default_root]
     projects = discover(roots, key, args.depth)
+    if args.project:
+        projects = [p for p in projects if any(
+            p.repo.name == selection or p.repo == Path(selection).resolve()
+            for selection in args.project)]
     if not projects:
-        print(f"  No downstream projects found under: "
-              f"{', '.join(str(r) for r in roots)}")
-        return 0
-
-    # ---- update each -----------------------------------------------------
-    for p in projects:
-        before = p.pinned_sha()
-        label = f"{p.repo.name}/{p.sub_path}"
-        if before == head:
-            p.status, p.detail = "current", f"already at {short}"
-            print(f"\n  [=] {label}: {p.detail}")
-            continue
-        if not p.sub_dir.is_dir():
-            p.status, p.detail = "missing", "submodule folder not initialised"
-            print(f"\n  [!] {label}: {p.detail} — run 'git submodule update --init'")
-            continue
-
-        print(f"\n  [>] {label}: {(before or 'unpinned')[:7]} -> {short}")
+        print("No downstream consumers found in the selected search roots.")
+    for project in projects:
+        before = project.pinned_sha()
+        label = f"{project.repo}/{project.sub_path}"
         if args.dry_run:
-            p.status, p.detail = "would update", f"{(before or '?')[:7]} -> {short}"
+            action = "already pinned" if head and before == head else "would update" if head and not issues else "discovered; library not ready"
+            print(f"[PLAN] {label}: {before or '(no gitlink)'} -> {head or '(no commit)'} ({action})")
             continue
-        try:
-            git("fetch", "origin", cwd=p.sub_dir)
-            git("checkout", "--quiet", head, cwd=p.sub_dir)
-            git("add", "--", p.sub_path, cwd=p.repo)
-            staged = git("diff", "--cached", "--name-only", cwd=p.repo).stdout
-            if p.sub_path.replace("\\", "/") in staged.replace("\\", "/"):
-                msg = args.message or f"Bump {p.sub_path} pin to {short}"
-                # path-limited commit: never sweeps up unrelated dirty files
-                git("commit", "-m", msg, "--", p.sub_path, cwd=p.repo)
-                p.status, p.detail = "updated", f"committed {short}"
-            else:
-                p.status, p.detail = "current", "nothing staged"
-            if args.push and p.status == "updated":
-                git("push", cwd=p.repo)
-                p.detail += " + pushed"
-        except subprocess.CalledProcessError as exc:
-            p.status = "FAILED"
-            p.detail = (exc.stderr or exc.stdout or str(exc)).strip().splitlines()[-1]
-            print(f"      ERROR: {p.detail}")
-
-    # ---- summary ---------------------------------------------------------
-    print(f"\n{bar}")
-    print("  SUMMARY")
-    print(bar)
-    width = max(len(f"{p.repo.name}/{p.sub_path}") for p in projects)
-    for p in projects:
-        tag = {"updated": "UPDATED", "current": "  OK   ",
-               "would update": "  PLAN ", "missing": "MISSING",
-               "FAILED": "FAILED "}.get(p.status, p.status)
-        print(f"  [{tag}]  {f'{p.repo.name}/{p.sub_path}'.ljust(width)}   {p.detail}")
-    print(bar)
-    failed = [p for p in projects if p.status in ("FAILED", "missing")]
+        if before == head:
+            project.status, project.detail = "current", "already pinned"
+            # --push also supports resuming after a prior local-only update.
+            if args.push:
+                try:
+                    consumer_ready(project)
+                    push_project(project)
+                    project.detail += " and pushed"
+                except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+                    project.status, project.detail = "FAILED", (getattr(exc, "stderr", "") or str(exc)).strip()
+        else:
+            try:
+                if not before:
+                    raise ValueError("path is not a committed submodule gitlink")
+                update_project(project, head, message=args.message, push=args.push)
+            except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+                project.status = "FAILED"
+                project.detail = (getattr(exc, "stderr", "") or str(exc)).strip()
+        print(f"[{project.status}] {label}: {project.detail}")
     if args.dry_run:
-        print("  Dry run — nothing was changed.")
-    elif not args.push:
-        updated = [p for p in projects if p.status == "updated"]
-        if updated:
-            print("  Committed locally. Push each project when ready, or re-run "
-                  "with --push.")
-    print(bar)
-    return 1 if failed else 0
+        print("Dry run: no repository content, pins or commits changed.")
+    return int(any(project.status == "FAILED" for project in projects))
 
 
 if __name__ == "__main__":

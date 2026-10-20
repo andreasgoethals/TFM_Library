@@ -1,0 +1,12 @@
+{
+  "2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf": {
+    "zotero_item_key": "6V27GTTB",
+    "publication_year": "2022",
+    "sha256": "720d38855122622d52aeb1321c3d5d8e1b5a4ccd4c8a4c53575816ba6df59648",
+    "first_release_date": "2021-12-20",
+    "filename_basis": "first_public_release",
+    "filed_pdf_revision_date": null,
+    "evidence_url": "https://arxiv.org/abs/2112.10510",
+    "reason": "The PDF identifies ICLR 2022 on its first page but carries no arXiv version banner. Retain the historical chronology and stable path without treating December 2021 as the PDF revision date."
+  }
+}

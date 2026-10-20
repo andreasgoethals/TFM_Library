@@ -6,6 +6,11 @@ One line per change; one dated section per day.
 
 ## 2026-10-20
 
+- Recorded hash-bound first-release filing provenance for the founding PFN conference PDF, separating its 2021 chronology from ICLR 2022 publication and its unknown exact PDF revision date.
+
+- Joined the local Literature workspace while retaining an independent GitHub repository. Standardized configurable maintenance and exact-published-commit propagation; added consumer registration and unrelated-commit safeguards. Canonical edits are allowed from the parent workspace; downstream shared files remain read-only.
+- Unified read-only arXiv version checks, including an explicit primary submission-history fallback when the batch API is rate-limited; unresolved sources remain failures rather than false success.
+
 - Moved VSC infrastructure knowledge to the standalone [VSC Library](https://github.com/andreasgoethals/VSC_Library), keeping this library TFM-only.
 - Removed the VSC dump, refresh registration and duplicated guide; updated the maintenance contract and consumer pointers. The new library retains the source as `VSC Repository.txt`, adds guides/templates and refreshes it daily.
 

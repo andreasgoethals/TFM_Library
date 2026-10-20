@@ -115,6 +115,27 @@ class ComparisonTests(unittest.TestCase):
         _, report, _ = sync.compare(self.reader, self.collection)
         self.assertIn("Year mismatch without an arXiv version date", report.sections)
 
+    def test_explicit_historical_filing_is_hash_bound(self):
+        import hashlib
+        self.text.write_text("Published at ICLR 2022", encoding="utf-8")
+        entry = {
+            "zotero_item_key": self.reader.items.return_value[0]["key"],
+            "publication_year": "2022",
+            "sha256": hashlib.sha256(self.pdf.read_bytes()).hexdigest(),
+            "first_release_date": "2021-12-20",
+            "filename_basis": "first_public_release",
+            "evidence_url": "https://arxiv.org/abs/2112.10510",
+            "reason": "Fixture conference PDF has no revision date.",
+        }
+        (self.root / "filing_overrides.json").write_text(
+            json.dumps({self.pdf.relative_to(self.root).as_posix(): entry}))
+        _, report, notes = sync.compare(self.reader, self.collection)
+        self.assertEqual(report.total, 0)
+        self.assertIn("exact PDF revision date remains unknown", notes[0])
+        self.pdf.write_bytes(b"changed")
+        _, report, _ = sync.compare(self.reader, self.collection)
+        self.assertIn("Invalid filing provenance", report.sections)
+
     def test_missing_paper_and_extra_library_pdf_are_both_reported(self):
         self.reader.items.return_value = [item(title="Completely unrelated research")]
         self.reader.pdfs.return_value = []

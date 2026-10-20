@@ -39,6 +39,7 @@ the live audit could not be completed (so it can gate a maintenance run).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -217,6 +218,26 @@ def filed_date(pdf: Path) -> tuple[str, str | None]:
     return filename_date, version_date
 
 
+def legacy_filing(pdf: Path, key: str, year: str) -> str | None:
+    """Explicit, hash-bound historical filing basis; never infer a PDF month."""
+    manifest = _PAPERS / "filing_overrides.json"
+    if not manifest.exists():
+        return None
+    entries = json.loads(manifest.read_text(encoding="utf-8"))
+    entry = entries.get(pdf.relative_to(_PAPERS).as_posix())
+    if not entry:
+        return None
+    if (entry["zotero_item_key"] != key or entry["publication_year"] != year
+            or entry["sha256"] != hashlib.sha256(pdf.read_bytes()).hexdigest()
+            or entry["first_release_date"][:7] != f"{pdf.parent.name}-{pdf.name[:2]}"
+            or entry["filename_basis"] != "first_public_release"
+            or not entry["evidence_url"] or not entry["reason"]):
+        raise ValueError(f"Invalid or stale filing provenance for {pdf.name}")
+    return (f"{key}: historical filename uses first public release "
+            f"{entry['first_release_date']}; filed conference PDF publication year "
+            f"{year}; exact PDF revision date remains unknown. {entry['reason']}")
+
+
 def author_segment(creators: list[str]) -> str:
     if not creators:
         return ""
@@ -318,8 +339,16 @@ def compare(z: ZoteroReader, collection: dict) -> tuple[dict, Report, list[str]]
                 notes.append(f"{key}: Zotero date {date}; stored version "
                              f"{version_date} correctly retained ({name})")
         elif year and pdf.parent.name != year:
-            rep.add("Year mismatch without an arXiv version date",
-                    f"{label}: Zotero {year}, library {pdf.parent.name}")
+            try:
+                historical = legacy_filing(pdf, key, year)
+            except (ValueError, KeyError) as exc:
+                rep.add("Invalid filing provenance", str(exc))
+                historical = None
+            if historical:
+                notes.append(historical)
+            else:
+                rep.add("Year mismatch without an arXiv version date",
+                        f"{label}: Zotero {year}, library {pdf.parent.name}")
         if not (_PAPERS / "text" / pdf.parent.name / (pdf.stem + ".txt")).is_file():
             rep.add("PDFs with no text extraction", f"{pdf.parent.name}/{name}")
 

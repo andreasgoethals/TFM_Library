@@ -102,6 +102,8 @@ this folder and write them there.
 **arXiv:** [2112.10510](https://arxiv.org/abs/2112.10510) · **PDF:**
 [open](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf)
 
+**Provenance.** First public release: 20 December 2021; publication: ICLR 2022. The filed conference PDF has no exact revision date. The historical path and chronology use the first release, not an inferred PDF month; its hash and evidence are recorded in `papers/filing_overrides.json`.
+
 **Where it fits.** The bedrock of the entire PFN / TabPFN line. Müller and colleagues introduce
 *Prior-Fitted Networks* (PFNs): transformers that, after a single training phase on synthetic
 datasets sampled from a Bayesian prior, perform approximate posterior inference *in context* on
