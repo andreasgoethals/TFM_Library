@@ -52,6 +52,17 @@
         "symbols",
         "docs"
       ]
+    },
+    "external": {
+      "command": [
+        "scripts/dumps/refresh_external_sources.py"
+      ],
+      "mutating": true,
+      "description": "refresh official docs, model cards and filtered TabForestPFN source",
+      "post_checks": [
+        "symbols",
+        "docs"
+      ]
     }
   }
 }

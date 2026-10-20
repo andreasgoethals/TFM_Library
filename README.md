@@ -472,13 +472,19 @@ To update only that snapshot:
 python scripts/dumps/refresh_repositories.py --only "Test-Time Compute for Tabular Foundation Models.txt"
 ```
 
-Two warnings from this script are **permanent and expected**. The shrink
-guard on `On Finetuning Tabular Foundation Models.txt` fails *correctly*:
-upstream deleted its entire `exp/` directory including all 342
-`report.json` reports, so this dump is now the only surviving copy —
-never `--force-shrink` it. And `TabForestPFN.txt` reports SKIP because it
-is too large for gitingest's clone timeout; refresh it with the
-sparse-clone recipe in the script's docstring.
+The additional `external` maintenance stage refreshes `TabForestPFN.txt`,
+`TabPFN Docs.txt` and `Huggingface TabPFN.txt` automatically. It resolves a
+source-only Git tree for TabForestPFN, the complete official Markdown export
+for docs, and immutable revisions for both model cards. No model weights or
+archived experiment results are downloaded. To run only this stage:
+
+```bash
+python scripts/maintain.py --only external
+```
+
+The ordinary repository refresher labels these three files as handled by the
+external stage. Preserve shrink guards: a substantial reduction requires
+review before an explicit `--force-shrink` retry.
 
 ### `scripts/hooks/` — catching mistakes before they are committed
 

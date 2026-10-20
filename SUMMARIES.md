@@ -67,11 +67,10 @@ this folder and write them there.
 | 2026-01 | Ma et al. | TabDPT — Scaling Tabular Foundation Models on Real Data | Real-data-only TabPFN competitor; retrieval-based self-supervision on OpenML. | [pdf](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) |
 | 2026-02 | Grinsztajn et al. | **TabPFN-2.5** — Advancing the State of the Art in Tabular Foundation Models | Successor architecture (18–24 layers, 50 k×2000 limit) and the family of v2.5 checkpoints. | [pdf](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) |
 | 2026-02 | Ma et al. | Foundation Models for Causal Inference via Prior-Data Fitted Networks | Unified causal-PFN framework; Do-PFN + FairPFN at scale. | [pdf](papers/2026/02_Ma_et_al._Foundation_Models_for_Causal_Inference_via_Prior_Data_Fitted_Networks.pdf) |
-| 2026-02 | Qu et al. | TabICLv2 — A better, faster, scalable, and open tabular foundation model | Improved TabICL with bigger context limit and open weights. | [pdf](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) |
 | 2026-03 | Kolberg et al. | **TabPFN-Wide** — Continued Pre-Training for Extreme Feature Counts | Continued-pretraining for >500-feature data via a feature-widening synthetic prior (argues *against* feature reduction). | [pdf](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) |
 | 2026-04 | Tanna et al. | **Exploring Fine-Tuning for Tabular Foundation Models** | First large-scale study of *when* fine-tuning helps TFMs (zero-shot vs meta-learning vs SFT vs PEFT/LoRA across TALENT / OpenML-CC18 / TabZilla). Full SFT can hurt accuracy & calibration; gains are model- and data-dependent; TabPFN is comparatively robust. | [pdf](papers/2026/04_Tanna_et_al._Exploring_Fine_Tuning_for_Tabular_Foundation_Models.pdf) |
 | 2026-04 | Bouadi et al. | **Orion-BiX** — Bi-Axial Attention for Tabular In-Context Learning | Bi-axial encoder (standard / grouped / hierarchical / relational attention fused by multi-CLS) plus a label-aware ICL head with hierarchical routing for large label spaces. | [pdf](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf) |
-| 2026-05 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The current frontier of the TabPFN line.** New three-stage architecture (column-wise → row-wise → ICL), scales to 1M rows on a single H100, many-class attention decoder, "Thinking" test-time-compute mode. Synthetic-prior only, +200 Elo over TabPFN-2.6 on TabArena-medium. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
+| 2026-05 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The May 2026 TabPFN generation.** New three-stage architecture (column-wise → row-wise → ICL), scales to 1M rows on a single H100, many-class attention decoder, "Thinking" test-time-compute mode. Synthetic-prior only, +200 Elo over TabPFN-2.6 on TabArena-medium. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
 | 2026-05 | Tanna et al. | **Data Presentation Over Architecture** — Resampling Strategies for Credit Risk Prediction with TFMs | On Home Credit and Lending Club, **how the context window is built explains more AUC variance than which TFM you pick**: balanced/hybrid sampling adds 3–4 AUC points over uniform, exceeding the spread between TFM families. | [pdf](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf) |
 | 2026-05 | Hosseinzadeh et al. | **TabDPT-Turbo** — Efficient In-Context Learning for Tabular Prediction | The retrieval branch recants: drops TabDPT's retrieval for **long-context pretraining**, stays row-based, scales the real corpus to 1,445 OpenML tables — matching TabDPT v1.1 quality orders of magnitude faster. Shipped as TabDPT v1.2. | [pdf](papers/2026/05_Hosseinzadeh_et_al._TabDPT_Turbo_Efficient_In_Context_Learning_for_Tabular_Prediction.pdf) |
 | 2026-05 | Bouadi et al. | **O'Prior** — Shaping the Prior: How Synthetic Task Distributions Determine TFM Quality | **The first controlled study of prior design as the sole variable**: architecture, optimizer and compute held fixed, only the synthetic task distribution varied. Structural mechanism diversity is the strongest driver of transfer; realism and shift-stress add complementary gains. | [pdf](papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf) |
@@ -82,6 +81,7 @@ this folder and write them there.
 | 2026-07 | Baesens et al. | **Foundation Models for Credit Risk Prediction: A Game Changer?** | Untuned TFMs compete strongly on 14 PD and 7 LGD datasets, especially with little data; discrimination and probability quality select different winners, and no LGD pair survives Holm correction. | [pdf](papers/2026/07_Baesens_et_al._Foundation_Models_for_Credit_Risk_Prediction_A_Game_Changer.pdf) |
 | 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Pretraining on a *single* real table transfers across domains, which the Bayesian prior-fitting account cannot explain; argues TFMs are learned **retrieval-and-aggregation** procedures instead. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Eo et al. | **EXAONE Tabular 1.0** — Technical Report | Removes the row-compression boundary: feature-axis and item-axis attention interleave at every layer. A 20.8M model ranks first on TabArena classification, untuned. | [pdf](papers/2026/08_Eo_et_al._EXAONE_Tabular_1.0_Technical_Report.pdf) |
+| 2026-09 | Qu et al. | TabICLv2 — A better, faster, scalable, and open tabular foundation model | Improved TabICL with bigger context limit and open weights. | [pdf](papers/2026/09_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) |
 | 2026-09 | Jäger et al. | **TabPFN-3.5** — Technical Report | Answers *Beyond IID* on its own benchmark: first place on **all seven** suites, including the grouped, temporal, wide and high-cardinality regimes where TFMs had been losing to tuned GBDTs. | [pdf](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf) |
 | 2026-09 | Tao et al. | **Mitra-v2** — Technical Report | Architecture held fixed, task distribution widened tenfold: 77M parameters reach the 1.64B TabFM's level. The most candid limitations section in this corpus. | [pdf](papers/2026/09_Tao_et_al._Mitra_v2_Technical_Report.pdf) |
 | 2026-09 | Xiaomi-TabLDM Team | **Xiaomi-TabLDM** — A Tabular Foundation Model | First **sparse Mixture-of-Experts** in a TFM, and a deliberate regression specialist: 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost. | [pdf](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf) |
@@ -1599,50 +1599,6 @@ uncertainty without ever evaluating calibration or coverage.
 
 ---
 
-<a id="tabiclv2"></a>
-
-## 2026-02 — Qu et al. — TabICLv2
-
-**arXiv:** [2602.11139](https://arxiv.org/abs/2602.11139) · **PDF:**
-[open](papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf)
-
-**Where it fits.** Direct successor to TabICL — full state-of-the- art tabular FM, **fully
-open** (inference code, model weights, synthetic-data engine, and pretraining code), explicitly
-framed as a "let's democratize the recipe so the field can build on top" release. Beats
-RealTabPFN-2.5 on TabArena even after RealTabPFN-2.5 is hyperparameter-tuned, ensembled, and
-fine-tuned on real data.
-
-**What it contains.** Three pillars of contributions, each with substantial detail.
-
-1. **A novel synthetic-data generation engine** focused on
-*diversity*. Builds on TabICL's distribution-aware feature embeddings and adds new SCM
-construction primitives, tree-ensemble priors (à la Mitra), and a controllable difficulty
-curriculum. The release of this generator is part of the paper's open-science contribution.
-2. **Architectural innovations.** The most interesting one for
-the TabPFN line: a **scalable softmax** in the attention layers that solves the "attention
-fading" problem — as context length n grows, vanilla softmax's denominator grows too, flattening
-the attention distribution and preventing the model from focusing sharply. TabICLv2 scales
-attention logits by `s log n` (where s is a learnable per-head parameter), maintaining
-discriminative attention even at very large context sizes. This is what unlocks generalisation
-to **million-scale datasets in under 50 GB GPU memory**. Concurrent theoretical work (Chen 2025)
-confirms `log n` scaling is *necessary* to maintain attention sharpness as n grows.
-3. **Optimisation protocol.** Replaces AdamW with the **Muon**
-optimizer (Jordan 2024), which converges faster on the transformer-style training loop. Combined
-with the new prior and architecture, this delivers TabICLv2's headline result: surpassing the
-strongest previously-published TFM (RealTabPFN-2.5) on TabArena and TALENT benchmarks **without
-any hyperparameter tuning**.
-
-Comprehensive ablations quantify each contribution.
-
-**Strengths.** Untuned SOTA with fully open weights and zero real-data leakage concerns, and
-ablations showing the prior is the largest effect (with strong architecture×prior interaction).
-
-**Limitations.** Mean-imputes missing values (harmful for informative missingness), ignores
-column-name semantics, never reports calibration despite log-loss metrics, and the
-prior/pretraining code was not yet released.
-
----
-
 <a id="tabpfn-wide"></a>
 
 
@@ -1926,7 +1882,13 @@ isolating it from the corpus scaling, so the four changes cannot be individually
 ## 2026-05 — Grinsztajn et al. — TabPFN-3 (Technical Report)
 
 **arXiv:** [2605.13986](https://arxiv.org/abs/2605.13986) · **PDF:**
-[open](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) · **Date:** May 12, 2026
+[open](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) · **Filed version:** v2, 28 May 2026
+
+The revision explicitly attributes the retrieval decoder to earlier target-equivariant
+and localization work (Section 2.2). The attention decoder is a continuation of that
+line, rather than an isolated invention. Provider-reported benchmark gains remain
+subject to the report's comparator, hardware and licensing conditions.
+
 
 **Where it fits.** Prior Labs' next-generation tabular foundation model after TabPFN-2.5 / 2.6.
 A clean architectural reset rather than a continued-pretraining variant: a three-stage
@@ -2421,6 +2383,59 @@ again. And the synthetic-only prior plants it firmly on one side of the question
 
 ---
 
+<a id="tabiclv2"></a>
+
+## 2026-09 — Qu et al. — TabICLv2
+
+**arXiv:** [2602.11139](https://arxiv.org/abs/2602.11139) · **PDF:**
+[open](papers/2026/09_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf)
+
+**Provenance.** ICML 2026 / PMLR 306; first released 11 February 2026.
+The filed PDF is arXiv v2, dated 16 September 2026. Appendix L adds ensemble-size,
+direct statistical, few-shot, LLM-comparison and label-noise experiments. Most
+ensemble gains occur by eight members; the 16-example benchmark ranks behind
+RealTabPFN-2.5. LLM comparisons cover only nine classification datasets. Random
+forest routing reduces memory but worsens TabICLv2 accuracy and runtime. These
+bounded comparisons do not establish universal superiority or robustness.
+
+
+**Where it fits.** Direct successor to TabICL — full state-of-the- art tabular FM, **fully
+open** (inference code, model weights, synthetic-data engine, and pretraining code), explicitly
+framed as a "let's democratize the recipe so the field can build on top" release. Beats
+RealTabPFN-2.5 on TabArena even after RealTabPFN-2.5 is hyperparameter-tuned, ensembled, and
+fine-tuned on real data.
+
+**What it contains.** Three pillars of contributions, each with substantial detail.
+
+1. **A novel synthetic-data generation engine** focused on
+*diversity*. Builds on TabICL's distribution-aware feature embeddings and adds new SCM
+construction primitives, tree-ensemble priors (à la Mitra), and a controllable difficulty
+curriculum. The release of this generator is part of the paper's open-science contribution.
+2. **Architectural innovations.** The most interesting one for
+the TabPFN line: a **scalable softmax** in the attention layers that solves the "attention
+fading" problem — as context length n grows, vanilla softmax's denominator grows too, flattening
+the attention distribution and preventing the model from focusing sharply. TabICLv2 scales
+attention logits by `s log n` (where s is a learnable per-head parameter), maintaining
+discriminative attention even at very large context sizes. This is what unlocks generalisation
+to **million-scale datasets in under 50 GB GPU memory**. Concurrent theoretical work (Chen 2025)
+confirms `log n` scaling is *necessary* to maintain attention sharpness as n grows.
+3. **Optimisation protocol.** Replaces AdamW with the **Muon**
+optimizer (Jordan 2024), which converges faster on the transformer-style training loop. Combined
+with the new prior and architecture, this delivers TabICLv2's headline result: surpassing the
+strongest previously-published TFM (RealTabPFN-2.5) on TabArena and TALENT benchmarks **without
+any hyperparameter tuning**.
+
+Comprehensive ablations quantify each contribution.
+
+**Strengths.** Strong untuned benchmark results with open weights and synthetic pretraining, and
+ablations showing the prior is the largest effect (with strong architecture×prior interaction).
+
+**Limitations.** Mean-imputes missing values (harmful for informative missingness), ignores
+column-name semantics, never reports calibration despite log-loss metrics, and the
+small auxiliary benchmarks limit broader robustness claims. The v2 paper reports the prior and pretraining code released; the earlier pending-release limitation is superseded.
+
+---
+
 <a id="tabpfn-3-5"></a>
 
 ## 2026-09 — Jäger et al. — TabPFN-3.5: Technical Report
@@ -2429,7 +2444,13 @@ again. And the synthetic-only prior plants it firmly on one side of the question
 code Apache 2.0, weights under a bespoke *TabPFN-3.5 License v1.0* ·
 **PDF:** [open](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf)
 
-**Where it fits.** The successor to [TabPFN-3](#tabpfn-3), six months on — but the more
+**Filed version.** arXiv v2, 22 September 2026; first release 15 September.
+The revised report expands the architecture presentation and comparator references.
+Its seven-suite headline uses the best family member per suite, including API-only
+variants; it is not a seven-suite win by a single downloadable checkpoint.
+
+
+**Where it fits.** The successor to [TabPFN-3](#tabpfn-3), four months on — but the more
 interesting relationship is with
 [Purucker et al. 2026, *Beyond IID*](#beyond-iid). That paper, **co-authored by Prior Labs
 itself**, found that TFMs win on clean i.i.d. benchmarks and then lose to tuned RealMLP and

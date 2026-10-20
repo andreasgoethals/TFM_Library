@@ -6,6 +6,12 @@ One line per change; one dated section per day.
 
 ## 2026-10-20
 
+- Fixed nondeterministic omission of Yandex finetuning reports/configs caused by the scraper's unordered handling of negated ignore rules. Explicit text selection retains reports and TOML configurations while excluding weights/data; added a regression using a real local Git fixture.
+
+- Refreshed 19 ordinary implementation snapshots and automated the three former manual exceptions: TabForestPFN source/config/licenses, the complete official docs export and both immutable model cards. Reviewed the shorter current model-card sources before accepting their shrink; archived experiment outputs remain excluded.
+
+- Updated TabICLv2, TabPFN-3 and TabPFN-3.5 to their verified arXiv v2 PDFs; regenerated text, moved TabICLv2 to its September filing date, retained stable anchors, and recorded hashes/version provenance. Zotero attachments remain unchanged.
+
 - Recorded hash-bound first-release filing provenance for the founding PFN conference PDF, separating its 2021 chronology from ICLR 2022 publication and its unknown exact PDF revision date.
 
 - Joined the local Literature workspace while retaining an independent GitHub repository. Standardized configurable maintenance and exact-published-commit propagation; added consumer registration and unrelated-commit safeguards. Canonical edits are allowed from the parent workspace; downstream shared files remain read-only.

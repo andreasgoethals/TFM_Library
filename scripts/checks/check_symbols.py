@@ -126,7 +126,9 @@ def is_symbol(tok: str) -> bool:
     tok = tok.strip()
     if tok in _IGNORE or tok in _OWN or tok.startswith(_IGNORE_PREFIX):
         return False
-    if tok.endswith((".txt", ".md", ".pdf", ".ipynb")) or " " in tok:
+    if tok.endswith((".txt", ".pdf", ".ipynb")) or " " in tok:
+        return False
+    if tok.endswith(".md") and ("/" not in tok or (ROOT / tok).is_file()):
         return False
     if "XXX" in tok:                       # `stg_XXXXX` — a prose placeholder
         return False

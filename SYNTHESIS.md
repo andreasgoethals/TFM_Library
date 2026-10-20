@@ -77,7 +77,6 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-01 | Hoo 2026 (*From Tables to Time*) | Zero-shot forecasting via hand-crafted temporal features into frozen TabPFN-v2 regression; SOTA on covariate-informed tasks | Hoo 2024; TabPFN v2 regressor |
 | 2026-01 | Klein & Hoffart 2026 | SAP position: TFMs need grounding in operational context (code, rules, KGs) via "Semantically Linked Tables", not isolated-table ICL | Critique of the whole ICL-on-one-table trunk |
 | 2026-02 | Grinsztajn/Prior Labs 2026 (TabPFN-2.5) | Synthetic-prior ICL to 50k rows / 2k features; tops TabArena; Real-TabPFN-2.5 variant + MLP/tree distillation | TabPFN v2; Garg 2025 |
-| 2026-02 | Qu 2026 | Fully open TFM: new SCM prior + QASSMax attention + Muon pretraining; beats Real-TabPFN-2.5 untuned; native million-row scale, ~10x faster | TabICL; TabPFN-2.5 |
 | 2026-02 | Ma 2026 (CausalFM) | PFNs on identifiability-constrained SCM priors do Bayesian CATE estimation in-context for back-door, front-door, IV settings | Do-PFN; Müller 2021 |
 | 2026-03 | Kolberg 2026 (*TabPFN-Wide*) | Continued pretraining on a synthetic feature-widening prior handles 30k+ features (HDLSS) without feature reduction | TabPFN v2; Garg 2025 CPT recipe |
 | 2026-04 | Tanna 2026 | Benchmark of zero-shot vs meta/SFT/LoRA across six TFMs: finetuning rarely helps, often hurts accuracy *and calibration*; TabPFN tolerates SFT best | TabTune (Tanna 2025) |
@@ -93,6 +92,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-07 | Baesens 2026 (*Foundation Models for Credit Risk Prediction: A Game Changer?*) | Competitive untuned TFMs on 14 PD and 7 LGD datasets; small-data advantage, different discrimination/probability-score winners, no Holm-significant LGD pair | TabPFN v1/v2; TabICL; Real-TabPFN; Mitra; credit-domain evaluation |
 | 2026-08 | Shaheen 2026 (*Understanding the Surprising Generalization Properties of TFMs*) | Pretraining on a *single* real table transfers across domains; feature count (not row count) predicts transfer; argues TFMs are learned retrieval-and-aggregation, not prior-fitted Bayesian inference | Nagler 2023 localisation; TabDPT procedure; challenges Müller 2021 |
 | 2026-08 | Eo 2026 (*EXAONE Tabular 1.0*) | Removes the row-compression boundary entirely — feature- and item-axis attention interleave at every layer; 20.8M params rank 1st on TabArena classification untuned, and tie 1.64B TabFM | CAST; synthetic-only SCM prior; TabPFN v2 vs TabICL/TabPFN-3 architectures |
+| 2026-09 | Qu 2026 (*TabICLv2*, v2; first released February) | Fully open TFM: new SCM prior + QASSMax attention + Muon pretraining; beats Real-TabPFN-2.5 untuned; native million-row scale, ~10x faster | TabICL; TabPFN-2.5 |
 | 2026-09 | Jäger 2026 (*TabPFN-3.5*) | Answers *Beyond IID* on its own benchmark: 1st on **all seven** suites, incl. grouped/temporal/wide/high-cardinality, where TFMs had trailed tuned GBDTs. Fourier cell encodings, doubled width at constant KV cache, prior retuned for those regimes | TabPFN-3; Purucker 2026; TabFM encodings; TabICLv2 prior |
 | 2026-09 | Tao 2026 (*Mitra-v2*) | Architecture held fixed, task distribution widened ~10×: 77M params reach 1.64B TabFM's level; 1st on >10-class tasks never seen in pretraining. Declares its own non-attribution | Mitra-v1; Hybrid SCM; Muon; Apache-2.0 |
 | 2026-09 | Xiaomi Team 2026 (*Xiaomi-TabLDM*) | First **sparse MoE** inside a TFM; dual-stream feature grouping extending TabICLv2; deliberate regression specialist — 1st on OpenML-CTR23, 2nd on TabArena regression at a fraction of TabFM's cost | TabICLv2 (QASSMax, grouping); TabFM |
@@ -738,3 +738,14 @@ remains similarly open despite the prior-level construction in *FairPFN*.
 ---
 
 For the per-paper treatment — venue, method, headline numbers, strengths and limitations, one complete summary per paper — see [`SUMMARIES.md`](SUMMARIES.md).
+
+
+The September revision of Qu et al. (2026), *TabICLv2: A Better, Faster, Scalable,
+and Open Tabular Foundation Model*, adds useful qualifications in Appendix L:
+few-shot performance trails RealTabPFN-2.5 at 16 examples, and random-forest
+context partitioning hurts this backbone even though it helped earlier ones.
+This supports evaluating context-selection strategies per architecture rather
+than transferring gains unchanged. TabPFN-3's May revision credits earlier
+retrieval-decoder work; TabPFN-3.5's September revision still reports the best
+family member per benchmark, including API-only variants. These are distinct
+claims from uniformly superior performance of one locally runnable checkpoint.

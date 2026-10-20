@@ -20,7 +20,7 @@ Skipped on purpose
     :data:`SKIP_NON_GIT` lists files whose upstream is not a Git repo
     (Hugging Face model card, public docs site without a GitHub mirror,
     …). :data:`SKIP_MANUAL` lists Git repos too large for gitingest's
-    clone timeout, refreshed by hand with the recipe below. Both print as
+    clone timeout, handled by the external maintenance stage. Both print as
     ``SKIP`` in the summary so it's clear they were intentionally not
     touched — neither is an error.
 
@@ -46,23 +46,11 @@ Running it
         python scripts/dumps/refresh_repositories.py --only "TabPFN .txt" --only "PFNS.txt"
         python scripts/dumps/refresh_repositories.py --force-shrink
 
-Very large repositories
-    gitingest clones before it filters, and the installed release
-    hardcodes a 60 s clone timeout that ``--timeout`` cannot raise. A
-    repository whose *history* is large therefore fails even when the
-    files you want are tiny (``TabForestPFN`` is 1.36 GB of experiment
-    artifacts around 1.2 MB of Python). Workaround — sparse-clone the
-    source files yourself, then point ``ingest`` at the local directory,
-    which has no timeout::
-
-        git clone --depth=1 --filter=blob:none --no-checkout <url> /tmp/x
-        cd /tmp/x && git sparse-checkout init --no-cone
-        git sparse-checkout set '/*.py' '/*.md' '<pkg>/**/*.py' && git checkout
-        python -c "from gitingest import ingest; ingest(source='/tmp/x', \\
-            output='repositories/<Name>.txt', include_patterns={'*.py','*.md'})"
-
-    Then fix the first tree line to the upstream slug
-    (``felixdenbreejen-tabforestpfn/``) so the dump looks like the others.
+Very large and non-Git sources
+    The external maintenance stage handles TabForestPFN through a filtered,
+    revision-pinned source tree, official docs through their complete Markdown
+    export, and model cards through immutable Hugging Face revisions. Run
+    scripts/dumps/refresh_external_sources.py or the normal maintain.py entrypoint.
 
 Dependencies
     ``pip install -r requirements.txt``  (gitingest, pypdf).
@@ -186,8 +174,17 @@ REPOSITORIES: dict[str, str | dict] = {
         "url": "https://github.com/soda-inria/nanotabicl",
         "note": "TabICLv2 release — prior generator + pretraining code",
     },
-    "On Finetuning Tabular Foundation Models.txt":
-        "https://github.com/yandex-research/tabpfn-finetuning",
+    "On Finetuning Tabular Foundation Models.txt": {
+        "url": "https://github.com/yandex-research/tabpfn-finetuning",
+        # Upstream negates exp/**/*.* for DONE, report.json and TOML configs.
+        # Gitingest stores ignore rules in an unordered set, losing Git's
+        # last-match semantics. Select the useful text explicitly instead.
+        "include_gitignored": True,
+        "include": _PY_DOCS | {"*.json", "*.ini", "*.sh", "*.lock",
+                               "DONE", "LICENSE*", "NOTICE*"},
+        "exclude": {"data/*", "data2/*", "exp/debug/*", "archive/*"},
+        "note": "explicit source/config/report selection avoids unordered ignore negation",
+    },
     "PFNS.txt":
         # automl/PFNs was moved to SamuelGabriel/PFNs; use the new canonical
         # URL directly rather than relying on the GitHub redirect.
@@ -248,30 +245,14 @@ REPOSITORIES: dict[str, str | dict] = {
 
 # Files whose upstream is a Git repo but is too large for gitingest's
 # hardcoded 60 s clone timeout (which --timeout cannot raise). They are
-# refreshed by hand with the sparse-clone recipe in the module docstring, so
-# they are reported as SKIP rather than failing every maintenance run.
+# handled by the external maintenance stage, so this ordinary-clone stage
+# reports them as SKIP; maintain.py runs the complementary stage automatically.
 SKIP_MANUAL: dict[str, str] = {
-    "TabForestPFN.txt":
-        "upstream is ~1.36 GB (19.5k files of experiment artifacts around "
-        "~1.2 MB of Python), so gitingest's 60 s clone timeout always trips. "
-        "Refresh with the sparse-clone recipe in this module's docstring: "
-        "git clone --depth=1 --filter=blob:none --no-checkout + "
-        "git sparse-checkout set '/*.py' '/*.md' 'tabularbench/**/*.py', then "
-        "ingest the local directory. Upstream is dead since 2024-05, so this "
-        "rarely needs doing.",
+    "TabForestPFN.txt": "Refreshed automatically by maintain.py's external stage (filtered source tree).",
 }
-
-# Files that exist in repositories/ but cannot be refreshed by gitingest.
-# Each entry maps the filename to a short human-readable reason; the
-# summary prints both. The existing on-disk file is never touched.
 SKIP_NON_GIT: dict[str, str] = {
-    "Huggingface TabPFN.txt":
-        "Hugging Face model card; not a git repo. "
-        "Refresh manually from https://huggingface.co/Prior-Labs/tabpfn_2_5 "
-        "and https://huggingface.co/Prior-Labs/tabpfn_2_6.",
-    "TabPFN Docs.txt":
-        "Prior Labs no longer publishes the docs GitHub source. "
-        "Refresh manually from https://docs.priorlabs.ai/overview.",
+    "Huggingface TabPFN.txt": "Refreshed automatically by maintain.py's external stage (immutable model-card revisions).",
+    "TabPFN Docs.txt": "Refreshed automatically by maintain.py's external stage (official complete Markdown export).",
 }
 
 
@@ -340,15 +321,17 @@ def entry_url(entry: str | dict) -> str:
     return entry if isinstance(entry, str) else entry["url"]
 
 
-def entry_patterns(entry: str | dict) -> dict[str, set[str]]:
+def entry_patterns(entry: str | dict) -> dict[str, object]:
     """gitingest include/exclude kwargs for a REPOSITORIES value."""
     if isinstance(entry, str):
         return {}
-    kw: dict[str, set[str]] = {}
+    kw: dict[str, object] = {}
     if entry.get("include"):
         kw["include_patterns"] = set(entry["include"])
     if entry.get("exclude"):
         kw["exclude_patterns"] = set(entry["exclude"])
+    if entry.get("include_gitignored"):
+        kw["include_gitignored"] = True
     return kw
 
 
@@ -359,7 +342,7 @@ def refresh_one(
     repositories_dir: Path,
     force_shrink: bool = False,
     timeout: int | None = None,
-    patterns: dict[str, set[str]] | None = None,
+    patterns: dict[str, object] | None = None,
 ) -> _Result:
     """Refresh a single ``repositories/<filename>`` from ``url`` atomically.
 
@@ -456,7 +439,7 @@ def refresh_one(
 
 def _ingest_with_optional_timeout(ingest_fn, url: str, tmp: Path,
                                   *, timeout: int | None,
-                                  patterns: dict[str, set[str]] | None = None) -> None:
+                                  patterns: dict[str, object] | None = None) -> None:
     """Call ``gitingest.ingest`` with an optional timeout kwarg.
 
     Newer gitingest releases accept ``timeout=``; older ones don't. We

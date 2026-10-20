@@ -1,4 +1,4 @@
-TabICLv2: A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Jingang Qu * 1 David Holzm¨uller * 1 Ga¨el Varoquaux1 2 Marine Le Morvan 1
 Abstract
 Tabular foundation models, such as TabPFNv2
@@ -21,27 +21,27 @@ the performance of the current state of the art,
 RealTabPFN-2.5 (hyperparameter-tuned, ensem-
 bled, and fine-tuned on real data). With only mod-
 erate pretraining compute, TabICLv2 generalizes
-effectively to million-scale datasets under 50GB
+effectively to million-scale datasets under 50 GB
 GPU memory while being markedly faster than
 RealTabPFN-2.5. We provide extensive ablation
-studies to quantify these contributions and com-
-mit to open research by first releasing inference
-code and model weights at https://github.
-com/soda-inria/tabicl, with synthetic
-data engine and pretraining code to follow.
+studies to quantify these contributions and foster
+open research by releasing code for inference, pre-
+training, and synthetic data generation at https:
+//github.com/soda-inria/tabicl.
 1. Introduction
 Tabular data, whether stored in spreadsheets or databases, is
 ubiquitous across applications ranging from healthcare to
 credit card fraud detection (Borisov et al., 2022; Jesus et al.,
 2022; Grinsztajn et al., 2025). While supervised learning on
 tabular data has long been dominated by gradient-boosted
-decision trees (Grinsztajn et al., 2022), both pretrained and
 *Equal contribution 1SODA Team, INRIA Saclay,
 Palaiseau, France 2Probabl, France. Correspondence to:
 Jingang Qu <jingang.qu@inria.fr>, David Holzm ¨uller
 <david.holzmuller@inria.fr>, Marine Le Morvan <marine.le-
 morvan@inria.fr>.
-Preprint. February 12, 2026.
+Proceedings of the 43 rd International Conference on Machine
+Learning, Seoul, South Korea. PMLR 306, 2026. Copyright 2026
+by the author(s).
 10−1 100 101 102 103 104
 Train time per 1K samples (s) (median)
 5%
@@ -89,38 +89,39 @@ Tuned + Ens.applies post-hoc weighted ensemble of all configu-
 rations. The runtime of TabICLv2 is measured on an H100 GPU,
 while others are from TabArena. Results for inapplicable model-
 dataset pairs are imputed with default RandomForest.
+decision trees (Grinsztajn et al., 2022), both pretrained and
 trained-from-scratch deep learning models have recently
 been able to match or even surpass their accuracy on tables
 with up to 100K samples (Erickson et al., 2025; Ye et al.,
 2024). In particular, starting from TabPFN (Hollmann et al.,
-2022), tabular foundation models (TFMs) have received a
+2023), tabular foundation models (TFMs) have received a
 lot of attention thanks to their ability to perform training and
 inference in a single forward pass of a Transformer-based
 architecture. The development of better TFMs also benefits
 downstream adaptations, such as causal inference, genera-
 tive modeling, joint predictive distributions, and simulation-
-based inference (Ma et al., 2025b; Robertson et al., 2025;
+based inference (Ma et al., 2026; Robertson et al., 2025;
 Balazadeh et al., 2025; Hollmann et al., 2025; Hassan et al.,
-2025; Vetter et al., 2025). To foster this research, there is a
+2026; Vetter et al., 2025). To foster this research, there is a
 pressing need for fully open-source TFMs that rival closed-
 source ones to democratize access to top-tier performance
 and demystify the recipe behind top-performing TFMs.
 ContributionsWe introduce TabICLv2, a state-of-the-
 art tabular foundation model, as shown in Figure 1. Our
 contributions include architectural innovations (Section 3),
-pretraining improvements (Section 4), a novel synthetic data
 1
-arXiv:2602.11139v1  [cs.LG]  11 Feb 2026
+arXiv:2602.11139v2  [cs.LG]  16 Sep 2026
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+pretraining improvements (Section 4), a novel synthetic data
 generator (Section 5), extensive evaluations (Section 6), and
 an ablation study (Section 7).
 2. Related Work
 2.1. Tabular foundation models
-Tabular foundation models (TFMs) based on Prior-data
-fitted networks (PFNs, M ¨uller et al. 2021) emerged as a
-paradigm shift in tabular learning. Given a training set and
-test input, a TFM qθ with parameters θ directly predicts
+Tabular foundation models (TFMs) based on Prior-data fit-
+ted networks (PFNs, M ¨uller et al., 2022) emerged as a
+paradigm shift in tabular learning. Given a training set
+and test input, a TFM qθ with parameters θ directly predicts
 a distribution qθ(ytest |x test,D train) with a forward pass
 on input (xtest,D train). For a single dataset, it hence per-
 forms in-context learning (ICL) without gradient updates.
@@ -132,7 +133,7 @@ L(θ) =E D∼p(·)
 
 .
 Architectural perspectives.TabPFN (Hollmann et al.,
-2022) treats each row as a token and performs ICL over rows.
+2023) treats each row as a token and performs ICL over rows.
 TabPFNv2 (Hollmann et al., 2025) moves to a cell-based de-
 sign with alternating row and column attentions, where each
 cell receives a separate representation. However, this incurs
@@ -144,31 +145,31 @@ two-stage design: a lightweight column-then-row attention
 first constructs fixed-dimensional row embeddings, after
 which ICL is performed over these embeddings. Recent
 work continues to innovate on these foundations, including
-Mitra (Zhang et al., 2025a), LimiX (Zhang et al., 2025b),
-and Orion-MSP (Bouadi et al., 2025).
+Mitra (Zhang et al., 2026), LimiX (Zhang et al., 2025), and
+Orion-MSP (Bouadi et al., 2025).
 Synthetic prior datasets.Synthetic priors are central to
 PFN-style TFMs. TabPFN uses structural causal models
-(SCMs). TabICL and TabForestPFN (Breejen et al., 2024)
-extend these by mixing tree-based priors to inject tree in-
-ductive biases. Mitra studies prior design principles and
-proposes mixed priors (SCM + tree ensembles) to better
-control decision boundaries. TabPFNv2 enriches priors
-with more sophisticated DAG construction and computa-
-tional mappings. LimiX introduces hierarchical SCMs with
-controllable difficulty. Drift-Resilient TabPFN (Helli et al.,
-2024) tackles temporal distribution shifts with a two-level
-generative prior that modulates SCM parameters over time.
-However, TabDPT (Ma et al., 2025a) shows that large-scale
-pretraining on real datasets can be competitive, and Real-
-TabPFN (Garg et al., 2025) indicates that continued pretrain-
-ing on real datasets can improve TabPFNv2.
+(SCMs). TabICL and TabForestPFN (den Breejen et al.,
+2024) extend these by mixing tree-based priors to inject
+tree inductive biases. Mitra studies prior design princi-
+ples and proposes mixed priors (SCM + tree ensembles)
+to better control decision boundaries. TabPFNv2 enriches
+priors with more sophisticated DAG construction and com-
+putational mappings. LimiX introduces hierarchical SCMs
+with controllable difficulty. Drift-Resilient TabPFN (Helli
+et al., 2024) tackles temporal distribution shifts with a two-
+level generative prior that modulates SCM parameters over
+time. However, TabDPT (Ma et al., 2025) shows that large-
+scale pretraining on real datasets can be competitive, and
+Real-TabPFN (Garg et al., 2025) indicates that continued
+pretraining on real datasets can improve TabPFNv2.
 Fine-tuning, retrieval, and distillation.Beyond pretrain-
 ing, adaptation strategies for TFMs include (a) fine-tuning
 to shift the learned prior toward a target distribution (Feuer
 et al., 2024; Liu & Ye, 2025; Garg et al., 2025; Kolberg et al.,
 2025; Rubachev et al., 2025), (b) retrieval-based context se-
 lection to enhance compute-constrained scalability (Thomas
-et al., 2024; Xu et al., 2024; Zhang et al., 2025b; Sergazinov
+et al., 2024; Xu et al., 2025; Zhang et al., 2025; Sergazinov
 & Yin, 2025), and (c) distilling TFMs into compact MLPs
 or trees (Bonet et al., 2024; Mueller et al., 2024; Grinsztajn
 et al., 2025).
@@ -181,7 +182,7 @@ sufficient training data is available.
 2.2. Attention struggles with long-context generalization
 Attention fading.Attention is central to PFN-style TFMs.
 But standard attention, based on softmax, suffers fromatten-
-tion fading(Veli ˇckovi´c et al., 2024; Nakanishi, 2025): the
+tion fading(Veli ˇckovi´c et al., 2025; Nakanishi, 2025): the
 softmax denominator increases as context length n grows,
 causing attention distributions to flatten and preventing
 sharp focus on relevant tokens. This limits length gener-
@@ -190,7 +191,7 @@ maintain discriminative attention patterns when applied to
 longer ones.
 Temperature scaling.To address attention fading, some
 work focuses on softmax alternatives (Peters et al., 2019;
-Ramapuram et al., 2024), which, however, requires special-
+Ramapuram et al., 2025), which, however, require special-
 ized implementations incompatible with the softmax ecosys-
 tem, e.g., FlashAttention (Dao et al., 2022). We thus focus
 on a less invasive solution:temperature scaling. Standard
@@ -199,16 +200,16 @@ scaling temperature factor 1/
 √
 d to prevent dot-product
 magnitudes from growing with dimension, but this does not
-address length-dependent fading. YaRN (Peng et al., 2023)
+address length-dependent fading. YaRN (Peng et al., 2024)
 scales temperature with context length for RoPE (Su et al.,
-2021) extension, but the scaling is fixed and requires posi-
+2024) extension, but the scaling is fixed and requires posi-
 tional encoding. Recent work proposes dynamic alternatives.
-Scalable Softmax (SSMax, Nakanishi 2025) scales attention
-logits by slogn , where s is a learnable per-head parameter.
-Concurrent theoretical analysis (Chen et al., 2025b) estab-
-lishes that logn scaling is necessary to maintain attention
+Scalable Softmax (SSMax, Nakanishi, 2025) scales atten-
+tion logits by slogn , where s is a learnable per-head param-
+eter. Concurrent theoretical analysis (Chen et al., 2025) es-
+tablishes that logn scaling is necessary to maintain attention
 sharpness as context length n grows. Adaptive-Scalable Ent-
-max (ASEntmax, Vasylenko et al. 2025) extends this with
+max (ASEntmax, Vasylenko et al., 2026) extends this with
 content-aware scaling δ+β(logn) γ, where δ is a length-
 independent constant offset, and β= softplus(MLP(X))
 and γ= tanh(MLP(X)) are input-dependent. Selective At-
@@ -217,7 +218,7 @@ troducing query-dependent temperature τ(q) via lightweight
 MLPs, decoupling the scaling from context length entirely.
 2
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 3. Architecture
 The architecture of TabICLv2 is illustrated in Figure 2. Fol-
 lowing TabICL, TabICLv2 chains column-wise embedding,
@@ -226,13 +227,14 @@ ing the efficiency of TabICL with a runtime complexity of
 O(n2 +nm 2) for tables with n rows and m columns. In
 addition, we introduce several improvements that signifi-
 cantly enhance performance without increasing model size
-(see the ablation study in Section 7). In the following, we
-mark these improvements with ▶. We focus below on archi-
-tectural innovations. For model configuration details (e.g.,
-number of layers), refer to Appendix A.4. We provide a
-short self-contained implementation of the TabICLv2 archi-
-tecture for educational and experimental purposes, inspired
-by nanoTabPFN (Pfefferle et al., 2025), at
+(see the ablation study in Section 7), placing it around 28M
+parameters. In the following, we mark these improvements
+with ▶. We focus below on architectural innovations. For
+model configuration details (e.g., number of layers), refer
+to Appendix A.4. We provide a short self-contained imple-
+mentation of the TabICLv2 architecture for educational and
+experimental purposes, inspired by nanoTabPFN (Pfefferle
+et al., 2025), at
 https://github.com/soda-inria/nanotabicl.
 ▶ Repeated feature grouping.TabICL embeds each fea-
 ture independently, which can lead to representation col-
@@ -252,11 +254,11 @@ E1[i, j] = Lin
 xi,j, x i,(j+1) modm , x i,(j+3) modm
 
 .
-The shift pattern (0,1,3) ensures that for ≥7 columns, no
-pair of columns appears together in more than one group.
-We show in Appendix A.1 that this pattern generalizes to
-arbitrary group sizes, although we did not observe consistent
-improvements from larger groups.
+The shift pattern (0,1,3) ensures that for tables with at least
+7 columns, no pair of columns appears together in more
+than one group. We show in Appendix A.1 that this pattern
+generalizes to arbitrary group sizes, although we did not
+observe consistent improvements from larger groups.
 ▶ Target-aware embedding.We find it beneficial to inject
 target information early. After repeated feature grouping
 produces input data representation E1 ∈R n×m×d, we add
@@ -268,9 +270,8 @@ pending the target as an additional column, we directly add
 target embeddings to all features. This also helps mitigate
 representation collapse because even when two features
 share similar distributions, their association with target val-
-ues often differs across samples.
-Compression then ICL.TabICLv2 processes E2 in three
-stages: (1)column-wise embeddingapplies a set transformer
+ues often differs across samples. Unlike TabICL, which
+compresses each row into a few tokens before seeing the
 Columns (Features)
 Rows (Samples)
 Repeated
@@ -306,6 +307,10 @@ learning to predict test targets ˆy. QASSMax, our query-aware
 scalable softmax, is applied in the part of TFcol where inducing
 points aggregate input information and TFicl to mitigate attention
 fading and improve long-context generalization.
+targets, our early target injection allows TabICLv2 to deter-
+mine the relevance of features before compression.
+Compression then ICL.TabICLv2 processes E2 in three
+stages: (1)column-wise embeddingapplies a set transformer
 TFcol (Lee et al., 2019) to each column; (2)row-wise interac-
 tionuses a transformer TFrow with [CLS] tokens to collapse
 feature embeddings per row into a single vector; (3)dataset-
@@ -324,10 +329,9 @@ h with head dimension indexed by i, and let n be the size
 of the training set. SSMax rescales queries with a learnable
 per-head scalars h:
 ˜qhi =q hi ·s h logn .
-We propose query-aware scalable softmax (QASSMax),
 3
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 0 10000
 Negative samples
 0.4
@@ -381,12 +385,14 @@ Test samples
 Negative clustersCi (b)Decision boundaries for anchor and negative clusters
 Figure 3.SSMax variants mitigate attention fading in a synthetic 2D classification task.We create a dataset consisting of four
 negative clusters (C1–C4) and one anchor cluster containing a single anchor sample (triangle) in the training set. We increase negative
-samples while evaluating 20 fixed test samples (red squares) nearest to the anchor.(a)Attention entropy is divided by logn to ensure
-values in (0,1) and averaged across all heads and layers in TFicl, measuring how uniformly test samples attend to training ones. Without
-SSMax, accuracy drops and entropy rises as negative samples increase, which is a hallmark of attention fading where the model fails to
-focus on the relevant anchor. QASSMax maintains 100% accuracy with consistently low entropy.(b)shows decision boundaries at 1K
-and 15K negative samples. The region of the anchor cluster shrinks for all variants as negative samples increase. No SSMax collapses at
-15K, while QASSMax preserves a stable boundary containing all test samples.
+samples while evaluating 20 fixed test samples (red squares) nearest to the anchor. We evaluate three stage 1 checkpoints trained for 280K
+steps with QASSMax, SSMax, and without SSMax.(a)Attention entropy is divided by logn to ensure values in (0,1) and averaged
+across all heads and layers in TFicl, measuring how uniformly test samples attend to training ones. Without SSMax, accuracy drops and
+entropy rises as negative samples increase, which is a hallmark of attention fading where the model fails to focus on the relevant anchor.
+QASSMax maintains 100% accuracy with consistently low entropy.(b)shows decision boundaries at 1K and 15K negative samples. The
+region of the anchor cluster shrinks for all variants as negative samples increase. No SSMax collapses at 15K, while QASSMax preserves
+a stable boundary containing all test samples.
+We propose query-aware scalable softmax (QASSMax),
 which rescales each query element as:
 ˜qhi =q hi ·MLPbase(logn) hi| {z }
 base scaling
@@ -402,8 +408,8 @@ and MLPgate :R dhead →R dhead are two-layer MLPs with
 We design QASSMax based on the following rationale: (a)
 The logn factor is critical as it counteracts the linear growth
 of the softmax denominator with respect to n (Nakanishi,
-2025; Chen et al., 2025b); (b) ASEntmax (Vasylenko et al.,
-2025) uses learnable δ+β(logn) γ, inspiring us to general-
+2025; Chen et al., 2025); (b) ASEntmax (Vasylenko et al.,
+2026) uses learnable δ+β(logn) γ, inspiring us to general-
 ize to MLPbase(logn) ; (c) Element-wise scaling increases
 expressiveness beyond per-head scalars; (d) Selective At-
 tention (Zhang et al., 2024) introduces query-awareness in
@@ -413,16 +419,17 @@ without dominating the logn trend. In addition, our gating
 design shares similar insights with Gated Attention (Qiu
 et al., 2025), which applies gating to attention outputs and
 finds query-dependent, element-wise gating most effective.
-QASSMax applied to TFcol and TFicl yields substantially
-performance improvements, as shown in the ablation study
+QASSMax applied to TFcol and TFicl yields substantial per-
+formance improvements, as shown in the ablation study
 (Section 7). To study its effect on attention fading, we de-
 sign a toy needle-in-haystack classification task (Figure 3):
 the model must focus on a single anchor sample (the needle)
-among increasing negative samples (the haystack). Without
-scalable softmax, attention entropy rises and accuracy drops.
-However, QASSMax maintains low entropy and 100% accu-
-racy even with 15K negatives, outperforming SSMax which
-largely degrades at extreme scales.
+among increasing negative samples (the haystack). With-
+out scalable softmax, attention entropy rises and accuracy
+drops. However, QASSMax maintains low entropy and
+100% accuracy even with 15K negatives, outperforming SS-
+Max, whose performance degrades substantially at extreme
+scales.
 Many-class classification.Like many TFMs, TabICLv2
 is pretrained with up to 10 classes. We use hierarchical
 classification (Qu et al., 2025) at the ICL stage for more
@@ -453,20 +460,20 @@ LimiX, we train separate models for classification and re-
 gression.
 TabICLv2 instead predicts 999 quantiles at probability levels
 α∈ {0.001,0.002, . . . ,0.999} , trained with pinball loss
+4
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 summed across all quantiles. In preliminary experiments
 using RMSE evaluation, we found that quantile regression
 outperforms MSE and the bin-based approach of TabPFNv2.
 At inference, for point estimation we simply average the
-4
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-predicted quantiles, which proves both fast and effective.
-For probabilistic predictions, we construct a full distribution
-from the quantiles by enforcing monotonicity via sorting
-(the default) or isotonic regression (Barlow & Brunk, 1972;
-Busing, 2022), extrapolating tails with parametric expo-
-nential models, and deriving closed-form PDF, CDF, and
-moments. See Appendix I for details.
+predicted quantiles, which proves to be both fast and ef-
+fective. For probabilistic predictions, we construct a full
+distribution from the quantiles by enforcing monotonicity
+via sorting (the default) or isotonic regression (Barlow &
+Brunk, 1972; Busing, 2022), extrapolating tails with para-
+metric exponential models, and deriving closed-form PDF,
+CDF, and moments. See Appendix I for details.
 4. Pretraining and Inference
 4.1. Pretraining setup
 We significantly improve the pretraining setup compared to
@@ -494,16 +501,18 @@ TabPFNv2). Following Moonlight (Liu et al., 2025), this im-
 plementation multiplies the learning rate for each parameter
 W∈R n×m by 0.2·
 p
-max{n, m}. We find higher learn-
-ing rates preferable for Muon. As a result, we use a max
-learning rate of 8e-4 for the stage 1 compared to 1e-4 for
-AdamW in TabICL. We adopt cautious weight decay (Chen
-et al., 2025a) with parameter 0.01, which applies decay only
-when the update and parameter have the same sign, avoid-
-ing interference with beneficial gradient directions. We also
-increase gradient clipping from 1 to 10 for stages 1 and 2,
-sample different train/test sizes per micro-batch, and use a
-cosine learning rate schedule across all stages.
+max{n, m}. Muon orthogonalizes
+gradient updates via Newton-Schulz iteration, which corre-
+sponds to steepest descent under the spectral norm (Bern-
+stein & Newhouse, 2024), and has been observed to speed
+up LLM training (Jordan et al., 2024a; Liu et al., 2025). We
+find higher learning rates preferable for Muon. As a result,
+we use a max learning rate of 8e-4 for stage 1 compared
+to 1e-4 for AdamW in TabICL. We use weight decay with
+parameter 0.01. We also increase gradient clipping from 1
+to 10 for stages 1 and 2, sample different train/test sizes per
+micro-batch, and use a cosine learning rate schedule across
+all stages.
 Pretraining cost.On H100 GPUs with 80GB memory,
 stage 1 takes around 20 GPU-days, stage 2 around 2.5 GPU-
 days, and stage 3 around 2 GPU-days, totaling 24.5 GPU-
@@ -519,13 +528,13 @@ long-context generalization, TabICLv2 can natively handle
 million-scale tables without retrieval and distillation. In
 addition, we reduce redundant computation by selectively
 computingQ/K/Vprojections (Appendix H.1).
-5. Synthetic data prior
+5. Synthetic Data Prior
 Our pretraining data isentirely synthetic, following the ap-
-proach pioneered in TabPFN (Hollmann et al., 2022). The
+proach pioneered in TabPFN (Hollmann et al., 2023). The
 data-generating mechanism is termedprior, as it implicitly
 defines a Bayesian prior over datasets. For TabICLv2, we
 design a new prior that retains the structural causal model
-framework used in Hollmann et al. (2022), incorporates
+framework used in Hollmann et al. (2023), incorporates
 innovations brought by TabICL and TabPFNv2 priors, and
 adds many novel design options and sampling mechanisms
 (see Appendix E.1). Unlike architectural and pretraining
@@ -551,15 +560,9 @@ ing a causal data-generating model. To obtain a dataset with
 n samples, a matrix X∈R n×di of n random vectors is
 sampled at each root node i and propagated through the
 graph. Each dataset feature is extracted from a randomly as-
-signed node. Only a subset of a node’s dimensions is used to
-generate each feature, leaving other dimensions unobserved
-and thereby introducing noise into the dataset. Unlike prior
-work, we do not add Gaussian noise at the node level. For
-numerical features (e.g., x1), feature values are extracted
-from a single node dimension. For categorical features (e.g.,
 5
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 standardize +feature scaling
 b) Propagate random vectors
 Dataset good?yesno
@@ -581,10 +584,16 @@ applied: (MLP) Multilayer perceptrons, (Tree Ensemble) Ensembles of symmetric tr
 2018), (Discretize) Discretization to nearest neighbors among a random set; (GP) Multivariate Gaussian process functions; (Linear)
 Linear functions; (Quadratic) Multivariate quadratic functions; (EM) functions with plateaus inspired by the cluster assignment in the EM
 algorithm; (Product) products of other random functions. (e) Examples of generated 2D classification datasets (cf. Figure F.1).
+signed node. Only a subset of a node’s dimensions is used to
+generate each feature, leaving other dimensions unobserved
+and thereby introducing noise into the dataset. Unlike prior
+work, we do not add Gaussian noise at the node level. For
+numerical features (e.g., x1), feature values are extracted
+from a single node dimension. For categorical features (e.g.,
 x2), multiple node dimensions are extracted and discretized,
 either via nearest-neighbor assignment or by applying a
 softmax to obtain a categorical distribution.
-New sampling mechanismsSince therandom graph
+New sampling mechanisms.Since therandom graph
 sampling mechanism used by Hollmann et al. (2025) can
 only generate tree-structured graphs, we introduce a “ran-
 dom Cauchy graph” mechanism, which models different
@@ -622,24 +631,22 @@ TabICL (Qu et al., 2025), including discarding problematic
 columns and datasets, permuting columns and class labels,
 and preprocessing features and targets.
 Data filtering.Inspired by Dong et al. (2025) and Zhang
-et al. (2025b), we filter out datasets on which a simple
-ExtraTrees model cannot improve on a constant baseline
-according to a bootstrap test. In addition, we directly filter
-graphs in which nodes associated to x do not have com-
-mon ancestors with the node associated to y, which implies
+et al. (2025), we filter out datasets on which a simple Extra-
+Trees model cannot improve on a constant baseline accord-
+ing to a bootstrap test. In addition, we directly filter graphs
+in which nodes associated with x do not have common
+ancestors with the node associated with y, which implies
 that y is independent of x. In pretraining stage 1, roughly
 35% classification and 25% regression datasets are filtered.
 Figure 10 shows that filtering improves the convergence of
 pretraining.
-Sampling correlated scalars.We often sample numerical
-or categorical scalars (“hyperparameters”) from the same
-distribution multiple times, e.g., the number of categories
-within a column. We introduce a correlated way to sample
-them, e.g., to make it more likely to sample datasets where
-many columns have the same number of categories.
+Sampling correlated scalars.We often sample scalars
+(“hyperparameters”) from the same distribution multiple
+times, e.g., the number of categories within a column. We in-
+troduce a mechanism to sample them in a correlated fashion
 6
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101
 Inference time per 1K samples (s) (median)
 10%
@@ -675,6 +682,11 @@ Pareto Front
 Figure 5.Improvability vs. inference time on TALENT (Ye
 et al., 2024).The runtime of TabICLv2 is measured on an H100
 GPU, while other runtimes are taken from TALENT.
+based on sampling shared parameters of a Beta distribution.
+For example, we observe that in some real datasets, many
+categorical columns have the same cardinality. Through
+correlated sampling, our prior is more likely to replicate this
+phenomenon.
 6. Experiments
 Benchmarks.We use the TabArena (Erickson et al., 2025)
 and TALENT (Ye et al., 2024) benchmarks. TabICLv2 en-
@@ -703,10 +715,6 @@ TabICLv2 is state-of-the-art on both benchmarks.As
 shown in Figures 1 and 5, TabICLv2 dominates the Pareto
 fronts of improvability versus runtime. Without any tuning,
 TabICLv2 surpasses RealTabPFN-2.5 (tuned + ensembled),
-the current state-of-the-art that is not fully open-source.
-TabICLv2 also substantially outperforms heavily tuned tra-
-ditional methods, such as CatBoost and XGBoost, despite
-requiring orders of magnitude less training time.
 0 10k 30k 50k
 Training samples
 100
@@ -755,6 +763,13 @@ Inference time
 (s/1K samples, median)
 Figure 7.Normalized accuracy across 12 datasets with more
 than 10 classes on the TALENT benchmark.
+the current state-of-the-art that is not fully open-source.
+A statistical test confirms that the win rate of TabICLv2
+vs. RealTabPFN-2.5 on TALENT is greater than 50% (Ap-
+pendix L.2). TabICLv2 also substantially outperforms heav-
+ily tuned traditional methods, such as CatBoost and XG-
+Boost, despite requiring orders of magnitude less training
+time.
 TabICLv2 is consistently faster than TabPFN-2.5.As
 shown in Figure 6, for 100 features, TabICLv2 is faster than
 TabPFN-2.5 across all hardware, with speedups increasing at
@@ -767,19 +782,13 @@ wrapper from TabPFNv2 and our native mixed-radix ensem-
 bling substantially outperforms all baselines on TALENT
 datasets with >10 classes (Figure 7). The ECOC wrapper
 is slightly better but 3×slower than our native handling.
-TabICLv2 scales to large datasets.As shown in Figure 8,
-TabICLv2 maintains top rankings across all dataset sizes
-from 103 to 105, outperforming RealTabPFN-2.5 on larger
-datasets (>20K). On even larger datasets (600K) from the
-TALENT extension, TabICLv2 still performs strongly (Fig-
-ure 9). These results show that TabICLv2 further extends
-the frontier of TFMs for natively handling large-scale data.
-7. Ablation study
-We conduct an ablation study to assess the impact of ar-
-chitectural, prior, and pretraining choices (Figure 10). See
+TabICLv2 scales to large datasets.As shown in Fig-
+ure 8, TabICLv2 maintains top rankings across all dataset
+sizes from 103 to 105, outperforming RealTabPFN-2.5 on
+larger datasets ( >20K). On even larger datasets ( ≈600K
 7
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 103 104 105
 Number of samples
 0
@@ -827,30 +836,28 @@ Data Science Good Kiva
 Figure 9.Accuracy on two huge classification datasets from the
 TALENT extension.TabICLv2 still performs strongly. TabPFN-
 2.5 resulted in out-of-memory errors.
+samples) from the TALENT extension, TabICLv2 still per-
+forms strongly (Figure 9). These results show that TabICLv2
+further extends the frontier of TFMs for natively handling
+large-scale data.
+Other experiments.We provide more experimental re-
+sults in Appendix L. Our default ensemble size of 8 es-
+timators unlocks most of the benefits of ensembling. In
+few-shot settings with 16 training samples, which are not
+included in TabICLv2’s pretraining, TabICLv2 comes sec-
+ond to RealTabPFN-2.5, while outperforming (untuned)
+classical baselines as well as LLMs Claude Opus 4.6 and
+Qwen3.5-112B. Unlike TabICL(v1), TabICLv2 does not
+benefit from TabPFNv2’s random forest extension for larger
+datasets (Appendix L.5), showing that it efficiently pro-
+cesses larger datasets. TabICLv2 and RealTabPFN-2.5 are
+also quite robust to adding label noise compared to tree-
+based models.
+7. Ablation Study
+We conduct an ablation study to assess the impact of ar-
+chitectural, prior, and pretraining choices (Figure 10). See
 Appendix C for more ablation results. The performance gap
 between the reference TabICLv2 checkpoint (dotted black)
-and its ablation (solid black) is explained by pretraining
-length: the ablation is trained for 280K steps, whereas the
-official checkpoint is pretrained for more steps (500K steps
-for stage 1 plus stages 2 & 3) and uses 8 instead of 4 at-
-tention heads in TFcol and TFrow. Interestingly, TabICLv2
-matches RealTabPFN-2.5 in log-loss after ≈200 K steps,
-and in<100K steps in terms of normalized accuracy.
-First, we observe a strong interaction between architecture
-and prior. Pretraining TabICLv2 with the TabICL prior fails
-(gray line): the performance remains below TabICL and the
-validation loss degrades in the second half of the pretraining.
-This suggests that the TabICLv2 architecture requires higher
-prior diversity to generalize, perhaps similar to how Ma et al.
-(2025a) observed that scaling laws can break down with
-weak synthetic data generators. Additionally, pretraining the
-TabICL architecture with the TabICLv2 prior (orange) only
-matches TabICL, indicating that the TabICL architecture
-has limited ability to exploit increased prior diversity.
-Across metrics (Figure C.1) including normalized accuracy,
-Elo, and log-loss, the ordering of ablations is consistent.
-The prior yields the largest effect. Three components pro-
-vide comparable, significant gains ( ≈100 Elo, 64% win
 0 50k 100k 150k 200k 250k
 Pretraining Step
 0.1
@@ -888,6 +895,31 @@ dataset is smaller) and two train/test splits. The AdamW ablation
 uses regular weight decay for AdamW and a learning rate of 1e-4
 following TabICL. Scatterplots display per-step validation perfor-
 mance and reveal decreasing noise as the learning rate decays.
+and its ablation (solid black) is explained by pretraining
+length: the ablation is trained for 280K steps, whereas the
+official checkpoint is pretrained for more steps (500K steps
+for stage 1 plus stages 2 & 3) and uses 8 instead of 4 at-
+tention heads in TFcol and TFicl. Interestingly, TabICLv2
+matches RealTabPFN-2.5 in log-loss after ≈200 K steps,
+and in<100K steps in terms of normalized accuracy.
+First, we observe a strong interaction between architecture
+and prior. Pretraining TabICLv2 with the TabICL prior fails
+(gray line): the performance remains below TabICL and the
+validation loss degrades in the second half of the pretraining.
+This suggests that the TabICLv2 architecture requires higher
+prior diversity to generalize, perhaps similar to how Ma
+et al. (2025) observed that scaling laws can break down with
+weak synthetic data generators. Additionally, pretraining the
+TabICL architecture with the TabICLv2 prior (orange) only
+matches TabICL, indicating that the TabICL architecture
+has limited ability to exploit increased prior diversity.
+Across metrics (Figure C.1) including normalized accuracy,
+Elo, and log-loss, the ordering of ablations is consistent.
+The prior yields the largest effect. Three components pro-
+vide comparable, significant gains ( ≈100 Elo, 64% win
+8
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 rate): early target inclusion, Muon instead of AdamW, and
 QASSMax. Repeated feature grouping and prior filtering
 yield smaller gains.
@@ -904,40 +936,29 @@ multi-output regression or handling distribution shifts (Helli
 et al., 2024) are also left to future work. Due to the lack of
 established benchmarks, the distributional regression capa-
 bilities of TabICLv2 are not evaluated beyond toy datasets
-(Appendix I.9). Adding missing indicators (Le Morvan &
-Varoquaux, 2025) or introducing missingness during pre-
-training may improve the handling of missing values, which
-are currently imputed by the mean, but remain unexplored.
-Finally, hyperparameter tuning or fine-tuning (Rubachev
-8
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-et al., 2025) could further improve the performance at the
-cost of increased runtime, but is not explored here.
+(Appendix I.9). Missing values are currently imputed by
+the mean. Adding missing indicators (Le Morvan & Varo-
+quaux, 2025) or introducing missingness during pretraining
+may improve the handling of missing values, but remain
+unexplored. Finally, hyperparameter tuning or fine-tuning
+(Rubachev et al., 2025) could further improve the perfor-
+mance at the cost of increased runtime, but is not explored
+here.
 9. Conclusion
 TabICLv2 represents a large step forward in tabular foun-
 dation models (TFMs), as it achieves state-of-the-art per-
-formance and redefines the native scalability of TFMs. We
-commit to fully open-sourcing everything to democratize ac-
-cess to state-of-the-art TFMs. With its moderate pretraining
-and inference cost, TabICLv2 provides an excellent basis for
-future adaptations. In addition, we prioritize out-of-the-box
-performance and principled innovations over fine-tuning on
-real data (Garg et al., 2025) or scaling up with deeper (Grin-
-sztajn et al., 2025) or wider (Ma et al., 2025a; Zhang et al.,
-2025a) architectures. We hope that TabICLv2 motivates
-continued innovation towards smaller, faster, better models.
-Acknowledgements
-We thank Fabian Schaipp for encouraging us to try his Muon
-implementation. We thank Tizian Wenzel and Ingo Stein-
-wart for helpful discussions on theory. We are grateful to the
-authors of the TALENT benchmark for providing informa-
-tion about the TALENT extension. We also thank the LimiX
-team, especially Xingxuan Zhang and Peng Cui, for their
-generous support in providing computational resources.
-This work was performed using HPC resources from
-GENCI–IDRIS (Grant 2024-AD011014864R1, 2024-
-AD011016033, 2025-AD011016033R1).
+formance and redefines the native scalability of TFMs.
+Through its open-source prior, pretraining, and inference
+code, we democratize access to state-of-the-art TFMs. With
+its moderate pretraining and inference cost, TabICLv2 pro-
+vides an excellent basis for future adaptations, including
+foundation models for time-series, causality, and relational
+databases. In addition, we prioritize out-of-the-box perfor-
+mance and principled innovations over fine-tuning on real
+data (Garg et al., 2025) or scaling up with deeper (Grinsztajn
+et al., 2025) or wider (Ma et al., 2025; Zhang et al., 2026)
+architectures. We hope that TabICLv2 motivates continued
+open innovation towards smaller, faster, better models.
 Contribution Statement
 JQ and DH contributed equally to this work (co-first au-
 thors). JQ developed the regression framework and multi-
@@ -952,29 +973,54 @@ JQ managed larger-scale pretraining runs and the systematic
 evaluation of model variants. All authors participated in the
 weekly technical steering, experimental design, and iterative
 refinement of the manuscript.
+Acknowledgements
+We thank Fabian Schaipp for encouraging us to try his Muon
+implementation. We thank Tizian Wenzel and Ingo Stein-
+wart for helpful discussions on theory. We are grateful to
+the authors of the TALENT benchmark for providing infor-
+mation about the TALENT extension. We also thank the
+LimiX team, especially Xingxuan Zhang and Peng Cui, for
+their generous support in providing computational resources.
+We thank Ingo Steinwart for providing computational re-
+sources funded by Deutsche Forschungsgemeinschaft (DFG,
+German Research Foundation) under Germany’s Excellence
+Strategy - EXC 2075 – 390740016.
+This work was performed using HPC resources from
+GENCI–IDRIS (Grant 2024-AD011014864R1, 2024-
+AD011016033, 2025-AD011016033R1). MLM and JQ
+acknowledge support from INRIA AEX NAP, and from
+ANR via the grant StatQA (ANR-25-CE23-5646). GV ac-
+knowledges support from ANR via grant TaFoMo (ANR-25-
+CE23-1822). This work is partly supported by Hi! PARIS
+and ANR/France 2030 program (ANR-23-IACL-0005).
 Impact Statement
 This paper presents work whose goal is to advance the field
 of Machine Learning. There are many potential societal
-consequences of our work, none which we feel must be
+consequences of our work, none of which we feel must be
 specifically highlighted here.
 References
 Balazadeh, V ., Kamkari, H., Thomas, V ., Ma, J., Li, B.,
 Cresswell, J. C., and Krishnan, R. CausalPFN: Amortized
-causal effect estimation via in-context learning. InThe
-Thirty-ninth Annual Conference on Neural Information
-Processing Systems, 2025.
+causal effect estimation via in-context learning. InNeural
+Information Processing Systems, 2025.
 Barlow, R. E. and Brunk, H. D. The isotonic regression
 problem and its dual.Journal of the American Statistical
 Association, 67(337):140–147, 1972.
 Beaglehole, D., Holzm ¨uller, D., Radhakrishnan, A., and
 Belkin, M. xRFM: Accurate, scalable, and interpretable
-feature learning models for tabular data. InAITD 2025–
-Workshop on AI for Tabular Data, 2025.
-Beirlant, J., Goegebeur, Y ., Segers, J., and Teugels, J. L.
-Statistics of extremes: theory and applications. John
-Wiley & Sons, 2006.
+feature learning models for tabular data. InInternational
+Conference on Learning Representations, 2026.
+Beirlant, J., Goegebeur, Y ., Teugels, J., and Segers, J.Statis-
+tics of Extremes: Theory and Applications. John Wiley &
+Sons, 2004.
+9
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Bell, J. Trace class operators and Hilbert-Schmidt operators.
 Lecture Notes, 2016.
+Bernstein, J. and Newhouse, L. Old optimizer, new norm:
+An anthology. InOPT 2024: Optimization for Machine
+Learning, 2024.
 Best, M. J. and Chakravarti, N. Active set algorithms for
 isotonic regression; a unifying framework.Mathematical
 Programming, 47(1):425–439, 1990.
@@ -983,58 +1029,53 @@ quantile regression curve estimation.Biometrika, 97(4):
 825–838, 2010.
 Bonet, D., Montserrat, D. M., Gir ´o-i Nieto, X., and Ioan-
 nidis, A. G. Hyperfast: Instant classification for tabular
-data. InProceedings of the AAAI Conference on Artificial
-Intelligence, volume 38, pp. 11114–11123, 2024.
+data. InAAAI Conference on Artificial Intelligence, 2024.
 Borisov, V ., Leemann, T., Seßler, K., Haug, J., Pawelczyk,
 M., and Kasneci, G. Deep neural networks and tabular
-data: A survey.IEEE transactions on neural networks
-and learning systems, 35(6):7499–7519, 2022.
-Bouadi, M., Seth, P., Tanna, A., and Sankarapu, V . K. Orion-
-msp: Multi-scale sparse attention for tabular in-context
-learning.arXiv preprint arXiv:2511.02818, 2025.
-Breejen, F. d., Bae, S., Cha, S., and Yun, S.-Y . Fine-tuned
-in-context learning transformers are excellent tabular data
-classifiers.arXiv preprint arXiv:2405.13396, 2024.
+data: A survey.IEEE Transactions on Neural Networks
+and Learning Systems, 35(6):7499–7519, 2022.
+Bouadi, M., Seth, P., Tanna, A., and Sankarapu, V . K.
+ORION-MSP: Multi-scale sparse attention for tabular
+in-context learning. InEurIPS 2025 Workshop: AI for
+Tabular Data, 2025.
 Busing, F. M. Monotone regression: A simple and fast O(n)
 PA V A implementation.Journal of Statistical Software,
 102:1–25, 2022.
-Chen, L., Li, J., Liang, K., Su, B., Xie, C., Pierse, N. W.,
-Liang, C., Lao, N., and Liu, Q. Cautious weight decay.
-arXiv preprint arXiv:2510.12402, 2025a.
-9
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
 Chen, S., Lin, Z., Polyanskiy, Y ., and Rigollet, P. Critical
 attention scaling in long-context transformers.ArXiv,
-abs/2510.05554, 2025b.
+abs/2510.05554, 2025.
 Chernozhukov, V ., Fern´andez-Val, I., and Galichon, A.
 Quantile and probability curves without crossing.Econo-
 metrica, 78(3):1093–1125, 2010.
 Da Costa, N., Pf ¨ortner, M., Da Costa, L., and Hennig, P.
-Sample path regularity of gaussian processes from the co-
+Sample path regularity of Gaussian processes from the co-
 variance kernel.arXiv preprint arXiv:2312.14886, 2023.
-Dao, T. Flashattention-2: Faster attention with better par-
-allelism and work partitioning.ArXiv, abs/2307.08691,
-2023.
-Dao, T., Fu, D. Y ., Ermon, S., Rudra, A., and R’e, C. Flashat-
+Dao, T. FlashAttention-2: Faster attention with better paral-
+lelism and work partitioning. InInternational Conference
+on Learning Representations, 2024.
+Dao, T., Fu, D., Ermon, S., Rudra, A., and R´e, C. FlashAt-
 tention: Fast and memory-efficient exact attention with
-io-awareness.ArXiv, abs/2205.14135, 2022.
+IO-awareness.Neural Information Processing Systems,
+2022.
 De Vito, E., M ¨ucke, N., and Rosasco, L. Reproducing
 kernel Hilbert spaces on manifolds: Sobolev and diffu-
 sion spaces.Analysis and Applications, 19(03):363–396,
 2021.
 Defazio, A., Yang, X., Mehta, H., Mishchenko, K., Khaled,
-A., and Cutkosky, A. The road less scheduled.Neural
+A., and Cutkosky, A. The road less scheduled. InNeural
 Information Processing Systems, 2024.
+den Breejen, F., Bae, S., Cha, S., and Yun, S.-Y . Fine-tuned
+in-context learning transformers are excellent tabular data
+classifiers.arXiv preprint arXiv:2405.13396, 2024.
 Dietterich, T. G. and Bakiri, G. Solving multiclass learning
 problems via error-correcting output codes.Journal of
-artificial intelligence research, 2:263–286, 1994.
+Artificial Intelligence Research, 2:263–286, 1994.
 Dong, H., Zhang, P., Lu, M., Shen, Y ., and Ke, G. Machine-
-learninglm: Scaling many-shot in-context learning via
+LearningLM: Scaling many-shot in-context learning via
 continued pretraining.arXiv preprint arXiv:2509.06806,
 2025.
 Erickson, N., Mueller, J., Shirkov, A., Zhang, H., Larroy,
-P., Li, M., and Smola, A. Autogluon-tabular: Robust
+P., Li, M., and Smola, A. AutoGluon-Tabular: Robust
 and accurate automl for structured data.arXiv preprint
 arXiv:2003.06505, 2020.
 Erickson, N., Purucker, L., Tschalzev, A., Holzm¨uller, D.,
@@ -1043,15 +1084,14 @@ living benchmark for machine learning on tabular data.
 InNeural Information Processing Systems, 2025.
 Feuer, B., Schirrmeister, R. T., Cherepanova, V ., Hegde,
 C., Hutter, F., Goldblum, M., Cohen, N., and White,
-C. Tunetables: Context optimization for scalable prior-
-data fitted networks.Advances in Neural Information
-Processing Systems, 37:83430–83464, 2024.
+C. TuneTables: Context optimization for scalable prior-
+data fitted networks. InNeural Information Processing
+Systems, 2024.
 Gardner, J., Perdomo, J. C., and Schmidt, L. Large scale
 transfer learning for tabular data via language modeling.
-Advances in Neural Information Processing Systems, 37:
-45155–45205, 2024.
+InNeural Information Processing Systems, 2024.
 Garg, A., Ali, M., Hollmann, N., Purucker, L., M ¨uller, S.,
-and Hutter, F. Real-tabPFN: Improving tabular founda-
+and Hutter, F. Real-TabPFN: Improving tabular founda-
 tion models via continued pre-training with real-world
 data. In1st ICML Workshop on Foundation Models for
 Structured Data, 2025.
@@ -1059,71 +1099,79 @@ Geurts, P., Ernst, D., and Wehenkel, L. Extremely random-
 ized trees.Machine learning, 63(1):3–42, 2006.
 Grinsztajn, L., Oyallon, E., and Varoquaux, G. Why do tree-
 based models still outperform deep learning on typical
-tabular data?Neural Information Processing Systems, 35:
-507–520, 2022.
+tabular data? InNeural Information Processing Systems,
+2022.
 Grinsztajn, L., Fl¨oge, K., Key, O., Birkel, F., Jund, P., Roof,
 B., J ¨ager, B., Safaric, D., Alessi, S., Hayler, A., et al.
-Tabpfn-2.5: Advancing the state of the art in tabular foun-
-dation models.arXiv preprint arXiv:2511.08667, 2025.
-Hassan, C., Loka, N., Li, C.-Y ., Huang, D., Chang, P. E.,
-Yang, Y ., Silvestrin, F., Kaski, S., and Acerbi, L. Effi-
-cient autoregressive inference for transformer probabilis-
-tic models.arXiv preprint arXiv:2510.09477, 2025.
+TabPFN-2.5: Advancing the state of the art in tabular
+foundation models.arXiv preprint arXiv:2511.08667,
+2025.
+10
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Hassan, C., Loka, N. R. B. S., Li, C.-Y ., Huang, D., Chang,
+P. E., Yang, Y ., Silvestrin, F., Kaski, S., and Acerbi, L.
+Efficient autoregressive inference for transformer proba-
+bilistic models. InInternational Conference on Learning
+Representations, 2026.
 Hegselmann, S., Buendia, A., Lang, H., Agrawal, M., Jiang,
-X., and Sontag, D. Tabllm: Few-shot classification of
+X., and Sontag, D. TabLLM: Few-shot classification of
 tabular data with large language models. InInternational
-conference on artificial intelligence and statistics, pp.
-5549–5581. PMLR, 2023.
+Conference on Artificial Intelligence and Statistics, 2023.
 Helli, K., Schnurr, D., Hollmann, N., M¨uller, S., and Hutter,
-F. Drift-resilient tabpfn: In-context learning temporal
-distribution shifts on tabular data.Advances in Neural
-Information Processing Systems, 37:98742–98781, 2024.
-Hollmann, N., M ¨uller, S., Eggensperger, K., and Hut-
-ter, F. Tabpfn: A transformer that solves small tabu-
-lar classification problems in a second.arXiv preprint
-arXiv:2207.01848, 2022.
+F. Drift-resilient TabPFN: In-context learning temporal
+distribution shifts on tabular data.Neural Information
+Processing Systems, 2024.
+Hollmann, N., M¨uller, S., Eggensperger, K., and Hutter, F.
+TabPFN: A transformer that solves small tabular classifi-
+cation problems in a second. InInternational Conference
+on Learning Representations, 2023.
 Hollmann, N., M¨uller, S., Purucker, L., Krishnakumar, A.,
 K¨orfer, M., Hoo, S. B., Schirrmeister, R. T., and Hutter,
 F. Accurate predictions on small data with a tabular
 foundation model.Nature, 637(8045):319–326, 2025.
+Huertas, C. Gradient boosting trees and large language
+models for tabular data few-shot learning.Annals of
+Computer Science and Information Systems, 41:53–59,
+2024.
 Jesus, S., Pombal, J., Alves, D., Cruz, A., Saleiro, P.,
-Ribeiro, R., Gama, J. a., and Bizarro, P. Turning the
-tables: Biased, imbalanced, dynamic tabular datasets for
-ml evaluation. InNeural Information Processing Systems,
-2022.
+Ribeiro, R., Gama, J., and Bizarro, P. Turning the ta-
+bles: Biased, imbalanced, dynamic tabular datasets for
+ML evaluation. InNeural Information Processing Sys-
+tems, 2022.
 Jordan, K., Bernstein, J., Rappazzo, B., @fern-
-bear.bsky.social, Vlado, B., Jiacheng, Y ., Cesista, F.,
-Koszarsky, B., and @Grad62304977. modded-nanogpt:
-Speedrunning the nanogpt baseline, 2024a.
-Jordan, K., Jin, Y ., Boza, V ., Jiacheng, Y ., Cesista, F., New-
+bear.bsky.social, Vlado, B., Jiacheng, Y ., Cesista,
+F., Koszarsky, B., and @Grad62304977. modded-
+nanogpt: Speedrunning the nanogpt baseline, 2024a.
+URL https://github.com/KellerJordan/
+modded-nanogpt.
+Jordan, K., Jin, Y ., Boza, V ., You, J., Cesista, F., New-
 house, L., and Bernstein, J. Muon: An optimizer for
-hidden layers in neural networks, 2024b.
-10
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-Kolberg, C., Eggensperger, K., and Pfeifer, N. Tabpfn-wide:
-Continued pre-training for extreme feature counts.arXiv
-preprint arXiv:2510.06162, 2025.
+hidden layers in neural networks, 2024b. URL https:
+//kellerjordan.github.io/posts/muon/.
+Kolberg, C., Eggensperger, K., and Pfeifer, N. TabPFN-
+Wide: Continued pre-training for extreme feature counts.
+InEurIPS 2025 Workshop: AI for Tabular Data, 2025.
 Kumaraswamy, P. A generalized probability density func-
 tion for double-bounded random processes.Journal of
-hydrology, 46(1-2):79–88, 1980.
-Lam, S. K., Pitrou, A., and Seibert, S. Numba: a llvm-based
-python jit compiler. InLLVM ’15, 2015.
+Hydrology, 46(1-2):79–88, 1980.
+Lam, S. K., Pitrou, A., and Seibert, S. Numba: a LLVM-
+based python JIT compiler. InProceedings of the Second
+Workshop on the LLVM Compiler Infrastructure in HPC,
+2015.
 Le Morvan, M. and Varoquaux, G. Imputation for predic-
-tion: beware of diminishing returns. InThe Thirteenth
-International Conference on Learning Representations,
-2025.
+tion: beware of diminishing returns. InInternational
+Conference on Learning Representations, 2025.
 Lee, J., Lee, Y ., Kim, J., Kosiorek, A., Choi, S., and Teh,
 Y . W. Set transformer: A framework for attention-based
 permutation-invariant neural networks. InInternational
-conference on machine learning, pp. 3744–3753. PMLR,
-2019.
+Conference on Machine Learning, 2019.
 Liu, J., Su, J., Yao, X., Jiang, Z., Lai, G., Du, Y ., Qin, Y .,
-Xu, W., Lu, E., Yan, J., et al. Muon is scalable for llm
+Xu, W., Lu, E., Yan, J., et al. Muon is scalable for LLM
 training.arXiv preprint arXiv:2502.16982, 2025.
-Liu, S.-Y . and Ye, H.-J. Tabpfn unleashed: A scalable and
-effective solution to tabular classification problems.arXiv
-preprint arXiv:2502.02527, 2025.
+Liu, S. and Ye, H.-J. TabPFN unleashed: A scalable and
+effective solution to tabular classification problems. In
+International Conference on Machine Learning, 2025.
 Luki´c, M. and Beder, J. Stochastic processes with sample
 paths in reproducing kernel Hilbert spaces.Transactions
 of the American Mathematical Society, 353(10):3945–
@@ -1132,17 +1180,19 @@ Ma, J., Thomas, V ., Hosseinzadeh, R., Labach, A., Cress-
 well, J. C., Golestan, K., Yu, G., Caterini, A. L., and
 V olkovs, M. TabDPT: Scaling tabular foundation models
 on real data. InNeural Information Processing Systems,
-2025a.
+2025.
 Ma, Y ., Frauen, D., Javurek, E., and Feuerriegel, S. Foun-
 dation models for causal inference via prior-data fitted
-networks.arXiv preprint arXiv:2506.10914, 2025b.
+networks. InInternational Conference on Learning Rep-
+resentations, 2026.
 Mueller, A. C., Curino, C. A., and Ramakrishnan, R. Moth-
-ernet: Fast training and inference via hyper-network trans-
-formers. InThe Thirteenth International Conference on
-Learning Representations, 2024.
+erNet: Fast training and inference via hyper-network
+transformers. InInternational Conference on Learning
+Representations, 2024.
 M¨uller, S., Hollmann, N., Arango, S. P., Grabocka, J., and
-Hutter, F. Transformers can do bayesian inference.arXiv
-preprint arXiv:2112.10510, 2021.
+Hutter, F. Transformers can do Bayesian inference. In
+International Conference on Learning Representations,
+2022.
 Nakanishi, K. M. Scalable-softmax is superior for attention.
 arXiv preprint arXiv:2501.19399, 2025.
 Pagliardini, M., Ablin, P., and Grangier, D. The AdEMAMix
@@ -1151,26 +1201,31 @@ ence on Learning Representations, 2025.
 Park, Y ., Maddix, D., Aubet, F.-X., Kan, K., Gasthaus, J.,
 and Wang, Y . Learning quantile functions without quan-
 tile crossing for distribution-free time series forecasting.
+11
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 InInternational Conference on Artificial Intelligence and
 Statistics, 2022.
 Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V .,
 Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P.,
-Weiss, R., Dubourg, V ., et al. Scikit-learn: Machine
-learning in python.the Journal of machine Learning
-research, 12:2825–2830, 2011.
-Peng, B., Quesnelle, J., Fan, H., and Shippole, E. Yarn:
+Weiss, R., Dubourg, V ., et al. Scikit-learn: Machine learn-
+ing in python.Journal of Machine Learning Research,
+12:2825–2830, 2011.
+Peng, B., Quesnelle, J., Fan, H., and Shippole, E. YaRN:
 Efficient context window extension of large language
-models.ArXiv, abs/2309.00071, 2023.
-Peters, B., Niculae, V ., and Martins, A. F. T. Sparse
-sequence-to-sequence models.ArXiv, abs/1905.05702,
-2019.
+models. InInternational Conference on Learning Repre-
+sentations, 2024.
+Peters, B., Niculae, V ., and Martins, A. F. Sparse sequence-
+to-sequence models. InProceedings of the 57th Annual
+Meeting of the Association for Computational Linguistics,
+pp. 1504–1519, 2019.
 Pfefferle, A., Hog, J., Purucker, L., and Hutter, F. nano-
-tabpfn: A lightweight and educational reimplementation
-of tabpfn. InEurIPS 2025 Workshop: AI for Tabular
+TabPFN: A lightweight and educational reimplementation
+of TabPFN. InEurIPS 2025 Workshop: AI for Tabular
 Data, 2025.
 Prokhorenkova, L., Gusev, G., V orobev, A., Dorogush, A. V .,
-and Gulin, A. Catboost: unbiased boosting with categori-
-cal features. InNeural Information Processing Systems,
+and Gulin, A. CatBoost: unbiased boosting with categor-
+ical features. InNeural Information Processing Systems,
 2018.
 Qiu, Z., Wang, Z., Zheng, B., Huang, Z., Wen, K., Yang,
 S., Men, R., Yu, L., Huang, F., Huang, S., Liu, D., Zhou,
@@ -1185,40 +1240,38 @@ Rahimi, A. and Recht, B. Random features for large-scale
 kernel machines. InNeural Information Processing Sys-
 tems, 2007.
 Ramapuram, J., Danieli, F., Dhekane, E. G., Weers, F.,
-Busbridge, D., Ablin, P., Likhomanenko, T., Digani,
-J., Gu, Z., Shidani, A., and Webb, R. Theory, analy-
-sis, and best practices for sigmoid self-attention.ArXiv,
-abs/2409.04431, 2024.
+Busbridge, D., Ablin, P., Likhomanenko, T., Digani, J.,
+Gu, Z., Shidani, A., and Webb, R. Theory, analysis, and
+best practices for sigmoid self-attention. InInternational
+Conference on Learning Representations, 2025.
 Robertson, J., Reuter, A., Guo, S., Hollmann, N., Hutter,
 F., and Sch¨olkopf, B. Do-PFN: In-context learning for
 causal effect estimation. InNeural Information Process-
 ing Systems, 2025.
-11
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
 Rubachev, I., Kotelnikov, A., Kartashev, N., and Babenko, A.
 On finetuning tabular foundation models.arXiv preprint
 arXiv:2506.08982, 2025.
 Schaipp, F. Optimization benchmark for diffusion models
 on dynamical systems. InEurIPS 2025 Workshop on
 Principles of Generative Modeling (PriGM), 2025.
-Sergazinov, R. and Yin, S.-A. Chunked tabpfn: Exact
-training-free in-context learning for long-context tabu-
-lar data.arXiv preprint arXiv:2509.00326, 2025.
+Sergazinov, R. and Yin, S.-A. Chunked TabPFN: Exact
+training-free in-context learning for long-context tabular
+data.arXiv preprint arXiv:2509.00326, 2025.
 Shah, J., Bikshandi, G., Zhang, Y ., Thakkar, V ., Ramani,
-P., and Dao, T. Flashattention-3: Fast and accurate
-attention with asynchrony and low-precision.ArXiv,
-abs/2407.08608, 2024.
+P., and Dao, T. FlashAttention-3: Fast and accurate at-
+tention with asynchrony and low-precision. InNeural
+Information Processing Systems, 2024.
 Spinaci, M., Polewczyk, M., Schambach, M., and Thelin,
 S. ConTextTab: A semantics-aware tabular in-context
 learner. InNeural Information Processing Systems, 2025.
-Steinwart, I.Support Vector Machines. Springer, 2008.
-Steinwart, I. When does a gaussian process have its paths
-in a reproducing kernel hilbert space?arXiv preprint
+Steinwart, I. When does a Gaussian process have its paths
+in a reproducing kernel Hilbert space?arXiv preprint
 arXiv:2407.11898, 2024.
-Su, J., Lu, Y ., Pan, S., Wen, B., and Liu, Y . Roformer:
-Enhanced transformer with rotary position embedding.
-ArXiv, abs/2104.09864, 2021.
+Steinwart, I. and Christmann, A.Support Vector Machines.
+Information Science and Statistics. Springer, 2008.
+Su, J., Ahmed, M., Lu, Y ., Pan, S., Bo, W., and Liu, Y .
+RoFormer: Enhanced transformer with rotary position
+embedding.Neurocomputing, 568:127063, 2024.
 Thomas, V ., Ma, J., Hosseinzadeh, R., Golestan, K., Yu, G.,
 V olkovs, M., and Caterini, A. Retrieval & fine-tuning for
 in-context tabular models.Neural Information Processing
@@ -1227,112 +1280,124 @@ Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones,
 L., Gomez, A. N., Kaiser, L., and Polosukhin, I. Atten-
 tion is all you need. InNeural Information Processing
 Systems, 2017.
-Vasylenko, P., Pitorro, H., Martins, A. F., and Treviso, M.
-Long-context generalization with sparse attention.arXiv
-preprint arXiv:2506.16640, 2025.
+Vasylenko, P., Pitorro, H., Martins, A., and Treviso, M. V .
+Long-context generalization with sparse attention. In
+International Conference on Learning Representations,
+2026.
 Veliˇckovi´c, P., Perivolaropoulos, C., Barbero, F., and Pas-
-canu, R. Softmax is not enough (for sharp size generali-
-sation).arXiv preprint arXiv:2410.01104, 2024.
+canu, R. Softmax is not enough (for sharp size generalisa-
+tion). InInternational Conference on Machine Learning,
+2025.
 Vetter, J., Gloeckler, M., Gedon, D., and Macke, J. H. Effort-
-less, simulation-efficient bayesian inference using tabular
+less, simulation-efficient Bayesian inference using tabular
 foundation models. InNeural Information Processing
 Systems, 2025.
 Virtanen, P., Gommers, R., Oliphant, T. E., Haberland, M.,
 Reddy, T., Cournapeau, D., Burovski, E., Peterson, P.,
-Weckesser, W., Bright, J., et al. Scipy 1.0: fundamental
+Weckesser, W., Bright, J., et al. SciPy 1.0: fundamental
 algorithms for scientific computing in python.Nature
-methods, 17(3):261–272, 2020.
+Methods, 17(3):261–272, 2020.
+12
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Wilson, A. G. and Izmailov, P. Bayesian deep learning and
-a probabilistic perspective of generalization.Advances
-in neural information processing systems, 33:4697–4708,
-2020.
-Xu, D., Cirit, O., Asadi, R., Sun, Y ., and Wang, W. Mixture
-of in-context prompters for tabular pfns.arXiv preprint
-arXiv:2405.16156, 2024.
+a probabilistic perspective of generalization. InNeural
+Information Processing Systems, 2020.
+Xu, D. Q., Cirit, O., Asadi, R., Sun, Y ., and Wang, W.
+Mixture of in-context prompters for tabular PFNs. In
+International Conference on Learning Representations,
+2025.
 Ye, H.-J., Liu, S.-Y ., Cai, H.-R., Zhou, Q.-L., and Zhan,
 D.-C. A closer look at deep learning methods on tabular
 datasets.arXiv preprint arXiv:2407.00956, 2024.
-Zhang, X., Chang, X., Li, M., Roy-Chowdhury, A. K.,
-Chen, J., and Oymak, S. Selective attention: Enhancing
-transformer through principled context control.ArXiv,
-abs/2411.12892, 2024.
-Zhang, X., Maddix, D. C., Yin, J., Erickson, N., Ansari,
-A. F., Han, B., Zhang, S., Akoglu, L., Faloutsos, C.,
-Mahoney, M. W., et al. Mitra: Mixed synthetic priors
-for enhancing tabular foundation models.arXiv preprint
-arXiv:2510.21204, 2025a.
+Zhang, X., Chang, X., Li, M., Roy-Chowdhury, A., Chen,
+J., and Oymak, S. Selective attention: Enhancing trans-
+former through principled context control. InNeural
+Information Processing Systems, 2024.
 Zhang, X., Ren, G., Yu, H., Yuan, H., Wang, H., Li, J., Wu,
-J., Mo, L., Mao, L., Hao, M., et al. Limix: Unleashing
+J., Mo, L., Mao, L., Hao, M., et al. LimiX: Unleashing
 structured-data modeling capability for generalist intelli-
-gence.arXiv preprint arXiv:2509.03505, 2025b.
-12
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-Appendices
-Contents
-A More architecture details about TabICLv2 15
-A.1 Repeated feature grouping . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
-A.2 Compression then ICL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
-A.3 Many-class classification . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
-A.4 Model configuration . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
-B More pretraining details about TabICLv2 18
-B.1 Three pretraining stages . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
-B.2 Speed and memory optimization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
-C Additional ablation results 20
-D Other things we tried 20
-E Details on the prior 22
-E.1 Differences to previous priors . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 22
-E.2 Sampling correlated scalars . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
-E.3 Random dataset . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
-E.4 Random graph . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
-E.5 Random node function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
-E.6 Random converter . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
-E.7 Random multi-function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
-E.8 Random functions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
-E.9 Random activations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
-E.10 Random matrix . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
-E.11 Random weights . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
-E.12 Random points . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
-E.13 Postprocessing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
-E.14 Filtering . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
-F Plots for the prior 28
-G Path smoothness for Gaussian processes 34
-H Inference optimization for TabICLv2 36
-H.1 Efficient attention computation via selective query-key-value projections . . . . . . . . . . . . . . . . . . 36
+gence.arXiv preprint arXiv:2509.03505, 2025.
+Zhang, X., Maddix Robinson, D., Yin, J., Erickson, N.,
+Ansari, A. F., Han, B., Zhang, S., Akoglu, L., Faloutsos,
+C., Mahoney, M., et al. Mitra: Mixed synthetic priors for
+enhancing tabular foundation models. InNeural Informa-
+tion Processing Systems, 2026.
 13
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-H.2 Offloading technique . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36
-I Quantile distribution 39
-I.1 Problem setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39
-I.2 Quantile function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 39
-I.3 Quantile crossing correction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
-I.4 Tail parameter estimation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
-I.5 Cumulative distribution function (CDF) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
-I.6 Probability density function (PDF) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
-I.7 Continuous ranked probability score (CRPS) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
-I.8 Moment calculations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 44
-I.9 Empirical validation on synthetic regression tasks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45
-J Detailed results on the TabArena benchmark 48
-J.1 Aggregation metrics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 48
-J.2 Results on all datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 48
-J.3 Results on binary classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52
-J.4 Results on multiclass classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53
-J.5 Results on regression datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 55
-K Detailed results on the TALENT benchmark 56
-K.1 Benchmark overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56
-K.2 Results on all datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56
-K.3 Results on binary classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 59
-K.4 Results on multiclass classification datasets (≤10 classes) . . . . . . . . . . . . . . . . . . . . . . . . . 62
-K.5 Results on multiclass classification datasets (>10 classes) . . . . . . . . . . . . . . . . . . . . . . . . . 65
-K.6 Results on regression datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 67
-K.7 Results on small datasets with less than 10K samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . 70
-K.8 Results on large datasets with more than 10K samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . 71
-K.9 Model rankings with respect to meta-features . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 73
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Appendices
+Contents
+A More Architecture Details About TabICLv2 16
+A.1 Repeated feature grouping . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+A.2 Compression then ICL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+A.3 Many-class classification . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+A.4 Model configuration . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+B More Pretraining Details About TabICLv2 19
+B.1 Three pretraining stages . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+B.2 Speed and memory optimization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+C Additional Ablation Results 21
+D Other Things We Tried 21
+E Details on the Prior 23
+E.1 Differences to previous priors . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+E.2 Sampling correlated scalars . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+E.3 Random dataset . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+E.4 Random graph . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+E.5 Random node function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 24
+E.6 Random converter . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+E.7 Random multi-function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+E.8 Random functions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
+E.9 Random activations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
+E.10 Random matrix . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+E.11 Random weights . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+E.12 Random points . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+E.13 Postprocessing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
+E.14 Filtering . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 29
+F Plots for the Prior 29
+G Path Smoothness for Gaussian Processes 35
+H Inference Optimization for TabICLv2 37
+H.1 Efficient attention computation via selective query-key-value projections . . . . . . . . . . . . . . . . . . 37
 14
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-A. More architecture details about TabICLv2
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+H.2 Offloading technique . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 37
+I Quantile Distribution 40
+I.1 Problem setup . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
+I.2 Quantile function . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 40
+I.3 Quantile crossing correction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
+I.4 Tail parameter estimation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
+I.5 Cumulative distribution function (CDF) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 42
+I.6 Probability density function (PDF) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43
+I.7 Continuous ranked probability score (CRPS) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 43
+I.8 Moment calculations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 45
+I.9 Empirical validation on synthetic regression tasks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 46
+J Detailed Results on the TabArena Benchmark 49
+J.1 Aggregation metrics . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 49
+J.2 Results on all datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 49
+J.3 Results on binary classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 53
+J.4 Results on multiclass classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 54
+J.5 Results on regression datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 56
+K Detailed Results on the TALENT Benchmark 57
+K.1 Benchmark overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 57
+K.2 Results on all datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 57
+K.3 Results on binary classification datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 60
+K.4 Results on multiclass classification datasets (≤10 classes) . . . . . . . . . . . . . . . . . . . . . . . . . 63
+K.5 Results on multiclass classification datasets (>10 classes) . . . . . . . . . . . . . . . . . . . . . . . . . 66
+K.6 Results on regression datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 68
+K.7 Results on small datasets with less than 10K samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . 71
+K.8 Results on large datasets with more than 10K samples . . . . . . . . . . . . . . . . . . . . . . . . . . . . 72
+K.9 Model rankings with respect to meta-features . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 74
+L Other Experiments 76
+L.1 Effect of ensemble size . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+L.2 Direct statistical comparison to RealTabPFN-2.5 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+L.3 Few-shot benchmark . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+L.4 Few-shot comparison to LLMs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+L.5 Benchmarking TabPFN’s Random Forest extension . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 76
+L.6 Noise resilience . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 77
+15
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+A. More Architecture Details About TabICLv2
 A.1. Repeated feature grouping
 The generalization of our repeated feature grouping pattern from groups of three columns to groups of k columns among m
 columns is to define groupi(fori≥0) as
@@ -1352,6 +1417,7 @@ which in particular implies
 (i+ 2 b −1)−(i+ 2 a −1) = (j+ 2 c −1)−(j+ 2 d −1),
 yielding 2b + 2d = 2a + 2c. But this means that {b, d}={a, c} . From i < j we know that a > c and b > d , implying
 a=bandc=d, contradicting our previous assumption.
+Note that the assumptionm≥2 k can likely be relaxed tom≥2 k −1.
 A.2. Compression then ICL
 Column-wise embedding.Column-wise embedding processes each column through a set transformer TFcol (Lee et al.,
 2019). Its core isinduced self-attentionwith k inducing vectors that proceeds in two stages: the first stage aggregates
@@ -1361,7 +1427,7 @@ applies an additional transformation; (b) we apply our query-aware scalable soft
 induced self-attention; and (c) TFcol is essentially an in-context learner operating within each column thanks to target-aware
 embedding.
 Row-wise interaction.Following TabICL (Qu et al., 2025), we prepend four learnable [CLS] tokens to each row and
-process them through a transformer TFrow with RoPE (Su et al., 2021). The outputs of the [CLS] tokens are concatenated to
+process them through a transformer TFrow with RoPE (Su et al., 2024). The outputs of the [CLS] tokens are concatenated to
 form a4d-dimensional row embeddings, effectively collapsing the feature dimension.
 Dataset-wise in-context learning.Training row embeddings are combined with target embeddings. A transformer TFicl
 processes all embeddings, where test samples attend only to training samples. A two-layer MLP converts the outputs into
@@ -1370,13 +1436,13 @@ A.3. Many-class classification
 Like many tabular foundation models, TabICLv2 is pretrained on classification tasks with up to 10 classes. For tasks with
 more classes, TabICL (Qu et al., 2025) proposed hierarchical classification during the ICL stage, which recursively partitions
 classes into subproblems with at most 10 classes each. However, our target-aware embedding introduces label information
+16
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 before hierarchical partitioning occurs. Since our label encoder supports at most 10 classes, we need a mechanism to handle
 many-class scenarios at this early stage. We proposemixed-radix ensembling, which generates multiple simplified views of
 the original labels, each containing at most 10 classes. The key idea is to decompose the class label using a mixed-radix
 number system, where each digit corresponds to a different view of the classification problem.
-15
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
 Computing balanced bases.For a task with C >10 classes, we first compute a sequence of balanced bases
 [k0, k1, . . . , kD−1]satisfying two constraints:
 1. Each base is bounded:k i ≤10for alli
@@ -1425,12 +1491,12 @@ etterich & Bakiri, 1994), which decomposes multi-class classification into multi
 ECOC which uses binary codes and trains separate classifiers, our method: (1) uses k-ary codes with k≤10 to match
 our pretrained label encoder capacity, (2) operates at the embedding level rather than the prediction level and averages
 embeddings rather than combining binary predictions.
+17
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Combined with hierarchical classification.Hierarchical classification operates at the ICL stage, while mixed-radix
 ensembling handles many-class scenarios at the column-wise embedding stage. Together, they enable TabICLv2 to handle
 classification tasks with an arbitrary number of classes without retraining.
-16
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
 A.4. Model configuration
 TabICLv2 adopts an architecture similar to TabICL, consisting of column-wise embedding through a Set Transformer TFcol,
 row-wise interaction through a Transformer encoder TFrow, and dataset-wise in-context learning through a Transformer
@@ -1452,6 +1518,9 @@ Regression model.Adapting TabICLv2 for regression requires minimal architectural
 EmbedTAE and ICL-stage target embedding EmbedICL use linear layers to embed continuous targets instead of class
 lookup tables, and the final MLP outputs 999 quantile predictions instead of class probabilities.
 Compared to the classification model, the regression model uses bias-free layer normalizations with learnable weights only.
+18
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Table A.1.Model configuration for classification and regression.
 Component Classification Regression
 TFcol (Column-wise embedding)
@@ -1478,10 +1547,7 @@ Other settings
 LayerNorm bias Yes No
 FFN expansion 2×2×
 Activation GELU GELU
-17
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-B. More pretraining details about TabICLv2
+B. More Pretraining Details About TabICLv2
 B.1. Three pretraining stages
 Following TabICL (Qu et al., 2025), we adopt a three-stage pretraining curriculum that progressively increases the sample
 size of synthetic datasets with batch size of 64 as follows:
@@ -1497,10 +1563,10 @@ synthetic datasets during pretraining is crucial for generalization to real-worl
 B.2. Speed and memory optimization
 Automatic mixed precision is always used. For stage 3, we enable gradient checkpointing when the sample size exceeds
 20K to avoid the out-of-memory error. For stages 2 and 3, we use FlashAttention-3 (Shah et al., 2024), which provides an
-average 1.3×speedup over FlashAttention-2 (Dao, 2023) on large-scale pretraining.
-18
+average 1.3×speedup over FlashAttention-2 (Dao, 2024) on large-scale pretraining.
+19
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 51015202530
 [5.41] TabICLv2-Stage3
 [5.69] TabICLv2-Stage2
@@ -1607,10 +1673,10 @@ DCNv2 [17.09]
 ExcelFormer [16.99]
 (c)Results on large datasets with more than 10K samples
 Figure B.1.Critical difference diagram on the TALENT benchmark for TabICLv2 pretrained on three stages.
-19
+20
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-C. Additional ablation results
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+C. Additional Ablation Results
 In the main text (Section 7), we present ablation results based on log-loss. Here, we provide additional results using
 normalized accuracy (Figure C.1a) and Elo (Figure C.1b). Across all three metrics, the ordering of ablations remains
 consistent, leading to the same conclusions about the contribution of each component.
@@ -1625,37 +1691,37 @@ Adding noise to the prior.Following TabPFNv2 (Hollmann et al., 2025), which adds
 causal graph during synthetic data generation to introduce uncertainty, we experimented with incorporating similar noise
 into our prior (green solid line in Figure C.1). However, this modification has negligible impact on performance across all
 metrics.
-D. Other things we tried
+D. Other Things We Tried
 Here, we want to describe some other things that we tried but did not end up using, mostly in smaller-scale experiments and
 without careful analysis. We hope that it can serve as anecdotal evidence to other model developers. Generally, the results of
 pretraining runs are somewhat noisy, so these observations have to be taken with at least one grain of salt. Reducing the
 pretraining noise could itself be a useful contribution of future research.
-Pretraining.Contrary to Ma et al. (2025a), we did not see a benefit from using schedule-free AdamW (Defazio et al.,
-2024) over regular AdamW with a cosine schedule. We found some benefit from AdEMAMix (Pagliardini et al., 2025) in
-small-scale runs compared to AdamW, but it performed worse than Muon, and a combination of both did not seem to help.
-For AdamW, decreasing β2 showed improvements at least for shorter runs. The comparisons between cautious weight decay,
-weight decay, and no weight decay were not very clear; we went with cautious weight decay due to its inclusion in the
-NanoGPT speedrun (Jordan et al., 2024a). Since Ma et al. (2025a) used label smoothing but this can hurt the performance
-on metrics like logloss, we tried a label smoothing schedule that decays to zero at the end of training, but it resulted in equal
-performance.
+Pretraining.Contrary to Ma et al. (2025), we did not see a benefit from using schedule-free AdamW (Defazio et al.,
+2024) over regular AdamW with a cosine schedule. We found some benefit from AdEMAMix (Pagliardini et al., 2025)
+in small-scale runs compared to AdamW, but it performed worse than Muon, and a combination of both did not seem to
+help. For AdamW, decreasing β2 showed improvements at least for shorter runs. The comparisons between cautious weight
+decay, weight decay, and no weight decay were not very clear; we went with cautious weight decay due to its inclusion in
+the NanoGPT speedrun (Jordan et al., 2024a). Since Ma et al. (2025) used label smoothing but this can hurt the performance
+on metrics like log-loss, we tried a label smoothing schedule that decays to zero at the end of training, but it resulted in
+equal performance.
 Architecture: embeddings.We did not see benefits from using MLPs instead of linear layers for embeddingx. Adding
 log(n) together with x was not helpful in small runs either. Surprisingly, using regular column-wise attention instead of
 ISAB performed worse in some runs. Mixing the layers of the column- and row-attention stages did not seem beneficial, and
-it can be a disadvantage since it requires more transposes and yields a less optimized CPU- and disk-offloading. Even with
+it can be a disadvantage since it requires more transposes and results in less optimized CPU- and disk-offloading. Even with
 such mixing, it did seem worse to have a separate column for y instead of adding the embedding of y to the embeddings of
 the columnsx i.
 Architecture: row interaction.It seems that the full row-wise attention (attention across columns, within a row) is
-important, replacing it by induced self-attention performed considerably worse. We experimented a bit with random feature
-identifies in the version used by LimiX (Zhang et al., 2025b), but it was unclear if they are beneficial.
+important, replacing it with induced self-attention performed considerably worse. We experimented a bit with random
+feature identifiers in the version used by LimiX (Zhang et al., 2025), but it was unclear whether they are beneficial.
 Architecture: normalizations.We did not see improvements from different placements of normalization layers (though
-the experiments used more shallow nets). Additionally, bias-free or parameter-free layernorms seemed to perform similar to
-full layernorms while being faster, but we were not very confident in whether these measurements are good enough.
+the experiments used shallower nets). Additionally, bias-free or parameter-free layernorms seemed to perform similar to full
+layernorms while being faster, but we were not very confident in whether these measurements are good enough.
 Architecture: other.TabPFNv2-type architectures seemed to perform well, and we have no clear conclusion in which
 situations they are better or worse than the TabICLv2 architecture. Due to the higher runtime complexity and per-step time
-of the TabPFNv2 architecture, we discarded it. Experiments with residual connections did not show much differences in the
-20
+of the TabPFNv2 architecture, we discarded it. Experiments with residual connections did not show much difference in the
+21
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 0 50k 100k 150k 200k 250k
 Pretraining Step
 0.55
@@ -1739,18 +1805,18 @@ Ref + more layers
 Ref + QASSMax
 (c)Ablation results based on log-loss
 Figure C.1.Ablation results using different metrics.
-21
+22
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 results. Increasing the number of attention heads from 4 to 8 in TFcol and TFicl seemed slightly beneficial in small-scale
 runs with a smaller model, but not necessarily in large-scale runs.
 Other things.For regression (judged by MSE), we found incremental spline quantile functions (ISQF, Park et al., 2022) to
 work similarly well as regular quantile regression, but discarded them due to their computational (and conceptual) overhead.
-While LimiX (Zhang et al., 2025b) included convolution-based functions in their prior, we did not see a measurable benefit
+While LimiX (Zhang et al., 2025) included convolution-based functions in their prior, we did not see a measurable benefit
 from including these functions into our prior, at least when fine-tuning TabICL on our prior. TabICL uses a masking
-mechanism to deal with micro-batches in which some datasets have fewer columns, where the rest of columns are filled up
-with zeros. We did not implement this and the pretraining still worked well.
-E. Details on the prior
+mechanism to deal with micro-batches in which some datasets have fewer columns, where the rest of the columns are filled
+up with zeros. We did not implement this and the pretraining still worked well.
+E. Details on the Prior
 In the following, we describe left-out details from the prior description in Section 5, with a focus on a more implementation-
 related description. To keep the prior modular, we decompose it into sampling methods for different objects: random
 datasets, random functions, random points, random matrices, and so on. These will be described in the following subsections
@@ -1764,10 +1830,10 @@ However, our prior still differs from it in many ways by introducing new mechani
 • We introduce additional computations at each node that create random node and feature importances (Appendix E.5).
 • We make the extraction of numerical and categorical features more precise through the introduction of random
 converters (Appendix E.6) and provide more variants for categorical converters.
-• We explicitly introduce multiple ways to apply random functions in the case of multiple parent nodes (Appendix E.7, it
+• We explicitly introduce multiple ways to apply random functions in the case of multiple parent nodes (Appendix E.7; it
 is unclear if this case can occur in TabPFNv2).
 • We introduce new random function types and diversify existing ones (Appendix E.8). In particular, for tree-based
-functions we do not only use single trees like TabPFNv2. Instead, we use an ensemble of CatBoost-style symmetric
+functions we do not only use single trees as in TabPFNv2. Instead, we use an ensemble of CatBoost-style symmetric
 trees which facilitate efficient computations. Our GP functions are extended and multivariate versions of the random
 GP activations from TabICL and come with a detailed theoretical analysis (Appendix G). We also introduce random
 linear, quadratic, clustering-based, and product functions.
@@ -1780,24 +1846,22 @@ distributions (Appendix E.12).
 • We introduce a filtering mechanism similar to Dong et al. (2025) in Appendix E.14.
 • In addition, for scalar random variables like the number of categories etc., we generally use different choices of
 distributions, either to fit our framework, or because they are not known for TabPFNv2.
-22
+23
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 E.2. Sampling correlated scalars
-When sampling scalar numerical or categorical values within the prior, we want some of them to be correlated, since we
-expect some properties to be correlated in real datasets. For example, correlated quantities could include the cardinalities of
-different categorical columns, or the random function types at different nodes of the graph. To know which values should be
-correlated, we assign names to them such as “categorical cardinality”. All values with that name are sampled from the same
-distribution, whose parameters are themselves sampled once for every name.
-Numerical values:For each variable name, we sample t∼Uniform[0,1] and s∼LogUniform[0.1,10000] and set
-α:=st, β:=s(1−t) . For each time a variable should be sampled for that name, a base variable is sampled as
-u∼Beta(α, β) . Then, it is affinely transformed to a desired range, the exponential is taken for log-type distributions, and
-it is rounded down for integer-valued random variables. We denote uniform-like real-valued and integer-valued random
-variables with boundsa, bbyNum(a, b),Int(a, b)and log-uniform-like versions asLogNum(a, b),LogInt(a, b).
-Categorical values:For each variable name, we generate a random weights vector w∈R c, where c is the desired number
-of categories. For each time a variable should be sampled from that name, it is sampled from the distribution represented
-by the normalized weight vector w. Note that the generation of the random weights vector w uses the numerical sampling
-mechanism for some scalar parameters, so the random weights vectors for different variable names are correlated.
+When sampling scalar numerical values within the prior, we want some of them to be correlated, since we expect some
+properties to be correlated in real datasets. For example, correlated quantities could include the cardinalities of different
+categorical columns. To know which values should be correlated, we assign names to them such as “categorical cardinality”.
+All values with that name are sampled from the same distribution, whose parameters are themselves sampled once for every
+name.
+Mechanism:For each variable name, we sample t∼Uniform[0,1] and s∼LogUniform[0.1,10000] and set α:=
+st, β:=s(1−t) . For each time a variable should be sampled for that name, a base variable is sampled as u∼Beta(α, β) .
+Then, it is affinely transformed to a desired range, the exponential is taken for log-type distributions, and it is rounded down
+for integer-valued random variables. We denote uniform-like real-valued and integer-valued random variables with bounds
+a, bbyNum(a, b),Int(a, b)and log-uniform-like versions asLogNum(a, b),LogInt(a, b).
+For categorical values (like the random function type used at each node), we intended to implement correlated sampling, but
+it was not used due to a bug.
 E.3. Random dataset
 We first sample some general characteristics of the dataset. For classification, we sample the number of classes from
 UniformInt(2,10) . The ratio of categorical columns is sampled from Uniform(−0.5,1.2) and subsequently clipped to
@@ -1812,7 +1876,7 @@ are then traversed in topological order and their corresponding random node func
 parent nodes as input. Nodes that are not needed for the final dataset computation are pruned. Finally, the obtained dataset is
 shuffled randomly and split into train and test parts.
 E.4. Random graph
-For node indiecesi < j, an edge is placed with probability
+For node indicesi < j, an edge is placed with probability
 pij = sigmoid(A+B i +C j),
 where A, Bi, Cj are independent standard Cauchy random variables. A controls the general level of connectivity, while Bi
 and Cj control the individual outgoing and incoming connectivities of the nodes, respectively. Compared to independent
@@ -1829,9 +1893,9 @@ the average (over samples) L2 norm of the vectors. The motivation to use the L2 
 the vector norms small in high dimensions, such that high-dimensional functions do not become too difficult to learn. Now,
 we apply the random converters for the assigned columns to their respective dij dimensions, updating the respective part of
 Xwith their output. Finally, in the “random rescale” step, we multiplyXby a scalarLogNum(0.1,10).
-23
+24
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 E.6. Random converter
 We introduce converters
 X ′, v= converter(X), X, X ′ ∈R n×d, v∈R n ,
@@ -1873,9 +1937,9 @@ probability proportionally to the standard deviation of data in that dimension, 
 randomly sampled on the input nodes. The split points are random samples from the arriving data in the respective dimension.
 The leaf values are standard normal random values. Then, each tree is evaluated for the data and the corresponding leaf
 values are averaged.
-24
+25
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 RandomDiscretizationFunctionChooses a subset of samples from X as centers, with the number of samples being
 LogInt(2,255) . It then maps each point x to its closest center as measured by the Lp distance, p= LogNum(0.5,4) , and
 applies a random linear function to the result.
@@ -1883,7 +1947,7 @@ RandomGPFunctionThis function computes f(M x) = (f1(M x), . . . , fd(M x)), wher
 from a Gaussian process with a random kernel k shared between all i. Here, Mij =αw iAij with random weights vector
 w, random scale α∼LogNum(0.5,10) , and a random Gaussian matrix A. This choice is inspired by the random GP
 activations in TabICL as well as the success of tuning over different kernels with different bandwidths (scales) and learnable
-linear input transformations in xRFM (Beaglehole et al., 2025).
+linear input transformations in xRFM (Beaglehole et al., 2026).
 The first question is how to design the random kernelsk. In order to use a random Fourier features approximation (Rahimi &
 Recht, 2007), we design k directly in the Fourier domain. Suppose that g:R d →R ≥0 is integrable and even (g(x) =g(−x)
 for all x). Then k(x, x′) = ˇg(x−x′) is a real-valued kernel on Rd (see e.g. Theorem G.2), where ˇg(x) =
@@ -1922,18 +1986,18 @@ a (u) = (1−u)
 1−a −1
 is distributed according toH a. We samplea∼LogNum(2,20), corresponding toq=a+d−1, and samplerfromH a.
 With 50% probability, we chooseanother wayto sample the kernel: Inspired by the choice of non-rotationally invariant
-axis-aligned kernels in xRFM (Beaglehole et al., 2025), we alternatively sample each entry of ω independently from Ha.
+axis-aligned kernels in xRFM (Beaglehole et al., 2026), we alternatively sample each entry of ω independently from Ha.
 This yields a product distribution g(ω) =g 1(ω1)·. . .·g d(ωd) for ω, whose inverse Fourier transform ˇgyields a kernel that
-is a product of one-dimensional kernels, as for the case “p=q ” in xRFM (Beaglehole et al., 2025). We do not explicitly
+is a product of one-dimensional kernels, as for the case “p=q ” in xRFM (Beaglehole et al., 2026). We do not explicitly
 prove a result about the path smoothness for product kernels, but a similar argument to Theorem G.1 in conjunction with
 Theorem 4.2 of Steinwart (2024) should yield that for a >2 , the paths are contained in Sobolev spaces of dominating mixed
 smoothness of order s whenever s <(a−1)/2 . As in the other case, we sample a∼LogNum(2,20) . Since the product
 kernel constructed in this way is axis-aligned, we do not apply the random matrix M in the construction above to preserve
 axis-alignment.
 RandomLinearFunctionSamples a random matrix (Appendix E.10) and multiplies each vectorxby this matrix.
-25
+26
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 RandomQuadraticFunctionComputes
 f(x) i =
 X
@@ -1975,12 +2039,13 @@ HardTanh, signum, Heaviside, exp(−x2), exp, 1[0,1], sin, square, abs, softmax,
 log(max(|x|,10 −6)), rank, sigmoid, round, modulo 1.
 Parametric activations.We introduce the following activations with random parameters:
 •ReLU(x) q withq∼LogNum(0.1,10).
-26
+27
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 •sign(x)|x| q withq∼LogNum(0.1,10).
 •(|x|+ 10 −3)−q withq∼LogNum(0.1,10).
 •x m withm∼Int(2,5).
+The latter two were only used for the random activation matrix.
 E.10. Random matrix
 We randomly sample a matrix from one of the following five types:
 RandomGaussianMatrix: Consists of i.i.d. standard normal entries.
@@ -1997,7 +2062,7 @@ and a scaling factor γ∼LogNum(0.1,10) , then create the Laplace kernel matrix
 multiply each entry by an independent random sign (a number in{−1,1}).
 RandomActivationMatrix: After sampling a matrix from one of the other types, we apply a random activation to the flattened
 matrix, then add Gaussian noise with standard deviation 10−3. Unlike for the NN, we omit the standardization and random
-rescaling in the activations.
+rescaling in the activations, since the batch size is 1, preventing standardization.
 Postprocessing.After creating a matrix using one of the described types, we add 1e-6 times a random Gaussian matrix
 and normalize each row of the resulting matrix. This prevents all-zero rows that could arise from some activation functions
 in the RandomActivationMatrix.
@@ -2012,59 +2077,59 @@ Finally, we normalize and shufflew.
 E.12. Random points
 Generating a matrix X∈R n×d of random points is in principle the same problem as generating a random dataset with
 numerical columns, but here we only use cheaper mechanisms (and avoid infinite recursions). First, we sample either
-standard normal points, uniform on [−1,1] d, uniform on the unit ball, or normal with random covariance. Then, we apply a
-random function to these points. The normal points with random covariance are sampled as follows: For a given dimension
-d, sample x∈R d from a standard normal distribution, then compute A(w⊙x) , where ⊙ is the elementwise product,
-w∈R d are random weights, andAis a random Gaussian matrix.
+standard normal points, uniform on [−1,1] d, uniform on the unit ball, or random covariance points. Then, we apply a
+random function to these points. The random covariance points are sampled as follows: For a given dimension d, sample
+x∈R d from a standard normal or uniform on [−1,1] d distribution, then compute A(w⊙x) , where ⊙ is the elementwise
+product,w∈R d are random weights, andAis a random Gaussian matrix.
 E.13. Postprocessing
 Following TabICL, columns with a single value are removed. Datasets are discarded if all columns were removed or less than
 2 classes are present or the train and test splits cannot be fixed to contain the same classes. We ordinal-encode categoricals.
+28
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 For all columns xi and in the regression case also y, we remove outliers, then standard-scale. We permute the column order
 and the class indices (but not the categorical indices).
-27
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
 E.14. Filtering
 The ExtraTrees-based filtering works as follows: We convert classification problems to regression using one-hot encoding,
 to unify the two cases. To obtain very fast filtering, we then fit an ExtraTreesRegressor (Geurts et al., 2006) from scikit-learn
 (Pedregosa et al., 2011) with n estimators=25, bootstrap=True, and max depth=6 on the full dataset. We then
 test whether the out-of-bag predictions can achieve a lower MSE than the mean label by checking if this is the case on at
 least 95% out of 200 bootstrap subsamples. If it is not the case, the dataset is rejected.
-F. Plots for the prior
+F. Plots for the Prior
 Figure F.1 shows random datasets from the prior. Random function types are shown in Figures F.2, F.3, F.4, F.7, F.5, F.6, F.8,
 and F.9. Random graphs are shown in Figure F.10. Figure F.11 shows random points. Random matrices are visualized in
 Figures F.12, F.13, F.14, F.15, F.16.
 Figure F .1.Random classification datasets from the prior.Datasets contain 500 samples and two columns in x. The color shows the
 class label. Only datasets containing at least 10 unique values on each axis are shown (for visualization purposes, since otherwise the
 points can overlap a lot).
-28
+29
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Figure F .2.Samples of RandomNNFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .3.Samples of RandomTreeFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .4.Samples of RandomDiscretizationFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .5.Samples of RandomLinearFunction.We use inputs from[−3,3] 2 and one-dimensional output.
-29
+30
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Figure F .6.Samples of RandomQuadraticFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .7.Samples of RandomGPFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .8.Samples of RandomEMAssignmentFunction.We use inputs from[−3,3] 2 and one-dimensional output.
 Figure F .9.Samples of RandomProductFunction.We use inputs from[−3,3] 2 and one-dimensional output.
-30
-
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-Figure F .10.Randomly sampled graphs.Graphs are not filtered (this would require knowing the assignment of columns to nodes).
 31
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Figure F .10.Randomly sampled graphs.Graphs are not filtered (this would require knowing the assignment of columns to nodes).
+32
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Figure F .11.Samples of RandomPoints from the prior.We sample 300 three-dimensional points and encode the third dimension
 through the color.
 Figure F .12.Samples of RandomGaussianMatrix.We sample 30×30 matrices and show the absolute values of their entries. We
 permute their indices by sorting the absolute values of the top left- and right-singular vectors of their absolute values, respectively.
-32
+33
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Figure F .13.Samples of RandomWeightsMatrix.We sample 30×30 matrices and show the absolute values of their entries. We permute
 their indices by sorting the absolute values of the top left- and right-singular vectors of their absolute values, respectively.
 Figure F .14.Samples of RandomSingularValuesMatrix.We sample 30×30 matrices and show the absolute values of their entries. We
@@ -2073,10 +2138,10 @@ Figure F .15.Samples of RandomKernelMatrix.We sample 30×30 matrices and show th
 their indices by sorting the absolute values of the top left- and right-singular vectors of their absolute values, respectively.
 Figure F .16.Samples of RandomActivationMatrix.We sample 30×30 matrices and show the absolute values of their entries. We
 permute their indices by sorting the absolute values of the top left- and right-singular vectors of their absolute values, respectively.
-33
+34
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-G. Path smoothness for Gaussian processes
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+G. Path Smoothness for Gaussian Processes
 In the following, we prove a result for the smoothness of functions sampled from Gaussian processes. We quantify the
 smoothness in terms of which Sobolev spaces H s(B) the functions f belong to, for some domain B⊆R d and smoothness
 s≥0 . There are different ways to define Sobolev spaces, and we refer the curious reader to the literature, but essentially
@@ -2089,7 +2154,7 @@ for allt. Moreover, for integrableg:R d →R ≥0, we denote its inverse Fourier
 R
 ei⟨ω,x⟩g(ω)dω.
 In the following theorem, it might be possible to relax the criterion q >2d to q > d by using other results from the literature.
-However, in this case the result would not guarantee anymore that the paths are continuous.
+However, in this case the result would no longer guarantee that the paths are continuous.
 Theorem G.1(Smoothness of GP sample paths).Let g:R d →R ≥0 be integrable and even such that there exist constants
 c, C, r0 >0andq >2dwith
 c∥ω∥−q ≤g(ω)≤C∥ω∥ −q for allω∈R d with∥ω∥ ≥r 0.(G.1)
@@ -2126,9 +2191,9 @@ Z
 Hence, the associated kernels klo, k0 are infinitely differentiable. For a given smoothness s∈R , using Theorem 4.1 of
 Da Costa et al. (2023) and choosing a suitable modification of Xlo, X0, we almost surely have Xlo|B, X0|B∈H s(B).
 Hence, if there exists a modification ˜X of X with P( ˜X| B ∈H s(B)) =p for some p∈[0,1] , then ˜X∗ := ˜X−X lo +X 0
-34
+35
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 is a modification of X∗ with P( ˜X∗|B ∈H s(B)) =p . The same holds with switched roles of X and X∗. Hence, it suffices
 to prove the desired smoothness results forX ∗ instead ofX.
 Step 3: Smoothness of sample paths for X∗.By Theorem G.2 and Eq. (G.2), the RKHS H∗ of k∗ is equivalent to the
@@ -2156,8 +2221,8 @@ Z
 ϕi(x)(ω)ϕi(y)(ω)dω=
 Z
 ei⟨x−y,ω⟩ gi(ω)dω= ˇg i(x−y),(G.4)
-which is real-valued since gi is even. Especially, k=k 1 is a real-valued kernel. Now, by Theorem 4.21 in Steinwart (2008),
-the associated RKHS is
+which is real-valued since gi is even. Especially, k=k 1 is a real-valued kernel. Now, by Theorem 4.21 in Steinwart &
+Christmann (2008), the associated RKHS is
 Hi :=H gi ={x7→ ⟨h, ϕ i(x)⟩H |h∈H}
 with norm
 ∥f∥ Hi = inf{∥h∥ H |h∈H, f=⟨h, ϕ i(·)⟩H }.
@@ -2178,19 +2243,19 @@ R
 ei⟨x−y,ω⟩(1 +∥ω∥ 2)−s dω, which is up to a
 constant factor exactly the kernel of (an equivalent version of) the Sobolev space H s(Rd) (see e.g. De Vito et al., 2021,
 section 7.1). By step 2, this means that the RKHS ofgis equivalent toH s(Rd).
-35
+36
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-H. Inference optimization for TabICLv2
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+H. Inference Optimization for TabICLv2
 H.1. Efficient attention computation via selective query-key-value projections
 We implement two attention optimizations that reduce redundant computation by selectively computing query, key, and
 value projections based on the specific attention patterns required in each stage of TabICLv2.
-Row-wise inter-feature interaction.During the row-wise interaction, we prepend c learnable [CLS] tokens (we use
-C= 4 as TabICL) to the feature embeddings and use only their final outputs that concatenated into a single vector as the
-row representation for the subsequent in-context learning. Since only the [CLS] token outputs are required, we optimize
-the final block of TFrow by restricting the query computation to these c positions while allowing them to attend to the full
-sequence ([CLS] tokens and all features) as keys and values. Concretely, given a sequence of length c+m , the final block
-computes attention outputs only for the firstCquery positions:
+Row-wise inter-feature interaction.During the row-wise interaction, we prepend c learnable [CLS] tokens (we use c= 4
+as TabICL) to the feature embeddings and use only their final outputs, which are concatenated into a single vector as the row
+representation for the subsequent in-context learning. Since only the [CLS] token outputs are required, we optimize the final
+block of TFrow by restricting the query computation to these c positions while allowing them to attend to the full sequence
+([CLS] tokens and all features) as keys and values. Concretely, given a sequence of length c+m , the final block computes
+attention outputs only for the firstcquery positions:
 Attention(Q1:c,K 1:c+m,V 1:c+m)
 where Q1:c ∈R c×d represents queries from [CLS] tokens only, while K,V∈R (c+m)×d span the full sequence. This
 reduces the query projection cost from O((c+m)·d 2) to O(c·d 2) and the attention computation from O((c+m) 2 ·d) to
@@ -2207,7 +2272,7 @@ key, or value computation. This ensures that normalization statistics are comput
 sliced representations remain properly normalized without requiring separate normalization passes for different subsets.
 H.2. Offloading technique
 Batch size estimation.To dynamically adjust the batch size of the three transformers based on available memory and
-avoid out-of-memory errors, following TabICL, TABICLV2 employs polynomial regression to estimate the inference peak
+avoid out-of-memory errors, following TabICL, TabICLv2 employs polynomial regression to estimate the inference peak
 GPU memory consumption:
 MEM=α 1 ×batch size+α 2 ×seq len+α 3 ×batch size×seq len+α 4
 Compared to TabICL, we introduce query-aware scalable softmax in TFcol and TFicl, which requires re-evaluating the
@@ -2219,9 +2284,9 @@ where the estimated memory is measured in megabytes (MB).
 TabICLv2 demonstrates substantially improved capability for handling large tables compared to TabICL. To provide an
 affordable setup for processing tables with millions of samples, we implement a hierarchical offloading strategy that extends
 beyond the CPU offloading of TabICL to include disk-based offloading.
-36
+37
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Memory bottleneck analysis.Given an input X∈R b×n×m, where b, n, and m represent the number of datasets, the
 number of samples, and the number of features respectively, X is first reshaped to R(b×m)×n and processed by TFcol to
 produce feature embeddings E∈R (b×m)×n×d. The memory bottleneck lies in storing this intermediate tensor E. For a
@@ -2256,10 +2321,10 @@ Figures H.1 and H.2 illustrate the resource utilization profiles for CPU and dis
 with 1 million samples and 500 features (80% training, 20% test) on an H100 GPU with FlashAttention-3 and automatic
 mixed precision enabled. CPU offloading achieves faster execution (115s vs. 450s) but requires 250 GB of RAM. Disk
 offloading trades speed for accessibility, requiring only 24 GB of CPU memory and 50 GB of GPU memory while using
-250 GB of disk space, which is a configuration available on most modern workstations.
-37
+250 GB of disk space.
+38
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 50
 100
 150
@@ -2309,10 +2374,10 @@ correspond to synchronization points where the asynchronous copy manager drains 
 row-wise interaction (280–350s), data is loaded from disk in batches. The total forward pass takes 450 seconds—approximately 4 ×
 slower than CPU offloading due to disk I/O latency, but with dramatically reduced memory requirements (CPU memory under 24 GB and
 GPU memory under 50 GB) that make million-scale inference accessible on commodity hardware.
-38
+39
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-I. Quantile distribution
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+I. Quantile Distribution
 I.1. Problem setup
 For regression tasks, given an input feature vectorx, TabICLv2 predicts a set of conditional quantiles:
 ˆQ(α|x)forα∈ {α 1, α2, . . . , αK}
@@ -2352,13 +2417,13 @@ mi = qi+1 −q i
 ∆αi
 The slopes mi must be non-negative for a valid quantile function, which is ensured by the monotonicity correction described
 later. To extrapolate the distribution beyond the observed quantile range[αL, αR], we employ parametric exponential tail
-models suitable for sub-exponential distributions (e.g., Gaussian) (Beirlant et al., 2006).
+models suitable for sub-exponential distributions (e.g., Gaussian) (Beirlant et al., 2004).
 For the left tail (α < α L):
 Qleft(α) =β L ln(α) +c L
 whereβ L >0is the scale parameter andc L is the intercept determined by continuity at the boundary.
-39
+40
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 RequiringQ left(αL) =q L gives:
 cL =q L −β L ln(αL)
 Thus, the complete left tail formula is:
@@ -2409,14 +2474,14 @@ q:q1≤q2≤···≤qK
 KX
 k=1
 wk(ˆqk −q k)2
-where wk >0 are optional weights (by default, wk = 1). This problem admits a unique solution that can be computed
-in O(K) time via the Pool Adjacent Violators Algorithm (PA V A) (Best & Chakravarti, 1990). PA V A iteratively merges
-adjacent blocks that violate monotonicity and replaces each merged block with its weighted average. Despite its linear
-per-sample complexity, PA V A is inherently a 1D, data-dependent procedure that the sequence of merges depends on local
-violations and therefore introduces sequential dependencies along the quantile index. As a result, it is not straightforward
-40
+where wk >0 are optional weights (by default, wk = 1). This problem admits a unique solution that can be computed in
+O(K) time via the Pool Adjacent Violators Algorithm (PA V A) (Best & Chakravarti, 1990). PA V A iteratively merges adjacent
+blocks that violate monotonicity and replaces each merged block with its weighted average. Despite its linear per-sample
+complexity, PA V A is inherently a 1D, data-dependent procedure in which the sequence of merges depends on local violations
+and therefore introduces sequential dependencies along the quantile index. As a result, it is not straightforward to implement
+41
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101 102 103 104 105 106
 Batch size
 10−4
@@ -2434,8 +2499,8 @@ Figure I.1.Execution time comparison of different monotonicity enforcement metho
 Sort-GPU( torch.sort on CUDA) achieves the best performance.Numba(our parallel PA V A implementation) andSort-CPUshow
 competitive scaling on CPU.Scipy( scipy.optimize.isotonic regression) processes samples sequentially, becoming slower
 than Numba at large batch sizes.
-to implement PA V A as a single fully vectorized operation, which limits its practical throughput because we often need to
-process large batches of predictions (e.g., the entire test set).
+PA V A as a single fully vectorized operation, which limits its practical throughput because we often need to process large
+batches of predictions (e.g., the entire test set).
 We leverage the just-in-time compilation of Numba (Lam et al., 2015) to optimize the PA V A implementation, achieving ef-
 fective CPU parallelism. As shown in Figure I.1, the Numba-based PA V A implementation achieves competitive performance
 with torch.sort on CPU for large batch sizes, while being faster than the PA V A implementation of Scipy (Virtanen
@@ -2470,9 +2535,9 @@ Spline region(z∈[q i, qi+1)):
 Fspline(z) =α i + z−q i
 qi+1 −q i
 (αi+1 −α i)
-41
+42
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 Left tail(z < q L): Fromz=q L +β L ln(α/αL), we solve forα:
 Fleft(z) =α L exp
  z−q L
@@ -2553,9 +2618,9 @@ Z 1
 F(z)
 2(1−α)(Q(α)−z)dα
 We compute CRPS analytically by integrating over each region.
-42
+43
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 I.7.1. CRPSCONTRIBUTION FROM SPLINE REGION
 For segment i with α∈[α i, αi+1] and Q(α) =q i +m i(α−α i), we let r= min(max(F(z), α i), αi+1) be the clamped
 CDF value. The contribution to CRPS from segmentiis:
@@ -2651,9 +2716,9 @@ Tright =
 (
 2(1−˜α)(z−b R)ifz > q R
 2aR(1−α R) ln(1−α R)otherwise
-43
+44
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 I.8. Moment calculations
 I.8.1. MEAN
 The mean of a distribution can be computed as:
@@ -2731,9 +2796,9 @@ Right tail contribution:
 E[Z 2]right = (1−α R)(q2
 R + 2βRqR + 2β2
 R)
-44
+45
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 I.9. Empirical validation on synthetic regression tasks
 To validate that QuantileDistribution correctly constructs probability distributions from the predicted quantiles
 of TabICLv2, we design four synthetic regression datasets with known ground-truth distributions. This allows direct
@@ -2776,17 +2841,17 @@ exponential tail extrapolation smoothly extends the curves beyond[α L, αR] = [
 conditional distributions. The heteroscedastic dataset shows narrower peaks at x= 0 and broader peaks at x=±2 ,
 matching the ground truth.
 4.Row 4 (CDF): The smooth S-curves of predicted CDFs (solid) closely follow the true CDFs (dashed).
-45
+46
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 5. Row 5 (Density heatmaps): A 2D visualization of the conditional density f(y|x) across the input domain (log scale).
 The heteroscedastic dataset shows a funnel-shaped density widening with |x|, while the step function exhibits two
 distinct horizontal bands separated atx= 0.
 6. Row 6 (resampled data): Synthetic samples drawn from the learned distribution via inverse transform sampling
 (y=Q(U)whereU∼Uniform(0,1)). The resampled points (blue) closely match the original training data (gray).
-46
+47
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 −2 0 2
 x
 −4
@@ -3028,10 +3093,10 @@ x=0 (pred)
 x=2 (true)
 x=2 (pred)
 Figure I.2.Validation ofQuantileDistributionon four synthetic regression tasks with known ground-truth distributions.
-47
+48
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-J. Detailed results on the TabArena benchmark
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+J. Detailed Results on the TabArena Benchmark
 J.1. Aggregation metrics
 TabArena (Erickson et al., 2025) evaluates models using task-specific error metrics and aggregates results across datasets
 using several complementary metrics. We briefly summarize these metrics below.
@@ -3071,18 +3136,18 @@ primarily report improvability in the main paper for its interpretability, but p
 completeness. Across all metrics, TabICLv2 consistently achieves state-of-the-art performance.
 J.2. Results on all datasets
 Figures in the section present the complete results on all 51 TabArena datasets.
-Ranking and Elo.TabICLv2 (default) achieves an average rank of 4.82, outperforming AutoGluon 1.4 (extreme, 4h)
-at 5.24 and RealTabPFN-2.5 (T+E) at 5.88. Here, AutoGluon (extreme, 4h) refers to AutoGluon (Erickson et al., 2020)
-with the best quality preset and a 4-hour training budget, which ensembles multiple model families with extensive
-hyperparameter tuning. Despite a single forward-pass without any tuning, TabICLv2 achieves better performance with this
+Ranking and Elo.TabICLv2 (default) achieves an average rank of 4.82, outperforming AutoGluon 1.4 (extreme, 4h) at
+5.24 and RealTabPFN-2.5 (T+E) at 5.88. Here, AutoGluon 1.4 (extreme, 4h) refers to AutoGluon 1.4 (Erickson et al., 2020)
+with the extreme quality preset and a 4-hour training budget, which ensembles multiple model families with extensive
+hyperparameter tuning. Despite a single forward-pass without any tuning, TabICLv2 achieves better performance than this
 heavily optimized ensemble system.
-48
+49
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
-Pairwise win rates.While TabICLv2 ranks below AutoGluon 1.5 (extreme, 4h) in average rank (4.82 vs. 3.88), the
-pairwise win rate matrix (Figure J.2) reveals a more nuanced picture: TabICLv2 achieves a 57% win rate against AutoGluon
-1.5 and a 59% win rate against RealTabPFN-2.5 (T+E). This indicates that TabICLv2 wins on the majority of datasets in
-head-to-head comparisons.
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Pairwise win rates.The more recent AutoGluon 1.5 (extreme, 4h), which includes more recent models like TabDPT,
+achieves a better average rank than TabICLv2 (3.88 vs. 4.82). However, the pairwise win rate matrix (Figure J.2) reveals a
+more nuanced picture: TabICLv2 achieves a 57% win rate against AutoGluon 1.5 and a 59% win rate against RealTabPFN-2.5
+(T+E). This indicates that TabICLv2 wins on the majority of datasets in head-to-head comparisons.
 The discrepancy between win rate and average rank arises from how these metrics handle the magnitude of performance
 differences. Win rate only counts wins and losses, treating all victories equally. In contrast, average rank penalizes methods
 that perform poorly on certain datasets, even if they win on most others. This suggests that while TabICLv2 wins more
@@ -3119,9 +3184,9 @@ TabICL (default) [13.20]
 ModernNCA (T+E) [12.84]
 Mitra (default) [12.74]
 Figure J.1.Critical difference diagram on the TabArena benchmark.
-49
+50
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 43736188907882889896787892909696989698969896100
 57 615976758478868282828888948288889094929210096
 2739 4578786969929698717886809894969494989896100
@@ -3202,7 +3267,7 @@ AutoGluon 1.5 (extreme, 4h)
 100Win Rate (%)
 Model B: Loser
 Model A: Winner
-Figure J.2.Winrate matrix on the TabArena benchmark.
+Figure J.2.Win rate matrix on the TabArena benchmark.
 10−1 100 101 102 103 104
 Train time per 1K samples (s) (median)
 10%
@@ -3269,9 +3334,9 @@ Tuned
 Tuned + Ens.
 Pareto Front (b)Pareto front of improvability and inference time
 Figure J.3.Pareto front of improvability and train/inference time on the TabArena benchmark.
-50
+51
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 10−1 100 101 102 103 104
 Train time per 1K samples (s) (median)
 600
@@ -3373,9 +3438,9 @@ Default
 Tuned
 Tuned + Ensembled
 Figure J.5.TabArena Elo.
-51
+52
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 J.3. Results on binary classification datasets
 Figures in this section present results on 24 binary classification datasets in TabArena. TabICLv2 achieves an average
 rank of 4.43, placing second behind AutoGluon 1.5 (extreme, 4h) at 3.83. Notably, TabICLv2 substantially outperforms
@@ -3473,9 +3538,9 @@ Tuned
 Tuned + Ens.
 Pareto Front (b)Pareto front of improvability and inference time
 Figure J.7.Pareto front of improvability and train/inference time on binary classification datasets of the TabArena benchmark.
-52
+53
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 10−1 100 101 102 103 104
 Train time per 1K samples (s) (median)
 400
@@ -3580,9 +3645,9 @@ ModernNCA (T+E) [14.38]
 XGBoost (T+E) [14.00]
 LightGBM (T+E) [13.38]
 Figure J.9.Critical difference diagram on multiclass classification datasets of the TabArena benchmark.
-53
+54
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101 102 103 104 105
 Train time per 1K samples (s) (median)
 0%
@@ -3723,9 +3788,9 @@ Tuned
 Tuned + Ens.
 Pareto Front (b)Pareto front of Elo and inference time
 Figure J.11.Pareto front of Elo and train/inference time on multiclass classification datasets of the TabArena benchmark.
-54
+55
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 J.5. Results on regression datasets
 Figures in this section present results on 13 regression datasets in TabArena. On regression tasks, TabICLv2 (default)
 achieves an average rank of 4.54, tying with RealTabPFN-2.5 (T+E) and trailing only AutoGluon 1.5 (extreme, 4h) at 3.92.
@@ -3827,9 +3892,9 @@ Tuned
 Tuned + Ens.
 Pareto Front (b)Pareto front of improvability and inference time
 Figure J.13.Pareto front of improvability and train/inference time on regression datasets of the TabArena benchmark.
-55
+56
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 10−1 100 101 102 103 104
 Train time per 1K samples (s) (median)
 2000Elo
@@ -3888,7 +3953,7 @@ Tuned
 Tuned + Ens.
 Pareto Front (b)Pareto front of Elo and inference time
 Figure J.14.Pareto front of Elo and train/inference time on regression datasets of the TabArena benchmark.
-K. Detailed results on the TALENT benchmark
+K. Detailed Results on the TALENT Benchmark
 K.1. Benchmark overview
 TALENT (Ye et al., 2024) comprises 300 datasets spanning three task types:
 •Binary classification: 120 datasets
@@ -3914,9 +3979,9 @@ Note that TabArena does not report results for TabPFN-2.5, making TALENT a valua
 of fine-tuning on TabPFN-2.5.
 TabICLv2 substantially outperforms other tabular foundation models. LimiX and TabPFNv2 achieve average ranks of 8.34
 and 8.82, respectively, nearly twice that of TabICLv2.
-56
+57
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 510152025
 [4.66] TabICLv2
 [5.11] RealTabPFN-2.5
@@ -4004,10 +4069,10 @@ TabICLv2
 Win Rate (%)
 Model B: Loser
 Model A: Winner
-Figure K.2.Winrate matrix on the TALENT benchmark.
-57
+Figure K.2.Win rate matrix on the TALENT benchmark.
+58
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101
 Inference time per 1K samples (s) (median)
 10%
@@ -4067,9 +4132,9 @@ ExcelFormer
 KNN
 Pareto Front
 Figure K.4.Pareto front of Elo and inference time on the TALENT benchmark.
-58
+59
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.3. Results on binary classification datasets
 For binary classification datasets, TabICLv2 (4.98) is essentially tied with RealTabPFN-2.5 (4.82) on accuracy, both
 outperforming TabPFN-2.5 (5.28), TabICL (8.48), and LimiX (8.61). However, on AUC and log-loss, TabICLv2 achieves a
@@ -4082,9 +4147,9 @@ thresholds and log-loss evaluates probability calibration. The fact that TabICLv
 and log-loss while matching on accuracy suggests that TabICLv2 produces better probability estimates. This is valuable in
 practice, where better probabilities enable reliable uncertainty quantification and informed decision-making beyond simple
 class predictions.
-59
+60
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 510152025
 [4.82] RealTabPFN-2.5
 [4.98] TabICLv2
@@ -4185,9 +4250,9 @@ RealMLP [18.07]
 ResNet [17.82]
 (c)Log-Loss
 Figure K.5.Critical difference diagram on binary classification datasets of the TALENT benchmark.
-60
+61
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101
 Inference time per 1K samples (s) (median)
 5%
@@ -4249,18 +4314,18 @@ ExcelFormer
 KNN
 Pareto Front
 Figure K.7.Pareto front of Elo and inference time on binary classification datasets of the TALENT benchmark.
-61
+62
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.4. Results on multiclass classification datasets (≤10 classes)
 Unlike binary classification where TabICLv2 and RealTabPFN-2.5 are comparable on accuracy, TabICLv2 achieves clear
 superiority on multiclass tasks across all evaluation metrics:
 •Accuracy: TabICLv2 (4.58) vs. RealTabPFN-2.5 (5.64)
 •AUC: TabICLv2 (3.38) vs. RealTabPFN-2.5 (5.20)
 •Log-loss: TabICLv2 (2.67) vs. RealTabPFN-2.5 (4.48)
-62
+63
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 510152025
 [4.58] TabICLv2
 [5.64] RealTabPFN-2.5
@@ -4361,9 +4426,9 @@ MLP-PLR [18.02]
 RealMLP [17.63]
 (c)Log-Loss
 Figure K.8.Critical difference diagram on multiclass classification datasets (≤10 classes) of the TALENT benchmark.
-63
+64
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101
 Inference time per 1K samples (s) (median)
 10%
@@ -4425,17 +4490,17 @@ ExcelFormer
 KNN
 Pareto Front
 Figure K.10.Pareto front of Elo and inference time on multiclass classification datasets ( ≤ 10 classes) of the TALENT benchmark.
-64
+65
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.5. Results on multiclass classification datasets (>10 classes)
 This section presents results on 12 multiclass classification datasets with more than 10 classes in TALENT. TabICLv2 clearly
 outperforms RealTabPFN-2.5 on many-class classification. Here, ECOC refers to the error-correcting output codes wrapper
 from TabPFNv2 (Hollmann et al., 2025). TabICLv2 achieves strong performance both with the ECOC wrapper and with its
 native many-class handling via mixed-radix ensembling. Both variants outperform RealTabPFN-2.5-ECOC.
-65
+66
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 510152025
 [2.92] TabICLv2-ECOC
 [3.38] TabICLv2
@@ -4530,9 +4595,9 @@ DCNv2 [15.67]
 TANGOS [14.25]
 (c)Log-Loss
 Figure K.11.Critical difference diagram on multiclass classification datasets (>10 classes) of the TALENT benchmark.
-66
+67
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.6. Results on regression datasets
 TabICLv2 outperforms TabPFN-2.5 on RMSE and R2, while TabPFN-2.5 has a slight edge on MAE. RMSE penalizes
 large errors, making it sensitive to outliers and tail behavior, while MAE treats all errors equally. The quantile regression of
@@ -4540,9 +4605,9 @@ TabICLv2, trained with pinball loss across 999 quantiles, is designed to capture
 optimizing for a single point estimate. This distributional focus leads to better performance on RMSE and R2, which reward
 accurate modeling of variance and extreme values. The slight disadvantage on MAE suggests that the bin-based approach of
 TabPFN-2.5 may be marginally better optimized for median prediction, though the difference is small (4.43 vs. 4.63).
-67
+68
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 510152025
 [4.21] TabICLv2
 [5.01] TabPFN-2.5
@@ -4640,9 +4705,9 @@ RandomForest [16.12]
 ExcelFormer [15.16]
 (c)MAE
 Figure K.12.Critical difference diagram on regression datasets of the TALENT benchmark.
-68
+69
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101 102
 Inference time per 1K samples (s) (median)
 7%
@@ -4674,7 +4739,7 @@ RealTabPFN-2.5
 TabPFN-2.5
 TabICLv2
 Pareto Front
-Figure K.13.Pareto front of improvability and inference time on regression classification datasets of the TALENT benchmark.
+Figure K.13.Pareto front of improvability and inference time on regression datasets of the TALENT benchmark.
 10−1 100 101 102
 Inference time per 1K samples (s) (median)
 800
@@ -4706,9 +4771,9 @@ ResNet
 KNN
 Pareto Front
 Figure K.14.Pareto front of Elo and inference time on regression datasets of the TALENT benchmark.
-69
+70
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.7. Results on small datasets with less than 10K samples
 TabICLv2 and RealTabPFN-2.5 achieve comparable performance on small datasets, the regime where tabular foundation
 models are originally designed to excel.
@@ -4774,9 +4839,9 @@ RealTabPFN-2.5
 TabICLv2
 Pareto Front
 Figure K.16.Pareto front of improvability and inference time on small datasets of the TALENT benchmark.
-70
+71
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 10−1 100 101
 Inference time per 1K samples (s) (median)
 800
@@ -4843,9 +4908,9 @@ MLP [16.74]
 AutoInt [15.83]
 DCNv2 [15.63]
 Figure K.18.Critical difference diagram on large datasets of the TALENT benchmark.
-71
+72
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 100 101 102
 Inference time per 1K samples (s) (median)
 10%
@@ -4899,9 +4964,9 @@ RandomForest
 KNN
 Pareto Front
 Figure K.20.Pareto front of Elo and inference time on large datasets of the TALENT benchmark.
-72
+73
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 K.9. Model rankings with respect to meta-features
 103 104 105
 Number of samples
@@ -4935,9 +5000,9 @@ RealTabPFN-2.5
 RealMLP
 CatBoost (b)
 Figure K.21.Model rankings with respect to meta-features across all datasets of the TALENT benchmark.
-73
+74
 
-TabICLv2 : A better, faster, scalable, and open tabular foundation model
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
 103 104 105
 Number of samples
 0
@@ -5037,4 +5102,197 @@ RealTabPFN-2.5
 RealMLP
 CatBoost (b)
 Figure K.23.Model rankings with respect to meta-features across regression datasets of the TALENT benchmark.
-74
+75
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+L. Other Experiments
+L.1. Effect of ensemble size
+We study the effect of ensemble size E∈ {1,2,4,8,16,32} on the TALENT benchmark. Gains are reported relative to
+E= 1 averaged over all datasets in Table L.1. Performance improves with ensemble size but with diminishing returns; most
+gains are captured byE= 8.
+L.2. Direct statistical comparison to RealTabPFN-2.5
+Here, we complement the critical difference diagrams with a direct statistical comparison between TabICLv2 and
+RealTabPFN-2.5. While the CD diagrams do not show a statistically significant difference between the two methods,
+they may lack statistical power, for instance due to corrections for multiple comparisons across many methods. We therefore
+performed a direct binomial test on TALENT to assess whether TabICLv2 achieves a win rate greater than 50% against
+RealTabPFN-2.5 / TabPFN-2.5. The results, reported in Table L.2, are statistically significant.
+Alternatively, a Wilcoxon signed-rank test yields similar results.
+L.3. Few-shot benchmark
+To evaluate TabICLv2 on tiny datasets, we run a simple few-shot benchmark with only 16 training+validation samples and
+up to 1984 test samples on TALENT through pytabkit (119 regression, 101 binary classification datasets; no multi-class to
+avoid too many missing classes in the small train+val set). We used 2 outer train/test splits and 4-fold inner cross-validation,
+ensembling the four fitted models (which worked better than refitting a single model on the full dataset). Gradient-boosted
+trees and MLPs use early stopping on the validation set based on log-loss (classification) or RMSE (regression). We only
+use default parameters to avoid overtuning on such small datasets. Note that TabICLv2 has never seen datasets below 300
+training samples during pretraining.
+Results are shown in Table L.3. TabICLv2 ranks second only to RealTabPFN-2.5 and outperforms all traditional methods,
+despite never being pretrained on datasets this small. Performance could likely improve further by including smaller datasets
+during pretraining.
+L.4. Few-shot comparison to LLMs
+We evaluate LLMs on TALENT using the MachineLearningLM codebase (Dong et al., 2025), which provides a complete
+pipeline: tabular serialization (token-efficient Concat and TabLLM formats), prompt assembly, JSON parsing, and evaluation.
+We test Qwen3.5 (4B, 27B, 112B) and Claude Opus 4.6. Due to compute constraints and the cost of proprietary APIs (ca.
+$14 in Claude API costs for these experiments), we focus on 9 TALENT classification datasets with ≤ 2,048 samples, using
+train sizes{8,16,64}with random sampling.
+Results (average accuracy across 9 datasets) are shown in Table L.4. Stronger LLMs yield better tabular accuracy. However,
+LLMs are only competitive in the very-few-shot regime (8 shots); TabICLv2 dominates from 16 shots onward while being
+orders of magnitude more efficient.
+We also study sample selection and serialization with Qwen3.5-27B in Table L.5. K-center greedy (maximizing feature-space
+coverage) helps at 16 shots but hurts at 64 shots. The TabLLM format shows no benefit.
+L.5. Benchmarking TabPFN’s Random Forest extension
+Here, we explore the random forest (RF) extension proposed by Hollmann et al. (2025), which routes test samples through
+an RF ensemble and fits the TFM on training subsets at each leaf. This approach showed improvements for TabPFNv2 and
+TabICL on large datasets (Qu et al., 2025, Appendix G). We apply it to TabICLv2 on TALENT datasets with>10K samples.
+The results are shown in Table L.6.
+Despite its positive effect on TabPFNv2 and TabICL, the RF extension degrades TabICLv2’s performance. While it reduces
+peak GPU memory, TabICLv2 already handles large datasets well via our QASSMax. Partitioning data through RF routing
+hurts by fragmenting useful context. The RF extension is also slow. However, training example selection remains a
+complementary direction worthy of further investigation.
+76
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Table L.1.Effect of ensemble size (number of estimators) on the TALENT benchmark relative to size 1.
+Ensemble size Classification accuracy gain Regression RMSE gain Inference time
+1 — — 0.2s
+2 +0.03% +0.09% 0.5s
+4 +0.11% +0.77% 0.7s
+8 +0.20% +1.22% 0.9s
+16 +0.23% +1.38% 1.5s
+32 +0.26% +1.46% 2.6s
+Table L.2.Results of a binomial comparison test.We test whether the win rate of TabICLv2 is >50% on the TALENT benchmark
+(classification or regression) and report the p-value.
+Comparison Metric p-value
+TabICLv2 vs. RealTabPFN-2.5 Accuracy 0.0018
+TabICLv2 vs. TabPFN-2.5 Accuracy 4.4e-05
+TabICLv2 vs. RealTabPFN-2.5 AUC 6.4e-09
+TabICLv2 vs. TabPFN-2.5 AUC 2.5e-09
+TabICLv2 vs. RealTabPFN-2.5 Log-loss 1.4e-08
+TabICLv2 vs. TabPFN-2.5 Log-loss 1.0e-10
+TabICLv2 vs. RealTabPFN-2.5R 2 0.0028
+TabICLv2 vs. TabPFN-2.5R 2 0.0028
+L.6. Noise resilience
+TabArena and TALENT comprise real-world datasets spanning diverse domains with inherent noise. TabICLv2’s strong
+performance on benchmarks already shows its noise resilience. To further probe this, we selected six low-noise binary
+classification datasets from TabArena (judged by the best AUC achieved in the TabArena paper) and progressively replaced
+0%–50% of training labels with random ones. As shown in Figure L.1, the performance of TabICLv2 tends to degrade less
+than that of tree-based methods.
+Table L.3.Few-shot benchmark results on TALENT datasets subsampled to 16 training samples.Here, TD refers to tuned defaults
+from pytabkit, Huertas refers to defaults optimized for few-shot learning from Huertas (2024), and RealMLP-TD (TabArena) refers to the
+version from TabArena without label smoothing and with 8 ensemble members per fold.
+Method Classification rank (AUC) Regression rank (RMSE)
+RealTabPFN-2.5 4.00 4.18
+TabICLv2 4.11 5.02
+ExtraTrees 4.49 5.52
+RandomForest 4.91 6.22
+RealMLP-TD (TabArena) 6.00 5.21
+LightGBM-Huertas 6.07 7.89
+XGBoost-TD 6.57 7.45
+CatBoost-TD 6.76 8.61
+TabM 6.96 7.13
+77
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.88
+0.90
+0.92
+0.94
+0.96
+0.98
+1.00AUROC on clean test set
+hazelnut-spread-contaminant-detection
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.850
+0.875
+0.900
+0.925
+0.950
+0.975AUROC on clean test set
+NATICUSdroid
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.82
+0.84
+0.86
+0.88
+0.90
+0.92
+0.94AUROC on clean test set
+online_shoppers_intention
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.80
+0.85
+0.90
+0.95AUROC on clean test set
+qsar-biodeg
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.6
+0.7
+0.8
+0.9
+1.0AUROC on clean test set
+polish_companies_bankruptcy
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+0.0 0.1 0.2 0.3 0.4 0.5
+Fraction of randomized train labels
+0.80
+0.85
+0.90
+0.95AUROC on clean test set
+taiwanese_bankruptcy_prediction
+CatBoost
+ExtraTrees
+RandomForest
+T abICLv2
+RealT abPFN-2.5
+Figure L.1.Robustness of different methods to label noise in binary classification.We take the 6 binary datasets with the largest best
+AUROC from TabArena and replace different fractions of training points by random labels. TabICLv2 and RealTabPFN-2.5 show higher
+resistance to noisy labels than tree-based methods. CatBoost uses the tuned default parameters from pytabkit and an ensemble of models
+from 8-fold cross-validation, early-stopped for AUROC. Shaded areas show the standard deviations across 5 runs with random outer splits
+using 40% of the data for testing.
+78
+
+TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model
+Table L.4.Comparing TabICLv2 to LLMs on few-shot prediction accuracy averaged over 9 TALENT classification datasets.
+Train size Qwen3.5-4B Qwen3.5-27B Qwen3.5-112B Claude Opus 4.6 TabICLv2
+8 0.482 0.505 0.511 0.536 0.515
+16 0.492 0.526 0.531 0.541 0.586
+64 0.522 0.569 0.574 0.606 0.659
+Table L.5.Effect of sample selection and serialization on Qwen3.5-27B.
+Train size Random K-center greedy TabLLM format
+16 0.526 0.556 0.521
+64 0.569 0.530 0.520
+Table L.6.Evaluating the random-forest extension of Hollmann et al. (2025) on TabICLv2.Quantities are averaged across TALENT
+datasets with>10K samples.
+TabICLv2 TabICLv2-RF
+Classification: Accuracy / AUC / Log-loss 0.857 / 0.897 / 0.306 0.848 / 0.891 / 0.327
+Regression: R² / RMSE 0.720 / 2293 0.687 / 2846
+79

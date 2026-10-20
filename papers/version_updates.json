@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "updates": [
+    {
+      "arxiv": "2602.11139",
+      "version": 2,
+      "filed_version_date": "2026-09-16",
+      "source_url": "https://arxiv.org/pdf/2602.11139v2",
+      "path": "papers/2026/09_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf",
+      "sha256": "71554be35ba3847a14267912d9738f6049545cf74a30d860de1ed23d14d95246",
+      "previous_path": "papers/2026/02_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf",
+      "previous_sha256": "ab4706efcfc11fe43c28d38a96956f1087e603428d4d7771c50efbc81a6a2ef9",
+      "retrieved": "2026-10-20",
+      "zotero_attachment": "preserved unchanged"
+    },
+    {
+      "arxiv": "2605.13986",
+      "version": 2,
+      "filed_version_date": "2026-05-28",
+      "source_url": "https://arxiv.org/pdf/2605.13986v2",
+      "path": "papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf",
+      "sha256": "68825024d264813f2f094769cbfac5ad9e887883472a50f0c73e1558c6ac4bc7",
+      "previous_path": "papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf",
+      "previous_sha256": "bffddc5f612187a5273ccf230e1fa28fed90ca310e59a2a818e668c64216886e",
+      "retrieved": "2026-10-20",
+      "zotero_attachment": "preserved unchanged"
+    },
+    {
+      "arxiv": "2609.17895",
+      "version": 2,
+      "filed_version_date": "2026-09-22",
+      "source_url": "https://arxiv.org/pdf/2609.17895v2",
+      "path": "papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf",
+      "sha256": "b72ca80ea1bfeeba2f66dc0a2ca695bb16ed7a50b3780a5c5483e8172700c786",
+      "previous_path": "papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf",
+      "previous_sha256": "fc2e1b4d6d08ade01855fc3b8f713684e235861a2d65db2c98cd9ec0a42dbb0c",
+      "retrieved": "2026-10-20",
+      "zotero_attachment": "preserved unchanged"
+    }
+  ]
+}
