@@ -14,8 +14,8 @@ fresh dump of a public GitHub repo, the upstream URL is linked.
 
 ## Overview table
 
-Line counts are as of the 2026-08-04 refresh, except VSC Documentation
-(2026-10-12) and Test-Time Compute for Tabular Foundation Models (2026-10-13).
+Line counts are as of the 2026-08-04 refresh, except
+Test-Time Compute for Tabular Foundation Models (2026-10-13).
 They drift on every refresh; treat them as rough sizes.
 
 | File | Lines | GitHub | Paper | What it gives us |
@@ -42,7 +42,6 @@ They drift on every refresh; treat them as rough sizes.
 | `TabTune.txt` | 168,086 | [Lexsi-Labs/TabTune](https://github.com/Lexsi-Labs/TabTune) | [Tanna 2025](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) | Unified sklearn-style wrapper around the **non-TabPFN** tabular foundation models (TabICL, OrionMSP/Bix, Mitra, ContextTab, TabDPT, LimiX) plus TabPFNv2.6 native FT, ensembling, distillation, and a `TabularLeaderboard`. A convenient source of non-TabPFN eval baselines; it does **not** natively support Real-TabPFN-style multi-dataset continued pretraining. |
 | `Test-Time Compute for Tabular Foundation Models.txt` | 17,152 | [kanghui-learning/test-time-compute-for-tabular-foundation-models](https://github.com/kanghui-learning/test-time-compute-for-tabular-foundation-models) | [Ning 2026](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) | DiagScale/full-FT adapters, configuration aggregation and attention-guided retrieval for TabPFN-3, TabICLv2 and TabFM; evaluation protocol, experiment configs, pinned-backbone patches and installer. |
 | `TransformersCanDoBayesianInference.txt` | 12,325 | [automl/TransformersCanDoBayesianInference](https://github.com/automl/TransformersCanDoBayesianInference) | [Müller 2021](papers/2021/12_Muller_et_al._Transformers_Can_Do_Bayesian_Inference.pdf) | The original (unmaintained) code release of the 2021 PFN paper. Historical; useful for explaining what a PFN is. |
-| `VSC Documentation.txt` | 39,613 | [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation) | — | VSC user documentation: **wICE P100/V100/A100/H100 and Mindwell B200**, Slurm selection and limits, Lustre/GPFS storage, software modules, credits and OnDemand. See the [current usage guide](#vsc-usage). |
 
 ## Check `TabTune.txt` before adding any new TFM dump
 
@@ -81,24 +80,18 @@ paper is dead as a literal string.
 ## Layout
 
 This file lives at the repo root; the dumps live in
-[`repositories/`](repositories/) — 23 flat `.txt` files, one per
+[`repositories/`](repositories/) — 22 flat `.txt` files, one per
 upstream source, named exactly as in the table above (`TabPFN .txt`
 keeps its intentional trailing space). Line counts are in the table;
 the only file not tracked by git is `TabPFN Wide.txt` (~366 MB,
 gitignored — regenerate with `python scripts/dumps/refresh_repositories.py`).
 
-### The one deliberate exception to the TFM-only scope
+### VSC infrastructure reference
 
-`VSC Documentation.txt` is **not** tabular-foundation-model literature —
-it is the full KU Leuven / Flemish Supercomputer Centre user
-documentation. It is here on purpose and **must not be removed**: every
-project that consumes this library runs its training and evaluation on
-VSC, so the same SLURM, storage-tier and credit questions come up in all
-of them, and answering them offline from a grep is worth far more than
-the file costs. Treat it as shared infrastructure knowledge that happens
-to live beside the literature. It is the *only* non-TFM file in this
-folder, and no further exceptions should be added without the owner
-saying so.
+VSC documentation, HPC usage guides and Slurm examples now live in the separate
+[VSC Library](https://github.com/andreasgoethals/VSC_Library). Consuming projects
+can mount it as `vsc-library/` and keep their own operating instructions in
+`docs/VSC.md`. This corpus remains strictly about tabular foundation models.
 
 ---
 
@@ -954,168 +947,6 @@ paper-era snapshot. It now tracks the original repo again.)*
 **When to grep this file:** when you need to write a paragraph
 explaining PFNs in your thesis / a defence / a report. Not relevant
 for pipeline implementation.
-
----
-
-<a id="vsc-usage"></a>
-
-## `VSC Documentation.txt`
-
-**Upstream:** [hpcleuven/VscDocumentation](https://github.com/hpcleuven/VscDocumentation),
-the source of the [VSC documentation site](https://docs.vscentrum.be).
-**Related paper:** none; this is the library's deliberate infrastructure exception.
-
-**What it is.** The supplied snapshot contains **39,613 lines**, including the current
-wICE/Mindwell guides and archived Genius hardware pages. It covers account access,
-SSH/MFA, Slurm, storage, software, credits, OnDemand and publication acknowledgments.
-The guidance below was reconciled with that snapshot and the live KU Leuven guides on
-**2026-10-12**. Source paths below are searchable `FILE:` headings in the dump; cite those
-paths or symbols rather than dump line numbers. Other VSC sites and Tier-1 systems have
-their own rules: do not transfer their driver versions, quotas or partitions to Leuven.
-
-**Cluster selection after the October maintenance.** P100 and V100 partitions now belong
-to **wICE**, and Genius is archived. A downstream launcher targeting those GPUs should
-use `--clusters=wice`, retaining the appropriate `gpu_p100` or `gpu_v100` partition.
-Mindwell B200 jobs still use `--clusters=mindwell --partition=gpu_b200`.
-The default for Slurm commands on login nodes is now wICE; on Mindwell compute nodes
-it is Mindwell. **Explicit `-M/--clusters` remains mandatory for job submission**, even
-though a default exists for commands such as `squeue`. Always select the cluster when
-monitoring or cancelling a specific job; `squeue -M all` and `sacct -M all` can span both.
-Source: `source/leuven/slurm_specifics.rst`, `leuven_cluster_choice`, and the
-[live Slurm guide](https://docs.vscentrum.be/leuven/slurm_specifics.html).
-
-These read-only commands illustrate the distinction from a login shell:
-
-```bash
-squeue -M wice -u "$USER"
-squeue -M mindwell -u "$USER"
-squeue -M all -u "$USER"
-sinfo -M wice
-sinfo -M mindwell
-```
-
-**GPU resources and time limits.** The following describes configured capacity, not
-current availability. Source: `source/leuven/wice_quick_start.rst`,
-`source/leuven/mindwell_quick_start.rst`, their `tier2_hardware/` pages, and
-`cpu_resource_limits_in_gpu_jobs` in `source/leuven/slurm_specifics.rst`.
-
-| Slurm cluster | GPU partition | Regular nodes × GPUs | VRAM per GPU | CPU cores / CPU memory per GPU (maximum) | Maximum walltime |
-|---|---|---|---|---|---|
-| `wice` | `gpu_p100` | 13 × 4 | 16 GiB | 9 / 45,000 MiB | 72 h; `gpu_p100_long`: 168 h |
-| `wice` | `gpu_v100` | 2 × 8 | 32 GiB | 4 / 84,000 MiB | 72 h; `gpu_v100_long`: 168 h |
-| `wice` | `gpu_a100` (alias `gpu`) | 4 × 4 | 80 GiB | 18 / 126,000 MiB | 72 h |
-| `wice` | `gpu_h100` | 5 × 4 | 80 GiB | 16 / 187,200 MiB | 72 h |
-| `mindwell` | `gpu_b200` | 3 × 8 | 192 GiB | 24 / 194,400 MiB | 72 h |
-
-The wICE hardware page counts **14 P100 nodes in total**, including debug capacity;
-the quick-start table lists 13 for the regular partitions. `gpu_p100_debug` and
-`gpu_a100_debug` allow up to **1 hour**. Do not infer A100, H100 or B200 `*_long`
-partitions from the P100/V100 exceptions. Request actual GPU resources (for example,
-`--gpus-per-node=1`) as well as a GPU partition, with proportionate CPU/memory requests.
-GPU nodes can host other jobs, but allocated cores and GPUs are exclusive to each job.
-For multi-node scaling, check interconnects: the wICE H100 nodes have Ethernet rather
-than the high-performance interconnect available to most other wICE nodes; Mindwell
-nodes use InfiniBand NDR.
-
-CPU work can run on either cluster. wICE `batch`/`batch_icelake` uses 72-core nodes;
-`batch_sapphirerapids` uses 96 cores. Mindwell defaults to `batch_graniterapids` with
-192 cores. Their documented `*_long` variants allow 168 h. The free `interactive`
-partitions allow up to 16 h and eight cores; wICE offers one **1/7 A100 instance**,
-whereas Mindwell offers one **RTX 5000 Ada GPU**. An interactive A100 instance is not
-a full 80 GiB device. See the quick-start guides for memory and resource requests.
-
-**Software and job environment.** Use `#!/bin/bash -l` and load application modules in
-the jobscript so the compute node selects its own architecture stack. Submission-shell
-variables are not propagated by default; use Slurm's documented `--export` behaviour
-when a workflow needs extra variables. P100/Skylake, V100/Cascadelake, A100/IceLake,
-and H100/Zen4 remain different hardware targets after migration. Check
-`VSC_ARCH_LOCAL`, `VSC_ARCH_SUFFIX` and `MODULEPATH` for native builds. Mindwell's
-central modules start with toolchains **2024a for CPUs / 2025a for GPUs**. Pure Python
-code need not have a separate environment for every CPU, but compiled extensions and
-GPU kernels must support the target hardware. Sources: `source/leuven/wice_advanced_guide.rst`,
-`source/leuven/tier2_hardware/mindwell_hardware.rst`, and
-`source/compute/software/using_software/cluster_modules.rst`.
-
-The announcement reports an updated **system GPU driver**, not an automatic replacement
-of a project's Python packages or CUDA runtime. Newer NVIDIA drivers generally support
-older CUDA runtimes, subject to supported hardware and compatible application libraries
-([NVIDIA compatibility guide](https://docs.nvidia.com/deploy/cuda-compatibility/why-cuda-compatibility.html)).
-After maintenance, a downstream project should check `nvidia-smi` and run a small GPU
-smoke test **inside an allocated GPU job** using its existing environment. Record the
-driver, GPU and framework/runtime versions before a larger run. No exact Leuven driver
-version is established by the announcement; the Tier-1 driver number elsewhere in this
-dump is not evidence for it.
-
-**Storage and transfers.** Source: `source/leuven/tier2_hardware/kuleuven_storage.rst`
-and `source/leuven/tier2_hardware/parallel_filesystems.rst`.
-
-- `$VSC_HOME` (default **3 GiB**) and `$VSC_DATA` (**75 GiB**) are backed-up NFS with
-  snapshots, accessible across VSC. They are intended for persistent files with modest
-  I/O; home-institute policy can change quotas.
-- `$VSC_SCRATCH` (default **500 GiB**, no backup) resolves to **Lustre on wICE** and
-  **GPFS on Mindwell**. Intensive compute I/O must use the filesystem associated with
-  the executing cluster; violations can cause cancellation by administrators.
-- Group storage follows the same split: staging directories beneath
-  `$VSC_PROJECT_LUSTRE1` for wICE, project1 directories beneath `$VSC_PROJECT_GPFS1`
-  for Mindwell. Do not assume access from another cluster means equivalent throughput
-  or that a project directory provides a backup; confirm the allocation's storage policy.
-- Explicit `$VSC_SCRATCH_LUSTRE1` / `$VSC_SCRATCH_GPFS1` paths support transfers.
-  **GPFS is not reachable from the wICE P100/V100 nodes.** Stage required GPFS inputs
-  through a wICE login node or an appropriate transfer job before using these GPUs.
-  The recommended transfer jobs can use either cluster's `interactive` partition;
-  keep login-node copies to a few minutes. The guide recommends transfer jobs rather
-  than Globus for volumes above 1 TB.
-- Scratch files not accessed for **30 days** are removed. When initially staging old
-  files, use `cp` without `-a`: moves and timestamp-preserving transfers can leave them
-  eligible for early deletion. The parallel-filesystem guide also illustrates `rsync -a`
-  for stage-in/out; that is not an exemption from the cleanup policy.
-- `$VSC_SCRATCH_NODE` is local temporary storage, removed when the job ends: default
-  200 GiB on P100/V100 nodes and 600 GiB on other wICE/Mindwell nodes. Copy required
-  outputs to durable storage before exit. Avoid millions of small files on shared
-  parallel filesystems, and plan either one cluster per work package or explicit
-  stage-in/stage-out and verified transfers between stages.
-
-**Credits and scheduling.** Source: `source/leuven/credits.rst` and
-`source/leuven/slurm_accounting.rst`. Mindwell now accepts regular credit accounts;
-the `lp_mindwell_pilot` name still present in some examples is not a guarantee of free
-production access. Choose an account you can charge with `--account`, inspect its
-balance with `sam-balance`, and estimate a submission with `sam-quote sbatch ...`.
-The documented GPU weights in credits per GPU-minute are **P100 41.667, V100 59.583,
-A100 141.667, H100 569.444, B200 437.500**. These are only the GPU component:
-**(CPU weight × effective allocated cores + GPU weight × GPU count) × runtime minutes**
-determines GPU-job cost. A large memory request can allocate and bill more CPU cores
-than requested explicitly. Read live `TRESBillingWeights` with
-`scontrol show partitions --clusters=wice` (or `mindwell`) before budgeting; the
-quoted maximum cost assumes the job uses its entire time limit.
-
-The site-specific Slurm guide distinguishes submission limits from running-resource
-limits through partition QoS (`normal`, `long`, `interactive`, `debug`). Inspect live
-limits with `sacctmgr show qos debug,interactive,long,normal`; a pending resource-limit
-reason is not evidence that the submitted job was lost. Cross-cluster `afterok`
-dependencies remain **unverified by this library**: coordinate dependent stages only
-after confirming upstream completion and the required data transfer, or first validate
-the intended cross-cluster dependency behaviour with VSC support.
-
-**OnDemand release and operational status.** The owner's **1 October 2026** notice from
-[KU Leuven OnDemand](https://ondemand.hpc.kuleuven.be/) reports that Genius has been
-removed, the dashboard displays available credits, Help can submit support tickets,
-and the Module Browser searches centrally installed modules. R/Python/Julia/Perl/Rust
-extensions are not indexed there yet. An absent extension search result therefore does
-not establish that a package is unavailable. Use `module spider <name>` / module help
-and inspect the selected runtime or environment; a browser entry also does not install
-or activate software in a job. Public portal coverage is documented in
-`source/compute/portal/index.rst` and the [web portal guide](https://docs.vscentrum.be/compute/portal/index.html).
-
-**Dated status, checked 2026-10-12:** the [Leuven incident page](https://status.vscentrum.be/tier2_leuven.html#incident_0013)
-(last updated 2026-10-11) still lists the **two V100 nodes as unavailable**, with no end
-time. Its updates returned A100/interactive nodes on 2 October, H100/B200/Mindwell
-interactive nodes later that day, and P100 nodes on 6 October. Recheck that page and
-Slurm before choosing hardware; this dated observation is not a permanent partition rule.
-
-**When to grep this file:** writing or reviewing job scripts, selecting hardware,
-checking environment compatibility, accounting for compute or storage, and looking up
-access, transfer and acknowledgment procedures. Cluster usage is a downstream project's
-choice; this shared guide does not prescribe a specific project's CPU/GPU split.
 
 ---
 

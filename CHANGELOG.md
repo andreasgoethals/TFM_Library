@@ -4,6 +4,23 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-20
+
+- Moved VSC infrastructure knowledge to the standalone [VSC Library](https://github.com/andreasgoethals/VSC_Library), keeping this library TFM-only.
+- Removed the VSC dump, refresh registration and duplicated guide; updated the maintenance contract and consumer pointers. The new library retains the source as `VSC Repository.txt`, adds guides/templates and refreshes it daily.
+
+## 2026-10-19
+
+- **Owner-requested live Zotero mirror: 61 → 62 papers.** Added the attached PDF and
+  generated text mirror for **Alberge et al. — SurvICL: a Foundation Model for in-context
+  Survival Analysis** (arXiv 2610.22242v1, 15 October); completed its summary, overview
+  row and synthesis timeline using curated Zotero metadata and the filed version.
+- Integrated censored-context/latent-target training with the TabICLv2 and task-prior
+  lineages; updated survival, distributional-output and calibration discussions to
+  distinguish overall IBS gains from small-cohort significance and subgroup calibration.
+- Retained the documented 2021/2022 filing-date warning for *Transformers Can Do Bayesian
+  Inference*; no Zotero metadata or existing paper was changed.
+
 ## 2026-10-15
 
 - Added **Zhao et al. 2026-10 — TabReliBench** (arXiv 2610.13654). The first dedicated

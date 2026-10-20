@@ -84,7 +84,7 @@ LOGGER = logging.getLogger(__name__)
 _SHRINK_GUARD_RATIO = 0.5
 
 # Default per-repository ingest timeout (seconds). Some repos
-# (VscDocumentation in particular) are slow to clone — bump from
+# can be slow to clone — bump from
 # gitingest's stock 60s default. Can be overridden with `--timeout`.
 _DEFAULT_TIMEOUT_SECONDS = 180
 
@@ -244,8 +244,6 @@ REPOSITORIES: dict[str, str | dict] = {
         # turned this file into a byte-duplicate of PFNS.txt and lost the
         # paper-era snapshot it exists to preserve.
         "https://github.com/automl/TransformersCanDoBayesianInference",
-    "VSC Documentation.txt":
-        "https://github.com/hpcleuven/VscDocumentation",
 }
 
 # Files whose upstream is a Git repo but is too large for gitingest's

@@ -12,7 +12,7 @@ A **Tabular Foundation Model (TFM)** is a neural network — in practice, almost
 - [The TabPFN model line — architecture & its evolution (v1 → v2 → 2.5 → 3)](#the-tabpfn-model-line--architecture--its-evolution-v1--v2--25--3)
 - [Scaling the paradigm — rows, features, and the prior itself](#scaling-the-paradigm--rows-features-and-the-prior-itself)
 - [Adapting a pretrained TFM — finetuning, continued pretraining, LoRA, tooling](#adapting-a-pretrained-tfm--finetuning-continued-pretraining-lora-tooling)
-- [Extending TFMs to new problems — time series, causal inference, fairness, interpretability, drift](#extending-tfms-to-new-problems--time-series-causal-inference-fairness-interpretability-drift)
+- [Extending TFMs to new problems — time series, survival, causal inference, fairness, interpretability, drift](#extending-tfms-to-new-problems--time-series-survival-causal-inference-fairness-interpretability-drift)
 - [Position, critique & open problems](#position-critique--open-problems)
 - [Cross-cutting design axes](#cross-cutting-design-axes)
 - [Recurring tensions & weaknesses of the paradigm](#recurring-tensions--weaknesses-of-the-paradigm)
@@ -102,6 +102,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-10 | Ning 2026 (*Test-Time Compute for Tabular Foundation Models*) | DiagScale recovers much of full-FT gains; selective aggregation helps at high cost; matched retrieval controls expose gains and failures | Rubachev's finetuning; LoCalPFN/LimiX retrieval; TabPFN-3 |
 | 2026-10 | Zhao 2026 (*TabReliBench*) | First dedicated reliability benchmark (11 TFMs, 241 datasets): marginal coverage near-nominal, **subgroup coverage not**; ensembling and conformal don't reliably fix it; rankings change across benchmarks and metrics | Müller 2021's calibration claim; ScoringBench; Beyond IID |
 | 2026-10 | Cannistraci 2026 (*Tabular Foundation Models Are Effectively Shallow*) | Label-free affine map replaces half of any TFM's blocks for ≤0.002 median AUROC; one-block TabPFN-3 is 2.4× faster in 6× less memory | Luo 2026 quantization; Nagler/Zheng/Shaheen localisation-retrieval account |
+| 2026-10 | Alberge 2026 (*SurvICL*) | Censored context with latent event-time quantile supervision; proportional-odds prior leads overall IBS on 63 held-out survival datasets, with small/large-cohort qualifications | TabICLv2; simulator-supervised task transformation; distributional evaluation |
 
 
 ## Foundations — Prior-Fitted Networks & Bayesian in-context learning
@@ -441,7 +442,7 @@ MulTaBench (Arazi 2026, *Benchmarking Multimodal Tabular Learning with Text and 
 adds a separate adaptation site: the text/image encoder. Its supervised preprocessing
 must be fitted within each evaluation fold, even if the final tabular model stays frozen.
 
-## Extending TFMs to new problems — time series, causal inference, fairness, interpretability, drift
+## Extending TFMs to new problems — time series, survival, causal inference, fairness, interpretability, drift
 
 Adaptation keeps the task fixed and moves the model. The literature in this section does the opposite: it keeps the machinery and moves the *task*, and in doing so reveals what the PFN recipe actually is — not a tabular classifier, but a general device for amortising an inference problem into a forward pass, which will amortise whatever the prior is written to describe.
 
@@ -463,6 +464,28 @@ every risk metric. The five-fold protocol does not answer Purucker 2026 (*Beyond
 temporal/grouped challenge, and clipped LGD point predictions do not validate distributional
 uncertainty.
 
+**Survival analysis changes what an observed target means.**
+[Alberge 2026, *SurvICL: a Foundation Model for in-context Survival
+Analysis*](SUMMARIES.md#survicl-a-foundation) extends Qu 2026 (*TabICLv2*) through a
+survival-specific synthetic prior and censoring-aware outcome embeddings. An observed
+follow-up time may be only a lower bound on the true event time. SurvICL therefore
+conditions on observed duration and event indicator but trains its quantile head against
+the simulator's uncensored event times. The plain pinball loss is possible because the
+prior supplies otherwise hidden outcomes. This shares the task-transformation logic
+of Robertson 2025 (*Do-PFN*) and *FairPFN*: training targets can differ systematically
+from the observations supplied to the context. It does not supply uncensored labels
+for real-data continued pretraining.
+
+The controlled prior comparison echoes Bouadi 2026 (*O'Prior*): a flexible
+proportional-odds prior beats Cox/AFT and competing survival priors under one architecture,
+while adding a censoring-distribution prediction head hurts. Backbone reuse is therefore
+compatible with changing both the observation model and what the network should infer.
+The benchmark keeps 40 development datasets separate from 63 held-out datasets and
+reports IBS, discrimination, time error and KM-calibration. Yet the overall IBS lead
+and the small-cohort claim have different evidential strength: the latter's lead over
+Cox is not statistically significant, and boosting leads IBS on larger cohorts.
+SurvICL's at-most-4,096-row context makes that size boundary operationally concrete.
+
 **Prior swaps: drift, causality, fairness, BO.** Strategy (ii) — retrain from scratch on a purpose-built synthetic prior — began with PFNs4BO (Müller 2023), which replaced the tabular prior with GP/BNN/HEBO priors to make a PFN a drop-in GP surrogate for Bayesian optimization, pioneering tricks (Riemann regression head, style-token user priors, spurious-dimension injection) that later extensions inherit. Helli (2024) applies the same move to temporal drift: TabPFN's SCM prior is augmented with a second-order SCM that, driven by a domain index, sparsely shifts edge weights of the base SCM over time, so covariate, label and concept shift all arise naturally and the model learns to *extrapolate* decision boundaries into unseen future domains. Inference is untouched; only the prior changed. The honest reading of the results is that calibration gains (ECE 0.119→0.091) and synthetic-benchmark gains are large, but real-world gains are marginal and depend on ground-truth domain indices — a caveat that matters for credit vintages, which are natural but imperfect domain labels.
 
 The causal extensions push the prior-swap logic furthest, because the quantity amortized is no longer the observational predictive. Do-PFN (Robertson 2025) samples SCMs, generates *paired* observational and interventional data (same noise, mutilated graph), and trains the PFN to predict interventional outcomes from observational context — so ICL delivers p(y|do(t),x) with no causal graph, no unconfoundedness, and calibrated unidentifiability uncertainty, from a 7.3M-parameter model. FairPFN (Robertson 2025), its sibling, uses the identical paired-target trick for counterfactual fairness: each synthetic SCM is forward-passed twice, once normally (biased data) and once with the protected attribute's outgoing edges zeroed (fair target), teaching the transformer the mapping X_biased → y_fair. Both show a PFN prior can encode a *task transformation*, not merely a data distribution — but both are binary-only, validated mostly on synthetic or circularly-evaluated real data. CausalFM (Ma 2026) then directly attacks Do-PFN's foundation: Theorem 4.3 proves that a prior mixing identifiable and non-identifiable SCMs yields asymptotically non-informative posteriors, so one must train one PFN per identifiable setting (back-door, front-door, IV) with the prior constrained to identifiability-respecting graphs. It beats Do-PFN on front-door tasks, yet its own misspecification ablations show a surprisingly small penalty and it loses to CausalPFN on ACIC2016 — the theory's practical bite remains contested, and the "one model per setting" design arguably abandons the foundation-model promise.
@@ -481,7 +504,7 @@ replace the identification assumptions required by causal-effect estimators.
 
 **ICL as an algorithmic primitive.** Rundel (2024) needs neither reframing nor retraining: because "retraining" a PFN on any row/column subset is just a forward pass with a different context, classically infeasible interpretability methods become exact and cheap. LOCO becomes one pass per feature; Kernel SHAP can use *exact* subset-retraining instead of independence-assuming imputation (lower error and variance per compute budget); Data Shapley over rows selects high-value context beyond the 1024-row ceiling. This is the same insight — the context is a mutable program input — that Ye (2025) exploits in the other direction, dissecting TabPFN-v2's randomized attribute tokens and lifting its feature/class/scale limits via test-time divide-and-conquer, effectively "unleashing" the frozen model rather than modifying it. For regulated credit scoring, Rundel's exact-retraining SHAP is the most directly deployable artifact, though demonstrated only at toy scale (≤256 rows, 6 features, binary classification).
 
-**What the map says.** The common thread is that almost nothing here touches the weights of an existing model: extensions either freeze TabPFN entirely or retrain a small PFN from scratch on a bespoke prior. Continued pretraining on real data — the Real-TabPFN route — is conspicuously *orthogonal* to this entire section: a drift-aware prior (Helli) could in principle be composed with real-data continued pretraining, but nobody has done it, and the Hoo/TabDPT evidence warns that domain specialization buys in-domain gains at the price of narrowed inductive bias. The recurring weaknesses are also shared: O(n²) context limits (unsolved in every paper here), binary-classification-only scope in the fairness/causal line, prior-realism dependence wherever real-world validation is thin, and — with Helli and Do-PFN as partial exceptions — a habit of claiming Bayesian uncertainty without ever evaluating calibration.
+**What the map says.** The common thread is that almost nothing here touches the weights of an existing model: extensions either freeze TabPFN entirely or retrain a small PFN from scratch on a bespoke prior. Continued pretraining on real data — the Real-TabPFN route — is conspicuously *orthogonal* to this entire section: a drift-aware prior (Helli) could in principle be composed with real-data continued pretraining, but nobody has done it, and the Hoo/TabDPT evidence warns that domain specialization buys in-domain gains at the price of narrowed inductive bias. The recurring weaknesses are also shared: O(n²) context limits (unsolved in every paper here), binary-classification-only scope in the fairness/causal line, prior-realism dependence wherever real-world validation is thin, and — with Helli and Do-PFN as partial exceptions — uneven evaluation of the uncertainty that the prior is meant to amortise. SurvICL adds explicit survival-probability and KM-calibration evaluation, but its average-curve diagnostic does not establish subgroup calibration or transfer beyond the simulated censoring regime.
 
 
 ## Position, critique & open problems
@@ -522,6 +545,16 @@ The field can be decomposed into five nearly-orthogonal design choices. Every pa
 **On architecture.** Three generations: rows-as-tokens (cheap, no per-cell structure; v1, TabDPT), cells-as-tokens with alternating row/feature attention (expressive, O(m²n + n²m) — the cost that caps v2 at 10k rows), and the compress-columns-first design (TabICL's set-transformer column embeddings + CLS-token row vectors → O(m²n + n²) ICL). TabPFN-3 adopting TabICL's skeleton — and Google's TabFM independently doing the same, TabPFN-style attention feeding a TabICL-style compressed-row ICL stage — is a genuine convergence event, but it buys row-scaling at the price of a feature-compression bottleneck (v3 underperforms Real-TabPFN-2.5 in wide-feature/low-n regimes). Positional-encoding choices leak here too: TabICL's RoPE breaks column-permutation invariance (patched only by ensembling), whereas v2's random feature-ID tokens preserve it (Ye 2025's mechanistic analysis).
 
 **On inference and calibration.** The paradigm's native asset is the Bayesian posterior predictive: low ECE from the start (Müller 2021: ECE 0.025 vs XGB 0.066), distributional regression via Riemann/bar heads (v2's ~5000-bin head; TabICLv2's 999-quantile pinball alternative), near-nominal coverage (Zhang 2025 "One Model"). But calibration is *bolted on* at the frontier: v2 uses an ad-hoc T=0.9; v2.5/v3 add post-hoc temperature scaling and threshold tuning yet report headline results uncalibrated and publish no ECE. Inference cost is the recurring hidden tax: ensembling multiplies passes, Ye 2025's extensions cost 32×–C×, and TabPFN-TS averaged 2210s per series vs Chronos's 8s.
+
+**Censored probabilities need their own observation model.** Alberge 2026
+(*SurvICL: a Foundation Model for in-context Survival Analysis*,
+[summary](SUMMARIES.md#survicl-a-foundation)) carries Qu 2026 (*TabICLv2*)'s pinball
+head into survival analysis while changing context embeddings and synthetic supervision.
+Treating censored follow-up times as ordinary regression labels would discard the
+information that the event may occur later. Positive, sorted quantiles provide a
+monotone survival curve; this structural property is distinct from empirical calibration.
+Its IBS and marginal KM-curve results complement Zhao 2026 (*TabReliBench*), whose
+subgroup findings warn against inferring local reliability from an average diagnostic.
 
 **On adaptation.** A clean hierarchy has emerged. (1) Frozen ICL is already SOTA on small data and best-calibrated (Tanna 2025). (2) Per-dataset full FT matches LoRA/partial FT while converging fastest — Rubachev 2025 (*On Finetuning Tabular Foundation Models*) overturns the v1-era "partial FT to avoid overfitting" folklore, and shows mechanistically that FT sharpens the model's implicit retrieval (attention entropy drops); but this works *only* for TabPFN-family architectures — SFT collapses TabICL (0.873→0.567 on TabZilla; Tanna 2026), a strong architecture×adaptation interaction. (3) Corpus-level CPT (Garg 2025; Kolberg 2026's synthetic-widening variant proves the recipe transfers, with Spearman ρ=0.9935 no-forgetting checks) is the only regime that improves the *prior itself* rather than one downstream fit. (4) Input-adapter PEFT (BETA, Liu & Ye 2025) is the cheap outsider: 0.6MB trainable, lifts feature/class caps, but v1-only and classification-only.
 
@@ -675,9 +708,26 @@ after fine-tuning or under temporal shift.
 
 **Which symmetries actually hold.** EquiTabPFN (Arbel 2025) closed the target-permutation gap and, in the same breath, showed the assumption fails for ordinal targets. Nobody has asked the general question: for a given domain, which invariances are real and which are imposed? Credit risk supplies concrete instances — rating grades are ordinal, vintages are ordered, and rows within an obligor are not exchangeable — so the equivariances the architecture grants for free are precisely wrong in places. Since the prior is what encodes them, this is a prior-design question wearing an architecture costume.
 
-**Regression and distributional outputs.** Extending the adaptation stack (CPT, BETA-style adapters, SFT recipes, drift priors) to regression is repeatedly flagged and never done (Kolberg 2026 names it explicitly). Head design is open too: Riemann/binned CE (v2) vs quantile-pinball (TabICLv2) vs GMM-NLL (Ma 2026 CausalFM) — no comparison exists on bounded/bimodal targets, and the convex-hull limitation plus bar-head underdispersion need fixes for any target that drifts.
+**Regression, censoring and distributional outputs.** The earlier blanket claim that
+regression adaptation is untested is no longer current: Ning 2026 (*Test-Time Compute
+for Tabular Foundation Models*) includes per-task regression adaptation, while Alberge
+2026 (*SurvICL: a Foundation Model for in-context Survival Analysis*) pretrains a
+survival-specific quantile predictor from scratch. Neither establishes a real-data
+continued-pretraining recipe for censored outcomes or bounded/bimodal targets. Head
+comparisons remain open: Riemann/binned CE, quantile-pinball and GMM-NLL represent
+different assumptions, and SurvICL shows that the observation model and availability
+of latent supervision must be controlled alongside the head. Competing risks,
+time-varying covariates and distribution shift remain untested extensions of its prior.
 
-**Calibration as a first-class benchmark axis.** Whether FT/CPT preserves the Bayesian calibration of the frozen model is the paradigm's most consequential open empirical question (Rubachev 2025's sharpening result vs Tanna 2025's TabPFN-stability result point in opposite directions). A standard ECE/Brier/coverage protocol across adaptation regimes — analogous to what TabArena did for accuracy — does not exist. Ditto fairness under adaptation (Tanna 2026's SFT-disparity swings; FairPFN's prior-level approach).
+**Calibration across adaptation and observation regimes.** Zhao 2026 (*TabReliBench*)
+now supplies a broad frozen-model reliability benchmark, while Alberge 2026 (*SurvICL*)
+adds survival-probability error and marginal KM-curve calibration. The open question is
+whether FT/CPT preserves these properties under temporal, grouped and censoring shift,
+including within subgroups. Rubachev 2025 (*On Finetuning Tabular Foundation Models*)'s
+retrieval sharpening and Tanna 2025/2026 (*TabTune* and *Exploring Fine-Tuning for
+Tabular Foundation Models*)'s calibration findings motivate a common adaptation
+protocol; a frozen-model benchmark does not settle it. Fairness under adaptation
+remains similarly open despite the prior-level construction in *FairPFN*.
 
 **Scaling rows AND features jointly.** v3's 1M×200 vs 100k×2k trade-off defines the frontier: no architecture handles both. Candidate directions from the corpus: learned context selection/data valuation (Rundel 2024) fused with retrieval-aligned training (TabDPT), linear/SSM attention (Müller 2025's roadmap), and hybrid compress-or-not routing by table shape.
 

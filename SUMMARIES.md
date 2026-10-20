@@ -91,6 +91,7 @@ this folder and write them there.
 | 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | DiagScale matches much of full finetuning's gain; selective aggregation helps at substantial cost, while retrieval can help or fail and context expansion gives no consistent gain. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
 | 2026-10 | Zhao et al. | **TabReliBench** — Evaluating Tabular Foundation Models Beyond Predictive Accuracy | The first dedicated reliability benchmark across 11 TFMs: marginal coverage is near-nominal, **subgroup coverage is not**, and neither ensembling nor conformal post-processing reliably fixes it. | [pdf](papers/2026/10_Zhao_et_al._TabReliBench_Evaluating_Tabular_Foundation_Models_Beyond_Predictive_Accuracy.pdf) |
 | 2026-10 | Cannistraci and Vogt | **Tabular Foundation Models Are Effectively Shallow** | A closed-form, label-free affine map replaces half of any TFM's blocks for ≤0.002 median AUROC; a one-block TabPFN-3 serves cached queries 2.4× faster in 6× less memory. | [pdf](papers/2026/10_Cannistraci_and_Vogt_Tabular_Foundation_Models_Are_Effectively_Shallow.pdf) |
+| 2026-10 | Alberge et al. | **SurvICL**: a Foundation Model for in-context Survival Analysis | TabICLv2-style survival ICL: censored context, latent event-time quantile targets and a proportional-odds prior; leads overall IBS on 63 held-out datasets, with size-dependent limits. | [pdf](papers/2026/10_Alberge_et_al._SurvICL_a_Foundation_Model_for_in_context_Survival_Analysis.pdf) |
 
 ---
 
@@ -2963,5 +2964,84 @@ memory advantage on very wide tables. The compression-equals-shallow-training re
 only on a 1.4M-parameter nanoTabPFN; whether it holds at production scale is explicitly open. It
 is a preprint, and a closely related ICML 2026 study (*Is one layer enough?*, not in this
 collection) reached a neighbouring conclusion independently.
+
+---
+
+<a id="survicl-a-foundation"></a>
+
+## 2026-10 — Alberge et al. — SurvICL: a Foundation Model for in-context Survival Analysis
+
+**arXiv:** [2610.22242v1](https://arxiv.org/abs/2610.22242v1), **15 October 2026** · preprint;
+no publication venue recorded in Zotero · **Inria Saclay / EPFL / Probabl** ·
+**PDF:** [open](papers/2026/10_Alberge_et_al._SurvICL_a_Foundation_Model_for_in_context_Survival_Analysis.pdf)
+
+**Citation key:** `2026.ALBERGE.surviclfoundationmodelincontextsurvivalanalysis`.
+
+**Where it fits.** Extends Qu 2026 (*TabICLv2: A better, faster, scalable, and open
+tabular foundation model*, [summary](#tabiclv2)) to **right-censored time-to-event
+prediction**. Like Robertson 2025 (*Do-PFN*), it uses simulator-accessible outcomes
+that real observations do not reveal: the context remains censored, while synthetic
+query targets are uncensored event times. Its controlled prior ablations complement
+Bouadi 2026 (*O'Prior*, [summary](#oprior)). It also broadens the distributional evidence
+alongside Zhao 2026 (*TabReliBench*, [summary](#tabrelibench)), while evaluating a
+different form of calibration.
+
+**What it contains.** A TabICLv2-style backbone is pretrained specifically for survival
+analysis. Context outcomes encode **observed duration plus event/censoring indicator**
+at both the cell-embedding and row-ICL stages. A softplus head predicts **999 positive
+event-time quantiles** using plain pinball loss against latent event times; sorting
+and interpolation produce a monotone survival function. Thus the simple loss depends
+on synthetic supervision, rather than treating censored durations as observed events.
+The architecture retains TabICLv2's repeated feature grouping, row compression and
+`O(n² + nm²)` attention cost; inference averages eight preprocessing/permutation views.
+
+The synthetic prior combines SCM covariates with a **proportional-odds survival model**:
+a flexible random baseline hazard and covariate-dependent risk generate event times,
+with a separately drawn censoring mechanism plus administrative study-end censoring.
+The generator filters out tables with over 95% censoring and tables without exploitable
+predictive signal. Pretraining uses **200,000 steps**, 1,024-row tables with at most
+100 features, and about **72 hours on two H100s**. It omits TabICLv2's later scaling
+stages. Development ablations hold the architecture fixed: the PO prior beats Cox,
+AFT and alternative survival priors, while adding a censoring-time prediction head
+hurts. These ablations use a shallower model trained for only 10,000 steps.
+
+The benchmark has **103 datasets: 40 for development and 63 held out from design
+decisions**, compared against **20 baselines**. Each held-out dataset receives ten
+event-stratified 80/20 train/test splits. SurvICL uses at most **4,096 context rows**
+without per-dataset tuning; test sets are also capped at 4,096. Tunable baselines
+receive up to 50 random-search trials, with their seed-0 choice reused across splits.
+
+On the held-out set, the reported **pairwise IBS win rate is 82.9%**, versus Cox's
+71.3%; for the median-horizon IPCW C-index it is **77.7%**, versus random survival
+forests' 71.6%. These percentages aggregate comparisons over datasets and competitors;
+they are not direct head-to-head win rates against the named runner-up. SurvICL leads
+overall IBS significantly. Below 1,000 samples it ranks above Cox in IBS, but that
+subgroup difference is **not statistically significant**; above 1,000, SurvivalBoost
+leads IBS. It is competitive on the runtime/performance frontier, while reported
+baseline runtime excludes hyperparameter search. Additional metrics are MAE-Hinge and
+**KM-calibration**, comparing the mean predicted survival curve with the test-set
+Kaplan–Meier curve. Its average KM-calibration rank is 6.0, behind Cox's 5.0 and the
+covariate-free KM estimator's 4.3.
+
+**Strengths.** Preserves censored information in context while exploiting simulator
+ground truth for training; separates survival targets, prior design and backbone
+reuse. The 40/63 development/evaluation split reduces dataset-level design leakage,
+and the benchmark reports probability error, ranking, time error, calibration and
+runtime separately. Reports the large-dataset reversal, statistical qualifications
+and failed-baseline handling rather than relying on a single overall leaderboard.
+
+**Limitations.** Unreviewed evidence restricted to right-censored, single-event,
+static-covariate data; competing risks and time-varying covariates remain future work.
+Random event-stratified splits do not establish temporal or grouped transfer. Reusing
+seed-0 baseline tuning overlaps later splits' test observations, a limitation the
+authors acknowledge as favouring baselines. Failed baseline fits are assigned IBS 1
+or C-index 0.5 on affected datasets, so aggregate ranks partly reflect robustness of
+the implementations. The 4,096-row context cap and 1,024-row pretraining regime limit
+claims about large cohorts; prior rankings from shallow, short ablations need not hold
+unchanged at full scale. IBS assesses probability quality and KM-calibration assesses
+an average curve: neither establishes individual or subgroup calibration. Finally,
+latent event times are unavailable for censored real observations, so plain pinball
+training here does not by itself supply a valid real-data finetuning or continued-
+pretraining objective.
 
 ---

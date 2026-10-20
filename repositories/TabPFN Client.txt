@@ -11,7 +11,9 @@ Directory structure:
     ├── uv.lock
     ├── changelog/
     │   ├── README.md
-    │   └── 403.fixed.md
+    │   ├── 403.fixed.md
+    │   ├── 404.added.md
+    │   └── 406.fixed.md
     ├── examples/
     │   └── sagemaker/
     │       └── tabpfn-3-sample.ipynb
@@ -77,6 +79,7 @@ Directory structure:
     │       ├── test_prompt_agent.py
     │       ├── test_sagemaker_invocation_timeout.py
     │       ├── test_service_wrapper.py
+    │       ├── test_submit_fit.py
     │       ├── test_tabpfn_classifier.py
     │       ├── test_tabpfn_regressor.py
     │       ├── test_text_features.py
@@ -107,7 +110,7 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 26687: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 28622: character maps to <undefined>
 
 
 ================================================
@@ -477,16 +480,16 @@ dependencies = [
     "omegaconf>=2.1.2,<=2.3.0",
     "pandas>=2.1.2,<=2.3.3",
     "password-strength>=0.0.3.post2,<=0.0.3.post2",
-    "pydantic>=2.11.7,<=2.13.4",
+    "pydantic>=2.11.7,<=2.14.1",
     "scikit-learn>=1.3.1,<=1.9.0",
     "sseclient-py>=1.8.0,<=1.9.0",
-    "tqdm>=4.63.0,<=4.70.0",
+    "tqdm>=4.63.0,<=4.70.1",
     "typing_extensions>=4.12.2,<=4.16.0",
     "xxhash>=1.1.0,<=3.8.1",
     "backoff>=2.2.0,<=2.2.1",
     "rich>=13.7.0,<=15.0.0",
     "tabpfn-common-utils>=0.2.10,<=0.2.19",
-    "google-crc32c>=1.5.0,<=1.8.0",
+    "google-crc32c>=1.5.0,<=1.9.0",
     "pyarrow>=14.0.0,<=25.0.1",
     "pydantic-settings>=2.14.2,<=2.15.0",
 ]
@@ -3048,6 +3051,20 @@ Treat a successful response with an empty final payload (only keepalive pings) a
 
 
 ================================================
+FILE: changelog/404.added.md
+================================================
+`TabPFNClassifier` and `TabPFNRegressor` gained `submit_fit()`, which starts a fit without waiting for it, and `wait_for_fit()`. `save_model()` saves the pending model, so a later run can `load_model()` it and wait for the same fit instead of fitting again; until the fit has been waited for, `predict()` raises `NotFittedError`. A fit the server reports as failed now raises `FitFailedError`, a `RuntimeError`.
+
+
+
+================================================
+FILE: changelog/406.fixed.md
+================================================
+`TabPFNClassifier.fit` in thinking mode now rejects a target with only one class before sending it, including the SageMaker and Foundry estimators.
+
+
+
+================================================
 FILE: examples/sagemaker/tabpfn-3-sample.ipynb
 ================================================
 # Jupyter notebook converted to Python script.
@@ -3286,7 +3303,7 @@ from tabpfn_client.config import (
 )
 from tabpfn_client.cost import estimate_cost
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
-from tabpfn_client.errors import FittedModelNotFoundError
+from tabpfn_client.errors import FitFailedError, FittedModelNotFoundError
 from tabpfn_client.interactive_auth import InteractiveLoginError, interactive_login
 from tabpfn_client.service_wrapper import UserDataClient
 
@@ -3301,6 +3318,7 @@ __all__ = [
     "reset",
     "TabPFNClassifier",
     "TabPFNRegressor",
+    "FitFailedError",
     "FittedModelNotFoundError",
     "UserDataClient",
     "get_access_token",
@@ -3794,7 +3812,6 @@ from typing_extensions import (
 )
 from tabpfn_client.models import (
     ClientOptions,
-    FitResult,
     PredictionResult,
     ApiMode,
 )
@@ -3802,6 +3819,7 @@ from tabpfn_client.errors import (
     RetryableServerError,
     CappedRetryableServerError,
     EmptyResponseError,
+    FitFailedError,
     FittedModelNotFoundError,
 )
 
@@ -3929,6 +3947,20 @@ def _get_crc32c_hash(data: bytes) -> str:
     """Compute the CRC32C checksum of ``data`` as a base64-encoded string."""
     crc32c_value = google_crc32c.value(data)
     return base64.b64encode(struct.pack(">I", crc32c_value)).decode("ascii")
+
+
+def _fitted_model_not_found(
+    fitted_train_set_id: UUID, response: NotFoundErrorResponse
+) -> FittedModelNotFoundError:
+    """Build the error for a fit id the server does not know."""
+    message = (
+        f"Fitted model {fitted_train_set_id} was not found on the server. "
+        "It may have been deleted (see UserDataClient), or it was fitted "
+        "under a different account. Call fit() again to create a new one."
+    )
+    if response.trace_id:
+        message += f" Report trace ID: {response.trace_id}."
+    return FittedModelNotFoundError(message)
 
 
 def _serialize_to_parquet(df: pd.DataFrame) -> tuple[bytes, str]:
@@ -4104,7 +4136,8 @@ class ServiceClient(Singleton):
         client_options: ClientOptions | None = None,
         description: str | None = None,
         text_handling: TextHandling = "advanced",
-    ) -> FitResult:
+        wait: bool = True,
+    ) -> FitResponse:
         """Upload a train set to server and fit it.
 
         Args:
@@ -4117,10 +4150,17 @@ class ServiceClient(Singleton):
             client_options: Client specific options (e.g. timeout, headers).
             description: Description of the dataset and task for the server.
             text_handling: Text-processing preset, ``"advanced"`` or ``"simple"``.
+            wait: Whether to poll the server until the fit completes. When
+                False, return as soon as the server answers the fit request,
+                which in ASYNC mode is right after it accepted the job; the
+                result's ``status`` then says whether the fit is still running,
+                and ``_wait_for_fit`` waits for it.
 
         Returns:
-            The unique ID of the fitted train set in the server, and the
-            server-reported timings of the fit (None if the server reports none).
+            The fit as the server reports it: the unique ID of the fitted train
+            set, its status, COMPLETED once waited for, and its timings (None
+            if the server reports none). An ASYNC fit not waited for is
+            PENDING, without timings.
 
         Raises:
             ValueError: If ``text_handling`` is invalid or the in-memory size of
@@ -4220,7 +4260,7 @@ class ServiceClient(Singleton):
                     raise
 
         if use_async:
-            fit_resp = cls._submit_fit_job(
+            submit_resp = cls._submit_fit_job(
                 req=SubmitFitJobRequest(
                     train_set_upload_id=prepare_resp.train_set_upload_id,
                     task_config=task_config,
@@ -4233,10 +4273,12 @@ class ServiceClient(Singleton):
                 timeout=client_options.timeout,
                 headers=client_options.headers,
             )
-            timings = cls._wait_for_fit(
-                fit_resp.fitted_train_set_id,
-                headers=client_options.headers,
-            ).timings
+            # The server answers a submitted job with its id alone: it has
+            # accepted the fit, not run it.
+            fit_resp = FitResponse(
+                fitted_train_set_id=submit_resp.fitted_train_set_id,
+                status=FitStatus.PENDING,
+            )
         else:
             fit_resp = cls._fit(
                 req=FitRequest(
@@ -4251,22 +4293,23 @@ class ServiceClient(Singleton):
                 timeout=client_options.timeout,
                 headers=client_options.headers,
             )
-            timings = fit_resp.timings
-            # NOTE: The server currently only returns COMPLETED or PENDING
-            # (failed requests raise), but `status` is forward-compatible
-            # (`FitStatus | UnknownEnum`), so treat anything that is not
-            # COMPLETED as still in progress instead of silently skipping
-            # the wait when a newer server adds a status.
-            if fit_resp.status != FitStatus.COMPLETED:
-                timings = cls._wait_for_fit(
-                    fit_resp.fitted_train_set_id,
-                    headers=client_options.headers,
-                ).timings
 
-        return FitResult(
-            fitted_train_set_id=fit_resp.fitted_train_set_id,
-            timings=timings.model_dump(mode="json") if timings is not None else None,
-        )
+        # NOTE: The server currently only returns COMPLETED or PENDING
+        # (failed requests raise), but `status` is forward-compatible
+        # (`FitStatus | UnknownEnum`), so treat anything that is not
+        # COMPLETED as still in progress instead of silently skipping
+        # the wait when a newer server adds a status.
+        if wait and fit_resp.status != FitStatus.COMPLETED:
+            status_resp = cls._wait_for_fit(
+                fit_resp.fitted_train_set_id,
+                headers=client_options.headers,
+            )
+            fit_resp = FitResponse(
+                fitted_train_set_id=fit_resp.fitted_train_set_id,
+                status=status_resp.status,
+                timings=status_resp.timings,
+            )
+        return fit_resp
 
     @classmethod
     def _wait_for_fit(
@@ -4280,12 +4323,15 @@ class ServiceClient(Singleton):
         server's per-response ``retry_in_secs`` hint (5s until the first hint
         arrives), clamped to the ``_MIN_RETRY_INTERVAL_SECS`` floor so a
         zero/negative hint can neither busy-poll the endpoint nor crash
-        ``time.sleep``.
+        ``time.sleep``. The server derives the hint from how long the fit has
+        been pending, so a process resuming the wait for a fit another process
+        submitted polls at the same cadence.
 
-        Returns once the fit is COMPLETED. Raises if the fit FAILED, or
-        ``TimeoutError`` when no terminal state is reached within the resolved
-        poll timeout. The timeout is a hard bound: the loop gives up as soon
-        as the next poll could no longer start before the deadline, instead
+        Returns once the fit is COMPLETED. Raises ``FitFailedError`` if the fit
+        FAILED, ``FittedModelNotFoundError`` if the server has no fit with this
+        id, or ``TimeoutError`` when no terminal state is reached within the
+        resolved poll timeout. The timeout is a hard bound: the loop gives up as
+        soon as the next poll could no longer start before the deadline, instead
         of sleeping up to the deadline and polling once more past it.
         A failed fit is reported by the server as HTTP 200 with
         ``status=failed`` (only an unknown/foreign id is a 404), so the status
@@ -4341,7 +4387,7 @@ class ServiceClient(Singleton):
                 if status_resp.status == FitStatus.COMPLETED:
                     return status_resp
                 if status_resp.status == FitStatus.FAILED:
-                    raise RuntimeError(
+                    raise FitFailedError(
                         f"Fit {fitted_train_set_id} failed: "
                         f"{status_resp.error or 'no error message provided'}"
                     )
@@ -4378,6 +4424,7 @@ class ServiceClient(Singleton):
         """Fetch the status of a fit once.
 
         Raises:
+            FittedModelNotFoundError: If the server has no fit with this ID.
             CappedRetryableServerError: On HTTP 429 or 500, or an empty
                 success body (treated as a 500).
         """
@@ -4396,13 +4443,17 @@ class ServiceClient(Singleton):
                 f"Fail to call get_fit_status: [HTTP {res.status_code}] {res.text}."
             )
         try:
-            return cls._validate_response(
+            status_resp = cls._validate_response(
                 res,
                 "get_fit_status",
                 success_model=GetFitStatusResponse,
+                error_models={404: NotFoundErrorResponse},
             )
         except EmptyResponseError as exc:
             raise CappedRetryableServerError(str(exc)) from exc
+        if isinstance(status_resp, NotFoundErrorResponse):
+            raise _fitted_model_not_found(req.fitted_train_set_id, status_resp)
+        return status_resp
 
     @classmethod
     # Every fit call creates a new fit job, no dedup logic exists on the server.
@@ -4545,14 +4596,7 @@ class ServiceClient(Singleton):
         )
 
         if isinstance(prepare_resp, NotFoundErrorResponse):
-            message = (
-                f"Fitted model {fitted_train_set_id} was not found on the server. "
-                "It may have been deleted (see UserDataClient), or it was fitted "
-                "under a different account. Call fit() again to create a new one."
-            )
-            if prepare_resp.trace_id:
-                message += f" Report trace ID: {prepare_resp.trace_id}."
-            raise FittedModelNotFoundError(message)
+            raise _fitted_model_not_found(fitted_train_set_id, prepare_resp)
 
         if isinstance(prepare_resp, DuplicateTestSetErrorResponse):
             logger.debug("Test set already exists, skipping upload.")
@@ -5550,6 +5594,17 @@ class FittedModelNotFoundError(RuntimeError):
     pass
 
 
+class FitFailedError(RuntimeError):
+    """The server reports that a fit it accepted has failed.
+
+    Raised by ``fit()`` and ``wait_for_fit()`` when they poll the server for the
+    outcome of a fit, as ``fit()`` does in ASYNC mode. The message holds the
+    server's reason.
+    """
+
+    pass
+
+
 
 ================================================
 FILE: src/tabpfn_client/estimator.py
@@ -5570,6 +5625,7 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 from sklearn.base import ClassifierMixin, RegressorMixin
+from sklearn.exceptions import NotFittedError
 from sklearn.utils import column_or_1d
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
@@ -5580,6 +5636,7 @@ from tabpfn_client.client import (
 )
 from tabpfn_client.config import Config, init
 from tabpfn_client.constants import URL_TABPFN_EXTENSIONS_GITHUB_MANY_CLASS_CODE
+from tabpfn_client.errors import FitFailedError, FittedModelNotFoundError
 from tabpfn_client.api_models import ModelVersion
 from tabpfn_client.utils import (
     model_limit_from_version,
@@ -5602,6 +5659,9 @@ from tabpfn_client.api_models import (
     ThinkingEffort,
     TabPFNSystem,
     TextHandling,
+    FitResponse,
+    FitStatus,
+    FitTimings,
 )
 from tabpfn_client.models import ApiMode, TabPFNConfig, FitModeLiteral
 from tabpfn_client.persistence import ModelPersistenceMixin
@@ -5696,8 +5756,9 @@ class _ServerTimingsMixin:
           A prediction sent in several requests reports their sum.
 
         Queue wait is time spent waiting for the server to start the work. An
-        entry is None before the first call, on a model restored with
-        `load_model()`, and when the server does not report timings.
+        entry is None before the first call, while a fit is pending, on a model
+        restored with `load_model()` from a completed fit, and when the server
+        does not report timings.
         """
         return {
             "fit": getattr(self, "fit_timings_", None),
@@ -5719,8 +5780,174 @@ def _combine_timings(
     return combined
 
 
+def _timings_dict(timings: FitTimings | None) -> dict[str, Any] | None:
+    """Return server-reported fit timings as the plain dict `fit_timings_` holds."""
+    return timings.model_dump(mode="json") if timings is not None else None
+
+
+class _AsyncMixin(ModelPersistenceMixin):
+    """Starts work on the TabPFN server without waiting for it, and waits for it.
+
+    `submit_fit()` returns as soon as the server has accepted the fit, leaving
+    the model pending until `wait_for_fit()` sees the fit complete. In between,
+    `save_model()` saves the pending fit, for a later run to load and wait for.
+    `submit_predict()` and `wait_for_predict()` are reserved for predictions.
+    """
+
+    # Set by the estimator's `__init__`.
+    client_options: ClientOptions
+
+    def submit_fit(
+        self,
+        X: pd.DataFrame | np.ndarray,
+        y: pd.Series | np.ndarray,
+        description: str | None = None,
+    ) -> Self:
+        """Start fitting the model on the server, without waiting for the fit.
+
+        Checks and uploads the training data as `fit()` does, but returns as
+        soon as the server has accepted the fit, which it then runs as a
+        background job, whatever `api_mode` is. Until `wait_for_fit()` sees
+        the fit complete, the model is pending: `predict()` raises
+        `NotFittedError`, and `save_model()` saves it as a pending fit, which
+        a later run can `load_model()` and wait for. The id of the fit is in
+        `model_id_` as soon as `submit_fit()` returns, for logs or support
+        requests.
+
+        Args:
+            X: The input data.
+            y: The target variable.
+            description: Description of the dataset and task for the server.
+
+        Returns:
+            self
+
+        Raises:
+            ValueError: If the data or the estimator's parameters are invalid,
+                or the data exceeds the model limits.
+        """
+        return self._fit(X, y, description, submit=True)
+
+    def wait_for_fit(self) -> Self:
+        """Wait for the server to complete the fit `submit_fit()` started.
+
+        Polls the server until the fit has completed, after which the model
+        can predict. A model `load_model()` restored from a record of a pending
+        fit is waited for the same way. Returns at once, without a request, if
+        the fit has already completed.
+
+        Returns:
+            self
+
+        Raises:
+            NotFittedError: If the model has no fit to wait for.
+            FitFailedError: If the server reports that the fit failed. The
+                model is then unfitted.
+            FittedModelNotFoundError: If the server does not have the fit, for
+                instance because it was deleted. The model is then unfitted.
+            TimeoutError: If the fit has not completed within
+                `TABPFN_CLIENT_ASYNC_POLL_TIMEOUT` seconds. The model is still
+                pending, so `wait_for_fit()` can be called again.
+        """
+        if not self._fit_pending:
+            check_is_fitted(
+                self,
+                msg="This %(name)s has no fit to wait for. Call submit_fit() first.",
+            )
+            return self
+        # A model restored by `load_model()` can get here without `fit()`, which
+        # is what otherwise authorizes the HTTP client.
+        init()
+        logger.debug(f"Waiting for fit {self.model_id_} to complete.")
+        try:
+            response = InferenceClient.wait_for_fit(
+                self.model_id_, client_options=self.client_options
+            )
+        except (FitFailedError, FittedModelNotFoundError):
+            self._forget_fit()
+            raise
+        self.fit_timings_ = _timings_dict(response.timings)
+        self._fit_pending = False
+        return self
+
+    def submit_predict(self, X: pd.DataFrame | np.ndarray) -> Self:
+        """Start predicting on the server, without waiting for the predictions.
+
+        Not implemented yet: reserved for the prediction counterpart of
+        `submit_fit()`. Use `predict()` in the meantime.
+
+        Args:
+            X: The input data for prediction.
+
+        Raises:
+            NotImplementedError: Always, for now.
+        """
+        raise NotImplementedError(
+            "submit_predict() is not implemented yet. Use predict()."
+        )
+
+    def wait_for_predict(self) -> Any:
+        """Wait for the predictions `submit_predict()` started.
+
+        Not implemented yet: reserved for the prediction counterpart of
+        `wait_for_fit()`. Use `predict()` in the meantime.
+
+        Raises:
+            NotImplementedError: Always, for now.
+        """
+        raise NotImplementedError(
+            "wait_for_predict() is not implemented yet. Use predict()."
+        )
+
+    def _fit(
+        self,
+        X: pd.DataFrame | np.ndarray,
+        y: pd.Series | np.ndarray,
+        description: str | None,
+        *,
+        submit: bool,
+    ) -> Self:
+        """Fit as `fit()` does or, with `submit`, as `submit_fit()` does."""
+        raise NotImplementedError  # Each estimator fits its own task.
+
+    def _check_fitted(self) -> None:
+        """Raise `NotFittedError` unless the model has a completed fit.
+
+        Asks the server nothing: whether a pending fit has completed is for
+        `wait_for_fit()` to find out.
+        """
+        if self._fit_pending:
+            raise NotFittedError(
+                f"Fit {self.model_id_} may not have completed yet. Call "
+                "wait_for_fit() before predicting."
+            )
+        check_is_fitted(self)
+
+    def _set_fit(
+        self,
+        fit_result: FitResponse,
+        *,
+        n_train_rows: int,
+    ) -> None:
+        """Assign the fitted state both estimators keep, for one fit.
+
+        A fit the server is still running leaves the model pending.
+        """
+        self.model_id_ = fit_result.fitted_train_set_id
+        self.fit_timings_ = _timings_dict(fit_result.timings)
+        self._n_train_rows = n_train_rows
+        self._fit_pending = fit_result.status != FitStatus.COMPLETED
+
+    def _forget_fit(self) -> None:
+        """Drop the fit `model_id_` refers to, leaving the model unfitted."""
+        for name in ("model_id_", "classes_", "fit_timings_"):
+            vars(self).pop(name, None)
+        self._n_train_rows = None
+        self._fit_pending = False
+
+
 class TabPFNClassifier(
-    ClassifierMixin, ModelPersistenceMixin, TabPFNModelSelection, _ServerTimingsMixin
+    ClassifierMixin, _AsyncMixin, TabPFNModelSelection, _ServerTimingsMixin
 ):
     """Hosted TabPFN classifier with a scikit-learn-compatible interface.
 
@@ -5934,13 +6161,16 @@ class TabPFNClassifier(
                 DataFrame that holds the column.
 
             api_mode:
-                Controls how the client calls the server.
+                How the client calls the API.
 
-                - `SYNC`: the client waits for the server to complete the request
-                  before returning.
-                - `ASYNC`: the client returns immediately and the server completes the
-                  request in the background.
-                - `AUTO`: the client determines the best mode based on the request.
+                - `SYNC`: for small workloads, where latency matters. The client
+                  waits on one open request.
+                - `ASYNC`: for larger workloads. The server runs the work as a
+                  background job, and the client polls it until it is done.
+                - `AUTO`: `ASYNC` for large training sets, `SYNC` otherwise.
+
+                In every mode `fit()` and `predict()` return once the work is
+                done. `submit_fit()` always runs async, whatever this setting is.
 
             client_options:
                 Client specific options (e.g. timeout, headers).
@@ -5986,7 +6216,10 @@ class TabPFNClassifier(
     ):
         """Fit the model.
 
-        Uploads the training data to the server, which fits the model on it.
+        Uploads the training data to the server, which fits the model on it,
+        and returns once the fit has completed. Every call starts a new fit,
+        also on a model with a pending fit. To start a fit without waiting for
+        it, use `submit_fit()`.
 
         Args:
             X: The input data.
@@ -5999,7 +6232,20 @@ class TabPFNClassifier(
         Raises:
             ValueError: If the data or the estimator's parameters are invalid,
                 or the data exceeds the model limits.
+            FitFailedError: If the server reports that the fit failed while
+                `fit()` polled for it, as in ASYNC mode.
         """
+        return self._fit(X, y, description, submit=False)
+
+    def _fit(
+        self,
+        X: pd.DataFrame | np.ndarray,
+        y: pd.Series | np.ndarray,
+        description: str | None,
+        *,
+        submit: bool,
+    ) -> Self:
+        """Fit as `fit()` does or, with `submit`, as `submit_fit()` does."""
         text_handling = validate_text_handling(self.text_handling)
         # assert init() is called
         init()
@@ -6011,6 +6257,12 @@ class TabPFNClassifier(
 
         # NOTE: Always resolve, do not re-assign to self.thinking_mode, user could change effort.
         thinking_mode = _resolve_thinking_mode(self.thinking_mode, self.thinking_effort)
+        # Only thinking needs 2 classes; a standard fit accepts one, like the local
+        # package. Checked here so the caller doesn't wait for the upload to find out.
+        if thinking_mode and len(classes) < 2:
+            raise ValueError(
+                "y contains only one class; thinking mode needs at least 2 classes."
+            )
         task_config = _build_fit_task_config(tabpfn_config)
         tabpfn_systems = _build_tabpfn_systems(self.paper_version, thinking_mode)
         thinking_config = _build_thinking_config(
@@ -6041,19 +6293,16 @@ class TabPFNClassifier(
                 tabpfn_systems=tabpfn_systems,
                 text_handling=text_handling,
                 thinking_config=thinking_config,
-                api_mode=self.api_mode,
+                # Only an ASYNC fit is accepted before it runs, as submit needs.
+                api_mode=ApiMode.ASYNC if submit else self.api_mode,
                 client_options=self.client_options,
                 description=description,
+                wait=not submit,
             )
-            self.model_id_ = fit_result.fitted_train_set_id
-            self.fit_timings_ = fit_result.timings
-            # NOTE: Previously classes were assigned in-place before a fit succeeded,
-            # consider this failure mode:
-            #  1. first fit() -> succeeds, model_id_ and classes_ are assigned
-            #  2. second fit() -> fails, only classes_ assigned, new classes_ but old model_id_
-            # Now we make sure to assign classes_ only after a successful fit.
+            self._set_fit(fit_result, n_train_rows=X.shape[0])
+            # Set only after the server has accepted the fit, so a failed refit
+            # can't pair new classes with the old model_id_.
             self.classes_ = classes
-            self._n_train_rows = X.shape[0]
             self._fit_count += 1
         else:
             raise NotImplementedError(
@@ -6069,6 +6318,10 @@ class TabPFNClassifier(
 
         Returns:
             The predicted class labels as a NumPy array.
+
+        Raises:
+            NotFittedError: If the model has no fit, or its fit is pending:
+                call `wait_for_fit()` first.
         """
         return self._predict(X, output_type="preds")
 
@@ -6081,6 +6334,10 @@ class TabPFNClassifier(
         Returns:
             The predicted probabilities of the classes as a NumPy array.
             Shape (n_samples, n_classes).
+
+        Raises:
+            NotFittedError: If the model has no fit, or its fit is pending:
+                call `wait_for_fit()` first.
         """
         return self._predict(X, output_type="probas")
 
@@ -6094,12 +6351,15 @@ class TabPFNClassifier(
         # we capture the original user-provided values.
         predict_params = self._get_predict_params(locals())
 
+        # Before `init()`, so that a model with nothing to predict with fails
+        # without authenticating first.
+        self._check_fitted()
+
         # An estimator restored by `load_model()` (or whose `model_id_` was
         # assigned directly) can reach `predict` without ever calling `fit()`,
         # so `init()` (which authorizes the HTTP client) must run here too. It
         # short-circuits after the first successful call.
         init()
-        check_is_fitted(self)
 
         tabpfn_config = self._get_tabpfn_config()
         task_config = ClassifierConfig(
@@ -6198,7 +6458,7 @@ class TabPFNClassifier(
 
 
 class TabPFNRegressor(
-    RegressorMixin, ModelPersistenceMixin, TabPFNModelSelection, _ServerTimingsMixin
+    RegressorMixin, _AsyncMixin, TabPFNModelSelection, _ServerTimingsMixin
 ):
     """Hosted TabPFN regressor with a scikit-learn-compatible interface.
 
@@ -6391,13 +6651,16 @@ class TabPFNRegressor(
                 DataFrame that holds the column.
 
             api_mode:
-                Controls how the client calls the server.
+                How the client calls the API.
 
-                - `SYNC`: the client waits for the server to complete the request
-                  before returning.
-                - `ASYNC`: the client returns immediately and the server completes the
-                  request in the background.
-                - `AUTO`: the client determines the best mode based on the request.
+                - `SYNC`: for small workloads, where latency matters. The client
+                  waits on one open request.
+                - `ASYNC`: for larger workloads. The server runs the work as a
+                  background job, and the client polls it until it is done.
+                - `AUTO`: `ASYNC` for large training sets, `SYNC` otherwise.
+
+                In every mode `fit()` and `predict()` return once the work is
+                done. `submit_fit()` always runs async, whatever this setting is.
 
             client_options:
                 Client specific options (e.g. timeout, headers).
@@ -6442,7 +6705,10 @@ class TabPFNRegressor(
     ):
         """Fit the model.
 
-        Uploads the training data to the server, which fits the model on it.
+        Uploads the training data to the server, which fits the model on it,
+        and returns once the fit has completed. Every call starts a new fit,
+        also on a model with a pending fit. To start a fit without waiting for
+        it, use `submit_fit()`.
 
         Args:
             X: The input data.
@@ -6455,7 +6721,20 @@ class TabPFNRegressor(
         Raises:
             ValueError: If the data or the estimator's parameters are invalid,
                 or the data exceeds the model limits.
+            FitFailedError: If the server reports that the fit failed while
+                `fit()` polled for it, as in ASYNC mode.
         """
+        return self._fit(X, y, description, submit=False)
+
+    def _fit(
+        self,
+        X: pd.DataFrame | np.ndarray,
+        y: pd.Series | np.ndarray,
+        description: str | None,
+        *,
+        submit: bool,
+    ) -> Self:
+        """Fit as `fit()` does or, with `submit`, as `submit_fit()` does."""
         text_handling = validate_text_handling(self.text_handling)
         # assert init() is called
         init()
@@ -6492,13 +6771,13 @@ class TabPFNRegressor(
                 tabpfn_systems=tabpfn_systems,
                 text_handling=text_handling,
                 thinking_config=thinking_config,
-                api_mode=self.api_mode,
+                # Only an ASYNC fit is accepted before it runs, as submit needs.
+                api_mode=ApiMode.ASYNC if submit else self.api_mode,
                 client_options=self.client_options,
                 description=description,
+                wait=not submit,
             )
-            self.model_id_ = fit_result.fitted_train_set_id
-            self.fit_timings_ = fit_result.timings
-            self._n_train_rows = X.shape[0]
+            self._set_fit(fit_result, n_train_rows=X.shape[0])
             self._fit_count += 1
         else:
             raise NotImplementedError(
@@ -6544,6 +6823,8 @@ class TabPFNRegressor(
             for `"main"` and `"full"`.
 
         Raises:
+            NotFittedError: If the model has no fit, or its fit is pending:
+                call `wait_for_fit()` first.
             ValueError: If `X` exceeds the model limits or the group columns are
                 invalid.
             RuntimeError: If a `"full"` prediction split across several requests
@@ -6553,12 +6834,15 @@ class TabPFNRegressor(
         # we capture the original user-provided values.
         predict_params = self._get_predict_params(locals())
 
+        # Before `init()`, so that a model with nothing to predict with fails
+        # without authenticating first.
+        self._check_fitted()
+
         # An estimator restored by `load_model()` (or whose `model_id_` was
         # assigned directly) can reach `predict` without ever calling `fit()`,
         # so `init()` (which authorizes the HTTP client) must run here too. It
         # short-circuits after the first successful call.
         init()
-        check_is_fitted(self)
 
         tabpfn_config = self._get_tabpfn_config()
         task_config = RegressorConfig(
@@ -7552,7 +7836,6 @@ from enum import Enum
 from dataclasses import dataclass, field
 import numpy as np
 from typing import Any, Literal
-from uuid import UUID
 from tabpfn_client.options import get_opts
 
 from tabpfn_client.api_models import (
@@ -7573,21 +7856,6 @@ class ApiMode(str, Enum):
     AUTO = "auto"
     SYNC = "sync"
     ASYNC = "async"
-
-
-@dataclass(frozen=True)
-class FitResult:
-    """Outcome of a fit request.
-
-    Attributes:
-        fitted_train_set_id: Server-side id of the fitted train set.
-        timings: Seconds per stage as reported by the server, or None when it
-            reports none.
-    """
-
-    fitted_train_set_id: UUID
-    # Seconds per stage as reported by the server; None when it reports none.
-    timings: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -7713,15 +7981,22 @@ fitted state held on the client is therefore small and fully describable:
 derives fittedness from them, and turns them into a small JSON record with
 `save_model()` and back into a ready-to-predict estimator with `load_model()`.
 Nothing else needs to survive, which is also what keeps pickling cheap.
+
+The same record lets a fit outlive the process that started it. The server
+assigns the id when it accepts a fit, before it runs it, so a model that
+`submit_fit()` left pending can be saved too. Its record says the fit is
+pending, and `load_model()` restores it as such, without asking the server
+about it, for `wait_for_fit()` to wait for.
 """
 
 from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
-from typing import Any
-from uuid import UUID
+from typing import Any, Literal
+from uuid import UUID, uuid4
 
 import numpy as np
 from pydantic import BaseModel, ValidationError
@@ -7729,7 +8004,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_is_fitted
 from typing_extensions import Self
 
-from tabpfn_client.api_models import PredictionTask
+from tabpfn_client.api_models import FitStatus, PredictionTask
 
 # Constructor params that describe the connection rather than the model. They
 # are left out of the record, and a record that carries them is rejected:
@@ -7755,6 +8030,11 @@ class _ModelRecord(BaseModel):
     n_train_rows: int | None = None
     # Classification only; None for regressors.
     classes: list[Any] | None = None
+    # PENDING for a fit `submit_fit()` started that had not been waited for when
+    # the record was saved, so the server may still be running it. A failed fit
+    # is never saved. Records written before this field existed only held
+    # completed fits.
+    fit_status: Literal[FitStatus.PENDING, FitStatus.COMPLETED] = FitStatus.COMPLETED
 
 
 def _task_of(estimator_cls: type) -> PredictionTask:
@@ -7789,6 +8069,24 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_jsonable(v) for v in value]
     return value
+
+
+def _write_record(path: str | Path, record: dict[str, Any]) -> None:
+    """Write `record` to `path` as JSON, replacing the file in one step.
+
+    Written to a file of its own beside `path` and renamed over it, so that a
+    process stopped mid-write leaves the previous record whole instead of a
+    truncated one, and processes saving to one path at once each install a
+    whole record.
+    """
+    path = Path(path)
+    aside = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+    try:
+        aside.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        os.replace(aside, path)
+    except BaseException:
+        aside.unlink(missing_ok=True)
+        raise
 
 
 def _read_record(source: str | Path | dict[str, Any]) -> _ModelRecord:
@@ -7841,12 +8139,18 @@ class ModelPersistenceMixin(BaseEstimator):
     # n_train_rows * n_test_rows, so this bounds the test rows per call.
     _n_train_rows: int | None = None
 
+    # Whether the server may still be running the fit `model_id_` refers to:
+    # set by `submit_fit()`, or by `load_model()` from a record of a pending
+    # fit, until `wait_for_fit()` sees the fit complete.
+    _fit_pending: bool = False
+
     # NOTE: Some "*_" attributes may be assigned before a fit succeeds (it used
     # to be the case for `classes_`), so we override sklearn's default of
     # inferring fittedness from any "*_" attribute and use `model_id_` as the
-    # single source of truth instead.
+    # single source of truth instead. A pending fit has its `model_id_`, but
+    # nothing to predict with until `wait_for_fit()` has seen it complete.
     def __sklearn_is_fitted__(self) -> bool:
-        return getattr(self, "model_id_", None) is not None
+        return getattr(self, "model_id_", None) is not None and not self._fit_pending
 
     def save_model(self, path: str | Path | None = None) -> dict[str, Any]:
         """Save the fitted model so it can be loaded later without re-fitting.
@@ -7862,6 +8166,9 @@ class ModelPersistenceMixin(BaseEstimator):
         with the same account, and they stay usable for as long as the training
         data remains on the server (see `UserDataClient` to delete it).
 
+        A model `submit_fit()` left pending is saved too, as a pending fit, so
+        that a later run can load it and `wait_for_fit()`.
+
         Args:
             path: Where to write the record as JSON. Nothing is written when
                 omitted.
@@ -7870,8 +8177,14 @@ class ModelPersistenceMixin(BaseEstimator):
             The record as a JSON-serialisable dict, whether or not `path` was
             given, so it can also be kept elsewhere (a database, an experiment
             tracker) and handed to `load_model()` directly.
+
+        Raises:
+            NotFittedError: If the model has no fit, completed or pending.
         """
-        check_is_fitted(self)
+        # A pending fit is not fitted yet, but saving it is what lets a later
+        # run wait for it.
+        if not self._fit_pending:
+            check_is_fitted(self)
         params = {
             k: _jsonable(v)
             for k, v in self.get_params(deep=False).items()
@@ -7885,9 +8198,10 @@ class ModelPersistenceMixin(BaseEstimator):
             params=params,
             n_train_rows=self._n_train_rows,
             classes=None if classes is None else np.asarray(classes).tolist(),
+            fit_status=FitStatus.PENDING if self._fit_pending else FitStatus.COMPLETED,
         ).model_dump(mode="json")
         if path is not None:
-            Path(path).write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+            _write_record(path, record)
         return record
 
     @classmethod
@@ -7899,12 +8213,17 @@ class ModelPersistenceMixin(BaseEstimator):
         here; the first `predict()` authenticates (like `fit()` would) and
         raises `FittedModelNotFoundError` if the server no longer has the model.
 
+        A record of a fit that was still pending when it was saved comes back
+        pending, as `submit_fit()` left it: call `wait_for_fit()` before
+        `predict()`.
+
         Args:
             source: The path of a file written by `save_model(path)`, or the
                 dict it returned.
 
         Returns:
-            A fitted estimator of this class.
+            A fitted estimator of this class, or a pending one if the record
+            holds a pending fit.
 
         Raises:
             ValueError: If `source` is not a record written by `save_model()`,
@@ -7954,6 +8273,7 @@ class ModelPersistenceMixin(BaseEstimator):
         estimator._n_train_rows = record.n_train_rows
         if record.classes is not None:
             setattr(estimator, "classes_", np.asarray(record.classes))
+        estimator._fit_pending = record.fit_status == FitStatus.PENDING
         return estimator
 
 
@@ -8542,13 +8862,15 @@ from tabpfn_common_utils.utils import Singleton
 from tabpfn_client.api_models import (
     FitTaskConfig,
     ClassifierConfig,
+    FitResponse,
+    GetFitStatusResponse,
     RegressorConfig,
     ThinkingConfig,
     TabPFNSystem,
     TextHandling,
 )
 from tabpfn_client.options import get_opts
-from tabpfn_client.models import ApiMode, FitResult
+from tabpfn_client.models import ApiMode
 
 logger = logging.getLogger(__name__)
 
@@ -8893,7 +9215,8 @@ class InferenceClient(ServiceClientWrapper, Singleton):
         client_options: ClientOptions | None,
         description: str | None,
         text_handling: TextHandling = "advanced",
-    ) -> FitResult:
+        wait: bool = True,
+    ) -> FitResponse:
         """Upload a train set to the server and fit it.
 
         See `ServiceClient.fit_with_result`.
@@ -8908,6 +9231,22 @@ class InferenceClient(ServiceClientWrapper, Singleton):
             api_mode=api_mode,
             client_options=client_options,
             description=description,
+            wait=wait,
+        )
+
+    @classmethod
+    def wait_for_fit(
+        cls,
+        fitted_train_set_id: UUID,
+        client_options: ClientOptions | None = None,
+    ) -> GetFitStatusResponse:
+        """Wait until the server completes a fit.
+
+        See `ServiceClient._wait_for_fit`.
+        """
+        return ServiceClient._wait_for_fit(
+            fitted_train_set_id,
+            headers=client_options.headers if client_options else None,
         )
 
     @classmethod
@@ -9502,7 +9841,8 @@ class _FoundryBase(BaseEstimator):
             The estimator itself.
 
         Raises:
-            ValueError: If `X` and `y` have different numbers of samples.
+            ValueError: If `X` and `y` have different numbers of samples, or
+                thinking mode is on and `y` has only one class.
         """
         X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
         y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
@@ -9512,11 +9852,20 @@ class _FoundryBase(BaseEstimator):
                 f"got X={X_arr.shape}, y={y_arr.shape}"
             )
 
+        classes = np.unique(y_arr) if self._task == "classification" else None
+        # Only thinking needs 2 classes; refused here rather than after the first
+        # predict call has sent the training data. Checked before any state is set,
+        # so a rejected fit leaves the estimator as it was.
+        if classes is not None and self._thinking_active and len(classes) < 2:
+            raise ValueError(
+                "y contains only one class; thinking mode needs at least 2 classes."
+            )
+
         self.X_train_ = X_arr
         self.y_train_ = y_arr
         self._cached_model_id: Optional[str] = None
-        if self._task == "classification":
-            self.classes_ = np.unique(y_arr)
+        if classes is not None:
+            self.classes_ = classes
         return self
 
     def _invoke(
@@ -10291,7 +10640,8 @@ class _SagemakerBase(BaseEstimator):
             The estimator itself.
 
         Raises:
-            ValueError: If `X` and `y` have different numbers of samples.
+            ValueError: If `X` and `y` have different numbers of samples, or
+                thinking mode is on and `y` has only one class.
         """
         X_arr = X if isinstance(X, pd.DataFrame) else np.asarray(X)
         y_arr = y if isinstance(y, (pd.DataFrame, pd.Series)) else np.asarray(y)
@@ -10300,11 +10650,20 @@ class _SagemakerBase(BaseEstimator):
                 f"X and y must have the same number of samples; "
                 f"got X={X_arr.shape}, y={y_arr.shape}"
             )
+        classes = np.unique(y_arr) if self._TASK == "classification" else None
+        # Only thinking needs 2 classes; refused here rather than after the first
+        # predict call has sent the training data. Checked before any state is set,
+        # so a rejected fit leaves the estimator as it was.
+        if classes is not None and self._thinking_active and len(classes) < 2:
+            raise ValueError(
+                "y contains only one class; thinking mode needs at least 2 classes."
+            )
+
         self.X_train_ = X_arr
         self.y_train_ = y_arr
         self._cached_model_id: Optional[str] = None
-        if self._TASK == "classification":
-            self.classes_ = np.unique(y_arr)
+        if classes is not None:
+            self.classes_ = classes
         return self
 
     def _invoke(
@@ -11650,7 +12009,13 @@ from tabpfn_client.client import (
     RetryableServerError,
     ServiceClient,
 )
-from tabpfn_client.errors import CappedRetryableServerError, EmptyResponseError
+from tabpfn_client.errors import (
+    CappedRetryableServerError,
+    EmptyResponseError,
+    FitFailedError,
+    FittedModelNotFoundError,
+)
+from tabpfn_client.models import ApiMode
 from tabpfn_client.api_models import (
     ClassifierConfig,
     DuplicateTrainSetErrorResponse,
@@ -12258,6 +12623,97 @@ class TestServiceClient(unittest.TestCase):
         self.assertIn("boom", str(cm.exception))
 
     @with_mock_server()
+    def test_fit_without_waiting_returns_once_the_job_is_submitted(self, mock_server):
+        # No /tabpfn/get_fit_status route: the mock server rejects any poll.
+        fitted_train_set_id = "00000000-0000-0000-0000-000000000002"
+        mock_server.router.post("/tabpfn/prepare_train_set_upload").respond(
+            200,
+            json=self._prepare_train_set_upload_response(
+                "00000000-0000-0000-0000-000000000001"
+            ),
+        )
+        mock_server.router.post("/tabpfn/submit_fit_job").respond(
+            200, json={"fitted_train_set_id": fitted_train_set_id}
+        )
+        ServiceClient.authorize("dummy_access_token")
+
+        with patch.object(ServiceClient, "_upload_to_gcs"):
+            result = ServiceClient.fit_with_result(
+                self.X_train,
+                self.y_train,
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
+                api_mode=ApiMode.ASYNC,
+                wait=False,
+            )
+
+        self.assertEqual(result.fitted_train_set_id, UUID(fitted_train_set_id))
+        self.assertEqual(result.status, FitStatus.PENDING)
+        self.assertIsNone(result.timings)
+
+    @with_mock_server()
+    def test_sync_fit_without_waiting_returns_what_the_server_answered(
+        self, mock_server
+    ):
+        # A sync fit that outlives the server's own wait comes back pending;
+        # without `wait`, the client hands that back instead of polling.
+        fitted_train_set_id = "00000000-0000-0000-0000-000000000002"
+        mock_server.router.post("/tabpfn/prepare_train_set_upload").respond(
+            200,
+            json=self._prepare_train_set_upload_response(
+                "00000000-0000-0000-0000-000000000001"
+            ),
+        )
+        mock_server.router.post("/tabpfn/fit").respond(
+            200,
+            json={
+                "fitted_train_set_id": fitted_train_set_id,
+                "status": "pending",
+                "timings": {"elapsed_s": 900.0},
+            },
+        )
+        ServiceClient.authorize("dummy_access_token")
+
+        with patch.object(ServiceClient, "_upload_to_gcs"):
+            result = ServiceClient.fit_with_result(
+                self.X_train,
+                self.y_train,
+                tabpfn_systems=["preprocessing", "text"],
+                task_config=ClassifierFitTaskConfig(),
+                api_mode=ApiMode.SYNC,
+                wait=False,
+            )
+
+        self.assertEqual(result.fitted_train_set_id, UUID(fitted_train_set_id))
+        self.assertEqual(result.status, FitStatus.PENDING)
+
+    @with_mock_server()
+    def test_waiting_for_an_unknown_fit_stops_at_once(self, mock_server):
+        # A 404 is not transient: the poll loop must not retry it until its
+        # deadline, so a resumed fit the server no longer has is fitted again.
+        fitted_train_set_id = UUID("00000000-0000-0000-0000-000000000002")
+        mock_server.router.post("/tabpfn/get_fit_status").respond(
+            404,
+            json={
+                "message": "Fitted train set not found",
+                "error_code": "NOT_FOUND",
+                "trace_id": "00000000-0000-0000-0000-00000000beef",
+            },
+        )
+        ServiceClient.authorize("dummy_access_token")
+
+        with (
+            patch("tabpfn_client.client.time.sleep") as mock_sleep,
+            self.assertRaises(FittedModelNotFoundError) as cm,
+        ):
+            ServiceClient._wait_for_fit(fitted_train_set_id)
+
+        mock_sleep.assert_not_called()
+
+        self.assertIn(str(fitted_train_set_id), str(cm.exception))
+        self.assertIn("00000000-0000-0000-0000-00000000beef", str(cm.exception))
+
+    @with_mock_server()
     def test_predict_with_same_test_set_calls_prepare_and_predict_each_time(
         self, mock_server
     ):
@@ -12544,13 +13000,15 @@ class TestWaitForFit(unittest.TestCase):
         self.assertEqual(fake_time.sleeps, [5.0, 5.0])
         self.assertEqual(mock.call_count, 3)
 
-    def test_failed_fit_raises_runtime_error_without_sleeping(self):
+    def test_failed_fit_raises_fit_failed_error_without_sleeping(self):
         with self._patched([_fit_status(FitStatus.FAILED, error="boom")]) as (
             fake_time,
             _,
         ):
-            with self.assertRaises(RuntimeError) as cm:
+            with self.assertRaises(FitFailedError) as cm:
                 ServiceClient._wait_for_fit(self.FIT_ID)
+        # Still a RuntimeError, which is what a failed fit raised before.
+        self.assertIsInstance(cm.exception, RuntimeError)
         self.assertIn("boom", str(cm.exception))
         self.assertEqual(fake_time.sleeps, [])
 
@@ -13076,9 +13534,11 @@ from tabpfn_client.api_models import (
     RegressorTabPFNConfig,
     ClassifierPredictParams,
     RegressorPredictParams,
+    FitResponse,
+    FitStatus,
     UnknownEnum,
 )
-from tabpfn_client.models import FitResult, TabPFNConfig
+from tabpfn_client.models import TabPFNConfig
 
 
 def _normalize_type(tp: object) -> object:
@@ -13224,9 +13684,11 @@ class _FakeInferenceServer:
     def __init__(self):
         self.classes_ = np.array([0])
 
-    def fit_with_result(self, X, y, *args, **kwargs) -> FitResult:
+    def fit_with_result(self, X, y, *args, **kwargs) -> FitResponse:
         self.classes_ = np.unique(np.asarray(y))
-        return FitResult(fitted_train_set_id=self._DUMMY_ID)
+        return FitResponse(
+            fitted_train_set_id=self._DUMMY_ID, status=FitStatus.COMPLETED
+        )
 
     def predict(self, X, *, task_config, **kwargs) -> PredictionResult:
         n_rows = np.asarray(X).shape[0]
@@ -13453,6 +13915,8 @@ a server-side failure reportable (`error_code` / `trace_id`).
 import httpx
 import numpy as np
 import pytest
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 from tabpfn_client.foundry import (
     FoundryEndpointError,
@@ -13639,6 +14103,32 @@ class TestFit:
         clf.fit(np.zeros((3, 2)), np.array([0, 1, 0]))
         assert clf._cached_model_id is None
 
+    def test_thinking_rejects_a_single_class(self):
+        with pytest.raises(ValueError, match="only one class"):
+            _clf(thinking_mode=True).fit(np.zeros((3, 2)), np.zeros(3))
+
+    def test_rejected_fit_leaves_estimator_unfitted(self):
+        clf = _clf(thinking_mode=True)
+        with pytest.raises(ValueError, match="only one class"):
+            clf.fit(np.zeros((3, 2)), np.zeros(3))
+        with pytest.raises(NotFittedError):
+            check_is_fitted(clf)
+
+    def test_rejected_refit_keeps_the_previous_fit(self):
+        clf = _clf(thinking_mode=True)
+        y = np.array([0, 1, 0])
+        clf.fit(np.zeros((3, 2)), y)
+        clf._cached_model_id = "model-id"
+        with pytest.raises(ValueError, match="only one class"):
+            clf.fit(np.ones((4, 2)), np.zeros(4))
+        np.testing.assert_array_equal(clf.y_train_, y)
+        assert list(clf.classes_) == [0, 1]
+        assert clf._cached_model_id == "model-id"
+
+    def test_a_single_class_is_accepted_without_thinking(self):
+        clf = _clf().fit(np.zeros((3, 2)), np.zeros(3))
+        assert list(clf.classes_) == [0]
+
 
 
 ================================================
@@ -13657,11 +14147,11 @@ import pytest
 from tabpfn_client import config
 from tabpfn_client.client import GetSettingsResponse, ServiceClient
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
-from tabpfn_client.models import FitResult
+from tabpfn_client.api_models import FitResponse, FitStatus
 from tabpfn_client.service_wrapper import InferenceClient
 from tests.unit.test_tabpfn_classifier import _api_settings_payload
 
-_FIT_RESULT = FitResult(fitted_train_set_id=UUID(int=0))
+_FIT_RESULT = FitResponse(fitted_train_set_id=UUID(int=0), status=FitStatus.COMPLETED)
 
 
 @pytest.fixture(autouse=True)
@@ -14499,6 +14989,7 @@ first `predict()`.
 from __future__ import annotations
 
 import json
+import os
 import pickle
 import shutil
 from contextlib import contextmanager
@@ -14513,12 +15004,11 @@ from sklearn.exceptions import NotFittedError
 from sklearn.utils.validation import check_is_fitted
 
 from tabpfn_client import FittedModelNotFoundError, __version__, init, reset
-from tabpfn_client.api_models import GetSettingsResponse
+from tabpfn_client.api_models import FitResponse, FitStatus, GetSettingsResponse
 from tabpfn_client.client import PredictionResult, ServiceClient
 from tabpfn_client.config import Config
 from tabpfn_client.constants import CACHE_DIR
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
-from tabpfn_client.models import FitResult
 from tabpfn_client.service_wrapper import InferenceClient, UserAuthenticationClient
 from tests.mock_tabpfn_server import with_mock_server
 
@@ -14586,7 +15076,9 @@ def _offline_server(prediction: PredictionResult | None = None):
             patch.object(
                 InferenceClient,
                 "fit_with_result",
-                return_value=FitResult(fitted_train_set_id=MODEL_ID),
+                return_value=FitResponse(
+                    fitted_train_set_id=MODEL_ID, status=FitStatus.COMPLETED
+                ),
             ) as fit,
             patch.object(
                 InferenceClient, "predict", return_value=prediction
@@ -14615,15 +15107,27 @@ class TestRecord:
             "params",
             "n_train_rows",
             "classes",
+            "fit_status",
         }
         assert record["tabpfn_client_version"] == __version__
         assert record["task"] == "regression"
         assert record["model_id"] == str(MODEL_ID)
         assert record["n_train_rows"] == N_TRAIN_ROWS
         assert record["classes"] is None
+        assert record["fit_status"] == "completed"
         assert record["params"] == _model_params(reg)
         assert "client_options" not in record["params"]
         json.dumps(record)  # JSON-serialisable as returned
+
+    def test_a_record_from_before_fit_status_holds_a_completed_fit(self):
+        # Records written before `fit_status` existed only held completed fits.
+        record = _fitted_regressor().save_model()
+        del record["fit_status"]
+
+        loaded = TabPFNRegressor.load_model(record)
+
+        check_is_fitted(loaded)
+        assert loaded.save_model()["fit_status"] == "completed"
 
     def test_none_valued_params_survive(self):
         # `random_state=None` asks for a fresh seed each run and differs from
@@ -14666,6 +15170,41 @@ class TestRecord:
             assert loaded._n_train_rows == N_TRAIN_ROWS
             np.testing.assert_array_equal(loaded.classes_, np.array(["cafÃ©", "dog"]))
             assert _model_params(loaded) == _model_params(clf)
+
+    def test_each_write_goes_through_a_file_of_its_own(self, tmp_path):
+        # Processes saving to one path at once must not share the file a record
+        # is written to before it is renamed into place, or one could install
+        # the other's half-written record.
+        path = tmp_path / "model.json"
+        reg = _fitted_regressor()
+
+        with patch("tabpfn_client.persistence.os.replace", wraps=os.replace) as replace:
+            reg.save_model(path)
+            reg.save_model(path)
+
+        (first, _), (second, _) = (c.args for c in replace.call_args_list)
+        assert first != second
+        assert [p.name for p in tmp_path.iterdir()] == ["model.json"]
+
+    def test_a_failed_write_keeps_the_previous_file_and_leaves_nothing_behind(
+        self, tmp_path
+    ):
+        path = tmp_path / "model.json"
+        reg = _fitted_regressor()
+        reg.save_model(path)
+        before = path.read_text()
+
+        with (
+            patch(
+                "tabpfn_client.persistence.os.replace",
+                side_effect=OSError("disk full"),
+            ),
+            pytest.raises(OSError, match="disk full"),
+        ):
+            reg.save_model(path)
+
+        assert path.read_text() == before
+        assert [p.name for p in tmp_path.iterdir()] == ["model.json"]
 
     def test_directly_assigned_id_saves_without_classes_or_row_count(self):
         # Reusing a fit by assigning `model_id_` leaves no classes or row count
@@ -14806,7 +15345,9 @@ class TestLoadedEstimator:
         y = np.array([0, 1, 2] * 3)
 
         with _offline_server() as (fit, _):
-            fit.return_value = FitResult(fitted_train_set_id=new_id)
+            fit.return_value = FitResponse(
+                fitted_train_set_id=new_id, status=FitStatus.COMPLETED
+            )
             loaded.fit(X, y)
 
         assert loaded.model_id_ == new_id
@@ -15102,6 +15643,8 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
 
 from tabpfn_client.sagemaker import TabPFNClassifier
 
@@ -15145,6 +15688,30 @@ class TestSagemakerInvocationTimeout(unittest.TestCase):
     def test_timeout_omitted_by_default(self):
         kwargs = self._invoke_async_kwargs(None)
         self.assertNotIn("InvocationTimeoutSeconds", kwargs)
+
+
+class TestSagemakerSingleClass(unittest.TestCase):
+    def test_thinking_rejects_a_single_class(self):
+        clf = TabPFNClassifier(endpoint_name="ep", thinking_mode=True)
+        with self.assertRaisesRegex(ValueError, "only one class"):
+            clf.fit(np.zeros((3, 2)), np.zeros(3))
+        with self.assertRaises(NotFittedError):
+            check_is_fitted(clf)
+
+    def test_rejected_refit_keeps_the_previous_fit(self):
+        clf = TabPFNClassifier(endpoint_name="ep", thinking_mode=True)
+        y = np.array([0, 1, 0])
+        clf.fit(np.zeros((3, 2)), y)
+        clf._cached_model_id = "model-id"
+        with self.assertRaisesRegex(ValueError, "only one class"):
+            clf.fit(np.ones((4, 2)), np.zeros(4))
+        np.testing.assert_array_equal(clf.y_train_, y)
+        self.assertEqual(list(clf.classes_), [0, 1])
+        self.assertEqual(clf._cached_model_id, "model-id")
+
+    def test_a_single_class_is_accepted_without_thinking(self):
+        clf = TabPFNClassifier(endpoint_name="ep").fit(np.zeros((3, 2)), np.zeros(3))
+        self.assertEqual(list(clf.classes_), [0])
 
 
 if __name__ == "__main__":
@@ -15435,6 +16002,485 @@ class TestUserDataClient(unittest.TestCase):
 
 
 ================================================
+FILE: tests/unit/test_submit_fit.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+#  Licensed under the Apache License, Version 2.0
+"""`submit_fit()` / `wait_for_fit()`: a fit started without waiting for it, the
+pending model it leaves, and how a later run saves, loads and waits for it.
+
+Hermetic by default: `init` and the `InferenceClient` boundary are patched. The
+mock-server test at the end runs the real HTTP layer for a fit submitted in one
+run and waited for in a later one.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+from collections.abc import Generator
+from contextlib import contextmanager
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import patch
+from uuid import UUID
+
+import httpx
+import numpy as np
+import pytest
+from sklearn.exceptions import NotFittedError
+from sklearn.utils.validation import check_is_fitted
+
+from tabpfn_client import FitFailedError, FittedModelNotFoundError, init, reset
+from tabpfn_client.api_models import (
+    FitResponse,
+    FitStatus,
+    FitTimings,
+    GetFitStatusResponse,
+)
+from tabpfn_client.client import PredictionResult, ServiceClient
+from tabpfn_client.config import Config
+from tabpfn_client.constants import CACHE_DIR
+from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor
+from tabpfn_client.models import ApiMode
+from tabpfn_client.service_wrapper import InferenceClient, UserAuthenticationClient
+from tests.mock_tabpfn_server import with_mock_server
+
+FIT_ID = UUID("00000000-0000-0000-0000-000000000abc")
+NEW_FIT_ID = UUID("00000000-0000-0000-0000-000000000def")
+TIMINGS = {
+    "elapsed_s": 42.0,
+    "queue_wait_s": 2.0,
+    "train_set_transform_s": 10.0,
+    "fit_s": 30.0,
+}
+
+X_TRAIN = np.arange(18, dtype=float).reshape(9, 2)
+Y_TRAIN = np.array([0, 1, 2] * 3)
+Y_TRAIN_REGRESSION = np.arange(9.0)
+X_TEST = np.ones((3, 2))
+
+ESTIMATORS = pytest.mark.parametrize(
+    ("estimator_cls", "y"),
+    [(TabPFNClassifier, Y_TRAIN), (TabPFNRegressor, Y_TRAIN_REGRESSION)],
+    ids=["classifier", "regressor"],
+)
+
+FIT_ERRORS = pytest.mark.parametrize(
+    "error",
+    [
+        FitFailedError("Fit failed: boom"),
+        FittedModelNotFoundError("Fitted model not found"),
+    ],
+    ids=["failed", "gone"],
+)
+
+
+def _completed(fit_id: UUID = FIT_ID) -> GetFitStatusResponse:
+    return GetFitStatusResponse.model_validate(
+        {"fitted_train_set_id": str(fit_id), "status": "completed", "timings": TIMINGS}
+    )
+
+
+def _read(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@contextmanager
+def _offline_server() -> Generator[SimpleNamespace]:
+    """Run the estimators with no network: no auth, no settings, mocked inference.
+
+    The server accepts every fit as `FIT_ID`: one the client waits for comes
+    back completed with `TIMINGS`, one it does not wait for comes back pending.
+    Waiting for a fit finds it completed, and a prediction is a row of zeros per
+    test row.
+    """
+    use_server_before = Config.use_server
+    Config.use_server = True
+
+    def fit_with_result(*args: Any, wait: bool, **kwargs: Any) -> FitResponse:
+        if wait:
+            return FitResponse(
+                fitted_train_set_id=FIT_ID,
+                status=FitStatus.COMPLETED,
+                timings=FitTimings.model_validate(TIMINGS),
+            )
+        return FitResponse(fitted_train_set_id=FIT_ID, status=FitStatus.PENDING)
+
+    try:
+        with (
+            patch("tabpfn_client.estimator.init") as init_,
+            patch.object(ServiceClient, "get_settings", return_value=None),
+            patch.object(
+                InferenceClient, "fit_with_result", side_effect=fit_with_result
+            ) as fit,
+            patch.object(
+                InferenceClient,
+                "wait_for_fit",
+                side_effect=lambda fit_id, **kwargs: _completed(fit_id),
+            ) as wait,
+            patch.object(
+                InferenceClient,
+                "predict",
+                side_effect=lambda X, **kwargs: PredictionResult(
+                    y_pred=np.zeros(len(X), dtype=int)
+                ),
+            ) as predict,
+        ):
+            yield SimpleNamespace(init=init_, fit=fit, wait=wait, predict=predict)
+    finally:
+        Config.use_server = use_server_before
+
+
+def _submitted(
+    estimator_cls: type[TabPFNClassifier | TabPFNRegressor] = TabPFNClassifier,
+    y: np.ndarray = Y_TRAIN,
+    **params: Any,
+) -> Any:
+    """Return an estimator whose fit `submit_fit()` started and nobody waited for."""
+    with _offline_server():
+        return estimator_cls(**params).submit_fit(X_TRAIN, y)
+
+
+class TestSubmitFit:
+    @ESTIMATORS
+    def test_returns_once_the_server_accepted_the_fit(self, estimator_cls, y):
+        model = estimator_cls()
+
+        with _offline_server() as server:
+            assert model.submit_fit(X_TRAIN, y) is model
+
+        assert server.fit.call_args.kwargs["wait"] is False
+        server.wait.assert_not_called()
+        assert model.model_id_ == FIT_ID
+        assert model._n_train_rows == 9
+        assert model.get_timings()["fit"] is None
+        with pytest.raises(NotFittedError):
+            check_is_fitted(model)
+
+    @ESTIMATORS
+    @pytest.mark.parametrize("api_mode", list(ApiMode))
+    def test_runs_the_fit_as_a_background_job_whatever_the_api_mode(
+        self, estimator_cls, y, api_mode
+    ):
+        with _offline_server() as server:
+            estimator_cls(api_mode=api_mode).submit_fit(X_TRAIN, y)
+
+        assert server.fit.call_args.kwargs["api_mode"] == ApiMode.ASYNC
+
+    def test_checks_the_data_before_submitting(self):
+        with _offline_server() as server:
+            with pytest.raises(ValueError, match="NaN"):
+                TabPFNClassifier().submit_fit(X_TRAIN, np.array([0, 1, np.nan] * 3))
+
+        server.fit.assert_not_called()
+
+
+class TestPredict:
+    @ESTIMATORS
+    def test_raises_on_a_pending_fit_without_a_request(self, estimator_cls, y):
+        model = _submitted(estimator_cls, y)
+        methods = [getattr(model, m, None) for m in ("predict", "predict_proba")]
+
+        with _offline_server() as server:
+            for predict in (m for m in methods if m is not None):
+                with pytest.raises(NotFittedError, match=r"wait_for_fit\(\)"):
+                    predict(X_TEST)
+
+        server.init.assert_not_called()
+        server.wait.assert_not_called()
+        server.predict.assert_not_called()
+
+    def test_an_unfitted_model_raises_without_authenticating(self):
+        with _offline_server() as server:
+            with pytest.raises(NotFittedError):
+                TabPFNClassifier().predict(X_TEST)
+
+        server.init.assert_not_called()
+
+
+class TestWaitForFit:
+    @ESTIMATORS
+    def test_waits_for_the_fit_then_predicts(self, estimator_cls, y):
+        model = _submitted(estimator_cls, y)
+
+        with _offline_server() as server:
+            assert model.wait_for_fit() is model
+            model.predict(X_TEST)
+
+        assert server.wait.call_args.args == (FIT_ID,)
+        server.fit.assert_not_called()
+        assert server.predict.call_args.kwargs["fitted_train_set_id"] == FIT_ID
+        check_is_fitted(model)
+        assert model.get_timings()["fit"] == TIMINGS
+
+    def test_asks_nothing_once_the_fit_has_completed(self):
+        clf = _submitted()
+
+        with _offline_server() as server:
+            clf.wait_for_fit()
+            clf.wait_for_fit()
+            fitted = TabPFNClassifier().fit(X_TRAIN, Y_TRAIN)
+            assert fitted.wait_for_fit() is fitted
+
+        server.wait.assert_called_once()
+
+    def test_an_unfitted_model_has_nothing_to_wait_for(self):
+        with _offline_server() as server:
+            with pytest.raises(NotFittedError, match=r"submit_fit\(\)"):
+                TabPFNClassifier().wait_for_fit()
+
+        server.wait.assert_not_called()
+
+    @FIT_ERRORS
+    def test_a_fit_the_server_lost_leaves_the_model_unfitted(self, error):
+        clf = _submitted()
+
+        with _offline_server() as server:
+            server.wait.side_effect = error
+            with pytest.raises(type(error)):
+                clf.wait_for_fit()
+
+        assert not hasattr(clf, "model_id_")
+        assert not hasattr(clf, "classes_")
+        for nothing_to_do in (
+            check_is_fitted,
+            type(clf).save_model,
+            type(clf).wait_for_fit,
+        ):
+            with pytest.raises(NotFittedError):
+                nothing_to_do(clf)
+
+    @pytest.mark.parametrize("stop", [KeyboardInterrupt, TimeoutError])
+    def test_a_wait_that_stops_keeps_the_fit_pending(self, stop):
+        clf = _submitted()
+
+        with _offline_server() as server:
+            server.wait.side_effect = stop
+            with pytest.raises(stop):
+                clf.wait_for_fit()
+            assert clf.save_model()["fit_status"] == "pending"
+
+            server.wait.side_effect = lambda fit_id, **kwargs: _completed(fit_id)
+            clf.wait_for_fit()
+
+        assert server.wait.call_count == 2
+        check_is_fitted(clf)
+
+
+class TestFit:
+    @ESTIMATORS
+    @pytest.mark.parametrize("pending", ["submitted", "loaded"])
+    def test_starts_a_new_fit_on_a_pending_model(self, estimator_cls, y, pending):
+        model = _submitted(estimator_cls, y, api_mode=ApiMode.SYNC)
+        if pending == "loaded":
+            model = estimator_cls.load_model(model.save_model())
+
+        with _offline_server() as server:
+            server.fit.side_effect = lambda *args, **kwargs: FitResponse(
+                fitted_train_set_id=NEW_FIT_ID,
+                status=FitStatus.COMPLETED,
+                timings=FitTimings.model_validate(TIMINGS),
+            )
+            assert model.fit(X_TRAIN, y) is model
+            model.predict(X_TEST)
+
+        server.fit.assert_called_once()
+        assert server.fit.call_args.kwargs["api_mode"] == ApiMode.SYNC
+        assert server.fit.call_args.kwargs["wait"] is True
+        server.wait.assert_not_called()
+        assert model.model_id_ == NEW_FIT_ID
+        assert server.predict.call_args.kwargs["fitted_train_set_id"] == NEW_FIT_ID
+        assert model.save_model()["fit_status"] == "completed"
+
+
+class TestSaveAndLoad:
+    def test_saves_a_pending_fit(self, tmp_path):
+        path = tmp_path / "model.json"
+
+        record = _submitted().save_model(path)
+
+        assert record == _read(path)
+        assert record["fit_status"] == "pending"
+        assert record["model_id"] == str(FIT_ID)
+        assert record["classes"] == [0, 1, 2]
+        assert record["n_train_rows"] == 9
+
+    def test_loads_a_pending_fit_as_pending_without_a_request(self, tmp_path):
+        path = tmp_path / "model.json"
+        _submitted().save_model(path)
+
+        with _offline_server() as server:
+            loaded = TabPFNClassifier.load_model(path)
+            with pytest.raises(NotFittedError, match=r"wait_for_fit\(\)"):
+                loaded.predict(X_TEST)
+
+        server.init.assert_not_called()
+        server.wait.assert_not_called()
+        server.predict.assert_not_called()
+        assert loaded.model_id_ == FIT_ID
+        np.testing.assert_array_equal(loaded.classes_, [0, 1, 2])
+        assert loaded.save_model() == _read(path)
+
+    @ESTIMATORS
+    def test_a_later_run_waits_for_the_loaded_fit(self, tmp_path, estimator_cls, y):
+        path = tmp_path / "model.json"
+        _submitted(estimator_cls, y).save_model(path)
+        before = path.read_text()
+
+        with _offline_server() as server:
+            loaded = estimator_cls.load_model(path)
+            loaded.wait_for_fit()
+            # A model loaded in a fresh process authenticates before waiting.
+            server.init.assert_called_once()
+            loaded.predict(X_TEST)
+
+        assert server.wait.call_args.args == (FIT_ID,)
+        server.fit.assert_not_called()
+        assert server.predict.call_args.kwargs["fitted_train_set_id"] == FIT_ID
+        assert loaded.get_timings()["fit"] == TIMINGS
+        # Nothing rewrites the file; saving again records the completed fit.
+        assert path.read_text() == before
+        assert loaded.save_model(path)["fit_status"] == "completed"
+
+
+@pytest.mark.parametrize("estimator_cls", [TabPFNClassifier, TabPFNRegressor])
+def test_async_prediction_is_not_implemented_yet(estimator_cls):
+    model = estimator_cls()
+
+    with pytest.raises(NotImplementedError, match=r"predict\(\)"):
+        model.submit_predict(X_TEST)
+    with pytest.raises(NotImplementedError, match=r"predict\(\)"):
+        model.wait_for_predict()
+
+
+class TestWithServer:
+    dummy_token = "dummy_token"
+
+    def setup_method(self):
+        reset()
+        ServiceClient.reset_authorization()
+        ServiceClient._api_settings = None
+
+    def teardown_method(self):
+        Config.is_initialized = False
+        ServiceClient.reset_authorization()
+        ServiceClient._api_settings = None
+        shutil.rmtree(CACHE_DIR, ignore_errors=True)
+
+    # `with_mock_server` hides the test's signature, so pytest cannot pass
+    # `tmp_path` to the test itself.
+    @pytest.fixture(autouse=True)
+    def _tmp_path(self, tmp_path: Path) -> None:
+        self.tmp_path = tmp_path
+
+    @with_mock_server()
+    def test_a_fit_submitted_in_one_run_is_waited_for_in_a_later_one(self, mock_server):
+        fit_id = "00000000-0000-0000-0000-000000000002"
+        path = self.tmp_path / "model.json"
+        UserAuthenticationClient.CACHED_TOKEN_FILE.parent.mkdir(
+            parents=True, exist_ok=True
+        )
+        UserAuthenticationClient.CACHED_TOKEN_FILE.write_text(self.dummy_token)
+
+        auth_route = mock_server.router.get(mock_server.endpoints.protected_root.path)
+        auth_route.respond(200)
+        mock_server.router.get(
+            mock_server.endpoints.retrieve_greeting_messages.path
+        ).respond(200, json={"messages": []})
+        upload_route = mock_server.router.post("/tabpfn/prepare_train_set_upload")
+        upload_route.respond(
+            409,
+            json={
+                "message": "duplicate",
+                "error_code": "DUPLICATE_TRAIN_SET_UPLOAD",
+                "train_set_upload_id": "00000000-0000-0000-0000-000000000001",
+            },
+        )
+        # No sync /tabpfn/fit route: submitting through it fails the test.
+        submit_route = mock_server.router.post("/tabpfn/submit_fit_job")
+        submit_route.respond(200, json={"fitted_train_set_id": fit_id})
+        status_route = mock_server.router.post("/tabpfn/get_fit_status")
+        status_route.side_effect = [
+            httpx.Response(
+                200,
+                json={
+                    "fitted_train_set_id": fit_id,
+                    "status": "pending",
+                    "retry_in_secs": 5,
+                },
+            ),
+            httpx.Response(
+                200,
+                json={
+                    "fitted_train_set_id": fit_id,
+                    "status": "completed",
+                    "timings": TIMINGS,
+                },
+            ),
+        ]
+        mock_server.router.post("/tabpfn/prepare_test_set_upload").respond(
+            409,
+            json={
+                "message": "duplicate",
+                "error_code": "DUPLICATE_TEST_SET_UPLOAD",
+                "test_set_upload_id": "00000000-0000-0000-0000-000000000003",
+            },
+        )
+        predict_route = mock_server.router.post(mock_server.endpoints.predict.path)
+        predict_route.respond(
+            200,
+            json={
+                "prediction": [1, 0, 1],
+                "metadata": {
+                    "task": "classification",
+                    "package_version": "0.3.0",
+                    "tabpfn_config": {},
+                    "test_set_num_rows": 3,
+                    "test_set_num_cols": 2,
+                },
+            },
+        )
+
+        with (
+            patch.object(ServiceClient, "get_settings", return_value=None),
+            patch("tabpfn_client.client.time.sleep") as sleep,
+        ):
+            # A run that submits the fit, saves it and ends.
+            init(use_server=True)
+            TabPFNClassifier(thinking_mode=True).submit_fit(
+                X_TRAIN, Y_TRAIN
+            ).save_model(path)
+            assert status_route.call_count == 0
+            assert _read(path)["fit_status"] == "pending"
+            assert _read(path)["model_id"] == fit_id
+
+            # A later run, in a new process: loading and predicting ask nothing,
+            # and wait_for_fit() polls until the fit has completed.
+            Config.is_initialized = False
+            ServiceClient.reset_authorization()
+            clf = TabPFNClassifier.load_model(path)
+            with pytest.raises(NotFittedError):
+                clf.predict(X_TEST)
+            assert status_route.call_count == 0
+            assert auth_route.call_count == 1
+            clf.wait_for_fit()
+            result = clf.predict(X_TEST)
+
+        np.testing.assert_array_equal(result, [1, 0, 1])
+        assert upload_route.call_count == 1
+        assert submit_route.call_count == 1
+        assert status_route.call_count == 2
+        sleep.assert_called_once_with(5)
+        assert auth_route.call_count == 2, "each run authenticates once"
+        predict_request = json.loads(predict_route.calls.last.request.content)
+        assert predict_request["fitted_train_set_id"] == fit_id
+        assert clf.get_timings()["fit"] == TIMINGS
+
+
+
+================================================
 FILE: tests/unit/test_tabpfn_classifier.py
 ================================================
 import time
@@ -15463,10 +16509,14 @@ from tabpfn_client.client import (
     PredictionResult,
     ServiceClient,
 )
-from tabpfn_client.api_models import ClassifierTabPFNConfig, ModelVersion
-from tabpfn_client.models import FitResult
+from tabpfn_client.api_models import (
+    ClassifierTabPFNConfig,
+    FitResponse,
+    FitStatus,
+    ModelVersion,
+)
 
-_DUMMY_FIT = FitResult(fitted_train_set_id=UUID(int=0))
+_DUMMY_FIT = FitResponse(fitted_train_set_id=UUID(int=0), status=FitStatus.COMPLETED)
 
 
 def _api_settings_payload(
@@ -16281,6 +17331,54 @@ class TestTabPFNClassifierInference(unittest.TestCase):
             tabpfn.fit(X, y_str)
         self.assertIn("exceeds the maximal number of", str(cm.exception))
 
+    def test_single_class_raises_error_in_thinking_mode(self):
+        X = np.random.rand(10, 5)
+        for y in (np.zeros(10, dtype=int), np.array(["a"] * 10)):
+            for tabpfn in (
+                TabPFNClassifier(thinking_mode=True),
+                TabPFNClassifier(thinking_effort="high"),
+            ):
+                with patch.object(InferenceClient, "fit_with_result") as fit:
+                    with self.assertRaises(ValueError) as cm:
+                        tabpfn.fit(X, y)
+                self.assertIn("only one class", str(cm.exception))
+                fit.assert_not_called()
+
+    def test_single_class_reaches_the_server_without_thinking(self):
+        # Parity with the local package, which fits a single class.
+        X = np.random.rand(10, 5)
+        with patch.object(InferenceClient, "fit_with_result") as fit:
+            TabPFNClassifier().fit(X, np.zeros(10, dtype=int))
+        fit.assert_called_once()
+
+    def test_a_failed_refit_keeps_the_previous_fit_and_its_classes(self):
+        # classes_ is set only once the server has accepted a fit, so a refit
+        # the server fails can't pair the new classes with the old model_id_.
+        for refit in ("fit", "submit_fit"):
+            with self.subTest(refit=refit):
+                tabpfn = TabPFNClassifier()
+                with patch.object(
+                    InferenceClient, "fit_with_result", return_value=_DUMMY_FIT
+                ):
+                    tabpfn.fit(np.random.rand(10, 5), np.array([0, 1] * 5))
+
+                with (
+                    patch.object(
+                        InferenceClient,
+                        "fit_with_result",
+                        side_effect=RuntimeError("the server failed the fit"),
+                    ),
+                    self.assertRaises(RuntimeError),
+                ):
+                    getattr(tabpfn, refit)(
+                        np.random.rand(12, 5), np.array([0, 1, 2] * 4)
+                    )
+
+                self.assertEqual(tabpfn.model_id_, _DUMMY_FIT.fitted_train_set_id)
+                np.testing.assert_array_equal(tabpfn.classes_, [0, 1])
+                self.assertEqual(tabpfn._n_train_rows, 10)
+                self.assertFalse(tabpfn._fit_pending)
+
 
 class TestTabPFNModelSelection(unittest.TestCase):
     def setUp(self):
@@ -16473,10 +17571,14 @@ from tabpfn_client.client import (
     PredictionResult,
     ServiceClient,
 )
-from tabpfn_client.api_models import ModelVersion, RegressorTabPFNConfig
-from tabpfn_client.models import FitResult
+from tabpfn_client.api_models import (
+    FitResponse,
+    FitStatus,
+    ModelVersion,
+    RegressorTabPFNConfig,
+)
 
-_DUMMY_FIT = FitResult(fitted_train_set_id=UUID(int=0))
+_DUMMY_FIT = FitResponse(fitted_train_set_id=UUID(int=0), status=FitStatus.COMPLETED)
 
 
 def _api_settings_payload(
@@ -17839,7 +18941,7 @@ def test_direct_client_rejects_invalid_text_handling_before_network(
 ================================================
 FILE: tests/unit/test_timings.py
 ================================================
-"""Server-reported timings reach `FitResult`, `PredictionResult` and the estimators."""
+"""Server-reported timings reach `fit_with_result()`, `PredictionResult` and the estimators."""
 
 from __future__ import annotations
 
@@ -17857,12 +18959,15 @@ import pytest
 from tabpfn_client.api_models import (
     ClassifierConfig,
     ClassifierFitTaskConfig,
+    FitResponse,
+    FitStatus,
+    FitTimings,
     GetSettingsResponse,
 )
 from tabpfn_client.client import ServiceClient
 from tabpfn_client.config import Config
 from tabpfn_client.estimator import TabPFNClassifier, TabPFNRegressor, _combine_timings
-from tabpfn_client.models import FitResult, PredictionResult
+from tabpfn_client.models import PredictionResult
 from tabpfn_client.service_wrapper import InferenceClient
 from tests.mock_tabpfn_server import with_mock_server
 from tests.unit.test_client import _api_settings_payload, _fast_poll_settings
@@ -17949,7 +19054,12 @@ class TestClientTimings(unittest.TestCase):
         result = self._call(ServiceClient.fit_with_result)
 
         self.assertEqual(
-            result, FitResult(fitted_train_set_id=UUID(FIT_ID), timings=FIT_TIMINGS)
+            result,
+            FitResponse(
+                fitted_train_set_id=UUID(FIT_ID),
+                status=FitStatus.COMPLETED,
+                timings=FitTimings.model_validate(FIT_TIMINGS),
+            ),
         )
 
     @with_mock_server()
@@ -17974,7 +19084,7 @@ class TestClientTimings(unittest.TestCase):
 
         result = self._call(ServiceClient.fit_with_result)
 
-        self.assertEqual(result.timings, FIT_TIMINGS)
+        self.assertEqual(result.timings, FitTimings.model_validate(FIT_TIMINGS))
 
     @with_mock_server()
     def test_fit_against_a_server_without_timings(self, mock_server):
@@ -18025,7 +19135,7 @@ class TestClientTimings(unittest.TestCase):
 
 
 @contextmanager
-def _offline(fit_result: FitResult, prediction: PredictionResult):
+def _offline(fit_result: FitResponse, prediction: PredictionResult):
     use_server_before = Config.use_server
     Config.use_server = True
     try:
@@ -18049,7 +19159,11 @@ def test_estimator_exposes_fit_and_predict_timings(Est):
     assert estimator.get_timings() == {"fit": None, "predict": None}
 
     with _offline(
-        FitResult(fitted_train_set_id=UUID(FIT_ID), timings=FIT_TIMINGS),
+        FitResponse(
+            fitted_train_set_id=UUID(FIT_ID),
+            status=FitStatus.COMPLETED,
+            timings=FitTimings.model_validate(FIT_TIMINGS),
+        ),
         PredictionResult(y_pred=y_pred, timings=PREDICT_TIMINGS),
     ):
         estimator.fit(X, y if Est is TabPFNRegressor else y.astype(int))

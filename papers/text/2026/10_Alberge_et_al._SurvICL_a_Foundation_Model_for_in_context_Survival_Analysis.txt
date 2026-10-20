@@ -1,0 +1,3143 @@
+Preprint.
+SURVICL: AFOUNDATION MODEL FOR IN-CONTEXT
+SURVIVAL ANALYSIS
+Julie Alberge ∗
+Inria de Saclay
+France
+Linus Bleistein
+EPFL
+Switzerland
+Judith Ab´ecassis
+Inria de Saclay
+France
+Marine Le Morvan
+Inria de Saclay
+France
+Ga¨el Varoquaux
+Inria de Saclay, :probabl.
+France
+David Holzm¨uller
+Inria de Saclay
+France
+ABSTRACT
+Tabular foundation models (TFMs) now outperform gradient-boosted trees in clas-
+sification and regression. Yet in survival analysis, which predicts when an event
+occurs from censored data, often on small clinical cohorts, we find that no existing
+TFM beats the half-century-old Cox model. We address this issue by introducing
+SurvICL, a TFM that predicts survival curves in-context. SurvICL is pretrained on
+purely synthetic datasets generated from a novel flexible proportional-odds prior
+that outperforms other prior types in our ablation study. Unlike most other survival
+models, SurvICL is trained with a plain quantile regression loss, which is possi-
+ble because its synthetic pre-training data generator can provide uncensored event
+times. Additionally, we introduce the largest survival benchmark to date spanning
+103 datasets. On the 63 datasets held out from all design decisions, SurvICL out-
+performs 20 tree-based, deep, and foundation-model baselines without any tuning:
+it wins 82.9% of pairwise comparisons in integrated Brier score, against 71.3% for
+the runner-up, the Cox model, and is the first model to rank above Cox on small
+datasets.
+1 INTRODUCTION
+Many decisions hinge onwhenan event will happen: how long will a patient survive after a cancer
+diagnosis? When will a customer churn? When will a machine fail? Survival analysis answers such
+questions by predicting, for an individual with featuresx∈R d, thesurvival functionS(t|x) =
+P(T ⋆ > t|x), that is, the probability that the event has not occurred by timet(Kleinbaum and
+Klein, 2012; Machin et al., 2006; Wiegrebe et al., 2024; Jeanselme et al., 2024). What sets survival
+analysis apart from regression, aside from strictly positive predictions, iscensoring. A patient who
+leaves a clinical study alive after three years does not reveal their time of death, only that it exceeds
+three years. Discarding such partial observations biases predictions, and treating them as observed
+events is plainly wrong: a survival model must learn from both observed and censored events. In
+addition, survival predictions feed decisions (such as choosing a treatment given a five-year survival
+probability) and must therefore becalibratedprobabilities rather than mere rankings of individuals
+(Goldstein et al., 2020; Lillelund et al., 2025; Alberge et al., 2026).
+Survival analysis is often a small-data problem. Many time-to-event datasets come from clinical
+studies, where observing events requires following patients for years, and cohorts of a few hundred
+individuals are the norm (Indrayan and Mishra, 2021; O’Donnell et al., 2025): in all the data we
+collect for this work, more than 70% of the datasets have fewer than 1,000 samples. In this regime,
+the flexibility of modern machine learning is a liability. Half a century after its introduction, the
+Cox proportional hazards model (Cox, 1972) remains the workhorse of practitioners, and for good
+reason: on the small datasets of our benchmark, none of the gradient-boosted trees, deep survival
+networks, or existing survival foundation models outperforms it.
+∗julie.alberge@inria.fr
+1
+arXiv:2610.22242v1  [stat.ML]  15 Oct 2026
+
+Preprint.
+SurvICL
+Cox
+SurvivalBoost
+RSF
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+DSM
+DeepSurvSurvivalPFN
+SurvPFN
+TFM-Survival
+SIC
+TabSurv-MLP
+SumoNetTabSurv
+TabSurv-RealMLP
+TabSurv-WSA
+TFM4Survival: TabICL
+Kaplan-MeierTabSurv-WAS
+DeepHit
+0%
+25%
+50%
+75%
+Win rate
+Best non-SurvICL: Cox (71.3%) Method failed to run for some dataset(s)
+Figure 1:SurvICL is the best survival model on 63 held-out datasets.Pairwise win rate in
+integrated Brier score (IBS): the fraction of (dataset, competitor) pairs on which a method achieves
+a lower IBS. SurvICL wins 82.9% of its comparisons, against 71.3% for the runner-up, the classical
+Cox model. All existing survival TFMs trail behind the Cox model.
+Tabular foundation models (TFMs) seem very well suited to this regime. Pre-trained on many syn-
+thetic datasets, models such as TabPFN and TabICL predict in-context and now outperform gradient-
+boosted trees for classification and regression, in particular on small datasets (Hollmann et al., 2023;
+2025; Grinsztajn et al., 2025; Qu et al., 2025; 2026; Zhang et al., 2025). This recipe has been ex-
+tended beyond standard supervised learning to causal effect estimation (Robertson et al., 2025; Bal-
+azadeh et al., 2025; Ma et al., 2025b). Survival analysis has not yet benefited from this progress.
+Recent survival TFMs either recast survival as classification over a time grid for off-the-shelf TFMs
+(Kim et al., 2026), or are pre-trained on synthetic survival data (Seletkov et al., 2026; B ¨ohm et al.,
+2026; Qi et al., 2026) but do not beat the Cox model or random survival forests (Figure 1).
+Building a High-Performing TFM for Survival Analysis.We introduce SurvICL, a tabular foun-
+dation model for in-context survival analysis, built on the TabICLv2 backbone (Qu et al., 2026).
+Similar to SurvivalPFN (Qi et al., 2026), it handles censoring in the data generation rather than the
+loss. During pre-training, SurvICL sees censored datasets in its context, but is supervised with the
+latent, uncensored event times of the simulator: it learns to correct for censoring in-context, so that
+a plain quantile-regression loss suffices. SurvICL predicts for each individual a continuous quantile
+function of the event time, from which we can directly infer a monotone survival function.
+Scaling Evaluation of Survival Models.We evaluate SurvICL in the largest benchmark to date for
+survival analysis: 103 real-world datasets from healthcare, genomics, economics and engineering,
+with up to 52,000 samples and 15,000 features, against 20 baselines spanning classical, tree-based,
+deep and foundation models. For comparison, survival papers at machine-learning venues typically
+report results on 5 to 20 datasets, and the largest evaluations of survival foundation models span 48
+to 81 datasets (Kim et al., 2026; Lyu et al., 2026; Pham et al., 2026a; Qi et al., 2026). All design
+choices were made on 40 development datasets, and all results are reported on 63 held-out datasets
+never used during development. On these held-out datasets, SurvICL is the best method both in
+prediction accuracy and in discrimination (Figure 1): it wins 82.9% of pairwise comparisons for
+the integrated Brier score (IBS), against 71.3% for the runner-up, the Cox model, and in 77.7% for
+the C-index, against 71.6% for random survival forests (see Figure 12). On small datasets, where
+no previous method surpasses the Cox model, SurvICL is the first to rank above it. On the largest
+datasets, gradient boosting still maintains a slight edge. Importantly, these gains do not come at the
+expense of computational efficiency. Across predictive metrics and dataset-size regimes, SurvICL
+lies on or close to the performance-runtime Pareto frontier (Appendix D). Thus, SurvICL combines
+strong predictive performance with efficient out-of-the-box inference. We commit to releasing code
+and model in an open-source license.
+Contributions.Our contributions are threefold:
+1.We design a foundation model for survival analysisthat, using in-context learning, outper-
+forms survival-analysis models (classical, tree-based, deep, all three existing survival foundation
+models as well as an adaptation of a classification foundation model), on integrated Brier score
+(IBS) and C-index.
+2.We identify key ingredientsof in-context survival analysis through extensive ablations: (i) a
+proportional-odds (PO) priorwith a flexible, multi-modal baseline hazard, which outperforms
+2
+
+Preprint.
+Cox, accelerated failure time, and existing TFM priors; and (ii)event-only targets, rather than
+also learning the censoring distribution.
+3.An extensive benchmarkof 103 survival datasets with a strict separation between development
+and held-out datasets, covering high-dimensional genomics cohorts (p > n) and large registries,
+and comparing 21 methods on four metrics.
+2 RELATEDWORK
+Deep Learning for Survival Analysis.The toolbox of survival analysis has been considerably
+extended in the last years to include deep architectures (Katzman et al., 2018; Lee et al., 2018;
+Kvamme et al., 2019) that can accommodate a wide variety of data and event types, including time
+series, competing events, images and text (Zhu et al., 2016; Thorsen-Meyer et al., 2022; Bleistein
+et al., 2024; Wiegrebe et al., 2024; Alberge et al., 2024; Jeanselme et al., 2024). Our work builds
+on this research by tailoring deep transformers and training procedures for tabular data, which is the
+most common form of survival data.
+Deep Learning for Tabular Data.Gradient-based decision tree models have long dominated
+benchmarks on tabular data (Gorishniy et al., 2021; Grinsztajn et al., 2022; Ye et al., 2024). Tabular
+foundation models have recently challenged their superiority and sparked a new line of research that
+focused on designing tailored architectures and training procedures (Hollmann et al., 2023; 2025;
+Qu et al., 2025; 2026; Kim et al., 2025; Ding et al., 2025; Zhang et al., 2025). We build on these ar-
+chitectural advances and adapt them to calibrated survival prediction. Once pre-trained, our method
+performs in-context inference without fine-tuning or weight updates.
+Tabular Foundation Models for Survival Analysisis a burgeoning field of research. Efforts follow
+three distinct strategies.(i) Reducing survival to a task that generic TFMs already solve.Kim et al.
+(2026) frame survival prediction as a series of binary classification problems over a time grid, so that
+any TFM that handles classification can be deployed for survival analysis. Vieyra (2026) instead
+plugs an off-the-shelf TFM regressor into a log-normal accelerated failure time model and impute
+censored times iteratively, while SurvFM (Lyu et al., 2026) converts censored follow-up into pseudo-
+observations of the restricted mean survival time (RMST), which are then regressed in-context by
+unmodified TFMs. These approaches inherit the strengths of generic TFMs, but their backbone has
+never seen censored data: they either depend on a time discretization, impose a parametric form
+on the event-time distribution, or only output a summary statistic (the RMST) rather than a full
+survival function.(ii) Adapting generic TFMs with a survival head.Pham et al. (2026b;a) train
+classical survival heads (Cox, DeepHit, multi-task logistic regression) on top of frozen or fine-tuned
+representations of TabPFN, TabDPT (Ma et al., 2025a), and TabICL, and systematically compare
+these adaptation interfaces on 74 datasets. They find that zero-shot reformulations work best on
+small datasets, whereas trained heads take over as the sample size grows. This line of work matches
+the common practice of fitting shallow survival models on top of deep foundation models, and gives
+up the pre-training + in-context learning recipe: the head must be fitted, and possibly tuned, on each
+new dataset.(iii) Pre-training on synthetic survival data.Closest to our work, Seletkov et al. (2026),
+B¨ohm et al. (2026) and Qi et al. (2026) pre-train a tabular foundation model on synthetic survival
+data, following previous work in the field of tabular foundation models (Hollmann et al., 2023; Qu
+et al., 2025; 2026). All three models predict on a discretized time grid (see Table 1), while SurvICL
+outputs a continuous quantile function of the event time. Finally, foundation models for time-to-
+event prediction have also been pre-trained on large real-world electronic health records (Steinberg
+et al., 2024); such models are tied to a specific data modality and coding system, whereas we target
+generic tabular data through a synthetic prior.
+3 SURVIVALANALYSISSETTINGS: CENSOREDTARGETS, SMALLSAMPLES
+3.1 CENSOREDDATA ANDSURVIVALMODELS
+Survival Data.In survival analysis, data comes in the form of i.i.d. samplesD n ={(x i, ti, δi)}n
+i=1.
+For each instancei,x i ∈R d denotes the feature vector andt i >0is a positive valued time. Unlike
+standard supervised learning, the target is subject toright-censoring, meaning that their true event
+time is not necessarily observed but might be censored, in which case we only observe the censoring
+3
+
+Preprint.
+timec i >0. This proxy time yields weak information on the true event time, since it will necessarily
+happenaftercensoring. We denote byt ⋆
+i the possibly unobserved true time of event, such that
+ti := min{t⋆
+i , ci}andδ i :=1 t⋆
+i ≤ci .
+Predicting with Survival Models.Our goal is to approximate the survival function
+S(t|x i) :=P(T ⋆ > t|X=x i)
+at any timet >0. This stands in contrast to classification or regression, where the model’s goal is
+to output a valuebyi which approximates the binary or continuous outcomey i. The survival function
+can be used to predict the time of eventˆti for individualias the first time it crosses the threshold0.5.
+Hazard-based Models.Following the seminal work of Cox (1972), an extensive family of models
+parametrized the hazard of the survival process, the time-wise derivative of the event probability:
+Hazard:h(t|x i) := lim
+ε→0
+P(T ⋆ ∈[t, t+ε)|X=x i, T⋆ ≥t)
+ε =−∂ t logS(t|x i)
+and trains it via (partial) likelihood maximization (Friedman, 1982; Fornili et al., 2013; Katzman
+et al., 2018; Kvamme et al., 2019; Kvamme and Borgan, 2021; Bleistein et al., 2024). Once the
+hazard is learned, it can be used to predict the survival function using numerical integration.
+Discrete-Time Models.On the other side, some models bin time to simplify the computation of the
+model’s likelihood and frame survival analysis as a classification task (Yu et al., 2011; Fotso, 2018;
+Lee et al., 2018; Kim et al., 2026). More precisely, in their approach, time is discretized intoB+ 1
+bins([s k, sk+1[)B
+k=0 for0 =s 0 <· · ·< sB = +∞. The tuple(x i, ti, δi)is then expanded into a
+series of points by creating a series of binary outcomesyi,k :=1 ti≤sk and considering the expanded
+dataset{((x i, sk), yi,k)k}n
+i=1. For individuals who experience the event,Bpoints are created, while
+for censored individuals only the bins prior to the censoring time are added to the expanded dataset.
+This approach is the dominant approach in survival TFMs (see Table 1). While flexible and easy
+to train, unconstrained formulations of these models can output non-monotonic survival functions,
+requiring post-hoc workarounds such as clipping probabilities (Kim et al., 2026).
+3.2 DESIGN GOALS FOR ASURVIVALTFM
+Performance on Small Datasets.Small datasets are ubiquitous in survival analysis (O’Donnell
+et al., 2025), notably because time-to-event data is expensive and time-consuming to collect (to
+analyze event times that span overNyears, one first needs to wait forNyears) and because datasets
+often originate from healthcare (Indrayan and Mishra, 2021). State-of-the-art models perform well
+on large samples (n≥2000), but struggle on small datasets (Zhao et al., 2026).
+Out-of-the-Box Calibration.In survival analysis, accurate probability estimates are crucial for
+decision-making (Goldstein et al., 2020; Alberge et al., 2026). Yet, models are often trained and
+evaluated chasing the C-index, which has been criticized as it does not assess calibration and is not
+a proper metric (not minimized for true probabilities, Lillelund et al., 2025). We train SurvICL to
+provide calibrated predictions without hyperparameter tuning.
+4 SURVICL ARCHITECTURE: QUANTILESSUPERVISED BYLATENTTIMES
+The TabICLv2 Backbone.Our architecture inherits the major components of TabICLv2 (Qu et al.,
+2026). In particular, we userepeated feature grouping, which bags groups of features before tok-
+enizing them andtarget-aware embedding. We adapt the original architecture of Qu et al. (2026)
+to handle triplets as inputs, which correspond to features, censoring indicators and observed times.
+More details on TabICLv2 and our modifications can be found in Appendix A.1.
+Continuous Quantile Head.To obtain calibrated and accurate predictions, we use a multi-
+quantile pinball loss following TabICLv2. Given an inputx∈R d, our model outputs ˆq(x) =
+(ˆqτ (x))τ∈T ∈[0,+∞) M−1 , whose entries are the predicted quantiles of the event time at the levels
+T={1/M,2/M, . . . ,(M−1)/M}. We then compute
+L( ˆq(x), t⋆) := 1
+M−1
+X
+τ∈T
+ℓτ
+
+ˆqτ (x), t⋆
+whereℓ τ (ˆq, t⋆) :=
+(
+τ(t ⋆ −ˆq)ift ⋆ ≥ˆq
+(1−τ) (ˆq−t ⋆)ift ⋆ <ˆq
+4
+
+Preprint.
+TabICLv2 Prior
+<latexit sha1_base64="px+sqgO01Dqg3VALq0A5x1NldoM=">AAAC13icjVHLSsNAFD3GV33XunQTLELdhLTWxu5ENy4r2FqxpUzSqYbmRTKRShF34tYfcKt/JP6B/oV3xhR0ITohyZ1zzzkz91478txEmObblDY9Mzs3n1tYXFpeWV3LrxdaSZjGDm86oRfGbZsl3HMD3hSu8Hg7ijnzbY+f2cMjmT+75nHihsGpuIl412eXgTtwHSYI6uULHS5YqeMzcWUPxqPb3u5OL180jZppVStV3TTKVmXfqsugUrf2dvWyYapVRLYaYf4VHfQRwkEKHxwBBMUeGBJ6LlCGiYiwLsaExRS5Ks9xi0XSpsTixGCEDul7SbuLDA1oLz0TpXboFI/emJQ6tkkTEi+mWJ6mq3yqnCX6m/dYecq73dDfzrx8QgWuCP1LN2H+VydrERhgX9XgUk2RQmR1TuaSqq7Im+vfqhLkEBEm4z7lY4odpZz0WVeaRNUue8tU/l0xJSr3TsZN8SFvSQOeTFH/PWhVjHLNqJ1UiweH2ahz2MQWSjRPCwc4RgNN8h7hCc940c61O+1ee/iialOZZgM/lvb4CVbflvY=</latexit>
+ω(x3)
+<latexit sha1_base64="P6rkJONUCED2nWVIi1B4VRDEA5c=">AAAC13icjVHLSsNAFD3GV33HunQTLIJuQlKtrbuiG5cVrA+slEmcamheJBNpKcWduPUH3OofiX+gf+GdMQVdFJ2Q5M6555yZe68T+14qLOt9Qpucmp6ZLczNLywuLa/oq8XTNMoSlzfdyI+Sc4el3PdC3hSe8Pl5nHAWOD4/c7qHMn92x5PUi8IT0Y/5VcBuQq/juUwQ1NaLLS7YVitg4tbpDHrDtr3d1kuWuV+tlCu2YZk1q1qplSmo1nasHduwTUutEvLViPQ3tHCNCC4yBOAIISj2wZDScwkbFmLCrjAgLKHIU3mOIeZJmxGLE4MR2qXvDe0uczSkvfRMldqlU3x6E1Ia2CRNRLyEYnmaofKZcpboOO+B8pR369Pfyb0CQgVuCf1LN2L+VydrEeigpmrwqKZYIbI6N3fJVFfkzY0fVQlyiAmT8TXlE4pdpRz12VCaVNUue8tU/kMxJSr3bs7N8ClvSQMeTdEYH5yWTXvP3DveLdUP8lEXsI4NbNE8q6jjCA00ybuHZ7zgVbvQ7rUH7fGbqk3kmjX8WtrTF0vllvE=</latexit>
+ω(x1)
+<latexit sha1_base64="QnBQ3DNXb/aCzE/tBs/fviJ5DmA=">AAAC13icjVHLSsNAFD3Gd33VunQTLIJuQlJjbXdFNy4VbFWslEmcamheJBOxlOJO3PoDbvWPxD/Qv/DOmIIuik5Icufcc87MvdeJfS8Vpvk+oU1OTc/Mzs0XFhaXlleKq6VWGmWJy5tu5EfJmcNS7nshbwpP+PwsTjgLHJ+fOr0DmT+95UnqReGJ6Mf8MmDXodf1XCYI6hRLbS7YVjtg4sbpDu6Gncp2p1g2jbpZs626bhp2zarYtgysnb3Krm4Zplpl5OsoKr6hjStEcJEhAEcIQbEPhpSeC1gwERN2iQFhCUWeynMMUSBtRixODEZoj77XtLvI0ZD20jNVapdO8elNSKljkzQR8RKK5Wm6ymfKWaLjvAfKU96tT38n9woIFbgh9C/diPlfnaxFoIuaqsGjmmKFyOrc3CVTXZE3139UJcghJkzGV5RPKHaVctRnXWlSVbvsLVP5D8WUqNy7OTfDp7wlDXg0RX180KoYVtWoHtvlxn4+6jmsYwNbNM89NHCIIzTJ+w7PeMGrdq7daw/a4zdVm8g1a/i1tKcvQpuW7Q==</latexit>
+ω(x2)
+<latexit sha1_base64="UrPkjFblCrkpc2mca2scexcmUcc=">AAACznicjVHLSsNAFD3G97vq0k2wCHUTphrbuhPduKxga6EtkkxHDaZJmEwKpRS3/oBb/SzxD/QvvDOmoIuiE5LcOfecM3Pv9ZMwSBVj7zPW7Nz8wuLS8srq2vrGZmFru5nGmeSiweMwli3fS0UYRKKhAhWKViKF1/dDce0/nOv89UDINIijKzVMRLfv3UXBbcA9RVC7I5RX6vBerA5uCkXmlNmxWzmymXNUc0+qLgUVt8rcY7vsMLOKyFc9Lryhgx5icGToQyCCojiEh5SeNspgSAjrYkSYpCgweYExVkibEUsQwyP0gb53tGvnaER77ZkaNadTQnolKW3skyYmnqRYn2abfGacNTrNe2Q89d2G9Pdzrz6hCveE/qWbMP+r07Uo3KJmagiopsQgujqeu2SmK/rm9o+qFDkkhOm4R3lJMTfKSZ9to0lN7bq3nsl/GKZG9Z7n3Ayf+pY04MkU7elB89ApV5zKpVs8PctHvYRd7KFE86ziFBeoo2E6/owXvFp1a2CNrcdvqjWTa3bwa1lPX+tuk7E=</latexit>
+ω(·)
+<latexit sha1_base64="h4GPub5Q5Ipe1D92kUaVqKlRNLU=">AAACz3icjVHLTsJAFD3WF75Rl24aiYmrpgWhuCO6cQmJoIkQMq2DNvSVdqoSgnHrD7jVvzL+gf6Fd8aS6MLoNG3vnHvOmbn3OrHvpcI032a02bn5hcXC0vLK6tr6RnFzq5NGWeLythv5UXLusJT7XsjbwhM+P48TzgLH52fO8Fjmz254knpReCpGMe8F7Cr0Bp7LBEHdbsDEtTMY3036Vr9YMo1Du1quWrpp1E27Wi9TYNcrZsXSLcNUq4R8NaPiK7q4RAQXGQJwhBAU+2BI6bmABRMxYT2MCUso8lSeY4Jl0mbE4sRghA7pe0W7ixwNaS89U6V26RSf3oSUOvZIExEvoViepqt8ppwl+pv3WHnKu43o7+ReAaEC14T+pZsy/6uTtQgMUFc1eFRTrBBZnZu7ZKor8ub6t6oEOcSEyfiS8gnFrlJO+6wrTapql71lKv+umBKVezfnZviQt6QBT6eo/x50yoZVM2qtg1LjKB91ATvYxT7N00YDJ2iiTd4xnvCMF62l3Wr32sMXVZvJNdv4sbTHTzG3lJ0=</latexit>
+x1
+<latexit sha1_base64="HOJqfikrR0PP0X45YKnDrt+HYDI=">AAACz3icjVHLTsMwEBzC+13gyCWiQuIUJSWUckNw4dhKFJAoQo5xISIvOQ5QVUVc+QGu8FeIP4C/YG1SCQ4IHCVZz86MvbtBFoW5ct23EWt0bHxicmp6ZnZufmGxsrR8lKeF5KLN0yiVJwHLRRQmoq1CFYmTTAoWB5E4Dq73df74Rsg8TJND1cvEWcwuk7AbcqYI6nRipq6Cbv9ucF47r1RdZ8dt+N6O7Tp+w6v5vg68ze3alu05rllVlKuZVl7RwQVScBSIIZBAURyBIafnFB5cZISdoU+YpCg0eYEBZkhbEEsQgxF6Td9L2p2WaEJ77ZkbNadTInolKW2skyYlnqRYn2abfGGcNfqbd9946rv16B+UXjGhCleE/qUbMv+r07UodNEwNYRUU2YQXR0vXQrTFX1z+1tVihwywnR8QXlJMTfKYZ9to8lN7bq3zOTfDVOjes9LboEPfUsa8HCK9u/BUc3x6k695Vd398pRT2EVa9igeW5jFwdook3eGZ7wjBerZd1a99bDF9UaKTUr+LGsx08obJSZ</latexit>
+x2
+<latexit sha1_base64="F8vBtgIynr5gexnhh6HYBLlXkdU=">AAACz3icjVHLSsNAFD3GV31XXboJFsFVSGtt2l3RjcsWrApWZBKnNjQvJhO1lIpbf8Ct/pX4B/oX3hlT0IXohCR3zj3nzNx73STwU2nbb1PG9Mzs3HxhYXFpeWV1rbi+cZLGmfB4x4uDWJy5LOWBH/GO9GXAzxLBWegG/NQdHKr86Q0XqR9Hx3KY8IuQXUd+z/eYJKjbDZnsu73R3fhy77JYsq2a7VQrVdO2yk6l7jRUUGk4+3tm2bL1KiFfrbj4ii6uEMNDhhAcESTFARhSes5Rho2EsAuMCBMU+TrPMcYiaTNicWIwQgf0vabdeY5GtFeeqVZ7dEpAryCliR3SxMQTFKvTTJ3PtLNCf/MeaU91tyH93dwrJFSiT+hfugnzvzpVi0QPdV2DTzUlGlHVeblLpruibm5+q0qSQ0KYiq8oLyj2tHLSZ1NrUl276i3T+XfNVKjaezk3w4e6JQ14MkXz9+CkYpVrVq1dLTUP8lEXsIVt7NI8HTRxhBY65J3gCc94MdrGrXFvPHxRjalcs4kfy3j8BDyvlKI=</latexit>
+x3
+Random HazardRandom Samples Individual Hazards
+PO Prior
+<latexit sha1_base64="VoYytcWmX7XWBFgxSaxcMLIwmmc=">AAACyXicjVHLLgRBFD3a+z1Y2nRMJGw63TNjmp2wkdiMxAwJIt2lUKZfqqsFEys/YMuPiT/gL9wqPQkLoTrdfevcc07VvTfMIpEr130bsAaHhkdGx8YnJqemZ2Yrc/OdPC0k422WRqk8DIOcRyLhbSVUxA8zyYM4jPhB2N3W+YMbLnORJvvqLuMncXCRiHPBAkVQ5/LUXVGrp5Wq63huw6/5tuvU12v+Rp2CZmOt5vm257hmVVGuVlp5xTHOkIKhQAyOBIriCAFyeo7gwUVG2Al6hEmKhMlzPGCCtAWxODECQrv0vaDdUYkmtNeeuVEzOiWiV5LSxjJpUuJJivVptskXxlmjv3n3jKe+2x39w9IrJlThktC/dH3mf3W6FoVzrJsaBNWUGURXx0qXwnRF39z+VpUih4wwHZ9RXlLMjLLfZ9toclO77m1g8u+GqVG9ZyW3wIe+JQ24P0X796BTc7ym09xrVDe3ylGPYRFLWKF5+tjEDlpok/cVnvCMF2vXurZurfsvqjVQahbwY1mPn+XJkUw=</latexit>
+h0(t)
+<latexit sha1_base64="P8mgvMd9VZ3DxwY3yTzf4Ov6EjY=">AAADCHicjVHBTttAEH0YSmmgEODYi2mERKUqdSIUOKJy6RGkBpDiKFqbTbpi7bV21xUoyg/0T3rjhnrlBzhS/qD9C2a3jgBVqB3L9uyb997u7CSFFMZG0d1MMDv3Yv7lwqva4tLr5ZX66tqRUaVOeTdVUumThBkuRc67VljJTwrNWZZIfpyc7bv68VeujVD5Z3tR8H7GRrkYipRZggb1fRa/j1XBNbNK5yzjY6OGtpClmcQbVErESPaGW/aDHYzjjJ1P3jlI92vhQwzqjai53e5QhH8nrWbko4EqDlT9FjFOoZCiRAaOHJZyCQZDTw8tRCgI62NMmKZM+DrHBDXSlsTixGCEntF3RKtehea0dp7Gq1PaRdKrSRlikzSKeJpyt1vo66V3duhz3mPv6c52Qf+k8soItfhC6L90U+b/6lwvFkPs+h4E9VR4xHWXVi6lvxV38vBRV5YcCsJcfkp1TXnqldN7Dr3G+N7d3TJf/+WZDnXrtOKW+O1OSQOeTjF8PjlqN1udZudwu7H3sRr1At7gLbZonjvYwyccoEve33GDn7gLvgWXwVXw4w81mKk063gSwfU9vGWo4Q==</latexit>
+asoftplus[f(t/tmax)]
+Individual 
+Survival Curves
+Random functions resampled 
+for censorship time model 
+Dataset
+<latexit sha1_base64="hdD1ZTiDsykfSFGvJyEDkkFK/7g=">AAADsXicjZFdb9MwFIZPFj5G+SpwyU1EhTSkKbKdtMnuJrjhciC6DTVViVO3i5ovOQ7aFPUC/iTiH4DEj+DYJBIwVeAoyev3nPPYx+ZVltaKkK/Wnn3j5q3b+3cGd+/df/Bw+OjxaV02MhHTpMxKec7jWmRpIaYqVZk4r6SIc56JM755peNnH4Ws07J4p64qMc/jdZGu0iRWaC2GP9rIQGZyzectcY+CMRvTQ+KGJBiHDEUQesSj24in64Moj9UFX7WX2wU9jJYiUzEKtaA6+mIbRYO/cST06RFS/JAy39eCegEbX8OxHscQx3bhJiTwmabQgIWB5lKGO/au4bwe5yHO63GL4ahnOD3D6RkOdYkZI+jGSTn8AhEsoYQEGshBQAEKdQYx1PjMgAKBCr05tOhJVKmJC9jCAGsbzBKYEaO7we8aZ7POLXCumbWpTnCVDF+JlQ48x5oS8yRqvZpj4o0ha3cXuzVMvbcr/POOlaOr4ALdf9X1mf9bp3tRsILQ9JBiT5VxdHdJR2nMqeidO791pZBQoaf1EuMSdWIq+3N2TE1tetdnG5v4N5OpXT1PutwGvutd4gX3t+jsFqfMpRN38sYfHb/srnofnsIzOMD7DOAYXsMJTCGx3lqX1ifrs+3Z7+0PNv+Vumd1NU/gj2FvfgKgato5</latexit>
+(
+x1,ω1,t1
+)
+(
+x2,ω2,t2
+)
+(
+x3,ω3,t3
+)
+Sampling & 
+Censorship
+Censoring Model
+a. Data Generation Overview b. Examples of Generated Datasets
+Sample Prior Function Prior
+Event Times Censorship Times Survival Curve
+<latexit sha1_base64="9GO7tyFNYGNh8ptkJ2O+z2w6GYc=">AAAC2nicjVHLSsNAFD3G9zsqrtwEi+BCSiqiLotuXCrYBzS1JOO0Ds2LyUSQ0o07cesPuNUPEv9A/8I7YwQfiE5Icubce87MvTdIQ5Ep130esUbHxicmp6ZnZufmFxbtpeV6luSS8RpLwkQ2Az/joYh5TQkV8mYquR8FIW8E/UMdb1xymYkkPlVXKW9Hfi8WXcF8RVTHXvUiEXsD1RFnXqZ8ucU6wht27JJbds1yfoJKAUoo1nFiP8HDORIw5IjAEUMRDuEjo6eFClykxLUxIE4SEibOMcQMaXPK4pThE9unb492rYKNaa89M6NmdEpIrySlgw3SJJQnCevTHBPPjbNmf/MeGE99tyv6B4VXRKzCBbF/6T4y/6vTtSh0sW9qEFRTahhdHStcctMVfXPnU1WKHFLiND6nuCTMjPKjz47RZKZ23VvfxF9Mpmb1nhW5OV71LWnAle/j/Anq2+XKbnn3ZKdUPShGPYU1rGOT5rmHKo5wjBp5D3CPBzxannVt3Vi376nWSKFZwZdl3b0B/X2YYA==</latexit>
+min{tω
+i,ci}
+Dataset #1Dataset #2Dataset #3
+Figure 2:(a)Overview over our synthetic data prior: building on Qu et al. (2026), we construct a
+pipeline to simulate survival datasets by generating an event time and censoring time distribution.
+(b)Three example datasets drawn from our prior, which illustrate the high diversity in observed
+event time and censoring time distributions.
+wheret ⋆ is the latent event time drawn from the prior (see below). We useM= 1000, i.e.,999
+quantile levels as in TabICLv2. To ensure monotonicity, we sort the predicted quantiles except
+during pre-training. Experiments with other numbers of percentiles are reported in Figure 4. This
+loss is one of the major design choices that drive the capabilities of our model, and distinguishes it
+from previous models, which use classification losses or the hybrid loss of Lee et al. (2018).
+Latent Time Supervision.The targett ⋆ of the pinball loss is never observed in real data: it is the
+latent event time generated by our prior (Section 5). During pre-training, the context only contains
+censored observations(x i, ti, δi), while the loss is computed on the uncensoredt ⋆
+i of the query
+points. The model thus learns to infer the event-time distribution from censored data in-context.
+The survival-specific knowledge lives in the prior, so that the above regression loss is valid: we need
+neither a censored likelihood, nor inverse-probability-of-censoring weights, nor a discretization of
+time. SurvivalPFN (Qi et al., 2026) also supervises with latent times, but over a discretized time grid
+and with censoring times as an additional target, which we find to be detrimental (Section 6).
+Mean-Duration Scaling.We rescale time, to cater for the wide variety of time range across datasets.
+Our strategy is to divide survival times by the mean observed duration.
+Event-Only Targets.In survival analysis, censoring times are often considered to be hurdles to
+efficient estimation. Interestingly, Qi et al. (2026) use the censored times as an alternative target:
+their model learns to approximate two distributions (one for censored times and one for event times)
+by predicting the event and censoring times during pre-training. We ablate this mixed prediction
+task and show that it degrades the performance of our model.
+5 PRETRAINING: SYNTHETICDATAPRIORS WITHPROPORTIONAL-ODDS
+A key novelty of our work is our synthetic data prior, illustrated in Figure 2.
+Proportional-Odds (PO) Prior.We start by sampling numerical and categorical features(x i)n
+i=1
+using the structural causal prior of Qu et al. (2026). The number of nodes (from 2 to 32) and features
+(from 1 to 100) span a wide range to allow for diverse datasets. We then sample survival times from
+a novel proportional-odds prior. Like the Cox model, it combines a baseline with an individual effect
+η(xi), but on the odds rather than the hazard scale: hazard ratios then vary over time and may vanish
+in the long run, a common pattern in clinical data that Cox priors cannot generate. For the baseline
+hazard, we set
+h0(t) =asoftplus
+
+f(t/t max)
+
++
+KX
+k=1
+Ak exp
+
+− (t−µ k)2
+2σ2
+k
+
+,
+witha,(A k)K
+k=1,(µ k)K
+k=1 and(σ k)K
+k=1 positive values, andt max >0. The parameterKis taken
+randomly between1and5. This parametrization adds a random number of positive Gaussian bumps
+at random times, each with its own width and height, directly on top of the smooth trend. We then
+integrate this baseline hazard to obtainS 0(t) = exp
+
+−
+R t
+0 h0(u)du
+
+. To generate the individual
+5
+
+Preprint.
+specific part of the hazard function, we apply a random functionη(x i)to the features as in Qu et al.
+(2026). We then define the individual-specific survival function as
+S(t|x i) := 1
+1−S0(t)
+S0(t) exp(η(xi)) + 1
+.
+Settingη(x i) = 0recovers the baseline hazard, while positive values increase the odds of experi-
+encing the event by any time. This prior draws on a long line of work on mixture models in survival
+analysis (McLachlan and McGiffin, 1994; De Angelis et al., 1999; Li et al., 2024). We sample event
+times by inverting the cumulative distribution function, withU∼ U([0,1]):
+t⋆
+i =H −1
+0
+
+log
+
+1 + exp(−η(xi)) (U−1 −1)
+
+withH 0(t) :=−logS 0(t). We draw5times per individual to speed up convergence.
+Generating Censoring Times.We add two sources of censoring to our model. First, in50%of
+datasets, we apply a shared end-of-study cutoff to a randomly sampled set of individuals. Secondly,
+we generate a concurrent censoring time distribution by sampling another pair of baseline and indi-
+vidual specific hazards and combining them as for the event time distribution. We then sample from
+this second distribution, and set the observed time to be the minimum between the two. Lastly, to
+introduce tied times, we move some individual times to a common time grid with low probability.
+Filtering.We remove datasets where more than 95% of samples are censored, as well asnon-
+predictabledatasets, adapting the filter of Qu et al. (2026): a dataset is non-predictable if predicting
+the mean survival time achieves a lower IBS (Section 6) than an ExtraTrees-based survival model
+(Geurts et al., 2006). Every pretraining dataset thus carries exploitable signal.
+Training.During training, we split every generated dataset into a context (train) setD c of sizen c
+and a query (test) setD q of sizen ℓ withn=n c +n ℓ. We then compute and take the gradients of
+1
+nℓ
+X
+i∈Dq
+L
+
+fθ(xi,D c), t⋆
+i
+
+,
+wheref θ(xi,D c)denotes the quantiles predicted from the contextD c; the loss is computed on the
+query set only. The context size varies during pre-training. We adopt the pre-training setup from Qu
+et al. (2026) and only use stage 1 for 200K steps, which takes around 72 hours on two H100 GPUs.
+6 LARGESCALEEVALUATION ON63 DATASETS
+6.1 SURVIVALMETRICS
+We evaluate our models on four different metrics to overcome the pitfalls of single-metric evaluation
+(Lillelund et al., 2025). In the following,N≥1denotes the size of the evaluation dataset. All
+metrics are computed using theSurvEvalpackage (Qi et al., 2023)
+Integrated Brier Score (IBS).The IBS is computed by integrating the Brier score at timet >0,
+which is equal for an individual to the difference between the predicted survival curve and the
+observed binary survival indicator function, over time. It is hence equal to
+1
+Ntesttmax
+NX
+i=1
+Z tmax
+0
+BSi(t)dtwhere BS i(t) :=
+bS(t|x i)21ti≤t,δi=1
+bG(ti)
++ (1− bS(t|x i))21ti>t
+bG(t)
+.
+Unlike the C-index, the IBS measures the accuracy of predicted probabilities, not just rankings.
+C-index at the 50th Quantile.We evaluate discrimination using an IPCW concordance index
+truncated at the median observed training follow-up timet 50 = Quantile 0.5{ttrain
+i }, wheret train
+i
+includes both event and censoring times. For each test individual, we use the predicted riskr i =
+1− bS(t50 |x i). Concordance is computed over comparable pairs with an observed event beforet 50
+and weighted by bG(ti)−2, where bGis the Kaplan–Meier estimate of the censoring survival function
+fitted on the training data. This corresponds to a truncated IPCW concordance estimator.
+6
+
+Preprint.
+Dimensionality
+Low 42%  Medium 37%  High 21%
+10 100 1000 10000
+<latexit sha1_base64="urL+xnDuStpWhUp2AiuiWr9Dw6E=">AAACx3icjVHLTsJAFD3UF+ILdemmkZi4agqBFhIXRDe6w0SQBIlpywANfaWdEglx4Q+41T8z/oH+hXfGkuiC6DRt75x7zpm599qR5yZc199zysrq2vpGfrOwtb2zu1fcP+gkYRo7rO2EXhh3bSthnhuwNne5x7pRzCzf9titPbkQ+dspixM3DG74LGJ93xoF7tB1LC6gM7Wi3xdLutYwzWq9oepavWZUDIMCs0xATS1rulwlZKsVFt9whwFCOEjhgyEAp9iDhYSeHsrQERHWx5ywmCJX5hkeUSBtSixGDIvQCX1HtOtlaEB74ZlItUOnePTGpFRxQpqQeDHF4jRV5lPpLNBl3nPpKe42o7+defmEcowJ/Uu3YP5XJ2rhGKIua3Cppkgiojonc0llV8TN1R9VcXKICBPxgPIxxY5ULvqsSk0iaxe9tWT+QzIFKvZOxk3xKW5JA15MUV0edCpa2dCM62qpeZ6NOo8jHOOU5mmiiUu00CbvMZ7xglflSgmVqfLwTVVymeYQv5by9AWH2JBb</latexit>
+<20
+<latexit sha1_base64="tHcbvTzUUye+xNMOv5QRENRmRw8=">AAACyXicjVHLTsMwEBzC+13gyCWiQuJC5BRa6K2CCxIXkGipVCqUBBcMeeE4iII48QNc4ccQfwB/wdqkEhwQOEqynp0Ze3f9NBSZYuxtyBoeGR0bn5icmp6ZnZsvLSy2siSXAW8GSZjItu9lPBQxbyqhQt5OJfciP+TH/tWuzh/fcJmJJD5S/ZR3I+88Fj0ReIqgVoWtu4ydlsrMqbs1t+7azKmxzXp1m4INt1rZqtquw8wqo1gHSekVJzhDggA5InDEUBSH8JDR04ELhpSwLu4JkxQJk+d4wBRpc2JxYniEXtH3nHadAo1prz0zow7olJBeSUobq6RJiCcp1qfZJp8bZ43+5n1vPPXd+vT3C6+IUIULQv/SDZj/1elaFHrYNjUIqik1iK4uKFxy0xV9c/tbVYocUsJ0fEZ5SXFglIM+20aTmdp1bz2TfzdMjep9UHBzfOhb0oAHU7R/D1oVx605tcPNcmOnGPUElrGCNZrnFhrYwwGa5H2JJzzjxdq3rq1b6+6Lag0VmiX8WNbjJ3q6kLQ=</latexit>
+20→100
+<latexit sha1_base64="HMOdgvuYrkY5wM2pHWzO/I/jY+0=">AAACyHicjVHLSsNAFD2Nr1pfVZdugkVwFSbWPlZSdCOuKthaqEWSdFqHpklIJkopbvwBt/pl4h/oX3hnTEEXRSckuXPuOWfm3utGvkgkY+85Y2FxaXklv1pYW9/Y3Cpu77STMI093vJCP4w7rpNwXwS8JYX0eSeKuTN2fX7tjs5U/vqex4kIgys5iXhv7AwDMRCeIwlqnZg2Y7fFErOqlRqrlk1mle26rQNWt8v1imlbTK8SstUMi2+4QR8hPKQYgyOApNiHg4SeLmwwRIT1MCUspkjoPMcjCqRNicWJ4RA6ou+Qdt0MDWivPBOt9ugUn96YlCYOSBMSL6ZYnWbqfKqdFTrPe6o91d0m9HczrzGhEneE/qWbMf+rU7VIDFDXNQiqKdKIqs7LXFLdFXVz80dVkhwiwlTcp3xMsaeVsz6bWpPo2lVvHZ3/0EyFqr2XcVN8qlvSgGdTNOcH7SPLrlrVy+NS4zQbdR572MchzbOGBs7RRIu8BZ7xglfjwoiMB2PyTTVymWYXv5bx9AXNHZBx</latexit>
+>100
+Censoring Rate
+Low 23%  Medium 46%  High 31%
+20% 40% 60% 80%
+<latexit sha1_base64="fvBNawZZD2dU0QXetzr9Tn1JTGs=">AAACyHicjVHLSsNAFD2N7/qqunQTLIKrMG1CW8GF6EZcVTBtoYokcaxD0yQkE6UUN/6AW/0y8Q/0L7wzpqAL0QlJ7px7zpm59/pJKDLJ2FvJmJmdm19YXCovr6yurVc2NjtZnKcBd4M4jNOe72U8FBF3pZAh7yUp90Z+yLv+8Fjlu3c8zUQcnctxwi9H3iASNyLwJEHugcMudq8qVWY1G80GYyazWo5dt20K9h1mOy2zZjG9qihWO6684gLXiBEgxwgcESTFITxk9PRRA0NC2CUmhKUUCZ3neECZtDmxODE8Qof0HdCuX6AR7ZVnptUBnRLSm5LSxC5pYuKlFKvTTJ3PtbNCf/OeaE91tzH9/cJrRKjELaF/6abM/+pULRI3aOkaBNWUaERVFxQuue6Kurn5rSpJDglhKr6mfEpxoJXTPptak+naVW89nX/XTIWqfVBwc3yoW9KAp1M0fw86davWsBpnTvXwqBj1Iraxgz2aZxOHOEEbLnkLPOEZL8apkRj3xviLapQKzRZ+LOPxE0tEkKY=</latexit>
+<40%
+<latexit sha1_base64="unrQQAa42Y25L2labuGuK5FzZgk=">AAACynicjVHLTsJAFD3UF+ILdemmkZC4sRkUatkR3bhwgYkICRDT1lEbS9tMpyaEuPMH3OqHGf9A/8I7Y0l0QXSatnfOPefM3Hu9JAxSydh7wZibX1hcKi6XVlbX1jfKm1uXaZwJn3f8OIxFz3NTHgYR78hAhryXCO6OvJB3vfsTle8+cJEGcXQhxwkfjtzbKLgJfFcS1K2z/SM2qF6VK8yqM/vQaZrMaji207ApcFjTthtmzWJ6VZCvdlx+wwDXiOEjwwgcESTFIVyk9PRRA0NC2BATwgRFgc5zPKJE2oxYnBguoff0vaVdP0cj2ivPVKt9OiWkV5DSRJU0MfEExeo0U+cz7azQWd4T7anuNqa/l3uNCJW4I/Qv3ZT5X52qReIGjq4hoJoSjajq/Nwl011RNzd/VCXJISFMxdeUFxT7Wjnts6k1qa5d9dbV+Q/NVKja+zk3w6e6JQ14OkVzdnB5YNVsyz6vV1rH+aiL2MEu9mieR2jhFG10dJXPeMGrcWYIY2xMvqlGIdds49cynr4AozKRKw==</latexit>
+40→70%
+<latexit sha1_base64="rIOD6N9lEG7vsq5cvm6NwZDmth0=">AAACyHicjVHLSsNAFD2Nr1pfVZdugkVwFSaxtF2J6EZcVbC2YIsk6bQOzYtkohRx4w+41S8T/0D/wjtjCroQnZDkzrnnnJl7r5cEIpOMvZWMufmFxaXycmVldW19o7q5dZnFeerzjh8Hcdrz3IwHIuIdKWTAe0nK3dALeNebnKh895anmYijCzlN+CB0x5EYCd+VBHUOm6y/d12tMct2HHbATGY59XqjZVNQt1stm5m2xfSqoVjtuPqKPoaI4SNHCI4IkuIALjJ6rmCDISFsgHvCUoqEznM8oELanFicGC6hE/qOaXdVoBHtlWem1T6dEtCbktLEHmli4qUUq9NMnc+1s0J/877XnupuU/p7hVdIqMQNoX/pZsz/6lQtEiO0dA2Cako0oqrzC5dcd0Xd3PxWlSSHhDAVDymfUuxr5azPptZkunbVW1fn3zVToWrvF9wcH+qWNODZFM3fg0vHshtW47xeOzouRl3GDnaxT/Ns4ginaKND3gJPeMaLcWYkxp0x/aIapUKzjR/LePwEI+eQlQ==</latexit>
+>70%
+100%
+Survival rate at end time
+Low 38%  Medium 37%  High 25%
+<latexit sha1_base64="waQFbvbn8bkt9R6g1SmmRu2Z5a4=">AAACyXicjVHLTsJAFD3UF+ILdemmkZC4IqWhPBIXRDcmbjCRRwLEtGXASmlrOzUiceUPuNUfM/6B/oV3xpLogug0bc+ce8+ZufdagetEXNPeU8rS8srqWno9s7G5tb2T3d1rRX4c2qxp+64fdiwzYq7jsSZ3uMs6QcjMieWytjU+FfH2HQsjx/cu+TRg/Yk58pyhY5ucqNaxqhu9/FU2pxWqRrmoGyoBTS/pFQI1zaiUamqxoMmVQ7IafvYNPQzgw0aMCRg8cMIuTET0dFGEhoC4PmbEhYQcGWd4RIa0MWUxyjCJHdN3RLtuwnq0F56RVNt0iktvSEoVedL4lBcSFqepMh5LZ8Eu8p5JT3G3Kf2txGtCLMc1sX/p5pn/1YlaOIaoyhocqimQjKjOTlxi2RVxc/VHVZwcAuIEHlA8JGxL5bzPqtREsnbRW1PGP2SmYMXeTnJjfIpb0oDnU1QXg5ZeKJYL5YtSrn6SjDqNAxziiOZZQR1naKBJ3jd4xgtelXPlVrlXHr5TlVSi2cevpTx9AdTAkNo=</latexit>
+<25%
+<latexit sha1_base64="zj/rIrDhuUl6ZSEOnLNAn8sC+ww=">AAACznicjVHLTsJAFD3U9xt16WYiIXFjU6AU2BHduMRExASMacugjX2lnZIQYtz6A271s4x/oH/hnbEkuiA6Tds7555zZu69Tux7qTCM94K2sLi0vLK6tr6xubW9U9zdu0yjLHF51438KLly7JT7Xsi7whM+v4oTbgeOz3vO/anM98Y8Sb0ovBCTmF8H9m3ojTzXFgT1q/VBmR0zyxiUb4olQ683W5bZZIZumtVWy6SgUavXzAar6IZaJeSrExXfMMAQEVxkCMARQlDsw0ZKTx8VGIgJu8aUsIQiT+U5HrBO2oxYnBg2off0vaVdP0dD2kvPVKldOsWnNyElQ5k0EfESiuVpTOUz5SzRed5T5SnvNqG/k3sFhArcEfqXbsb8r07WIjBCU9XgUU2xQmR1bu6Sqa7Im7MfVQlyiAmT8ZDyCcWuUs76zJQmVbXL3toq/6GYEpV7N+dm+JS3pAHPpsjmB5dVvWLp1rlZap/ko17FAQ5xRPNsoI0zdNBVHX/GC161jjbWHrTHb6pWyDX7+LW0py8O9JIV</latexit>
+25%→60%
+<latexit sha1_base64="IgNs3kG3tqeX/xPBh/TovYx7TtQ=">AAACyXicjVHLSsNAFD2Nr1pfVZdugqXgKiR92ZUU3QhuKtgH2CJJOq2xeZlMxFpc+QNu9cfEP9C/8M6Ygi6KTkhy59xzzsy91wpdJ+a6/p5RFhaXlleyq7m19Y3Nrfz2TjsOkshmLTtwg6hrmTFzHZ+1uMNd1g0jZnqWyzrW+ETkO3csip3Av+CTkPU9c+Q7Q8c2OUHtI7Wm94pX+YKuleoVvVxSdc2oVepVg4JKuVot11VD0+UqIF3NIP+GHgYIYCOBBwYfnGIXJmJ6LmFAR0hYH1PCIoocmWd4RI60CbEYMUxCx/Qd0e4yRX3aC89Yqm06xaU3IqWKImkC4kUUi9NUmU+ks0DneU+lp7jbhP5W6uURynFN6F+6GfO/OlELxxB1WYNDNYUSEdXZqUsiuyJurv6oipNDSJiIB5SPKLalctZnVWpiWbvorSnzH5IpULG3U26CT3FLGvBsiur8oF2i2Wu180qhcZyOOos97OOA5nmIBk7RRIu8b/CMF7wqZ8qtcq88fFOVTKrZxa+lPH0Bu2WQzw==</latexit>
+>60%
+0% 20% 40% 60% 80% 100%
+Sample Size
+Low 74%  High 26%
+100 1000 10000
+Context Set Size
+a. Held-out Datasets
+b. Sample of 500 Pretraining Datasets 
+Survival rate at end time
+Low 53.6%  Medium 29.4%  High 17%
+Dimensionality
+Low 28.2%  Medium 43.6%  High 28.2%
+Censoring Rate
+Low 32.4%  Medium 43.2%  High 24.4%
+<latexit sha1_base64="HoqZwBRcH0djDxwOSWrXi0qO2CY=">AAACx3icjVHLTsJAFD3UF+ILdemmkZC4atqGZ+KC6EZ3mAiSADFtGaChtE07JRLiwh9wq39m/AP9C++MJdEF0Wna3jn3nDNz77VDz425rr9nlLX1jc2t7HZuZ3dv/yB/eNSOgyRyWMsJvCDq2FbMPNdnLe5yj3XCiFlT22N39uRS5O9mLIrdwL/l85D1p9bId4euY3EBnRu94n2+oGt1s14pl1Rdq+lG2TREUDerelk1NF2uAtLVDPJv6GGAAA4STMHgg1PswUJMTxcGdISE9bEgLKLIlXmGR+RImxCLEcMidELfEe26KerTXnjGUu3QKR69ESlVFEkTEC+iWJymynwinQW6ynshPcXd5vS3U68poRxjQv/SLZn/1YlaOIaoyRpcqimUiKjOSV0S2RVxc/VHVZwcQsJEPKB8RLEjlcs+q1ITy9pFby2Z/5BMgYq9k3ITfIpb0oCXU1RXB21TMypa5aZUaFyko87iBKc4o3lW0cAVmmiR9xjPeMGrcq0Eykx5+KYqmVRzjF9LefoCuYSQbw==</latexit>
+<1%
+<latexit sha1_base64="89r7RbTx8Bx82xqIhqplWmbI3q8=">AAACy3icjVHLSsNAFD2Nr/quunQTLAU3hiTGtMuiGzdCBfuAViSJYw3Ni2Qi1OrSH3Cr/yX+gf6Fd8YUdFF0QpIz595zZu69bhL4Gdf195IyN7+wuFReXlldW9/YrGxtd7I4Tz3W9uIgTnuuk7HAj1ib+zxgvSRlTugGrOuOTkS8e8fSzI+jCz5O2GXoDCP/xvccTlTPGNQOzKNB7apS1bW6YTVMU9U1yzTthk7Atq1Dy1INTZerimK14sobBrhGDA85QjBE4IQDOMjo6cOAjoS4S0yISwn5Ms7wiBXS5pTFKMMhdkTfIe36BRvRXnhmUu3RKQG9KSlV1EgTU15KWJymyngunQU7y3siPcXdxvR3C6+QWI5bYv/STTP/qxO1cNygIWvwqaZEMqI6r3DJZVfEzdUfVXFySIgT+JriKWFPKqd9VqUmk7WL3joy/iEzBSv2XpGb41PckgY8naI6G3RMzbA1+9yqNo+LUZexiz3s0zzraOIULbTlHJ/xglflTMmUe+XhO1UpFZod/FrK0xdBo5Fm</latexit>
+1%→25%
+<latexit sha1_base64="C4Jmv0t2ON/kmFuAPEGbRVGEg5o=">AAACyHicjVHLTsJAFD3UF+ILdemmkZC4akpBwI0hujGuMJFHAsS0ZdAJpW3aqYYQN/6AW/0y4x/oX3hnLIkuiE7T9s6555yZe68TejwWpvme0ZaWV1bXsuu5jc2t7Z387l47DpLIZS038IKo69gx87jPWoILj3XDiNkTx2MdZ3wu8517FsU88K/FNGSDiX3r8xF3bUFQ69Q67hdv8gXTKNcrtXJVN42SZdbqJgXl8knFsvSSYapVQLqaQf4NfQwRwEWCCRh8CIo92Ijp6aEEEyFhA8wIiyjiKs/wiBxpE2IxYtiEjul7S7teivq0l56xUrt0ikdvREodRdIExIsolqfpKp8oZ4ku8p4pT3m3Kf2d1GtCqMAdoX/p5sz/6mQtAiPUVQ2cagoVIqtzU5dEdUXeXP9RlSCHkDAZDykfUewq5bzPutLEqnbZW1vlPxRTonLvptwEn/KWNOD5FPXFQdsySlWjelUpNM7SUWdxgEMc0TxraOACTbTIm+MZL3jVLrVQe9Cm31Qtk2r28WtpT19L0pCm</latexit>
+>25%
+<latexit sha1_base64="HPwGV0GeNnzRKPiByA8Ot7DeAjo=">AAACyHicjVHLSsNAFD2N7/qqunQTLAVXYaK1D3AhuhFXFYwtVJEkndahaRKSiVKKG3/ArX6Z+Af6F94ZU9CF6IQkd84958zce704EKlk7K1gzMzOzS8sLhWXV1bX1ksbm5dplCU+d/woiJKO56Y8ECF3pJAB78QJd0dewNve8ETl23c8SUUUXshxzK9H7iAUfeG7kiDncJ9dVW5KZWbVG3VmM5NZjcbe/kFVBc1qk9VM22J6lZGvVlR6xRV6iOAjwwgcISTFAVyk9HRhgyEm7BoTwhKKhM5zPKBI2oxYnBguoUP6DmjXzdGQ9soz1WqfTgnoTUhpokKaiHgJxeo0U+cz7azQ37wn2lPdbUx/L/caESpxS+hfuinzvzpVi0QfDV2DoJpijajq/Nwl011RNze/VSXJISZMxT3KJxT7Wjnts6k1qa5d9dbV+XfNVKja+zk3w4e6JQ14OkXz9+Byz7JrVu28Wj46zke9iG3sYJfmWccRTtGCQ94CT3jGi3FmxMa9Mf6iGoVcs4Ufy3j8BGQ/kLE=</latexit>
+<30%
+<latexit sha1_base64="87AiKCqXKx3Wv3AkNVGN69yqUY8=">AAACynicjVHLTsJAFD3UF+ILdemmkZi4sRmkVNwR3bhwgYkIiRDT1gEbS9tMpyaEuPMH3OqHGf9A/8I7Y0l0QXSatnfOPefM3Hu9JAxSydh7wZibX1hcKi6XVlbX1jfKm1tXaZwJn7f9OIxF13NTHgYRb8tAhrybCO6OvJB3vPtTle88cJEGcXQpxwnvj9xhFAwC35UEdWrswGG9vZtyhVm16qHdsE1m1Y/rtsMocOrsyK6ZVYvpVUG+WnH5DT3cIoaPDCNwRJAUh3CR0nONKhgSwvqYECYoCnSe4xEl0mbE4sRwCb2n75B21zka0V55plrt0ykhvYKUJvZIExNPUKxOM3U+084KneU90Z7qbmP6e7nXiFCJO0L/0k2Z/9WpWiQGaOgaAqop0Yiqzs9dMt0VdXPzR1WSHBLCVHxLeUGxr5XTPptak+raVW9dnf/QTIWqvZ9zM3yqW9KAp1M0ZwdXh1bVsZwLu9I8yUddxA52sU/zPEITZ2ihrat8xgtejXNDGGNj8k01CrlmG7+W8fQFYpiRDw==</latexit>
+30→60%
+<latexit sha1_base64="ZQSvudp2+kz6k9OYoMIGe/JXx10=">AAACyHicjVHLSsNAFD3GV62vqks3wVJwFSatRruRohtxVcFWwRZJ0mkdTJOQTJRS3PgDbvXLxD/Qv/DOmIIuik5Icufcc87MvdeLA5FKxt5njNm5+YXFwlJxeWV1bb20sdlOoyzxecuPgii58tyUByLkLSlkwK/ihLtDL+CX3t2Jyl/e8yQVUXghRzHvDt1BKPrCdyVBrSOHdSo3pTKzWN05dPZNZlXrNrMdCmp7tf1q3bQtplcZ+WpGpTd00EMEHxmG4AghKQ7gIqXnGjYYYsK6GBOWUCR0nuMRRdJmxOLEcAm9o++Adtc5GtJeeaZa7dMpAb0JKU1USBMRL6FYnWbqfKadFTrNe6w91d1G9PdyryGhEreE/qWbMP+rU7VI9HGoaxBUU6wRVZ2fu2S6K+rm5o+qJDnEhKm4R/mEYl8rJ302tSbVtaveujr/oZkKVXs/52b4VLekAU+maE4P2lXLdiznfK/cOM5HXcA2drBL8zxAA6dookXeAs94watxZsTGgzH6phozuWYLv5bx9AVZi5Cs</latexit>
+>60%
+0% 20% 40% 60% 80% 0 25 50 75 1000% 20% 40% 60% 80% 100%
+<latexit sha1_base64="GIf6UeWvabe9BQ6S90l8FsocaNU=">AAACxnicjVHLSsNAFD2Nr1pfVZdugkVwFZLWthFcFN10WdE+oBZJ0mkNzYtkopQi+ANu9dPEP9C/8M6Ygi6KTkhy59xzzsy91448N+G6/p5TlpZXVtfy64WNza3tneLuXicJ09hhbSf0wrhnWwnz3IC1ucs91otiZvm2x7r25ELku/csTtwwuObTiA18axy4I9exOEFXZ5XqbbGka6f1arlqqLpm6vWqWaagblb0iqEami5XCdlqhcU33GCIEA5S+GAIwCn2YCGhpw8DOiLCBpgRFlPkyjzDIwqkTYnFiGEROqHvmHb9DA1oLzwTqXboFI/emJQqjkgTEi+mWJymynwqnQW6yHsmPcXdpvS3My+fUI47Qv/SzZn/1YlaOEYwZQ0u1RRJRFTnZC6p7Iq4ufqjKk4OEWEiHlI+ptiRynmfValJZO2it5bMf0imQMXeybgpPsUtacDzKaqLg05ZM2pa7fKk1DjPRp3HAQ5xTPOso4EmWmiT9xjPeMGr0lQCJVUevqlKLtPs49dSnr4A3rSQGQ==</latexit>
+<35
+<latexit sha1_base64="AWpNMXMAh3ycT18tXAw8cngP/X8=">AAACyHicjVHLTsMwEBzC+13gyCWiQuJC5JRAyw3BBXECiQJSQShxXbCaJpHjgCrEhR/gCl+G+AP4C9YmleBQgaMk69mZsXc3ymKZa8beR5zRsfGJyanpmdm5+YXFytLyWZ4WiosmT+NUXURhLmKZiKaWOhYXmRJhL4rFedQ9MPnzO6FymSanup+Jq154k8iO5KEmqLm1vVln15Uq83ZZI/B3XeYFDb8WBCbwt+q1bdf3mF1VlOs4rbzhEm2k4CjQg0ACTXGMEDk9LfhgyAi7wgNhiiJp8wKPmCFtQSxBjJDQLn1vaNcq0YT2xjO3ak6nxPQqUrpYJ01KPEWxOc21+cI6G3SY94P1NHfr0z8qvXqEatwS+pduwPyvztSi0UHD1iCppswipjpeuhS2K+bm7o+qNDlkhJm4TXlFMbfKQZ9dq8lt7aa3oc1/WKZBzZ6X3AKf5pY04MEU3eHBWc3zd7ydk6C6t1+OegqrWMMGzbOOPRziGE3ylnjGC16dIydz7p3+N9UZKTUr+LWcpy/w85CA</latexit>
+35→70
+<latexit sha1_base64="wUA8NQkQPRcQinPY0li8OD+1Btk=">AAACxnicjVHLTsJAFD3UF+ILdemmkZi4alpEChtDdMMSozwSJKYtAzb0lXaqIcTEH3Crn2b8A/0L74wl0QXRadreOfecM3PvtSPPTbiuv+eUpeWV1bX8emFjc2t7p7i710nCNHZY2wm9MO7ZVsI8N2Bt7nKP9aKYWb7tsa49uRD57j2LEzcMrvk0YgPfGgfuyHUsTtDVmanfFku6VtXNSrmi6pphlmtmXQTlunl6ohqaLlcJ2WqFxTfcYIgQDlL4YAjAKfZgIaGnDwM6IsIGmBEWU+TKPMMjCqRNicWIYRE6oe+Ydv0MDWgvPBOpdugUj96YlCqOSBMSL6ZYnKbKfCqdBbrIeyY9xd2m9LczL59QjjtC/9LNmf/ViVo4RqjJGlyqKZKIqM7JXFLZFXFz9UdVnBwiwkQ8pHxMsSOV8z6rUpPI2kVvLZn/kEyBir2TcVN8ilvSgOdTVBcHnbJmVLXqZaXUOM9GnccBDnFM8zTRQBMttMl7jGe84FVpKoGSKg/fVCWXafbxaylPX+dUkB0=</latexit>
+>70
+Low 27%  Medium 45.4%  High 27.6%
+100% 0 250 500 750 1000
+<latexit sha1_base64="MCT9mN7y+/Et9zC1II10CF+X2WY=">AAACx3icjVHLTsJAFD3UF+ILdemmkZi4IlNQ6MIF0Y3uMBEkQWLaMkBDX2mnREJc+ANu9c+Mf6B/4Z2xJLogOk3bM+fec2buvXbkuYlg7D2nLS2vrK7l1wsbm1vbO8XdvXYSprHDW07ohXHHthLuuQFvCVd4vBPF3PJtj9/a4wsZv53wOHHD4EZMI97zrWHgDlzHEpI6qzJ2XyyxslmtGXVTJ2BWjFNGoG7UDZPpRpmpVUK2mmHxDXfoI4SDFD44AgjCHiwk9HRhgCEirocZcTEhV8U5HlEgbUpZnDIsYsf0HdKum7EB7aVnotQOneLRG5NSxxFpQsqLCcvTdBVPlbNkF3nPlKe825T+dublEyswIvYv3TzzvzpZi8AApqrBpZoixcjqnMwlVV2RN9d/VCXIISJO4j7FY8KOUs77rCtNomqXvbVU/ENlSlbunSw3xae8JQ14PkV9MWhXykatXLs+KTXOs1HncYBDHNM862jgEk20yHuEZ7zgVbvSQm2iPXynarlMs49fS3v6AmtDkE4=</latexit>
+<300
+<latexit sha1_base64="cd6hstcemS0XJaN78a2gbU0UcNQ=">AAACynicjVHLTsJAFD3UF+ILdemmkZi4sZmKFNgR3bhwgYmAiRLTllEbSttMpyaEuPMH3OqHGf9A/8I7Y0l0QXSatnfOPefM3Hu9JAxSydh7wZibX1hcKi6XVlbX1jfKm1vdNM6Ezzt+HMbi0nNTHgYR78hAhvwyEdwdeSHvecMTle89cJEGcXQhxwnvj9y7KLgNfFcS1KsydlBn7KZcYVbtsGHbjsksx6k16iqoMqdpN03bYnpVkK92XH7DNQaI4SPDCBwRJMUhXKT0XMEGQ0JYHxPCBEWBznM8okTajFicGC6hQ/re0e4qRyPaK89Uq306JaRXkNLEHmli4gmK1WmmzmfaWaGzvCfaU91tTH8v9xoRKnFP6F+6KfO/OlWLxC0auoaAako0oqrzc5dMd0Xd3PxRlSSHhDAVDygvKPa1ctpnU2tSXbvqravzH5qpULX3c26GT3VLGvB0iubsoHto2Y7lnB9VWsf5qIvYwS72aZ51tHCKNjq6yme84NU4M4QxNibfVKOQa7bxaxlPXzQ6kPw=</latexit>
+300→700
+<latexit sha1_base64="CYiWfhpUJonXL65hYA/Sg3R4FsY=">AAACx3icjVHLSsNAFD2Nr/quunQTLIKrMKnRdiVFN7qrYFXQIkkc29A0EyYTsRQX/oBb/TPxD/QvvDOmoIuiE5LcOfecM3PvDdI4yhRj7yVranpmdq48v7C4tLyyWllbP89ELkPeDkUs5GXgZzyOEt5WkYr5ZSq5PwhifhH0j3T+4p7LLBLJmRqmvDPwu0l0F4W+0tBBnbGbSpU5Na/BvD2bObte3WMuBS5zdxvMdh1mVhXFaonKG65xC4EQOQbgSKAojuEjo+cKLhhSwjoYESYpikye4xELpM2JxYnhE9qnb5d2VwWa0F57ZkYd0ikxvZKUNrZJI4gnKdan2SafG2eNTvIeGU99tyH9g8JrQKhCj9C/dGPmf3W6FoU7NEwNEdWUGkRXFxYuuemKvrn9oypFDilhOr6lvKQ4NMpxn22jyUzture+yX8Ypkb1Piy4OT71LWnA4ynak4PzmuPuO/unXrV5WIy6jE1sYYfmWUcTx2ihTd49POMFr9aJJax76+GbapUKzQZ+LevpCz2AkDo=</latexit>
+>700
+<latexit sha1_base64="8c2h3A6eY8GAv3FBYOGrhDTanno=">AAACyHicjVHLSsQwFD1TX+N71KWb4iC4KqmPcQouBt2IqxGsCirSxqjBTlvSVBnEjT/gVr9M/AP9C29iB3QhmtL25txzTnLvjfNEFpqxt5ozNDwyOlYfn5icmp6ZbczNHxZZqbgIeZZk6jiOCpHIVIRa6kQc50pEvTgRR/HNjskf3QpVyCw90P1cnPWiq1ReSh5pgsItnzF23mgybzPw20HLZV47YOv+hgkYC/w11/eYXU1Uq5s1XnGKC2TgKNGDQApNcYIIBT0n8MGQE3aGe8IURdLmBR4wQdqSWIIYEaE39L2i3UmFprQ3noVVczoloVeR0sUyaTLiKYrNaa7Nl9bZoL9531tPc7c+/ePKq0eoxjWhf+kGzP/qTC0al2jbGiTVlFvEVMcrl9J2xdzc/VaVJoecMBNfUF5RzK1y0GfXagpbu+ltZPPvlmlQs+cVt8SHuSUNeDBF9/fgcNXzW15rf73Z2a5GXccilrBC89xEB7voIiRviSc848XZc3Lnzul/UZ1apVnAj+U8fgIPmJCN</latexit>
+<1000
+<latexit sha1_base64="H6nh54QTkZecw5hOpctZo0OS9ss=">AAACyHicjVHLTsMwEBzCq5RXgSOXiAqJU2TzKOSCKrggTkWigAQVSlIDVvNS4oCqigs/wBW+DPEH8BesTSrBoQJbcdazM2Ov109DmSvG3ses8YnJqenKTHV2bn5hsba0fJYnRRaIdpCESXbhe7kIZSzaSqpQXKSZ8CI/FOd+71Dnz+9FlsskPlX9VHQi7zaWNzLwFEHtfc4Yu67VmcO3Gy7nNnO2dmi6FHCXuzvM5g4zo45ytJLaG67QRYIABSIIxFAUh/CQ07wEB0NKWAcDwjKKpMkLPKJK2oJYghgeoT1ab2l3WaIx7bVnbtQBnRLSl5HSxjppEuJlFOvTbJMvjLNGR3kPjKe+W5/+fukVEapwR+hfuiHzvzpdi8IN9kwNkmpKDaKrC0qXwryKvrn9oypFDilhOu5SPqM4MMrhO9tGk5va9dt6Jv9hmBrV+6DkFvjUt6QGD7tojw7ONh3ecBon2/XmQdnqClaxhg3q5y6aOEILbfKWeMYLXq1jK7UerP431RorNSv4NaynL/VykII=</latexit>
+>1000
+Figure 3: Overview of(a)the held-out datasets and(b)a sample of 500 pre-training datasets. In (b),
+the sample size is replaced by the context (train) set size (see Section 5).
+MAE-Hinge.We use absolute error for event times and a one-sided hinge error for censored times:
+MAEHinge = 1
+n
+nX
+i=1
+
+δi|ti − ˆti|+ (1−δ i) max(0, ti − ˆti)
+
+,
+whereδ i indicates an observed event and ˆti is the predicted median survival time. For censored
+individuals, only predictions earlier than the censoring time are penalized.
+KM-Calibration.We assess marginal calibration with the normalized integrated squared error,
+in[0,1], between the average predicted survival curve 1
+Ntest
+P
+i bS(t|x i)and the Kaplan–Meier
+curve of the test set (Chapfuwa et al., 2020).
+6.2 BASELINES: FROMCOX TOFOUNDATIONMODELS
+All models are described in more detail in Appendix B.1, we refer to Table 3 for a synthetic overview.
+Shallow models.We include Cox model (Cox, 1972) and KM estimator (Kaplan and Meier, 1958)
+as baselines. The latter does not use covariates, and hence any model is expected to outperform it.
+Deep Networks.We include five deep networks tailored for survival analysis (Lee et al., 2018;
+Katzman et al., 2018; Nagpal et al., 2021; Rindt et al., 2022; Kirpichenko et al., 2026). These
+models are fitted on each dataset and use various modeling techniques (from Bayesian prior to a
+MLP that predicts the survival function at different times).
+Tree-Based Models.Following the seminal work of Ishwaran et al. (2008) on random survival
+forests (RSF) and Grinsztajn et al. (2022), a body of work has adapted tree-based methods to survival
+analysis. On top of RSF, we evaluate SurvivalBoost (Alberge et al., 2024) and alternative gradient-
+boosted tree-based methods implemented insksurv(P ¨olsterl, 2020).
+Tabular Foundation Models (TFMs).We include four open-weight tabular foundation models in
+our benchmark: SurvPFN (B ¨ohm et al., 2026), SurvivalPFN (Qi et al., 2026), Survival-IC (SIC)
+(Seletkov et al., 2026) and TFM4Survival (Kim et al., 2026).
+6.3 DATASETS ANDHOLD-OUTPROTOCOL
+In total, we consider 103 datasets with varying properties, see Figure 3. The datasets are partitioned
+into 40 development datasets used during model development and 63 held-out datasets at random.
+For development, we source 2 PyCox (Kvamme et al., 2019), 25 SurvSet (Drysdale, 2022), one from
+a challenge and 12 cBioPortal (Cerami et al., 2012; Gao et al., 2013; De Bruijn et al., 2023) datasets.
+For held-out datasets, we use 6 from Pycox, 39 from SurvSet and 18 datasets from cBioPortal.
+Protocol.All design choices of SurvICL (prior, target, and checkpoint) were made using the 40
+development datasets; the 63 held-out datasets were kept for the final evaluation. We evaluated
+each method over ten event-stratified 80/20 train–test splits (test sets capped at 4,096 observations).
+7
+
+Preprint.
+(a)IBS
+51015
+SurvICL (4.4)
+Cox (6.7)
+SurvivalBoost (6.7)
+RSF (6.8)
+sksurv GBS (C-index) (7.8)
+sksurv GBS (Cox) (8.4)
+DSM (9.0)
+DeepSurv* (9.6)
+SurvivalPFN* (9.7)
+SurvPFN (10.2)
+DeepHit (18.4)
+T abSurv-WAS (15.9)
+Kaplan-Meier (14.8)
+TFM4Survival: T abICL* (14.6)
+T abSurv-WSA (13.8)
+T abSurv-RealMLP (13.6)
+T abSurv (12.8)
+SumoNet (12.8)
+T abSurv-MLP (12.8)
+SIC (11.4)
+TFM-Survival (10.5)
+(b)C-index att 50
+5101520
+SurvICL (5.5)
+RSF (6.7)
+Cox (7.8)
+sksurv GBS (C-index) (8.5)
+T abSurv-WSA (8.8)
+SIC (9.3)
+SurvivalBoost (9.6)
+sksurv GBS (Cox) (10.1)
+T abSurv (10.1)
+T abSurv-WAS (10.4)
+Kaplan-Meier (20.6)
+DeepHit (17.7)
+DeepSurv* (13.1)
+SumoNet (12.9)
+SurvivalPFN* (12.0)
+TFM4Survival: T abICL* (11.7)
+DSM (11.4)
+T abSurv-MLP (11.4)
+T abSurv-RealMLP (11.4)
+TFM-Survival (11.3)
+SurvPFN (10.7)
+ACH
+AFT
+(heterogeneous)
+AFT (homogeneous)
+AH
+Cox
+Cox + AFT
+Grand mixture
+Law
+PO prior
+Quantile
+SIC
+SurvivalPFN
+SurvPFN
+Transform
+Survival
+family
+Off
+On
+Discretization
+Off
+On
+Administrative
+censoring
+1
+5
+20
+Labels /
+sample
+99
+999
+Quantile heads
+Event-only targets
++ censoring head
+PriorTraining
+70 80 90
+Min max normalized IBS
+(  better)
+77.9
+84.6
+82.6
+80.3
+77.6
+79.4
+84.0
+78.5
+88.5
+84.8
+83.7
+82.7
+79.0
+83.8
+88.5
+85.5
+88.5
+85.1
+88.5
+84.2
+85.0
+88.5
+87.2
+88.5
+81.0
+(c)Ablations
+Figure 4:(a, b)Critical difference diagrams of average ranks on all held-out datasets (lower is
+better), for IBS and C-index at the median horizont 50; methods joined by a bar are not significantly
+different.(c)Ablations of prior and training choices, by min–max normalized IBS (higher is better).
+Baseline hyperparameters were selected using a budget of up to 50 random search steps per dataset,
+minimizing the integrated Brier score on an event-stratified 80/20 split within the seed-0 training
+partition. The selected configuration was reused across all ten evaluation splits, with each esti-
+mator refitted on the corresponding training split. Methods without tunable hyperparameters were
+evaluated directly. Search spaces and method-specific budgets are detailed in Appendix B.1. Cox
+regression uses anℓ 2 penalty to regularize estimation, including whenp > n.
+SurvICL uses each dataset’s training split as context, with at most 4,096 labeled observations se-
+lected by event-stratified subsampling, without fine-tuning or dataset-specific hyperparameter tun-
+ing. Benchmark results for all methods and metrics are in Appendix D. Baseline runtimes measure
+fitting and survival-curve prediction, excluding hyperparameter search and metric computation.
+6.4 RESULTS: SURVICL ISBESTOVERALL
+SurvICL is the best survival model overall.On the 63 held-out datasets, SurvICL wins 82.9% of
+pairwise comparisons in IBS, against 71.3% for the runner-up, the Cox model (Figure 1), and the dif-
+ference is statistically significant (Figure 4a, ranks and winrates are related by an affine transform).
+It also achieves the highest win rate in C-index, 77.7% against 71.6% for random survival forests
+(Figures 4b and 12). All existing survival TFMs trail behind classical methods. That the runners-up
+are the Cox model and random survival forests, with few parameters and strong inductive biases,
+underlines how hard survival analysis is for flexible models, which overfit small censored datasets.
+SurvICL is the first model to rank above Cox on small datasets.69.8% of our held-out datasets
+have fewer than 1,000 samples, making this regime central and not a niche. SurvICL is the first to
+rank above Cox in IBS (win rate 84.9% against 77.2%, Figure 23) and it matches Cox in C-index,
+although these differences are not statistically significant (Figures 22 and 26).
+On large datasets, boosting remains strongest.On held-out datasets with more than 1,000 sam-
+ples, SurvivalBoost is clearly the best method in IBS (Figure 37, 86.9% winrate). SurvICL ranks
+second in average IBS and first in C-index 50th quantile, ahead of TabSurv-WSA, RSF, and all other
+TFMs, although it wins fewer pairwise comparisons than on small datasets (Figure 38).
+8
+
+Preprint.
+Model Loss Continuous Time Prior Prediction Target
+SurvPFNNLL + ranking✓Weibull Observed times
+SurvivalPFNNLL✗Random MLP Latent event + censoring times
+Survival-ICDeepHit Loss✗EH Model Observed times
+TFM4SurvivalBCE✗ ✗Binary survival labels
+SurvICL(ours) Pinball Loss✓PO prior Latent event times
+Table 1: Major differences between existing survival TFMs and SurvICL. “Latent” targets are un-
+censored times generated by the prior, unobserved in real data.
+Performance-runtime trade-off.SurvICL lies on the Pareto frontier across C-index and IBS for all
+dataset-size regimes (Appendix D), and on the frontier for MAE in the small regime and all held-out
+datasets. SurvICL combines strong predictive performance with competitive runtime.
+Calibration and time accuracy.SurvICL is among the best-calibrated methods: its average KM-
+calibration rank (6.0) trails only the KM estimator (4.3), the Cox model (5.0), DeepSurv (5.6) and
+sksurv GBS-Cox (5.9) (Figure 15). Both KM and the Breslow baseline hazard of the Cox model
+enforce calibration by construction. In MAE, SurvICL is close to Survival-IC and slightly behind
+SurvivalPFN, without statistically significant difference (Figure 18).
+What makes SurvICL work.Figure 4c ablates design choices on development datasets with a
+shallower model trained for 10K steps, cf. Appendix C for more details. The prior has a substantial
+impact on performance: by keeping the exact same architecture and only changing the generation
+process, ourproportional-odds prioroutperforms Cox (77.6) and mixed priors (84.0). Compared to
+the prior of the other TFMs, our prior yields better results than SurvPFN (79.0), SurvivalPFN (82.7),
+and SIC (83.7). This demonstrates that our prior is highly effective, while adding a censoring-time
+prediction head actually reduces performance (81.0). Administrative censoring and time discretiza-
+tion have limited effects at this scale; we retain them to represent study-end censoring and finite
+temporal resolution. The final model uses999quantiles for finer resolution, despite a small advan-
+tage for99in the ablation (88.5versus87.2).
+7 DISCUSSION ANDCONCLUSION
+Designing Efficient Survival TFMs.SurvICL differs from existing survival TFMs along three axes
+(Table 1).Output and supervision.Unlike previous survival TFMs that rely on discrete time bins
+such as TFM4Survival (Kim et al., 2026) and SurvivalPFN (Qi et al., 2026), which use classification
+or likelihood losses over time bins, SurvPFN (B ¨ohm et al., 2026) uses a censored likelihood with
+a ranking term over 1,000 bins, and Survival-IC (Seletkov et al., 2026) uses the DeepHit loss (Lee
+et al., 2018) over 10 bins. SurvICL is the first to output a continuous quantile function. Quantile
+outputs are not new per se: TabICLv2 (Qu et al., 2026) uses a pinball loss for regression, and
+censored quantile regression (Portnoy, 2003; Pearce et al., 2022) modifies this loss to account for
+censoring. With latent-time supervision, no such modification is needed, as censoring is handled by
+the prior. SurvivalPFN also supervises with latent times, but over a time grid and with censoring
+times as an additional target, which our ablations show to be detrimental.Prior.SurvivalPFN draws
+times from random noised neural networks with several censoring mechanisms, SurvPFN draws
+Weibull times from a risk score and a dataset-specific shape, and Survival-IC mixes an extended
+hazard and a discrete-time model, with covariate-independent and administrative censoring. Our
+PO prior instead combines a flexible, multi-modal baseline hazard with a random risk function, for
+both event and censoring times; in our ablations, it outperforms the SurvPFN prior as well as Cox
+and AFT priors.Backbone and evaluation.Like Survival-IC, built on TabICL (Qu et al., 2025), we
+reuse an existing architecture, TabICLv2, which is not our contribution. Finally, we provide, to our
+knowledge, the first comparison of all four survival TFMs, on 63 datasets.
+Implications.On the small cohorts that dominate clinical research, SurvICL is the first model
+to rank above the Cox model, the default of practitioners for half a century, without any training
+or tuning, while remaining among the best-calibrated methods. This makes foundation models a
+credible default for survival analysis.
+9
+
+Preprint.
+Limitations and outlook.On the largest datasets, gradient boosting remains slightly stronger, call-
+ing for longer contexts or light fine-tuning. Baseline hyperparameters are tuned on the first split
+and reused across splits; as tuning data then overlaps other splits’ test sets, this protocol, if any-
+thing, favors the baselines. SurvICL addresses right-censored, single-event data; competing risks
+and time-varying covariates are natural extensions of the prior. We release our code and models to
+foster research on foundation models for time-to-event data.
+10
+
+Preprint.
+ACKNOWLEDGEMENTS
+LB and JAl thank Julie Josse and Charlotte V oinot for helpful discussions on survival analysis. We
+thank F´elix Lefebvre and Farouk Yartaoui for inspiring our figure design.
+Part of this research was conducted while LB was at EPFL (Schools of Computer and Commu-
+nication Sciences and School of Life Sciences). His research was funded by an EPFL AI Center
+Postdoctoral Fellowship. DH and JAl acknowledge HPC resources from GENCI–IDRIS (Grant
+2024-AD011014864R2 and AD011017641 respectively). DH thanks Probabl for providing Claude
+API access. JAl, JAb, and GV acknowledge funding from the European Union’s Horizon Europe
+research and innovation program under grant agreement No 1010954433 (Intercept-T2D). GV ac-
+knowledges support from ANR via grant TaFoMo (ANR-25-CE23-1822). MLM acknowledges
+support from ANR via the grant StatQA (ANR-25-CE23-5646). This work is partly supported by
+Hi! PARIS and ANR/France 2030 program (ANR-23-IACL-0005).
+AIUSE STATEMENT
+In this work, we used generative AI tools to generate synthetic data sets, design or provide feedback
+on research methodology or experiments, implement methods, draft preliminary plots and provide
+feedback on research methodology or experiments. We have not used generative AI tools to help
+develop theoretical models or conceptual frameworks, formulate mathematical claims, assist with
+translation, clean and reformat datasets, support qualitative and thematic data analysis, and interpret
+results. The categories provide critical ingredients for proving mathematical claims, assist in the
+writing of proofs, propose or refine hypotheses are not applicable to this work.
+Additionally, we used generative AI tools to create or modify scientific figures or images, suggest
+experimental parameters, create or edit software code, and to brainstorm and source and search for
+information.
+We have reviewed all AI-assisted work. The paper has been proofread by all authors. We take
+responsibility for the final content of this work, including text, claims or artifacts produced with the
+aid of generative AI.
+REPRODUCIBILITY STATEMENT
+The codebase, dataset preprocessing files, and model checkpoints will be released in a few weeks.
+11
+
+Preprint.
+REFERENCES
+Julie Alberge, Vincent Maladi `ere, Olivier Grisel, Judith Ab ´ecassis, and Ga ¨el Varoquaux. Survival
+models: Proper scoring rule and stochastic optimization with competing risks.arXiv preprint
+arXiv:2410.16765, 2024.
+Julie Alberge, Tristan Haugomat, Ga ¨el Varoquaux, and Judith Ab ´ecassis. On the calibration of
+survival models with competing risks.arXiv preprint arXiv:2602.00194, 2026.
+Vahid Balazadeh, Hamidreza Kamkari, Valentin Thomas, Benson Li, Junwei Ma, Jesse C. Cress-
+well, and Rahul G. Krishnan. CausalPFN: Amortized causal effect estimation via in-context
+learning. InAdvances in Neural Information Processing Systems (NeurIPS), 2025.
+Linus Bleistein, Van-Tuan Nguyen, Adeline Fermanian, and Agathe Guilloux. Dynamical survival
+analysis with controlled latent states.arXiv preprint arXiv:2401.17077, 2024.
+Samuel B¨ohm, Lennart Purucker, Frank Hutter, and Pascal Schlosser. Survpfn: Towards foundation
+models for survival predictions.arXiv preprint arXiv:2606.04564, 2026.
+Ethan Cerami, Jianjiong Gao, Ugur Dogrusoz, Benjamin E Gross, Selcuk Onur Sumer, B ¨ulent Ar-
+man Aksoy, Anders Jacobsen, Caitlin J Byrne, Michael L Heuer, Erik Larsson, et al. The cbio
+cancer genomics portal: an open platform for exploring multidimensional cancer genomics data.
+Cancer discovery, 2(5):401–404, 2012.
+Paidamoyo Chapfuwa, Chenyang Tao, Chunyuan Li, Irfan Khan, Karen J. Chandross, Michael J.
+Pencina, Lawrence Carin, and Ricardo Henao. Calibration and uncertainty in neural time-to-event
+modeling.IEEE Transactions on Neural Networks and Learning Systems, 2020.
+David R Cox. Regression models and life-tables.Journal of the royal statistical society: Series B
+(methodological), 34(2):187–202, 1972.
+R De Angelis, R Capocaccia, T Hakulinen, B Soderman, and A Verdecchia. Mixture models for can-
+cer survival analysis: application to population-based data with covariates.Statistics in medicine,
+18(4):441–454, 1999.
+Ino De Bruijn, Ritika Kundra, Brooke Mastrogiacomo, Thinh Ngoc Tran, Luke Sikina, Tali Mazor,
+Xiang Li, Angelica Ochoa, Gaofei Zhao, Bryan Lai, et al. Analysis and visualization of longitu-
+dinal genomic and clinical data from the aacr project genie biopharma collaborative in cbioportal.
+Cancer research, 83(23):3861–3867, 2023.
+Jiayuan Ding, Jianhui Lin, Shiyu Jiang, Yixin Wang, Ziyang Miao, Zhaoyu Fang, Jiliang Tang, Min
+Li, and Xiaojie Qiu. Tabula: A tabular self-supervised foundation model for single-cell tran-
+scriptomics. InThe Thirty-ninth Annual Conference on Neural Information Processing Systems,
+2025.
+Erik Drysdale. SurvSet: An open-source time-to-event dataset repository.arXiv preprint
+arXiv:2203.03094, 2022.
+Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzm¨uller, Prateek Desai, David Sali-
+nas, and Frank Hutter. TabArena: A living benchmark for machine learning on tabular data.
+Advances in Neural Information Processing Systems, 38, 2025.
+Marco Fornili, Federico Ambrogi, Patrizia Boracchi, and Elia Biganzoli. Piecewise exponential
+artificial neural networks (peann) for modeling hazard function with right censored data. InIn-
+ternational Meeting on Computational Intelligence Methods for Bioinformatics and Biostatistics,
+pages 125–136. Springer, 2013.
+Stephane Fotso. Deep neural networks for survival analysis based on a multi-task framework.arXiv
+preprint arXiv:1801.05512, 2018.
+Michael Friedman. Piecewise exponential models for survival data with covariates.The Annals of
+Statistics, 10(1):101–113, 1982.
+12
+
+Preprint.
+Jianjiong Gao, B ¨ulent Arman Aksoy, Ugur Dogrusoz, Gideon Dresdner, Benjamin Gross, S Onur
+Sumer, Yichao Sun, Anders Jacobsen, Rileen Sinha, Erik Larsson, et al. Integrative analysis of
+complex cancer genomics and clinical profiles using the cbioportal.Science signaling, 6(269):
+pl1–pl1, 2013.
+Pierre Geurts, Damien Ernst, and Louis Wehenkel. Extremely randomized trees.Machine learning,
+63(1):3–42, 2006.
+Mark Goldstein, Xintian Han, Aahlad Puli, Adler Perotte, and Rajesh Ranganath. X-cal: Explicit
+calibration for survival analysis.Advances in neural information processing systems, 33:18296–
+18307, 2020.
+Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. Revisiting deep learning
+models for tabular data.Advances in neural information processing systems, 34:18932–18943,
+2021.
+L´eo Grinsztajn, Edouard Oyallon, and Ga¨el Varoquaux. Why do tree-based models still outperform
+deep learning on typical tabular data?Advances in neural information processing systems, 35:
+507–520, 2022.
+L´eo Grinsztajn, Klemens Fl ¨oge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Benjamin
+J¨ager, Dominik Safaric, Simone Alessi, Adrian Hayler, Mihir Manium, Rosen Yu, Felix Jablonski,
+Shi Bin Hoo, Anurag Garg, Jake Robertson, Magnus B ¨uhler, Vladyslav Moroshan, Lennart Pu-
+rucker, Clara Cornu, Lilly Charlotte Wehrhahn, Alessandro Bonetto, Bernhard Sch¨olkopf, Sauraj
+Gambhir, Noah Hollmann, and Frank Hutter. Tabpfn-2.5: Advancing the state of the art in tabular
+foundation models, 2025. URLhttps://arxiv.org/abs/2511.08667.
+Noah Hollmann, Samuel M¨uller, Katharina Eggensperger, and Frank Hutter. TabPFN: A transformer
+that solves small tabular classification problems in a second. InInternational Conference on
+Learning Representations, 2023.
+Noah Hollmann, Samuel M¨uller, Lennart Purucker, Arjun Krishnakumar, Max K¨orfer, Shi Bin Hoo,
+Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data with a tabular
+foundation model.Nature, 01 2025. doi: 10.1038/s41586-024-08328-6. URLhttps://www.
+nature.com/articles/s41586-024-08328-6.
+A Indrayan and A Mishra. The importance of small samples in medical research.Journal of Post-
+graduate Medicine, 67(4):219–223, 2021.
+Hemant Ishwaran, Udaya B. Kogalur, Eugene H. Blackstone, and Michael S. Lauer. Random sur-
+vival forests.The Annals of Applied Statistics, 2(3):841 – 860, 2008. doi: 10.1214/08-AOAS169.
+URLhttps://doi.org/10.1214/08-AOAS169.
+Vincent Jeanselme, Nikita Agarwal, and Chen Wang. Review of language models for survival
+analysis. InAAAI 2024 Spring Symposium on Clinical Foundation Models, 2024.
+Edward L Kaplan and Paul Meier. Nonparametric estimation from incomplete observations.Journal
+of the American statistical association, 53(282):457–481, 1958.
+Jared L Katzman, Uri Shaham, Alexander Cloninger, Jonathan Bates, Tingting Jiang, and Yuval
+Kluger. Deepsurv: personalized treatment recommender system using a cox proportional hazards
+deep neural network.BMC medical research methodology, 18(1):24, 2018.
+Da In Kim, Wei Siang Lai, and Kelly W Zhang. Tabular foundation models can do survival analysis.
+arXiv preprint arXiv:2601.22259, 2026.
+Myung Jun Kim, F ´elix Lefebvre, Ga ¨etan Brison, Alexandre Perez-Lebel, and Ga ¨el Varoquaux.
+Table foundation models: on knowledge pre-training for tabular learning.arXiv preprint
+arXiv:2505.14415, 2025.
+Stanislav Kirpichenko, Andrei Konstantinov, and Lev Utkin. Tabsurv: Adapting modern tabular
+neural networks to survival analysis.arXiv preprint arXiv:2605.03944, 2026.
+13
+
+Preprint.
+David G. Kleinbaum and Mitchel Klein.Survival Analysis: A Self-Learning Text. Statistics for
+Biology and Health. Springer, New York, NY , 2012.
+H˚avard Kvamme and Ørnulf Borgan. Continuous and discrete-time survival prediction with neural
+networks.Lifetime data analysis, 27(4):710–736, 2021.
+H˚avard Kvamme, Ørnulf Borgan, and Ida Scheel. Time-to-event prediction with neural networks
+and cox regression.Journal of machine learning research, 20(129):1–30, 2019.
+Changhee Lee, William Zame, Jinsung Yoon, and Mihaela Van Der Schaar. Deephit: A deep learn-
+ing approach to survival analysis with competing risks. InProceedings of the AAAI Conference
+on Artificial Intelligence, volume 32, 2018.
+Yunzhe Li, Juhee Lee, and Athanasios Kottas. Bayesian nonparametric erlang mixture modeling for
+survival analysis.Computational Statistics & Data Analysis, 191:107874, 2024.
+Christian Marius Lillelund, Shi-ang Qi, Russell Greiner, and Christian Fischer Pedersen. Stop
+chasing the c-index: This is how we should evaluate our survival models.arXiv preprint
+arXiv:2506.02075, 2025.
+Yue Lyu, Steven H. Lin, Xuelin Huang, and Ziyi Li. SurvFM enables tabular foundation models for
+right-censored survival prediction.arXiv preprint arXiv:2607.09577, 2026.
+Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Alex Labach, Jesse Cresswell, Keyvan Golestan,
+Guangwei Yu, Anthony L Caterini, and Maks V olkovs. TabDPT: Scaling tabular foundation
+models on real data. InAdvances in Neural Information Processing Systems, 2025a.
+Yuchen Ma, Dennis Frauen, Emil Javurek, and Stefan Feuerriegel. Foundation models for causal
+inference via prior-data fitted networks.arXiv preprint arXiv:2506.10914, 2025b.
+David Machin, Yin Bun Cheung, and Mahesh Parmar.Survival analysis: a practical approach.
+John Wiley & Sons, 2006.
+Geoff J McLachlan and David C McGiffin. On the role of finite mixture models in survival analysis.
+Statistical methods in medical research, 3(3):211–226, 1994.
+Chirag Nagpal, Xinyu Li, and Artur Dubrawski. Deep survival machines: Fully parametric survival
+regression and representation learning for censored data with competing risks.IEEE Journal of
+Biomedical and Health Informatics, 25(8):3163–3175, 2021.
+Autumn O’Donnell, Michael Cronin, Shirin Moghaddam, and Eric Wolsztynski. A systematic re-
+view on machine learning techniques for survival analysis in cancer.Cancer Medicine, 14(22):
+e71375, 2025.
+Tim Pearce, Jong-Hyeon Jeong, Yichen Jia, and Jun Zhu. Censored quantile regression neural
+networks for distribution-free survival analysis. InAdvances in Neural Information Processing
+Systems (NeurIPS), 2022.
+Minh-Khoi Pham, Luca Cotugno, D. Cernei, Alina S ˆırbu, S. Masi, G. Prencipe, A. Pingitore,
+P. Landi, Tai Tan Mai, Martin Crane, and Marija Bezbradica. Adaptation interfaces for in-context
+tabular foundation models in time-to-event prediction.arXiv preprint arXiv:2609.04901, 2026a.
+Minh-Khoi Pham, Luca Cotugno, Alina S ˆırbu, Tai Tan Mai, Martin Crane, and Marija Bezbrad-
+ica. Tabular foundation models for clinical survival analysis via survival-aware adaptation. In
+International Conference on AI in Healthcare (AIiH), 2026b. arXiv:2606.12006.
+Sebastian P ¨olsterl. scikit-survival: A library for time-to-event analysis built on top of scikit-learn.
+Journal of Machine Learning Research, 21(212):1–6, 2020.
+Stephen Portnoy. Censored regression quantiles.Journal of the American Statistical Association,
+98(464):1001–1012, 2003.
+Shi-ang Qi, Weijie Sun, and Russell Greiner. Survivaleval: A comprehensive open-source python
+package for evaluating individual survival distributions. InProceedings of the AAAI Symposium
+Series, volume 2, pages 453–457, 2023.
+14
+
+Preprint.
+Shi-ang Qi, Vahid Balazadeh, Michael Cooper, Russell Greiner, and Rahul G Krishnan. Sur-
+vivalpfn: Amortizing survival prediction via in-context bayesian inference.arXiv preprint
+arXiv:2605.15488, 2026.
+Jingang Qu, David Holzm¨uller, Ga¨el Varoquaux, and Marine Le Morvan. Tabicl: A tabular founda-
+tion model for in-context learning on large data.arXiv preprint arXiv:2502.05564, 2025.
+Jingang Qu, David Holzm¨uller, Ga¨el Varoquaux, and Marine Le Morvan. Tabiclv2: A better, faster,
+scalable, and open tabular foundation model.arXiv preprint arXiv:2602.11139, 2026.
+David Rindt, Robert Hu, David Steinsaltz, and Dino Sejdinovic. Survival regression with proper
+scoring rules and monotonic neural networks. InInternational Conference on Artificial Intelli-
+gence and Statistics, 2022.
+Jake Robertson, Arik Reuter, Siyuan Guo, Noah Hollmann, Frank Hutter, and Bernhard Sch ¨olkopf.
+Do-pfn: In-context learning for causal effect estimation.arXiv preprint arXiv:2506.06039, 2025.
+Dmitrii Seletkov, Paul Hager, Georgios Kaissis, Rickmer Braren, Daniel Rueckert, and Raphael
+Rehms. Survival in-context: Amortized bayesian survival analysis via prior-fitted networks.arXiv
+preprint arXiv:2603.29475, 2026.
+Ethan Steinberg, Jason Fries, Yizhe Xu, and Nigam Shah. MOTOR: A time-to-event foundation
+model for structured medical records. InInternational Conference on Learning Representations
+(ICLR), 2024.
+Hans-Christian Thorsen-Meyer, Davide Placido, Benjamin Skov Kaas-Hansen, Anna P Nielsen,
+Theis Lange, Annelaura B Nielsen, Palle Toft, Jens Schierbeck, Thomas Strøm, Piotr J Chmura,
+et al. Discrete-time survival analysis in the critically ill: a deep learning approach using hetero-
+geneous data.NPJ digital medicine, 5(1):142, 2022.
+Mariana Vargas Vieyra. Staying alive: Uncensored survival analysis with tabular foundation models.
+arXiv preprint arXiv:2606.03689, 2026.
+Simon Wiegrebe, Philipp Kopper, Raphael Sonabend, Bernd Bischl, and Andreas Bender. Deep
+learning for survival analysis: a review.Artificial Intelligence Review, 57(3):65, 2024.
+Han-Jia Ye, Si-Yang Liu, Hao-Run Cai, Qi-Le Zhou, and De-Chuan Zhan. A closer look at deep
+learning methods on tabular datasets.arXiv preprint arXiv:2407.00956, 2024.
+Chun-Nam Yu, Russell Greiner, Hsiu-Chin Lin, and Vickie Baracos. Learning patient-specific can-
+cer survival distributions as a sequence of dependent regressors.Advances in neural information
+processing systems, 24, 2011.
+Xiyuan Zhang, Danielle C Maddix, Junming Yin, Nick Erickson, Abdul Fatir Ansari, Boran Han,
+Shuai Zhang, Leman Akoglu, Christos Faloutsos, Michael W Mahoney, et al. Mitra: Mixed
+synthetic priors for enhancing tabular foundation models.arXiv preprint arXiv:2510.21204, 2025.
+Yonghao Zhao, Changtao Li, Chi Shu, Qingbin Wu, Hong Li, Chuan Xu, Tianrui Li, Ziqiang Wang,
+Zhipeng Luo, and Yazhou He. Tackling small sample survival analysis via transfer learning: A
+study of colorectal cancer prognosis.Artificial Intelligence in Medicine, page 103426, 2026.
+Xinliang Zhu, Jiawen Yao, and Junzhou Huang. Deep convolutional neural network for survival
+analysis with pathological images. In2016 IEEE international conference on bioinformatics and
+biomedicine (BIBM), pages 544–547. IEEE, 2016.
+15
+
+Preprint.
+Appendices
+Contents
+A SurvICL model details 17
+A.1 Architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+A.2 Pretraining . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+A.3 Example of generated datasets . . . . . . . . . . . . . . . . . . . . . . . 18
+B Experimental Details 19
+B.1 Details on Baselines . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+B.2 Hyperparameter tuning . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+B.3 Issues for some methods . . . . . . . . . . . . . . . . . . . . . . . . . 23
+B.4 Details on Datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+C Ablations 26
+D Other Results 27
+D.1 All held-out datasets . . . . . . . . . . . . . . . . . . . . . . . . . . . 27
+D.2 Held-out datasets with less than 1000 samples . . . . . . . . . . . . . . . . 35
+D.3 Held-out datasets with more than 1000 samples . . . . . . . . . . . . . . . 43
+16
+
+Preprint.
+A SURVICLMODEL DETAILS
+A.1 ARCHITECTURE
+We build SurvICL on top of TabICLv2 (Qu et al., 2026), which is at the time of writing the leading
+fully open-source model on the TabArena benchmark (Erickson et al., 2025). While refer to the
+original paper for the details, the key components of the TabICLv2 architecture can be summarized
+as follows:
+•Preprocessing: First, some light preprocessing is applied, including ordinal encoding of
+categorical columns. After the preprocessing, the model receives a fully numerical table.
+•Target-aware embedding: The original covariates(x ij)∈R n×m are transformed into
+embeddings(z ij)∈R n×m×128 containing one embedding vectorz ij ∈R 128 per cell
+(i, j). Each embedding vector is obtained from an affine transformation applied to three
+cells in the same row (“repeated feature grouping”). An affine transformation of the target
+yi is added for the context set rows.
+•Column-wise embedding: Each columnjof the resulting embeddings is processed in-
+dependently using three induced self-attention blocks that allow interactions between dif-
+ferent rows in the same column, resulting in a complexity ofO(nm), which is linear in
+the number of rows, unlike a full Transformer. Crucially, the attention is designed to only
+retrieve information from the training set, meaning that predictions on test samples are
+independent of the other test samples.
+•Row-wise interaction: Next, three full transformer blocks allow different columns within
+a row to interact. Before these blocks, four extra columns with fixed values are appended,
+and after the blocks, the values of these four columns are concatenated and serve as row
+embeddings, while the other columns are discarded.
+•ICL transformer: After adding another embedding of the targets, the embeddings of each
+row interact via 12 regular transformer layers, again making sure that test samples cannot
+access other test samples.
+•Head: Finally, a multilayer perceptron (MLP) head transforms the output embeddings into
+999 quantile predictions (for regression).
+Overall, the TabICLv2 architecture has a runtime complexity ofO(n 2 +nm 2), and SurvICL pre-
+serves this complexity since it only modifies theO(nm)preprocessing and embedding parts. In
+addition, like other TFMs, we use ensembling, where the predictions of eight forward passes with
+different preprocessings and column permutations are averaged.
+Building on TabICLv2, we introduce the following adaptations to handle survival data:
+•Time normalization: We normalize observed times by their mean over the context set,
+yielding ˜ti =t i/¯t, where ¯tcontext is the mean duration of the observed times. This makes
+the time representation invariant to the choice of measurement units. During pre-training,
+both context and query sets are normalized and the mean¯tis taken across context and query
+set. During inference (after pre-training), the mean for ¯tis taken across the context set, and
+the predicted quantiles are transformed back to the original time scale.
+•Censoring-aware target embedding: We replace the scalar target embedding with a joint
+representation of the observed time and event indicator. Specifically, we sum the embed-
+ding of the continuous time ˜ti and a learned embedding of the binary indicatorδ i. This
+representation is added to every cell embedding in context rowi, allowing the column-wise
+encoder to distinguish observed events from censored observations.
+•Survival information at the ICL stage: We also encode( ˜ti, δi)using a separate pair
+of time and event-indicator embeddings whose sum matches the dimension of the row
+representation. This embedding is added to context row representations before the ICL
+transformer. At both embedding stages, survival outcomes are supplied only for context
+rows.
+•Survival prediction: The MLP head predicts quantiles of the conditional event-time dis-
+tribution, using a softplus transformation to ensure that the quantiles are positive. After
+17
+
+Preprint.
+restoring the original time scale and forcing the predicted quantiles to be monotonous by
+sorting them, we obtain an estimated cumulative distribution function by linear interpola-
+tion between quantile levels. The survival function is then given by
+bS(t|x) = 1− bF(t|x).
+Table 2: Backbone architecture and prior for SurvICL.
+Backbone
+Column-wise transformer 3 blocks, 8 heads, 128 inducing points, QSSMax attention
+Row-wise transformer 3 blocks, 8 heads, 4 CLS tokens
+In-context (ICL) transformer 12 blocks, 8 heads, QSSMax attention
+Max. sequence length (rows) 1024
+Max. features per dataset 100 (min. 1)
+Regression head Pinball / quantile, 999 quantile levels
+Target embedding Sum
+Duration rescaling Mean-duration
+Label draws per row 5
+Training steps 200,000
+Learning rate 0.0008
+Synthetic prior
+Prior generator GraphSCM (graph scm survival)
+Structural family Proportional odds (generation type po)
+Survival parameter range Wide
+Loss Pinball loss on death-time quantiles
+A.2 PRETRAINING
+We follow many of the pretraining settings from TabICLv2 but make the following modifications:
+• We omit the second and third stages of pretraining, which scale to larger datasets, since the
+second stage did not show improvements on our benchmark.
+• For computational reasons, we only train for 200K steps instead of 500K. Moreover, our
+pretraining consisted of two pretrainings for 100K steps each, meaning that the learning-
+rate schedule consisted of two 100K-steps schedules.
+• We generate pretraining datasets with 1024 samples each, of which a random fraction in
+[0.03,0.9]is used as context (train) and the rest as query (test) samples. We lowered the
+lower bound from0.3to0.03to cover the smaller datasets found in our benchmark.
+• We pretrain fully in 32-bit floats to avoid potential instabilities.
+A.3 EXAMPLE OF GENERATED DATASETS
+Figure 5 presents a diverse set of examples sampled from our final Proportional Odds (PO) prior.
+These datasets incorporate both administrative censoring and time discretization. In each subfigure:
+left and middle panels are histograms showing the observed events and censoring events over time
+while the right panel is the resulting Kaplan-Meier survival probability curve.
+18
+
+Preprint.
+Time
+Count
+Time
+Count
+Time
+Survival probability
+(a) Sample 1
+Time
+Count
+Time
+Count
+Time
+Survival probability (b) Sample 2
+Time
+Count
+Time
+Count
+Time
+Survival probability
+(c) Sample 3
+Time
+Count
+Time
+Count
+Time
+Survival probability (d) Sample 4
+Time
+Count
+Time
+Count
+Time
+Survival probability
+(e) Sample 5
+Time
+Count
+Time
+Count
+Time
+Survival probability (f) Sample 6
+Figure 5: Six generated datasets using our final PO prior, incorporating administrative censoring and
+time discretization. For each sample, we show the histogram of observed event (left), the censoring
+events (center), and the Kaplan-Meier curve (right).
+B EXPERIMENTALDETAILS
+B.1 DETAILS ONBASELINES
+B.1.1 USUAL METHODS
+Type Model Name Reference
+TFMSurvICLThis work
+SurvPFNB ¨ohm et al. 2026
+SurvivalPFNQi et al. 2026
+Survival-ICSeletkov et al. 2026
+TFM4SurvivalKim et al. 2026
+TreeSurvivalBoostAlberge et al. 2024
+Based GBC P ¨olsterl 2020
+RSFIshwaran et al. 2008
+DeepTabSurvKirpichenko et al. 2026
+NeuralSumoNetRindt et al. 2022
+NetDSMNagpal et al. 2021
+DeepSurvKatzman et al. 2018
+DeepHitLee et al. 2018
+Shallow Cox Cox 1972
+Model Kaplan-Meier Kaplan and Meier 1958
+Table 3: Overview of methods we consider
+in our experimental section.
+Those two methods are the most used in the medical
+setting.
+Kaplan-Meier Estimator (Kaplan and Meier,
+1958):A non-parametric statistic used to estimate the
+marginal survival probability from observed lifetime
+data. Because it does not take individual covariates
+into account, it serves as the most basic population-
+level baseline for survival functions and is consistent.
+Cox Model (Cox Proportional Hazards) (Cox,
+1972):The standard semiparametric workhorse of
+survival analysis. It models the hazard rate as a prod-
+uct of a time-varying baseline hazard and an expo-
+nential linear combination of the covariates. It relies
+on the strong assumption of proportional hazards (the
+hazard ratio between any two individuals is constant
+over time).
+B.1.2 TREE-BASEDMODELS
+These models adapt decision trees and boosting trees to handle right-censored data, remaining highly
+competitive on tabular datasets.
+19
+
+Preprint.
+RSF (Random Survival Forests) (Ishwaran et al., 2008):An extension of the Random Forest al-
+gorithm for time-to-event data. It constructs an ensemble of survival trees using specialized splitting
+criteria (like the log-rank test) to handle censored observations.
+GBS (Gradient Boosting for Survival)(P ¨olsterl, 2020): A boosting approach implemented in
+scikit-survivalthat sequentially builds regression trees. In our evaluation, we include two
+variants corresponding to different optimization targets:sksurv GBS (Cox), which minimizes the
+negative log partial likelihood of the Cox proportional hazards model, andsksurv GBS (C-index),
+which directly optimizes a smoothed concordance index.
+SurvivalBoost (Alberge et al., 2024):A modern, highly optimized gradient boosting framework
+specifically tailored for survival analysis, optimizing a proper scoring rule.
+B.1.3 DEEPNEURALNETWORKS
+These methods leverage multi-layer architectures to capture complex, non-linear relationships be-
+tween covariates and survival times, often dropping the proportional hazards assumption.
+DeepHit (Lee et al., 2018):A discrete-time survival network that optimizes a loss that combines a
+likelihood and a ranking metric over an MLP, usable in survival analysis and competing events.
+DeepSurv (Katzman et al., 2018):It uses a Multi-Layer Perceptron (MLP) to replace the linear
+combination of covariates in the standard Cox model, allowing it to learn complex, non-linear inter-
+actions while still optimizing the Cox partial likelihood.
+DSM (Deep Survival Machines) (Nagpal et al., 2021):DSM uses a neural network to model
+the survival function as a mixture of parametric distributions (such as Weibull or Log-Normal),
+providing well-calibrated survival estimates.
+SumoNet (Rindt et al., 2022):SurvivalMonotonic-net utilizes a partially monotonic neural network
+to directly optimize the right-censored log-likelihood.
+TabSurv(Kirpichenko et al., 2026): A specialized deep learning framework that adapts modern
+tabular neural networks to time-to-event prediction. Because this framework supports multiple
+representation backbones, we evaluate several architectural variants that appear throughout our re-
+sults: the defaultTabSurv,TabSurv-MLP(using a standard Multi-Layer Perceptron),TabSurv-
+RealMLP(utilizing the more robust RealMLP tabular backbone), as well asTabSurv-W ASand
+TabSurv-WSA(which incorporate specialized attention and sparse embedding mechanisms de-
+signed specifically for tabular features).
+B.1.4 TABULARFOUNDATIONMODELS
+This category represents the most modern class of baselines: tabular foundation models trained on
+synthetic tabular data. They generalize to new datasets in a zero-shot or in-context manner.
+SurvPFN: (B ¨ohm et al., 2026)SurvPFN is a survival-specific Prior-Data Fitted Network (PFN)
+based on the architecture of TabPFN v2, pretrained on synthetic censored survival tasks (sampling
+from different distributions such as Weibull).
+SurvivalPFN (Qi et al., 2026):SurvivalPFN performs amortized Bayesian survival inference by us-
+ing the observed covariates, event times, and censoring indicators as in-context examples to directly
+predict posterior event-time distributions for new individuals based on the CausalPFN architecture.
+Survival-IC (Seletkov et al., 2026):Survival In-Context (SIC) is a prior-fitted foundation model
+pretrained on synthetic survival datasets to approximate Bayesian posterior predictive inference and
+based on the architecture of TabICL.
+TFM4Survival (Kim et al., 2026):TFM4Survival adapts pretrained tabular foundation models such
+as TabICL to censored time-to-event data through a sampling-based formulation, allowing existing
+TFMs to perform survival prediction without survival-specific pretraining.
+20
+
+Preprint.
+B.2 HYPERPARAMETER TUNING
+Table 4 shows a description of the hyperparameter search spaces for each method. These spaces are
+used with a budget of 50 iterations.
+Table 4: Hyper-parameter search space for every baseline in our survival bench-
+mark. Each cell is searched withRandomizedSearchCVfor 50 iterations
+on a single stratified 80/20 split of the seed-0 training fold, scored by the inte-
+grated Brier score (IBS).randint/loguniformdenote thescipy.stats
+distributions; a list denotes a categorical choice; a lone value is held fixed (not
+searched).
+model parameter range
+Others
+Kaplan–Meier no hyperparameters (population-level estimator)
+Cox (lifelines, ridge-
+penalized)
+penalizerloguniform(1e-04, 10)
+Tree-based methods
+Random Survival Forest max features sqrt, log2, 0.3, 0.5, 1.0
+min samples leafrandint(1, 30)
+min samples splitrandint(2, 20)
+n estimatorsrandint(100, 500)
+sksurv GBS (Cox) dropout rate 0.0, 0.1, 0.2
+learning rateloguniform(1e-03, 0.3)
+loss coxph
+n estimatorsrandint(50, 500)
+subsample 0.7, 0.85, 1.0
+sksurv GBS (C-index) dropout rate 0.0, 0.1, 0.2
+learning rateloguniform(1e-03, 0.3)
+loss coxph
+max depthrandint(2, 8)
+min samples leafrandint(1, 20)
+n estimatorsrandint(50, 400)
+subsample 0.7, 0.85, 1.0
+SurvivalBoost learning rateloguniform(0.01, 0.1)
+max depthrandint(2, 10)
+n horizons per observationrandint(1, 5)
+n iterrandint(5, 50)
+n iter before feedbackrandint(5, 50)
+Neural network methods
+DeepHit alpha 0.2, 0.5, 0.9
+batch size 128, 256, 512
+epochsrandint(256, 1024)
+lrloguniform(1e-05, 0.001)
+nb output times 40, 60, 80, 100
+num nodes shared [128, 128], [256, 256], [64, 64]
+sigma 0.1, 0.5, 0.9
+weight decayloguniform(1e-05, 0.001)
+DeepSurv activation ReLU
+batch norm True, False
+batch size 128, 256, 512
+dropout 0.0, 0.1, 0.2, 0.4
+early stopping True (patience 20)
+hidden dim 16, 32, 64, 128
+lrloguniform(1e-05, 0.001)
+n epochs 64, 128, 256, 512
+n layers 1, 2, 3
+output bias False
+21
+
+Preprint.
+model parameter range
+weight decayloguniform(1e-05, 0.1)
+Deep Survival Machines batch size 128, 256, 512
+distribution Weibull, LogNormal
+itersrandint(50, 200)
+krandint(2, 7)
+layers [100], [100, 100], [50, 50], [100, 100, 100]
+learning rateloguniform(1e-04, 0.01)
+temperature 0.5, 1.0, 2.0
+SuMo-Net batch size 128, 256, 512
+dropout 0.0, 0.1, 0.25
+layers [64, 64], [100, 100], [32, 32, 32]
+layers surv [64], [100], [100, 100]
+lrloguniform(1e-04, 0.01)
+n iterrandint(200, 1500)
+weight decayloguniform(1e-05, 0.01)
+TabSurv-LAS activation ReLU, SiLU, SELU
+batch size 32, 64, 96
+d block 128, 256, 512
+dropoutloguniform(0.01, 0.1)
+emb dim rtdl 8, 12, 16
+k 8, 16, 32
+llh radius 1, 2, 3, 4, 5
+lrloguniform(1e-04, 0.005)
+n blocksrandint(1, 4)
+rtdl activation True, False
+rtdl n bins 32, 48, 64
+TabSurv-MLP activation ReLU, SiLU, SELU
+batch size 32, 64, 96
+emb dim rtdl 8, 12, 16
+hidden dim 128, 256, 512
+layer nrandint(1, 5)
+llh radius 1, 2, 3, 4, 5
+lrloguniform(1e-04, 0.005)
+normalization False, True
+rtdl activation True, False
+rtdl n bins 32, 48, 64
+TabSurv-RealMLP activation Mish, SELU
+batch size 32, 64, 96
+emb dim rtdl 8, 12, 16
+frequency scaleloguniform(0.01, 1.0)
+hidden dim 128, 256, 512
+llh radius 1, 2, 3, 4, 5
+lrloguniform(1e-04, 0.005)
+n frequencies 32, 48, 64
+n hidden layersrandint(1, 5)
+TabSurv-W AS activation ReLU, SELU
+batch size 32, 64, 96
+d block 64, 128, 256
+emb dim rtdl 8, 12, 16
+k 8, 16, 32
+llh radius 1, 3, 5
+lrloguniform(1e-04, 0.005)
+n blocksrandint(1, 4)
+rtdl activation True, False
+rtdl n bins 32, 48, 64
+TabSurv-WSA activation ReLU, SELU
+batch size 32, 64, 96
+d block 128, 256, 512
+emb dim rtdl 8, 12, 16
+22
+
+Preprint.
+model parameter range
+k 8, 16, 32
+llh radius 1, 3, 5
+lrloguniform(1e-04, 0.005)
+n blocksrandint(1, 4)
+rtdl activation True, False
+rtdl n bins 32, 48, 64
+SurvICL and tabular foundation models
+SIC no hyperparameters (frozen DeepHit10 checkpoint)
+SurvivalPFN calibrate False, True
+max context size 1024, 2048, 4096, 8192
+SurvPFN max context size 1024, 2048, 4096
+max features 5, 10
+TFM-Survival max train rows 4096, 8192
+n intervalsrandint(5, 20)
+Surv. Classif.: TabICL n intervalsrandint(5, 40)
+B.3 ISSUES FOR SOME METHODS
+Some baselines failed to complete their hyperparameter search or final fit on a small subset of
+datasets, for reasons intrinsic to the method rather than to the benchmark protocol (e.g., a train-
+ing run that diverged numerically, or a step of the method’s own pipeline that is only defined for
+datasets larger than the fold at hand). We assign the method a trivially achievable score on each
+dataset on which it did not complete: an IBS of1(the maximum attainable value in expectation if
+Gis estimated perfectly) or a concordance index of0.5(no better than chance), matching the metric
+being ranked. All critical-difference diagrams and pairwise win-rate figures are therefore always
+computed over the full 63-dataset held-out cohort. Methods with at least one imputed dataset are
+marked with an asterisk in the critical-difference diagrams and with a hatched bar in the win-rate
+figures; Table 5 lists the affected (method, dataset) pairs and their cause.
+Table 5: Baseline (method, dataset) pairs that created issues
+Method Dataset(s) Cause
+DeepSurvdivorce,actg,FRTCSTraining loss diverged (became non-finite)
+during optimization on these three small
+datasets.
+TFM4Surival: TabICLsac3,DLBCL,gse1992Out-of-memory issue on these larger/high-
+dimensional datasets.
+SurvivalPFNAML Bull,gse1992,vdvThe method’s internal dimensionality-
+reduction step (a truncated SVD) requires
+more components than the smaller of the
+fold’s row or feature count provides, and
+errors when that bound is violated.
+TabSurvDBCD,cesc tcga, kirc tcga, lgg tcgaThe method’s obtained a MAE of value in-
+fty.
+B.4 DETAILS ONDATASETS
+An overview of the development and held-out datasets is shown in Tables 6 and 7.
+23
+
+Preprint.
+name source n samples n features censoring frac km survival at tmax
+Framingham survset 4699 18 68.7% 60.5 %
+MCLcleaned survset 92 574 30.4 % 0.0 %
+Melanoma survset 205 5 72.2 % 64.5 %
+NSBCD survset 115 549 67.0 % 57.4 %
+Rossi survset 432 29 73.6 % 73.6 %
+Unemployment survset 452 8 43.4 % 5.8 %
+acath survset 3504 3 33.4 % 0.0 %
+aids survset 467 5 59.7 % 49.2 %
+brca tcga pan can atlas 2018 cbioportal 980 137 95.2 % 60.1 %
+cgd survset 128 25 65.6 % 47.6 %
+challenge ens custom 3173 42 49.6 % 5.9 %
+chop survset 414 3833 60.1 % 39.5 %
+cost survset 518 13 22.0 % 22.0 %
+crc orion 2024 cbioportal 74 131 66.2 % 30.4 %
+csl survset 446 6 39.5 % 17.3 %
+d.oropha.rec survset 192 30 27.6 % 16.5 %
+dataDIV AT3 survset 4267 17 94.4 % 84.7 %
+dataOvarian1 survset 912 163 40.4 % 11.9 %
+epileptic survset 605 5 63.5 % 46.3 %
+flchain pycox 6524 8 69.9 % 65.6 %
+gse3143 survset 158 8664 68.4 % 41.9 %
+kirc tcga pan can atlas 2018 cbioportal 369 53 92.7 % 86.5 %
+kirp tcga pan can atlas 2018 cbioportal 251 56 96.0 % 92.9 %
+luad tcga pan can atlas 2018 cbioportal 392 98 82.4 % 68.4 %
+lusc tcga pan can atlas 2018 cbioportal 481 100 57.2 % 0.0 %
+micro.censure survset 117 118 77.8 % 42.4 %
+msk 2026 cbioportal 40755 56 57.0 % 31.7 %
+oldmort survset 4603 17 57.2 % 0.2 %
+ov tcga pan can atlas 2018 cbioportal 427 34 48.2 % 6.5 %
+ova survset 358 13 25.7 % 22.2 %
+ovarian survset 26 4 53.8 % 49.7 %
+pancan pcawg 2020 cbioportal 361 255 62.9 % 0.0 %
+rdata survset 1040 7 47.4 % 38.1 %
+sarc tcga pan can atlas 2018 cbioportal 181 147 87.3 % 74.3 %
+smarto pycox 3873 39 88.1 % 72.5 %
+ucs tcga pan can atlas 2018 cbioportal 57 11 38.6 % 9.2 %
+uvm tcga pan can atlas 2018 cbioportal 80 6 71.2 % 38.5 %
+vlbw survset 617 55 82.7 % 0.0 %
+whas500 survset 461 18 61.8 % 0.0 %
+zinc survset 431 23 81.2 % 79.0 %
+Table 6: Overview of development datasets.
+24
+
+Preprint.
+name source n samples n features censoring frac km survival at tmax
+AML Bull survset 116 6283 42.2 % 28.3 %
+Aids2 survset 2839 14 38.0 % 5.8 %
+Bergamaschi survset 82 10 65.9 % 58.3 %
+DBCD survset 295 4919 73.2 % 61.0 %
+DLBCL survset 240 7399 42.5 % 26.8 %
+Dialysis survset 6805 37 76.4 % 58.7 %
+FRTCS survset 697 5 89.7 % 89.1 %
+LeukSurv survset 1043 30 15.7 % 4.4 %
+Pbc3 survset 349 21 82.5 % 63.4 %
+TRACE survset 1878 6 49.0 % 43.9 %
+UnempDur survset 3241 6 38.7 % 10.5 %
+acc tcga pan can atlas 2018 cbioportal 91 39 63.7 % 49.9 %
+actg survset 1151 20 91.7 % 90.1 %
+blca tcga pan can atlas 2018 cbioportal 301 84 76.1 % 62.0 %
+breast survset 100 4 74.0 % 71.4 %
+burn survset 154 14 68.8 % 48.0 %
+cancer survset 228 30 27.6 % 5.0 %
+cesc tcga pan can atlas 2018 cbioportal 241 97 95.0 % 91.3 %
+chol tcga pan can atlas 2018 cbioportal 36 53 50.0 % 19.5 %
+coadread tcga pan can atlas 2018 cbioportal 543 133 86.2 % 62.1 %
+colon survset 929 14 51.3 % 45.5 %
+crc hta8 htan 2024 cbioportal 83 91 69.9 % 24.4 %
+dataDIV AT2 survset 1837 4 68.3 % 31.1 %
+diabetes survset 394 4 60.7 % 53.0 %
+difg glass cbioportal 661 179 24.8 % 0.0 %
+divorce survset 3371 5 69.4 % 55.7 %
+e1684 survset 284 3 31.0 % 28.3 %
+esca tcga pan can atlas 2018 cbioportal 182 90 58.2 % 10.7 %
+gbm tcga pan can atlas 2018 cbioportal 277 30 31.8 % 0.0 %
+gbsg pycox 2232 7 43.2 % 36.9 %
+grace survset 1000 5 67.6 % 63.5 %
+gse1992 survset 124 15545 71.8 % 45.4 %
+hdfail pycox 52422 38 94.5 % 56.1 %
+heart survset 103 4 27.2 % 15.2 %
+heartvalve survset 256 27 78.9 % 53.0 %
+hepatoCellular survset 227 43 57.3 % 51.2 %
+hnsc tcga pan can atlas 2018 cbioportal 364 119 83.0 % 44.6 %
+lgg tcga pan can atlas 2018 cbioportal 422 63 91.9 % 43.3 %
+lihc tcga pan can atlas 2018 cbioportal 371 70 64.7 % 18.2 %
+meso tcga pan can atlas 2018 cbioportal 86 58 15.1 % 0.0 %
+metabric pycox 1904 9 42.1 % 0.0 %
+mgus survset 241 13 6.6 % 1.8 %
+msk 2021 cbioportal 25659 86 60.4 % 34.3 %
+nki70 survset 144 77 66.7 % 48.0 %
+nwtco pycox 4028 6 85.8 % 84.9 %
+paad tcga pan can atlas 2018 cbioportal 184 75 46.2 % 13.7 %
+pbc survset 312 6 59.9 % 34.1 %
+pharmacoSmoking survset 125 19 28.8 % 28.8 %
+phpl04K8a survset 442 21 46.6 % 0.0 %
+prostate survset 502 28 29.5 % 23.8 %
+prostateSurvival survset 14294 8 94.4 % 81.4 %
+rhc survset 5735 79 35.1 % 0.0 %
+sac3 pycox 50000 45 37.3 % 20.2 %
+scania survset 1931 9 43.8 % 15.9 %
+skcm tcga pan can atlas 2018 cbioportal 433 172 50.3 % 5.7 %
+stad tcga pan can atlas 2018 cbioportal 355 112 75.5 % 64.4 %
+stagec survset 146 22 63.0 % 55.8 %
+support pycox 8873 14 32.0 % 24.1 %
+ucec tcga pan can atlas 2018 cbioportal 486 58 90.7 % 83.6 %
+uis survset 628 17 19.1 % 16.6 %
+vdv survset 78 4705 56.4 % 56.4 %
+veteran survset 137 9 6.6 % 0.0 %
+wpbc survset 198 32 76.3 % 65.3 %
+Table 7: Overview of held-out datasets.
+25
+
+Preprint.
+C ABLATIONS
+To isolate the impact of specific design choices, we conduct ablation studies using a shared
+nanotabiclexsurvivalbackbone trained for 10,000 steps. Each ablation alters exactly one
+variable against a control arm trained on the Proportional Odds (po) prior as detailed in the follow-
+ing table. One arm can be trained in 2h on 2 A100.
+Table 8: Backbone architecture shared by every arm.
+Backbone (nanotabiclexsurvival)
+Column-wise transformer 2 blocks, 4 heads, 128 inducing points, SSMax attention
+Row-wise transformer 2 blocks, 4 heads, 4 CLS tokens
+In-context (ICL) transformer 4 blocks, 4 heads, SSMax attention
+Regression head Pinball / quantile, 99 quantile levels
+Target embedding Sum
+Duration rescaling (control) Mean-duration
+Label draws per row (control) 1
+Learning rate 0.0015
+Synthetic prior
+Prior generator GraphSCM (graph scm survival)
+Loss Pinball loss on death-time quantiles
+C.0.1 ABLATION DESIGN
+Survival-family axis.Table 9 lists the generative equation of every family tested.
+Table 9: Structural survival families compared on the family axis.H,O,Aandhdenote the
+cumulative hazard, cumulative odds, Aranda-Ordaz/Box-Cox transform, and hazard ofT|x; a0
+subscript denotes the shared random baseline.
+Family Arm(s) Generative structure
+Proportional hazardscoxH(t|x) =e ηH0(t)
+Proportional oddspoO(t|x) =e ηO0(t),O= (1−S)/S
+Transformation familytransformA ρ(t|x) =e ηAρ(S0(t)),ρ∼[0.05,3]per dataset
+(interpolates PH atρ→0and PO atρ= 1)
+Additive hazardsahh(t|x) =h 0(t) +c·tanh(η), clamped at 0
+Accelerated hazardsachh(t|x) =h 0(t eη)(curves leaveS=1together)
+AFT, homoscedasticaft-homologT=µ(x) + (logT 0 −ElogT 0)
+AFT, heteroscedasticaft-heteroas above with a per-subject log-time spread, producing
+crossing survival curves
+Quantile modelquantilelogQ p(T|x) = logQ 0,p +η p(x), 3 anchor levels
+Classical parametric lawslawWeibull / gamma / exponential / log-logistic mixture
+(“all”), proportional hazards
+Simplified (reduced)simplesingle-law, non-mixture, single label draw
+Cox + AFT mixturecox-aftper-dataset random choice ofcoxoraft
+Grand mixturegrand-mixper-dataset random choice amongcox,aft,po,ah,
+quantile
+SurvPFN priorsurvpfnclosed-form Weibull PH/non-PH times, ported from
+SurvPFN’s own pretraining prior
+SurvivalPFN priorsurvivalpfnnonparametric hazard shape via a monotone Bernstein-
+polynomial map, ported from SurvivalPFN’s prior
+SIC priorsicextended-hazards law with a per-dataset hazard-family
+draw, ported from SIC’s pretraining recipe
+Recipe axes.Seven arms each flip exactly one flag off the control, holding
+generation type=pofixed (Table 10). Two of the axes (discretization, administrative
+censoring) are already off in the control, so we ablate by turning themonrather than removing them
+– the same one-knob-at-a-time principle, applied in the direction the control recipe permits.
+26
+
+Preprint.
+Table 10: Recipe axes ablated against thepocontrol, one flag at a time.
+Axis Control Variant(s)
+Discretization Off On (10% per-dataset chance of coarsening times to a grid)
+Administrative censoring Off On (50% per-dataset chance of a study-end cutoff)
+Label draws per row 1 5, 20
+Quantile head width 99 levels 999 levels
+Auxiliary censoring head Event-only targets+censoring-distribution head (train-time only, dropped at inference)
+C.0.2 EVALUATION PROTOCOL
+Arms are evaluated at their final checkpoint on frozen, held-out validation datasets. To account for
+varying dataset scales and censoring rates, raw metrics are min–max normalized per dataset (100 =
+best arm, 0 = worst arm) before averaging. The primary ranking metric is the mean Integrated Brier
+Score (IBS).
+D OTHERRESULTS
+D.1 ALL HELD-OUT DATASETS
+D.1.1 IBS
+Results for the IBS on held-out datasets are shown in Figures 6, 7, 8, 9.
+−40 −20 0 20 40
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 6:IBS on all held-out datasets, compared to the IBS score obtained with a Kaplan-
+Meier estimator (higher is better).The points show individual dataset performances, and a boxplot
+summarizes the overall distribution. The dot color represents the dataset size.
+27
+
+Preprint.
+51015
+SurvICL (4.4)
+Cox (6.7)
+SurvivalBoost (6.7)
+RSF (6.8)
+sksurv GBS (C-index) (7.8)
+sksurv GBS (Cox) (8.4)
+DSM (9.0)
+DeepSurv* (9.6)
+SurvivalPFN* (9.7)
+SurvPFN (10.2)
+DeepHit (18.4)
+T abSurv-WAS (15.9)
+Kaplan-Meier (14.8)
+TFM4Survival: T abICL* (14.6)
+T abSurv-WSA (13.8)
+T abSurv-RealMLP (13.6)
+T abSurv (12.8)
+SumoNet (12.8)
+T abSurv-MLP (12.8)
+SIC (11.4)
+TFM-Survival (10.5)
+Figure 7:Critical difference diagram of average ranks on all held-out datasets (lower is better)
+for IBS.Methods joined by a bar are not significantly different
+SurvICL
+SurvivalPFN
+SurvPFN
+TFM-Survival
+SIC
+TFM4Survival: TabICL
+DSM
+DeepSurv
+TabSurv-MLP
+SumoNetTabSurv
+TabSurv-RealMLP
+TabSurv-WSATabSurv-WAS
+DeepHit
+SurvivalBoost
+RSF
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Cox (71.3%) Method failed to run for some dataset(s)
+Figure 8:Pairwise win rate IBS all held-out datasets:the fraction of (dataset, competitor) pairs
+on which a method achieves a lower IBS. The scores are the same as in Figure 1, but shown with a
+different grouping.
+28
+
+Preprint.
+10−2 10−1 100 101 102
+Mean fit + predict time per fold (s)
+30
+45
+60
+75
+90
+Mean min–max normalized IBS (higher is better)
+Kaplan-Meier
+SurvICL
+Cox
+SurvivalPFN
+SIC
+RSF
+TFM-Survival
+SurvPFN
+DeepSurv
+SumoNet
+T abSurv-MLP
+DeepHit
+T abSurv
+DSM
+T abSurv-RealMLP
+SurvivalBoost
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 9:Pareto front of mean normalized IBS (higher is better) and fit+predict time.We re-
+port average performances over all held-out datasets. IBS was normalized to provide comparability
+across all datasets.
+29
+
+Preprint.
+D.1.2 C-INDEX50
+Results for the C-index on held-out datasets are shown in Figures 10, 11, 12, 13.
+0 20 40 60 80 100
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 10:C-index on the 50th quantile on all held-out datasets, compared to the score ob-
+tained with a Kaplan-Meier estimator (higher is better).The points show individual dataset per-
+formances, and a boxplot summarizes the overall distribution. The dot color represents the dataset
+size.
+5101520
+SurvICL (5.5)
+RSF (6.7)
+Cox (7.8)
+sksurv GBS (C-index) (8.5)
+T abSurv-WSA (8.8)
+SIC (9.3)
+SurvivalBoost (9.6)
+sksurv GBS (Cox) (10.1)
+T abSurv (10.1)
+T abSurv-WAS (10.4)
+Kaplan-Meier (20.6)
+DeepHit (17.7)
+DeepSurv* (13.1)
+SumoNet (12.9)
+SurvivalPFN* (12.0)
+TFM4Survival: T abICL* (11.7)
+DSM (11.4)
+T abSurv-MLP (11.4)
+T abSurv-RealMLP (11.4)
+TFM-Survival (11.3)
+SurvPFN (10.7)
+Figure 11:Critical difference diagram of average ranks on all held-out datasets (lower is better)
+for the C-index on the 50th quantile.Methods joined by a bar are not significantly different.
+30
+
+Preprint.
+SurvICL
+SIC
+SurvPFN
+TFM-Survival
+TFM4Survival: TabICL
+SurvivalPFNTabSurv-WSA
+TabSurv
+TabSurv-WAS
+TabSurv-RealMLP
+TabSurv-MLP
+DSM
+SumoNetDeepSurvDeepHit
+RSF
+sksurv GBS (C-index)
+SurvivalBoost
+sksurv GBS (Cox)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: RSF (71.6%) Method failed to run for some dataset(s)
+Figure 12:Pairwise win rate in the C-index on the 50th quantile on all held-out datasets:the
+fraction of (dataset, competitor) pairs on which a method achieves a higher C-index.
+10−2 10−1 100 101 102
+Mean fit + predict time per fold (s)
+0.50
+0.55
+0.60
+0.65
+0.70
+Mean C-index @50% (higher is better)Kaplan-Meier
+SurvICL
+Cox
+SurvivalPFN
+SIC
+RSF TFM-Survival
+SurvPFN
+DeepSurv
+SumoNetT abSurv-MLP
+DeepHit
+T abSurv
+DSMT abSurv-RealMLP
+SurvivalBoost
+T abSurv-WAS
+T abSurv-WSA TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 13:Pareto front of mean C-index on the 50th quantile (higher is better) and fit+predict
+time.We report average performances over all held-out datasets.
+D.1.3 KM-CALIBRATION
+Results for the KM-calibration on held-out datasets are shown in Figures 14, 15, 16.
+31
+
+Preprint.
+0.0 0.1 0.2 0.3
+KM-calibration
+DeepHit
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+T abSurv
+SumoNet
+TFM-Survival
+T abSurv-RealMLP
+T abSurv-MLP
+SurvivalBoost
+SurvPFN
+SIC
+SurvivalPFN
+DSM
+SurvICL
+DeepSurv
+sksurv GBS (C-index)
+RSF
+sksurv GBS (Cox)
+Cox
+Kaplan-Meier
+102
+103
+104
+n_samples (training)
+Figure 14:KM calibration on all held-out datasets (lower is better).The points show individual
+dataset performances, and a boxplot summarizes the overall distribution. The dot color represents
+the dataset size.
+51015
+Kaplan-Meier (4.3)
+Cox (5.0)
+DeepSurv (5.6)
+sksurv GBS (Cox) (5.9)
+SurvICL (6.0)
+sksurv GBS (C-index) (6.2)
+RSF (6.3)
+SurvivalPFN (9.3)
+SIC (10.6)
+DSM (11.0)
+DeepHit (19.0)
+T abSurv-WAS (18.4)
+T abSurv-WSA (17.1)
+TFM4Survival: T abICL (16.6)
+SumoNet (15.1)
+TFM-Survival (13.9)
+T abSurv (13.0)
+T abSurv-MLP (12.4)
+T abSurv-RealMLP (12.1)
+SurvivalBoost (11.6)
+SurvPFN (11.4)
+Figure 15:Critical difference diagram of average ranks on all held-out datasets (lower is better)
+for the KM calibration.Methods joined by a bar are not significantly different.
+32
+
+Preprint.
+SurvICL
+SurvivalPFN
+SIC
+SurvPFN
+TFM-Survival
+TFM4Survival: TabICL
+DeepSurv
+DSM
+TabSurv-RealMLP
+TabSurv-MLP
+TabSurvSumoNet
+TabSurv-WSATabSurv-WAS
+DeepHit
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+RSF
+SurvivalBoostKaplan-Meier
+Cox
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Kaplan-Meier (83.6%)
+Figure 16:Pairwise win rate in KM calibration on all held-out datasets:the fraction of (dataset,
+competitor) pairs on which a method achieves a better KM calibration.
+33
+
+Preprint.
+D.1.4 MAE
+Results for the MAE on held-out datasets are shown in Figures 17, 18, 19, 20.
+−400 −300 −200 −100 0 100 200 300 400
+Gain over KM (%)
+T abSurv-WAS
+TFM4Survival: T abICL
+SumoNet
+TFM-Survival
+T abSurv-WSA
+SurvPFN
+T abSurv-MLP
+DSM
+T abSurv
+T abSurv-RealMLP
+DeepHit
+DeepSurv
+GBS (component-wise)
+RSF
+SurvICL
+Cox
+SIC
+GBS (trees)
+SurvivalBoost
+SurvivalPFN
+102
+103
+104
+n_samples (training)
+Figure 17:MAE on all held-out datasets, compared to the MAE obtained with a Kaplan-
+Meier estimator (higher is better).The points show individual dataset performances, and a boxplot
+summarizes the overall distribution. The dot color represents the dataset size.
+51015
+SurvivalBoost (5.6)
+GBS (trees) (5.8)
+SurvICL (7.2)
+SIC (7.5)
+Cox* (8.3)
+RSF* (8.3)
+SurvivalPFN* (8.4)
+DeepHit (9.6)
+GBS (component-wise) (9.8)
+DeepSurv* (11.0)
+T abSurv-WAS* (17.6)
+TFM4Survival: T abICL* (15.8)
+T abSurv-WSA (15.0)
+SumoNet (14.4)
+TFM-Survival (13.6)
+SurvPFN (13.4)
+T abSurv-MLP* (12.8)
+DSM (12.1)
+Kaplan-Meier (11.8)
+T abSurv-RealMLP (11.7)
+T abSurv* (11.2)
+Figure 18:Critical difference diagram of average ranks on all held-out datasets (lower is better)
+for the MAE.Methods joined by a bar are not significantly different
+34
+
+Preprint.
+SurvivalPFN
+SurvICL
+SIC
+SurvPFN
+TFM-Survival
+TFM4Survival: TabICL
+DeepHitDeepSurvTabSurv
+TabSurv-RealMLP
+DSM
+TabSurv-MLP
+SumoNet
+TabSurv-WSATabSurv-WASSurvivalBoostGBS (trees)
+RSF
+GBS (component-wise)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: SurvivalBoost (76.4%) Method failed to run for some dataset(s)
+Figure 19:Pairwise win rate in MAE on all held-out datasets:the fraction of (dataset, competitor)
+pairs on which a method achieves a lower MAE.
+10−2 10−1 100 101 102
+Mean fit + predict time per fold (s)
+102
+103
+104
+105
+106
+107
+Mean MAE (lower is better)
+Kaplan-Meier Cox
+SurvICL SurvivalPFN
+SIC
+RSF
+TFM-Survival
+SurvPFN
+DeepSurv
+SumoNet
+T abSurv-MLP
+DSM
+DeepHit
+T abSurv
+T abSurv-RealMLP
+SurvivalBoost
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 20:Pareto front of mean MAE (lower is better) and fit+predict time.We report average
+performances over all held-out datasets.
+D.2 HELD-OUT DATASETS WITH LESS THAN1000SAMPLES
+D.2.1 IBS
+Results for the IBS on small held-out datasets are shown in Figures 21, 22, 23, 24.
+35
+
+Preprint.
+−40 −20 0 20 40
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 21:IBS on the small held-out datasets, compared to the IBS score obtained with a
+Kaplan-Meier estimator (higher is better).The points show individual dataset performances, and
+a boxplot summarizes the overall distribution. The dot color represents the dataset size.
+5101520
+SurvICL (4.0)
+Cox (5.6)
+RSF (6.1)
+sksurv GBS (Cox) (7.1)
+SurvivalBoost (7.8)
+sksurv GBS (C-index) (7.8)
+SurvivalPFN* (7.9)
+SurvPFN (8.5)
+DSM (8.9)
+SIC (9.6)
+DeepHit (19.3)
+T abSurv-WAS (17.1)
+T abSurv-RealMLP (14.8)
+TFM4Survival: T abICL* (14.8)
+SumoNet (14.6)
+T abSurv-WSA (14.4)
+T abSurv-MLP (14.1)
+T abSurv (13.6)
+Kaplan-Meier (13.5)
+TFM-Survival (10.8)
+DeepSurv* (10.6)
+Figure 22:Critical difference diagram of average ranks on the small held-out datasets (lower
+is better) for the IBS.Methods joined by a bar are not significantly different.
+36
+
+Preprint.
+SurvICL
+SurvivalPFN
+SurvPFN
+SIC
+TFM-Survival
+TFM4Survival: TabICL
+DSM
+DeepSurvTabSurv
+TabSurv-MLPTabSurv-WSA
+SumoNet
+TabSurv-RealMLP
+TabSurv-WAS
+DeepHit
+RSF
+sksurv GBS (Cox)
+SurvivalBoost
+sksurv GBS (C-index)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Cox (77.2%) Method failed to run for some dataset(s)
+Figure 23:Pairwise win rate in IBS on the small held-out datasets:the fraction of (dataset,
+competitor) pairs on which a method achieves a lower IBS.
+10−2 10−1 100 101
+Mean fit + predict time per fold (s)
+20
+40
+60
+80
+100
+Mean min–max normalized IBS (higher is better)
+Kaplan-Meier
+SurvICL
+Cox
+SurvivalPFN
+RSF
+SurvPFN SIC
+sksurv GBS (Cox)
+SumoNet
+T abSurv-MLP T abSurv
+DeepSurv
+TFM-Survival
+T abSurv-WSA
+T abSurv-WAS
+T abSurv-RealMLP
+sksurv GBS (C-index)
+DeepHit
+TFM4Survival: T abICL
+DSM
+SurvivalBoost
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 24:Pareto front of mean normalized IBS (higher is better) and fit+predict time.
+We report average performances over the small held-out datasets. IBS was normalized to provide
+comparability across all datasets.
+37
+
+Preprint.
+D.2.2 C-INDEX50
+Results for the C-index at the 50th quantile on small held-out datasets are shown in Figures 25, 26,
+27, 28.
+0 20 40 60 80 100
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 25:C-index at the 50th quantile on the small held-out datasets, compared to the C-index
+score obtained with a Kaplan-Meier estimator (higher is better).The points show individual
+dataset performances, and a boxplot summarizes the overall distribution. The dot color represents
+the dataset size.
+5101520
+SurvICL (5.5)
+Cox (5.9)
+RSF (6.6)
+sksurv GBS (Cox) (8.1)
+SIC (8.6)
+sksurv GBS (C-index) (8.7)
+SurvPFN (9.5)
+SurvivalBoost (9.6)
+T abSurv-WSA (9.8)
+SurvivalPFN* (10.3)
+Kaplan-Meier (20.6)
+DeepHit (18.5)
+DeepSurv* (14.3)
+SumoNet (13.9)
+T abSurv-RealMLP (12.4)
+T abSurv-MLP (12.0)
+T abSurv-WAS (11.8)
+DSM (11.6)
+TFM4Survival: T abICL* (11.3)
+TFM-Survival (11.0)
+T abSurv (11.0)
+Figure 26:Critical difference diagram of average ranks on the small held-out datasets (lower
+is better) for the C-index at the 50th quantile.Methods joined by a bar are not significantly
+different.
+38
+
+Preprint.
+SurvICL
+SIC
+SurvPFN
+SurvivalPFNTFM-Survival
+TFM4Survival: TabICL
+TabSurv-WSA
+TabSurv
+DSM
+TabSurv-WASTabSurv-MLP
+TabSurv-RealMLP
+SumoNetDeepSurvDeepHit
+RSF
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SurvivalBoost
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Cox (75.5%) Method failed to run for some dataset(s)
+Figure 27:Pairwise win rate in the C-index at the 50th quantile on the small held-out datasets:
+the fraction of (dataset, competitor) pairs on which a method achieves a higher C-index.
+10−2 10−1 100 101
+Mean fit + predict time per fold (s)
+0.50
+0.55
+0.60
+0.65
+0.70
+Mean C-index @50% (higher is better)Kaplan-Meier
+SurvICL Cox
+SurvivalPFN
+RSF
+SurvPFN
+SIC
+sksurv GBS (Cox)
+SumoNet T abSurv-MLP
+T abSurv
+DeepSurv
+TFM-Survival
+T abSurv-WSA
+T abSurv-WAS
+T abSurv-RealMLP
+sksurv GBS (C-index)
+DeepHit
+TFM4Survival: T abICL
+DSM
+SurvivalBoost
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 28:Pareto front of mean C-index on the 50th quantile (higher is better) and fit+predict
+time.We report average performances over the small held-out datasets.
+D.2.3 KM-CALIBRATION
+Results for the KM-calibration on small held-out datasets are shown in Figures 29, 30, 31.
+39
+
+Preprint.
+0.0 0.1 0.2 0.3
+KM-calibration
+DeepHit
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+TFM-Survival
+SurvivalBoost
+DSM
+SurvPFN
+SIC
+sksurv GBS (C-index)
+DeepSurv
+Cox
+SurvivalPFN
+RSF
+sksurv GBS (Cox)
+Kaplan-Meier
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 29:KM calibration on the small held-out datasets (lower is better).The points show
+individual dataset performances, and a boxplot summarizes the overall distribution. The dot color
+represents the dataset size.
+51015
+Kaplan-Meier (4.6)
+Cox (5.2)
+DeepSurv (5.8)
+SurvICL (6.0)
+RSF (6.3)
+sksurv GBS (Cox) (6.5)
+sksurv GBS (C-index) (6.7)
+SurvivalPFN (8.7)
+SIC (8.9)
+SurvPFN (10.7)
+T abSurv-WAS (19.1)
+DeepHit (19.0)
+T abSurv-WSA (17.3)
+TFM4Survival: T abICL (16.4)
+SumoNet (15.9)
+TFM-Survival (13.7)
+T abSurv-RealMLP (12.8)
+T abSurv (12.7)
+T abSurv-MLP (12.6)
+DSM (11.1)
+SurvivalBoost (11.1)
+Figure 30:Critical difference diagram of average ranks on the small held-out datasets (lower
+is better) for the KM calibration.Methods joined by a bar are not significantly different.
+40
+
+Preprint.
+SurvICL
+SurvivalPFN
+SIC
+SurvPFN
+TFM-Survival
+TFM4Survival: TabICL
+DeepSurv
+DSM
+TabSurv-MLP
+TabSurv
+TabSurv-RealMLP
+SumoNet
+TabSurv-WSA
+DeepHit
+TabSurv-WAS
+RSF
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SurvivalBoostKaplan-Meier
+Cox
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Kaplan-Meier (81.9%)
+Figure 31:Pairwise win rate in the KM-calibration on the small held-out datasets:the fraction
+of (dataset, competitor) pairs on which a method achieves a better KM-calibration.
+41
+
+Preprint.
+D.2.4 MAE
+Results for the MAE on small held-out datasets are shown in Figures 32, 33, 34, 35.
+−400 −300 −200 −100 0 100 200 300 400
+Gain over KM (%)
+SumoNet
+T abSurv-WAS
+TFM4Survival: T abICL
+TFM-Survival
+T abSurv-WSA
+T abSurv-MLP
+DSM
+SurvPFN
+DeepHit
+T abSurv
+T abSurv-RealMLP
+DeepSurv
+GBS (component-wise)
+Cox
+SurvICL
+RSF
+SurvivalBoost
+SIC
+SurvivalPFN
+GBS (trees)
+102
+103
+104
+n_samples (training)
+Figure 32:MAE on the small held-out datasets, compared to the MAE obtained with a Kaplan-
+Meier estimator (higher is better).The points show individual dataset performances, and a boxplot
+summarizes the overall distribution. The dot color represents the dataset size.
+51015
+GBS (trees) (4.9)
+SurvivalBoost (6.0)
+SurvICL (6.6)
+SIC (6.8)
+RSF* (7.1)
+Cox* (7.5)
+SurvivalPFN* (8.0)
+GBS (component-wise) (8.7)
+Kaplan-Meier (9.8)
+DeepSurv* (10.5)
+T abSurv-WAS* (18.1)
+TFM4Survival: T abICL* (16.8)
+SumoNet (16.7)
+T abSurv-WSA (14.9)
+TFM-Survival (14.6)
+T abSurv-MLP* (13.6)
+SurvPFN (12.7)
+DSM (12.5)
+T abSurv* (12.4)
+T abSurv-RealMLP (11.7)
+DeepHit (11.0)
+Figure 33:Critical difference diagram of average ranks on the small held-out datasets (lower
+is better) for the MAE.Methods joined by a bar are not significantly different.
+42
+
+Preprint.
+SurvICL
+SurvivalPFN
+SIC
+SurvPFN
+TFM-Survival
+TFM4Survival: TabICL
+DeepSurvDeepHit
+TabSurv-RealMLP
+TabSurv
+DSM
+TabSurv-MLPTabSurv-WSATabSurv-WAS
+SumoNetGBS (trees)SurvivalBoost
+RSF
+GBS (component-wise)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: GBS (trees) (80.0%) Method failed to run for some dataset(s)
+Figure 34:Pairwise win rate in the MAE on the small held-out datasets:the fraction of (dataset,
+competitor) pairs on which a method achieves a lower MAE.
+10−2 10−1 100 101
+Mean fit + predict time per fold (s)
+102
+103
+104
+105
+106
+107
+Mean MAE (lower is better)
+Kaplan-Meier SurvICL
+Cox RSF
+SurvivalPFN
+SurvPFN SIC
+sksurv GBS (Cox)
+SumoNet
+T abSurv-MLP
+DeepSurv
+T abSurv
+TFM-Survival
+T abSurv-WAS
+T abSurv-RealMLP
+T abSurv-WSA
+DeepHit
+sksurv GBS (C-index)
+TFM4Survival: T abICL
+DSM
+SurvivalBoost
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 35:Pareto front of mean MAE (lower is better) and fit+predict time.We report average
+performances over the small held-out datasets.
+D.3 HELD-OUT DATASETS WITH MORE THAN1000SAMPLES
+D.3.1 IBS
+Results for the IBS on large held-out datasets are shown in Figures 36, 37, 38, 39.
+43
+
+Preprint.
+−40 −20 0 20 40
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 36:IBS on the large held-out datasets, compared to the IBS obtained with a Kaplan-
+Meier estimator (higher is better).The points show individual dataset performances, and a boxplot
+summarizes the overall distribution. The dot color represents the dataset size.
+51015
+SurvivalBoost (3.6)
+SurvICL (5.6)
+DeepSurv (6.8)
+SumoNet (7.6)
+sksurv GBS (C-index) (7.8)
+RSF (8.6)
+T abSurv-MLP (9.0)
+DSM (9.1)
+TFM-Survival (9.8)
+Cox (10.1)
+Kaplan-Meier (18.4)
+SIC (16.6)
+DeepHit (15.7)
+SurvPFN (15.2)
+SurvivalPFN* (15.0)
+TFM4Survival: T abICL* (14.2)
+T abSurv-WAS (12.4)
+sksurv GBS (Cox) (12.3)
+T abSurv-WSA (12.3)
+T abSurv (10.7)
+T abSurv-RealMLP (10.2)
+Figure 37:Critical difference diagram of average ranks on the large held-out datasets (lower
+is better) for the IBS.Methods joined by a bar are not significantly different.
+44
+
+Preprint.
+SurvICL
+TFM-Survival
+TFM4Survival: TabICL
+SurvivalPFN
+SurvPFN
+SIC
+DeepSurvSumoNet
+TabSurv-MLP
+DSM
+TabSurv-RealMLP
+TabSurv
+TabSurv-WSATabSurv-WAS
+DeepHit
+SurvivalBoost
+sksurv GBS (C-index)
+RSF
+sksurv GBS (Cox)
+Cox
+Kaplan-Meier
+0%
+50%
+100%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: SurvivalBoost (86.9%) Method failed to run for some dataset(s)
+Figure 38:Pairwise win rate in the IBS on the large held-out datasets:the fraction of (dataset,
+competitor) pairs on which a method achieves a lower IBS.
+10−2 10−1 100 101 102 103
+Mean fit + predict time per fold (s)
+30
+45
+60
+75
+90
+105
+Mean min–max normalized IBS (higher is better)
+Kaplan-Meier
+Cox
+SIC
+SurvivalPFN
+SurvICL
+RSF
+TFM-Survival
+DSM
+DeepSurv
+SurvivalBoost
+SurvPFN
+SumoNet T abSurv-MLP
+DeepHit
+T abSurv
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 39:Pareto front of mean normalized IBS (higher is better) and fit+predict time.
+We report average performances over the large held-out datasets. IBS was normalized to provide
+comparability across all datasets.
+45
+
+Preprint.
+D.3.2 C-INDEX
+Results for the C-index on large held-out datasets are shown in Figures 40, 41, 42, 43.
+0 10 20 30 40 50 60 70
+Gain over KM (%)
+Cox
+DeepHit
+DeepSurv
+DSM
+RSF
+SIC
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+SumoNet
+SurvivalBoost
+SurvivalPFN
+SurvPFN
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM-Survival
+TFM4Survival: T abICL
+SurvICL
+102
+103
+104
+n_samples (training)
+Figure 40:C-index at the 50th quantile on the large held-out datasets, compared to the C-
+index obtained with a Kaplan-Meier estimator (higher is better).The points show individual
+dataset performances, and a boxplot summarizes the overall distribution. The dot color represents
+the dataset size.
+5101520
+SurvICL (5.4)
+T abSurv-WSA (6.1)
+T abSurv-WAS (6.6)
+RSF (6.9)
+T abSurv (7.6)
+sksurv GBS (C-index) (7.9)
+T abSurv-RealMLP (8.5)
+SurvivalBoost (9.5)
+DeepSurv (9.6)
+T abSurv-MLP (9.6)
+Kaplan-Meier (20.7)
+SurvivalPFN* (17.0)
+sksurv GBS (Cox) (15.8)
+DeepHit (15.6)
+SurvPFN (14.1)
+Cox (13.2)
+TFM4Survival: T abICL* (12.9)
+TFM-Survival (11.9)
+SIC (11.4)
+DSM (10.8)
+SumoNet (9.9)
+Figure 41:Critical difference diagram of average ranks on the large held-out datasets (lower
+is better) for the C-index at the 50th quantile.Methods joined by a bar are not significantly
+different.
+46
+
+Preprint.
+SurvICL
+SIC
+TFM-Survival
+TFM4Survival: TabICL
+SurvPFN
+SurvivalPFNTabSurv-WSATabSurv-WAS
+TabSurv
+TabSurv-RealMLP
+DeepSurv
+TabSurv-MLP
+SumoNet
+DSM
+DeepHit
+RSF
+sksurv GBS (C-index)
+SurvivalBoost
+sksurv GBS (Cox)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: TabSurv-WSA (74.7%) Method failed to run for some dataset(s)
+Figure 42:Pairwise win rate in the C-index at the 50th quantile on the large held-out datasets:
+the fraction of (dataset, competitor) pairs on which a method achieves a higher C-index.
+10−2 10−1 100 101 102 103
+Mean fit + predict time per fold (s)
+0.50
+0.55
+0.60
+0.65
+0.70
+Mean C-index @50% (higher is better)Kaplan-Meier
+Cox
+SIC
+SurvivalPFN
+SurvICL
+RSF
+TFM-Survival
+DSM
+DeepSurv
+SurvivalBoost
+SurvPFN
+SumoNet
+T abSurv-MLP
+DeepHit
+T abSurvT abSurv-RealMLP T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 43:Pareto front of mean C-index on the 50th quantile (higher is better) and fit+predict
+time.We report average performances over the large held-out datasets.
+D.3.3 KM-CALIBRATION
+Results for the KM-calibration on large held-out datasets are shown in Figures 44, 45, 46.
+47
+
+Preprint.
+0.000 0.025 0.050 0.075 0.100 0.125 0.150
+KM-calibration
+DeepHit
+TFM4Survival: T abICL
+T abSurv-WSA
+SIC
+T abSurv-WAS
+SurvPFN
+T abSurv
+SurvivalBoost
+TFM-Survival
+T abSurv-MLP
+SurvivalPFN
+SumoNet
+T abSurv-RealMLP
+DSM
+SurvICL
+RSF
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+Cox
+DeepSurv
+Kaplan-Meier
+102
+103
+104
+n_samples (training)
+Figure 44:KM calibration on the large held-out datasets (lower is better).The points show
+individual dataset performances, and a boxplot summarizes the overall distribution. The dot color
+represents the dataset size.
+5101520
+Kaplan-Meier (3.0)
+sksurv GBS (Cox) (3.8)
+Cox (4.2)
+sksurv GBS (C-index) (4.4)
+DeepSurv (5.0)
+SurvICL (6.2)
+RSF (6.3)
+T abSurv-RealMLP (9.8)
+DSM (10.4)
+SurvivalPFN (11.6)
+DeepHit (19.3)
+TFM4Survival: T abICL (17.3)
+SIC (16.8)
+T abSurv-WSA (16.3)
+T abSurv-WAS (15.8)
+TFM-Survival (14.7)
+T abSurv (14.3)
+SurvPFN (14.0)
+SurvivalBoost (13.3)
+SumoNet (12.3)
+T abSurv-MLP (11.9)
+Figure 45:Critical difference diagram of average ranks on the large held-out datasets (lower
+is better) for the KM calibration.Methods joined by a bar are not significantly different.
+48
+
+Preprint.
+SurvICL
+SurvivalPFN
+SurvPFN
+TFM-Survival
+SIC
+TFM4Survival: TabICL
+DeepSurv
+TabSurv-RealMLP
+DSM
+TabSurv-MLP
+SumoNetTabSurv
+TabSurv-WASTabSurv-WSA
+DeepHit
+sksurv GBS (Cox)
+sksurv GBS (C-index)
+RSF
+SurvivalBoostKaplan-Meier
+Cox
+0%
+50%
+100%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: Kaplan-Meier (90.0%)
+Figure 46:Pairwise win rate in the KM calibration on the large held-out datasets:the fraction
+of (dataset, competitor) pairs on which a method achieves a better KM calibration.
+49
+
+Preprint.
+D.3.4 MAE
+Results for the MAE on large held-out datasets are shown in Figures 47, 48, 49.
+−400 −300 −200 −100 0 100 200 300 400
+Gain over KM (%)
+T abSurv-WAS
+TFM4Survival: T abICL
+SurvPFN
+T abSurv-WSA
+TFM-Survival
+DSM
+RSF
+GBS (component-wise)
+DeepSurv
+T abSurv-RealMLP
+SurvICL
+Cox
+SIC
+T abSurv-MLP
+GBS (trees)
+SumoNet
+T abSurv
+SurvivalPFN
+SurvivalBoost
+DeepHit
+102
+103
+104
+n_samples (training)
+Figure 47:MAE on the large held-out datasets, compared to the MAE obtained with a Kaplan-
+Meier estimator (higher is better).The points show individual dataset performances, and a boxplot
+summarizes the overall distribution. The dot color represents the dataset size.
+5.07.510.012.515.0
+SurvivalBoost (4.6)
+DeepHit (6.3)
+GBS (trees) (8.0)
+T abSurv (8.5)
+SurvICL (8.6)
+SumoNet (9.0)
+SurvivalPFN* (9.2)
+SIC (9.2)
+Cox (10.2)
+T abSurv-MLP (10.9)
+T abSurv-WAS* (16.6)
+Kaplan-Meier (16.2)
+T abSurv-WSA (15.2)
+SurvPFN (15.1)
+TFM4Survival: T abICL* (13.6)
+GBS (component-wise) (12.3)
+DeepSurv* (12.3)
+T abSurv-RealMLP (11.7)
+TFM-Survival (11.4)
+RSF (11.2)
+DSM (11.2)
+Figure 48:Critical difference diagram of average ranks on the large held-out datasets (lower
+is better) for the MAE.Methods joined by a bar are not significantly different.
+50
+
+Preprint.
+SurvivalPFN
+SurvICL
+SIC
+TFM-Survival
+TFM4Survival: TabICL
+SurvPFNDeepHitTabSurvSumoNet
+TabSurv-MLP
+DSM
+TabSurv-RealMLP
+DeepSurv
+TabSurv-WSATabSurv-WASSurvivalBoostGBS (trees)
+RSF
+GBS (component-wise)
+Cox
+Kaplan-Meier
+0%
+25%
+50%
+75%
+Win rate
+SurvICL + TFMs NN methods Tree-based methods Others
+Best non-SurvICL: SurvivalBoost (81.5%) Method failed to run for some dataset(s)
+Figure 49:Pairwise win rate in the MAE on the large held-out datasets:the fraction of (dataset,
+competitor) pairs on which a method achieves a lower MAE.
+10−2 10−1 100 101 102 103
+Mean fit + predict time per fold (s)
+2 × 102
+3 × 102
+Mean MAE (lower is better)
+Kaplan-Meier
+Cox
+SIC
+SurvivalPFN
+SurvICL RSF
+TFM-Survival
+DSM
+DeepSurv
+SurvivalBoost
+SurvPFN
+SumoNet
+T abSurv-MLP
+DeepHit
+T abSurv
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+TFM4Survival: T abICL
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+SurvICL + TFMs
+SIC
+SurvICL
+SurvPFN
+SurvivalPFN
+TFM-Survival
+TFM4Survival: T abICL
+NN methods
+DSM
+DeepHit
+DeepSurv
+SumoNet
+T abSurv
+T abSurv-MLP
+T abSurv-RealMLP
+T abSurv-WAS
+T abSurv-WSA
+Tree-based methods
+RSF
+SurvivalBoost
+sksurv GBS (C-index)
+sksurv GBS (Cox)
+Others
+Cox
+Kaplan-Meier
+Pareto frontier
+Figure 50:Pareto front of mean MAE (lower is better) and fit+predict time.We report average
+performances over the large held-out datasets.
+51

@@ -350,24 +350,17 @@ Flat-text snapshots of upstream implementations, one `.txt` per
 repository, made with [`gitingest`](https://github.com/cyclotruc/gitingest).
 This is what makes "what does the official code actually do" answerable
 offline against the exact code a paper shipped.
-[`REPOSITORIES.md`](REPOSITORIES.md) describes every one of them; two
-deserve mention here because they are exceptions:
+[`REPOSITORIES.md`](REPOSITORIES.md) describes every one of them; one
+deserves mention here because of its size:
 
 - **`TabPFN Wide.txt`** (~366 MB) exceeds GitHub's file limit and is
   **gitignored**. Regenerate it locally with
   `python scripts/dumps/refresh_repositories.py --only "TabPFN Wide.txt"`.
-- **`VSC Documentation.txt`** is the one deliberate exception to the
-  TFM-only scope, and a load-bearing one — **do not remove it**. It is the
-  full KU Leuven / Flemish Supercomputer Centre user documentation. Every
-  project consuming this library trains and evaluates on VSC, so SLURM
-  scripting, partition and GPU choice, the Lustre/GPFS storage split, and
-  credit accounting are shared questions across all of them; having the
-  answers greppable offline is worth far more than the file costs. No
-  further non-TFM files should be added. The [VSC usage guide](REPOSITORIES.md#vsc-usage)
-  reconciles the refreshed snapshot with the October 2026 changes: P100/V100 now
-  belong to wICE, explicit Slurm cluster selection is still required for submissions,
-  and storage access, time limits, credits and OnDemand features are documented there.
-  Check the linked live status page for temporary outages before scheduling work.
+
+VSC documentation, cluster usage guides and Slurm examples are maintained in the
+separate [VSC Library](https://github.com/andreasgoethals/VSC_Library). Mount it
+as `vsc-library/` alongside this library in a consuming project; keep that
+project's VSC instructions in its own `docs/VSC.md`.
 
 Cite these dumps **by symbol name, never by line number** — a refresh
 moves every line by thousands.

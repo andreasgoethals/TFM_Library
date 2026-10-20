@@ -1,7 +1,9 @@
 Directory structure:
 └── priorlabs-tabpfn/
     ├── README.md
+    ├── AGENTS.md
     ├── CHANGELOG.md
+    ├── CONTRIBUTING.md
     ├── LICENSE
     ├── NOTICE
     ├── pyproject.toml
@@ -9,7 +11,11 @@ Directory structure:
     ├── THIRD-PARTY-NOTICES.md
     ├── .pre-commit-config.yaml
     ├── changelog/
-    │   └── README.md
+    │   ├── README.md
+    │   ├── 1339.changed.md
+    │   ├── 1340.fixed.md
+    │   ├── 1358.fixed.md
+    │   └── 1375.fixed.md
     ├── examples/
     │   ├── batched_classification_cv.py
     │   ├── batched_regression_m4.py
@@ -79,7 +85,7 @@ Directory structure:
     │       │       ├── scaled_dot_product_attention.py
     │       │       ├── tabpfn_col_embedding.pt
     │       │       ├── torch_mps_backend.py
-    │       │       └── workaround_mps_linear_bug.py
+    │       │       └── workarounds_mps_bugs.py
     │       ├── finetuning/
     │       │   ├── __init__.py
     │       │   ├── _torch_compat.py
@@ -210,6 +216,7 @@ Directory structure:
     │   │   ├── test_init.py
     │   │   ├── test_kv_cache.py
     │   │   ├── test_mlx_backend.py
+    │   │   ├── test_prepare_targets.py
     │   │   ├── test_regression_target_projection.py
     │   │   ├── test_tabpfn_v2.py
     │   │   ├── test_tabpfn_v2_5.py
@@ -220,7 +227,7 @@ Directory structure:
     │   │       ├── __init__.py
     │   │       ├── test_attention_backends.py
     │   │       ├── test_scaled_dot_product_attention.py
-    │   │       └── test_workaround_mps_linear_bug.py
+    │   │       └── test_workarounds_mps_bugs.py
     │   ├── test_preprocessing/
     │   │   ├── __init__.py
     │   │   ├── test_adaptive_quantile_transformer.py
@@ -296,6 +303,7 @@ Directory structure:
         ├── PULL_REQUEST_TEMPLATE.md
         ├── ISSUE_TEMPLATE/
         │   ├── bug_report.yml
+        │   ├── config.yml
         │   ├── doc_improvement.yml
         │   └── feature_request.yml
         └── workflows/
@@ -315,7 +323,26 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 13509: character maps to <undefined>
+Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 13398: character maps to <undefined>
+
+
+================================================
+FILE: AGENTS.md
+================================================
+# Instructions for AI agents
+
+These instructions apply to any AI agent preparing a pull request or issue for this repository on behalf of someone outside Prior Labs.
+
+**IMPORTANT:** Before you open or update a pull request or issue, read [`CONTRIBUTING.md`](CONTRIBUTING.md), in particular "What we fix" and "AI-assisted contributions". Then honestly re-evaluate whether your change is worth the maintainers' review time:
+
+- Does it fix a problem on the default path or in documented usage, or a use case a real user has?
+- Is it the smallest change that solves the problem, with a test?
+- Has the human you work for reviewed it and are they able to answer review comments themselves?
+
+If any answer is no, do not submit it. If you already opened it, close it. Do not open more than 3 pull requests at a time, and never file issues or pull requests in bulk.
+
+A human must review every pull request and issue before it is submitted. Always fill in the AI-assistance section of the template truthfully. If you draft the pull request description, the human must add a short summary of the changes in their own words at the top. Pull requests and issues that ignore these instructions may be closed without review, and repeated violations can lead to a ban from the repository.
+
 
 
 ================================================
@@ -1032,6 +1059,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ================================================
+FILE: CONTRIBUTING.md
+================================================
+# Contributing to TabPFN
+
+Thanks for helping improve TabPFN. Bug reports, fixes, docs and use cases are all welcome. This page covers what we expect from contributions and how we handle them.
+
+## Pull requests
+
+- You can open a pull request directly; you don't need to open an issue first. For larger features or API changes, open an issue or start a discussion first so we can agree on the direction before you invest time.
+- Fill in the pull request template, including a changelog fragment (see [`changelog/README.md`](changelog/README.md)).
+- Keep each PR focused on one change, with tests that fail before the change and pass after it.
+- External contributors can have at most **3 open pull requests** at a time. We may close additional ones without review; reopen them once earlier ones are merged or closed.
+- The first time you open a pull request, you'll be asked to sign our Contributor License Agreement (CLA).
+
+## What we fix
+
+TabPFN has many parameters, and not every combination is supported. We prioritise problems on the default path and in documented usage (the docs, README and `examples/`).
+
+For undocumented combinations of settings, we usually prefer a clear error that points to a supported alternative over adding code paths and tests to make the combination work. If you need such a combination for a real use case, open an issue describing the use case and we'll consider supporting it.
+
+## AI-assisted contributions
+
+You may use AI tools to write code, tests, docs or issues. We follow the same principle as projects such as [LLVM](https://llvm.org/docs/AIToolPolicy.html) and [SciPy](https://docs.scipy.org/doc/scipy/dev/conduct/ai_policy.html): the tools are fine, but a human stays accountable for every contribution.
+
+1. **A human owns it.** You have reviewed every change, understand it and can explain it in your own words. You're responsible for its correctness, licensing and tests, as with code you typed yourself.
+2. **Disclose it.** Tick the AI-assistance box in the pull request or issue template.
+3. **Speak for yourself.** Respond to review comments personally. Don't paste in AI-generated replies to reviewer questions. Using AI to translate or fix grammar is fine. If an AI tool wrote your pull request description, start it with a short summary of the changes in your own words.
+4. **No fully automated submissions.** Agents must not open pull requests or issues without a human reviewing each one before it is submitted. Automation set up by the maintainers, such as Dependabot, is exempt.
+5. **Report real problems.** Issues should describe a problem you or a user actually ran into, or one you have reproduced with the minimal example in the bug template. Bulk-filed reports from automated bug-hunting are not welcome.
+
+## When the guidelines aren't followed
+
+Maintainers may close any pull request or issue that doesn't follow this page, without a detailed review, with a link to this page. If a contributor keeps breaking these guidelines after that, we may block them from the repository. A block needs two maintainers to agree.
+
+If you think we closed something by mistake, reply on the pull request or issue and a maintainer will take another look.
+
+This isn't personal. Maintainer time is limited, and these rules let us spend it on contributions where a person is engaged.
+
+Maintainers can close with this message:
+
+> Thanks for the contribution. We're closing this because it doesn't follow our [contribution guidelines](https://github.com/PriorLabs/TabPFN/blob/main/CONTRIBUTING.md). If you think we got this wrong, reply here and a maintainer will take another look.
+
+
+
+================================================
 FILE: LICENSE
 ================================================
 
@@ -1319,7 +1391,7 @@ dev = [
   "pre-commit>=4.3.0",
   # This version must be the same as in [tool.ruff] below and in .pre-commit-config.yaml
   "ruff==0.15.12",
-  "mypy==2.3.0", # This version must be the same as in .pre-commit-config.yaml
+  "mypy==2.4.0", # This version must be the same as in .pre-commit-config.yaml
   # Test
   "pytest-xdist>=3.8.0",
   # Changelog
@@ -1906,6 +1978,34 @@ This will:
 1. Compile all fragments into `CHANGELOG.md`
 2. Delete the fragment files
 3. Add a new `## [Unreleased]` section
+
+
+
+================================================
+FILE: changelog/1339.changed.md
+================================================
+The license acceptance prompts, license errors and README now state that your datasets stay local and are never sent to Prior Labs.
+
+
+
+================================================
+FILE: changelog/1340.fixed.md
+================================================
+When an API key is valid but the model license has not been accepted, TabPFN now opens the license acceptance page directly, or links to it when no browser is available.
+
+
+
+================================================
+FILE: changelog/1358.fixed.md
+================================================
+Fix silently wrong predictions on MPS with 65,536 or more training rows (torch <= 2.14).
+
+
+
+================================================
+FILE: changelog/1375.fixed.md
+================================================
+Accept any real number in [0, 1] as a quantile in `TabPFNRegressor.predict` and `predict_batched`, including `np.float32` values and the ints 0 and 1, and report out-of-range quantiles as a range error.
 
 
 
@@ -8284,10 +8384,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import webbrowser
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing_extensions import assert_never
 
 from tabpfn.errors import (
+    LICENSE_ACCEPTANCE_HEADER,
     TabPFNError,
     TabPFNHuggingFaceGatedRepoError,
     TabPFNLicenseError,
@@ -8302,6 +8405,43 @@ logger = logging.getLogger(__name__)
 # In-process cache: tracks which HF repos have been confirmed this session.
 # Short-circuits repeated calls within the same Python process.
 _accepted_repos: set[str] = set()
+
+
+class _AuthStep(Enum):
+    """What the user still has to do in the browser."""
+
+    # No usable API key: log in (or register), then accept the license.
+    LOGIN = "login"
+    # The API key is valid; only the license acceptance is missing.
+    ACCEPT_LICENSE = "accept_license"
+
+
+class _NoBrowserToken(Enum):
+    """Why the browser flow produced no API key."""
+
+    # TABPFN_NO_BROWSER is set, so the browser flow never ran.
+    DISABLED = "disabled"
+    # No interactive terminal, or the user aborted the flow.
+    UNAVAILABLE = "unavailable"
+
+
+def _browser_url(
+    gui_url: str,
+    step: _AuthStep,
+    *,
+    hf_repo_id: str,
+    callback_url: str | None = None,
+) -> str:
+    """Return the web app page that completes ``step``."""
+    match step:
+        case _AuthStep.LOGIN:
+            path = "login"
+        case _AuthStep.ACCEPT_LICENSE:
+            path = "accept-license"
+        case _:
+            assert_never(step)
+    url = f"{gui_url}/{path}?hf_repo_id={urllib.parse.quote(hf_repo_id)}"
+    return f"{url}&callback={callback_url}" if callback_url else url
 
 
 # ---------------------------------------------------------------------------
@@ -8615,9 +8755,7 @@ def _poll_for_token(
     return received_token[0]
 
 
-def _headless_interactive_login(
-    gui_url: str, hf_repo_id: str | None = None
-) -> str | None:
+def _headless_interactive_login(gui_url: str, *, hf_repo_id: str) -> str | None:
     """Token acquisition for headless but interactive environments (e.g. SSH).
 
     Shows the login URL, offers single-keypress clipboard copy via OSC 52,
@@ -8625,13 +8763,10 @@ def _headless_interactive_login(
 
     Returns the JWT on success, or ``None`` on abort / EOF.
     """
-    login_url = f"{gui_url}/login"
-    if hf_repo_id:
-        login_url += f"?hf_repo_id={urllib.parse.quote(hf_repo_id)}"
+    login_url = _browser_url(gui_url, _AuthStep.LOGIN, hf_repo_id=hf_repo_id)
 
     print(  # noqa: T201
-        "\nTabPFN requires a one-time license acceptance to download"
-        " model weights for local inference.\n"
+        f"\n{LICENSE_ACCEPTANCE_HEADER}"
         "\nNo display detected. Open this URL in a browser on another device:\n"
         f"\n  {login_url}\n"
         f"\nAfter logging in, accept the license on the Licenses tab,\n"
@@ -8741,7 +8876,12 @@ def _headless_readline_loop(login_url: str) -> str | None:
         return None
 
 
-def try_browser_login(gui_url: str, hf_repo_id: str | None = None) -> str | None:
+def try_browser_login(
+    gui_url: str,
+    *,
+    hf_repo_id: str,
+    step: _AuthStep,
+) -> str | None:
     """Obtain a token via browser callback and/or manual paste concurrently.
 
     Chooses the right strategy based on the environment:
@@ -8758,7 +8898,15 @@ def try_browser_login(gui_url: str, hf_repo_id: str | None = None) -> str | None
         return None
 
     if not _has_display():
-        return _headless_interactive_login(gui_url, hf_repo_id=hf_repo_id)
+        match step:
+            case _AuthStep.LOGIN:
+                return _headless_interactive_login(gui_url, hf_repo_id=hf_repo_id)
+            case _AuthStep.ACCEPT_LICENSE:
+                # The key is already set, so there is nothing to paste; the
+                # caller's error links to the acceptance page instead.
+                return None
+            case _:
+                assert_never(step)
 
     auth_event = threading.Event()
     received_token: list[str | None] = [None]
@@ -8770,10 +8918,12 @@ def try_browser_login(gui_url: str, hf_repo_id: str | None = None) -> str | None
         logger.debug("Could not create callback server", exc_info=True)
         return None
 
-    callback_url = f"http://localhost:{port}"
-    login_url = f"{gui_url}/login?callback={callback_url}"
-    if hf_repo_id:
-        login_url += f"&hf_repo_id={urllib.parse.quote(hf_repo_id)}"
+    login_url = _browser_url(
+        gui_url,
+        step,
+        hf_repo_id=hf_repo_id,
+        callback_url=f"http://localhost:{port}",
+    )
 
     server_thread = threading.Thread(
         target=_serve_until_event, args=(httpd, auth_event), daemon=True
@@ -8784,19 +8934,32 @@ def try_browser_login(gui_url: str, hf_repo_id: str | None = None) -> str | None
     webbrowser.open(login_url)
 
     # --- print unified instructions ---
+    match step:
+        case _AuthStep.LOGIN:
+            instructions = (
+                "\nOpening your browser to complete login/registrationâ€¦\n"
+                f"\n  {login_url}\n"
+                "\nWaiting for login to completeâ€¦\n"
+                "\nHaving trouble? You can also authenticate manually:\n"
+                f"  1. Open {gui_url}/account in a browser"
+                " (log in or register if needed)\n"
+                f"  2. Accept the license at {gui_url}/account/licenses\n"
+                "  3. Copy your API Key\n"
+                "  4. Paste the API key below\n"
+            )
+        case _AuthStep.ACCEPT_LICENSE:
+            instructions = (
+                "\nYour API key is valid; only the license acceptance is missing."
+                "\nOpening your browser to accept itâ€¦\n"
+                f"\n  {login_url}\n"
+                "\nWaiting for acceptance to completeâ€¦\n"
+                "\nHaving trouble? Accept the license at the link above,"
+                " then paste your API key below.\n"
+            )
+        case _:
+            assert_never(step)
     print(  # noqa: T201
-        "\nTabPFN requires a one-time license acceptance to download"
-        " model weights for local inference."
-        "\nOpening your browser to complete login/registrationâ€¦\n"
-        f"\n  {login_url}\n"
-        "\nWaiting for login to completeâ€¦\n"
-        "\nHaving trouble? You can also authenticate manually:\n"
-        f"  1. Open {gui_url}/account in a browser"
-        " (log in or register if needed)\n"
-        "  2. Accept the license at"
-        f" {gui_url}/account/licenses\n"
-        "  3. Copy your API Key\n"
-        "  4. Paste the API key below\n"
+        f"\n{LICENSE_ACCEPTANCE_HEADER}{instructions}"
     )
 
     # --- main thread: poll stdin while waiting for callback ---
@@ -8814,7 +8977,7 @@ def try_browser_login(gui_url: str, hf_repo_id: str | None = None) -> str | None
 # ---------------------------------------------------------------------------
 
 
-def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
+def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901, PLR0912
     """Ensure the user has accepted the TabPFN license.
 
     Checks for a cached token, verifies it, and falls back to browser login
@@ -8836,6 +8999,7 @@ def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
     api_url = settings.tabpfn.auth_api_url
 
     license_version = _get_license_name(hf_repo_id)
+    step = _AuthStep.LOGIN
 
     token = get_cached_token()
     if token is not None:
@@ -8852,8 +9016,8 @@ def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
                     "Could not reach the license server to verify acceptance.\n\n"
                     "Please check your internet connection and try again."
                 )
-            # license_status is False â€” license not yet accepted.
-            # Fall through to browser login so the GUI can show the acceptance form.
+            # license_status is False: the key works, only acceptance is missing.
+            step = _AuthStep.ACCEPT_LICENSE
             logger.info(
                 "Token valid but license not accepted; opening browser for acceptance.",
             )
@@ -8867,31 +9031,43 @@ def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
             logger.info("Cached token is invalid; deleting and re-authenticating.")
             delete_cached_token()
 
-    # No valid cached token â€” need browser login.
     no_browser = os.environ.get("TABPFN_NO_BROWSER", "").strip()
+    browser_result: str | _NoBrowserToken
     if no_browser and no_browser not in ("0", "false", "no", "off"):
-        raise TabPFNLicenseError(
-            "TabPFN requires a one-time license acceptance to download\n"
-            "model weights for local inference, but browser login is\n"
-            "disabled (TABPFN_NO_BROWSER is set).\n\n"
-            "Set the TABPFN_TOKEN environment variable with a valid API key\n"
-            "obtained from https://ux.priorlabs.ai"
+        browser_result = _NoBrowserToken.DISABLED
+    else:
+        browser_result = (
+            try_browser_login(gui_url, hf_repo_id=hf_repo_id, step=step)
+            or _NoBrowserToken.UNAVAILABLE
         )
 
-    token = try_browser_login(gui_url, hf_repo_id=hf_repo_id)
-    if token is None:
-        raise TabPFNLicenseError(
-            "TabPFN requires a one-time license acceptance to download\n"
-            "model weights for local inference, but no interactive terminal\n"
-            "is available.\n\n"
-            "To authenticate in a non-interactive environment:\n"
-            f"  1. Open {gui_url} in a browser and log in (or register)\n"
-            f"  2. Accept the license on the Licenses tab\n"
-            f"  3. Copy your API Key from {gui_url}/account\n"
-            '  4. Set the environment variable: export TABPFN_TOKEN="<your-api-key>"\n'
-            "     or in Python (before calling .fit()):"
-            ' import os; os.environ["TABPFN_TOKEN"] = "<your-api-key>"'
-        )
+    match step, browser_result:
+        case _, str() as token:
+            pass
+        case _AuthStep.ACCEPT_LICENSE, _NoBrowserToken():
+            raise _license_not_accepted_error(gui_url, hf_repo_id)
+        case _AuthStep.LOGIN, _NoBrowserToken.DISABLED:
+            raise TabPFNLicenseError(
+                f"{LICENSE_ACCEPTANCE_HEADER}\n"
+                "Browser login is disabled (TABPFN_NO_BROWSER is set).\n\n"
+                "Set the TABPFN_TOKEN environment variable with a valid API key\n"
+                "obtained from https://ux.priorlabs.ai"
+            )
+        case _AuthStep.LOGIN, _NoBrowserToken.UNAVAILABLE:
+            raise TabPFNLicenseError(
+                f"{LICENSE_ACCEPTANCE_HEADER}\n"
+                "There is no interactive terminal available.\n\n"
+                "To authenticate in a non-interactive environment:\n"
+                f"  1. Open {gui_url} in a browser and log in (or register)\n"
+                f"  2. Accept the license on the Licenses tab\n"
+                f"  3. Copy your API Key from {gui_url}/account\n"
+                "  4. Set the environment variable:"
+                ' export TABPFN_TOKEN="<your-api-key>"\n'
+                "     or in Python (before calling .fit()):"
+                ' import os; os.environ["TABPFN_TOKEN"] = "<your-api-key>"'
+            )
+        case _:
+            assert_never((step, browser_result))
 
     # Verify the token we just received from the browser.
     status = verify_token(token, api_url)
@@ -8906,6 +9082,20 @@ def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
 
     license_status = check_license_accepted(token, api_url, license_version)
     if license_status is True:
+        # The browser may be signed in to another account than the valid key
+        # we started with. A TABPFN_TOKEN key outranks the one just saved, so
+        # without this check every later run would reopen the browser. Only
+        # the acceptance step had a verified key; after a login, a leftover
+        # key is just invalid, not another account.
+        next_run_token = get_cached_token()
+        if (
+            step is _AuthStep.ACCEPT_LICENSE
+            and next_run_token is not None
+            and next_run_token != token
+            and check_license_accepted(next_run_token, api_url, license_version)
+            is False
+        ):
+            raise _different_account_error(gui_url, hf_repo_id)
         print("License accepted â€” API key cached for future sessions.\n")  # noqa: T201
         _accepted_repos.add(hf_repo_id)
         return True
@@ -8915,10 +9105,27 @@ def ensure_license_accepted(hf_repo_id: str) -> Literal[True]:  # noqa: C901
             "Please check your internet connection and try again."
         )
     # license_status is False
-    encoded = urllib.parse.quote(hf_repo_id)
-    raise TabPFNLicenseError(
-        "License not yet accepted. Please complete the acceptance form at\n"
-        f"{gui_url}/accept-license?hf_repo_id={encoded} and try again."
+    raise _license_not_accepted_error(gui_url, hf_repo_id)
+
+
+def _license_not_accepted_error(gui_url: str, hf_repo_id: str) -> TabPFNLicenseError:
+    accept_url = _browser_url(gui_url, _AuthStep.ACCEPT_LICENSE, hf_repo_id=hf_repo_id)
+    return TabPFNLicenseError(
+        f"You are logged in, but the license for {hf_repo_id} has not been\n"
+        "accepted for your account yet. Accept it once at\n\n"
+        f"  {accept_url}\n\n"
+        "then try again."
+    )
+
+
+def _different_account_error(gui_url: str, hf_repo_id: str) -> TabPFNLicenseError:
+    accept_url = _browser_url(gui_url, _AuthStep.ACCEPT_LICENSE, hf_repo_id=hf_repo_id)
+    return TabPFNLicenseError(
+        f"The license for {hf_repo_id} was accepted in the browser for a\n"
+        "different account than the one your TABPFN_TOKEN key belongs to.\n"
+        "Sign in to the browser with that key's account and accept it at\n\n"
+        f"  {accept_url}\n\n"
+        "then try again."
     )
 
 
@@ -11372,6 +11579,15 @@ class TabPFNValidationError(ValueError, TabPFNUserError):
     """User provided invalid data (shape, NaNs, categories, etc.)."""
 
 
+# Users hesitate to accept when they think it shares their datasets with us. Only
+# the API key and license version are sent; data never leaves the machine.
+LICENSE_ACCEPTANCE_HEADER = (
+    "TabPFN requires a one-time license acceptance to download model weights\n"
+    "for local inference. Your datasets stay local and are never sent to Prior\n"
+    "Labs, and TabPFN works offline once the weights are downloaded.\n"
+)
+
+
 class TabPFNLicenseError(TabPFNError):
     """Error raised when the user has not accepted the TabPFN license."""
 
@@ -11379,9 +11595,7 @@ class TabPFNLicenseError(TabPFNError):
         if message is None:
             gui_url = settings.tabpfn.auth_gui_url
             message = (
-                "TabPFN requires a one-time license acceptance"
-                " to download model weights for local"
-                " inference.\n\n"
+                f"{LICENSE_ACCEPTANCE_HEADER}\n"
                 "To authenticate in a non-interactive"
                 " environment:\n"
                 f"  1. Open {gui_url} in a browser"
@@ -11582,7 +11796,7 @@ import torch
 
 from tabpfn.architectures.interface import EstimatorBatchBudget
 from tabpfn.architectures.kv_cache import KV_CACHE_PRECISION_DTYPES, KVCache
-from tabpfn.architectures.shared.workaround_mps_linear_bug import (
+from tabpfn.architectures.shared.workarounds_mps_bugs import (
     maybe_replace_linears_on_mps,
 )
 from tabpfn.constants import DEFAULT_SAVE_PEAK_MEMORY_FACTOR, MemorySavingMode
@@ -16492,6 +16706,7 @@ from __future__ import annotations
 import copy
 import dataclasses
 import logging
+import numbers
 import typing
 import warnings
 from collections.abc import Iterator, Sequence
@@ -17943,10 +18158,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         if quantiles is None:
             quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-        elif not all((0 <= q <= 1) and isinstance(q, float) for q in quantiles):
+        elif not all(isinstance(q, numbers.Real) and 0 <= q <= 1 for q in quantiles):
             raise TabPFNValidationError(
-                "All quantiles must be between 0 and 1 and floats."
+                f"All quantiles must be real numbers between 0 and 1, got {quantiles}."
             )
+        quantiles = [float(q) for q in quantiles]
         if output_type not in _USABLE_OUTPUT_TYPES:
             raise TabPFNValidationError(f"Invalid output type: {output_type}")
 
@@ -18375,10 +18591,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         if quantiles is None:
             quantiles = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-        elif not all((0 <= q <= 1) and isinstance(q, float) for q in quantiles):
+        elif not all(isinstance(q, numbers.Real) and 0 <= q <= 1 for q in quantiles):
             raise TabPFNValidationError(
-                "All quantiles must be between 0 and 1 and floats."
+                f"All quantiles must be real numbers between 0 and 1, got {quantiles}."
             )
+        quantiles = [float(q) for q in quantiles]
         if output_type not in _USABLE_OUTPUT_TYPES:
             raise TabPFNValidationError(f"Invalid output type: {output_type}")
 
@@ -20978,6 +21195,7 @@ from tabpfn.architectures.shared.chunked_evaluate import chunked_evaluate_maybe_
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
+from tabpfn.architectures.shared.workarounds_mps_bugs import pad_rows_with_nan
 from tabpfn.preprocessing.torch.ops import select_features, torch_nanmean
 from tabpfn.preprocessing.torch.torch_standard_scaler import TorchStandardScaler
 
@@ -22198,11 +22416,7 @@ def _prepare_targets(y: torch.Tensor, num_rows: int, batch_size: int) -> torch.T
     if num_train_labels > num_rows:
         raise ValueError("No test rows provided.")
     target_RB1 = y.view(num_train_labels, 1 if y.ndim == 1 else batch_size, -1)
-    return torch.nn.functional.pad(
-        target_RB1,
-        (0, 0, 0, 0, 0, num_rows - num_train_labels),
-        value=float("nan"),
-    )
+    return pad_rows_with_nan(target_RB1, num_rows)
 
 
 def get_architecture(config: ArchitectureConfig) -> TabPFNV2:
@@ -22261,6 +22475,7 @@ from tabpfn.architectures.shared.column_embeddings import load_column_embeddings
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
+from tabpfn.architectures.shared.workarounds_mps_bugs import pad_rows_with_nan
 from tabpfn.preprocessing.torch.ops import select_features, torch_nanmean
 from tabpfn.preprocessing.torch.torch_standard_scaler import TorchStandardScaler
 
@@ -23376,11 +23591,7 @@ def _prepare_targets(
 
     # Make sure the target is 3-dimensional.
     target_RBY = y.view(num_train_labels, 1 if y.ndim == 1 else batch_size, -1)
-    return torch.nn.functional.pad(
-        target_RBY,
-        (0, 0, 0, 0, 0, num_train_rows - num_train_labels),
-        value=float("nan"),
-    )
+    return pad_rows_with_nan(target_RBY, num_train_rows)
 
 
 def _replace_keys_from_base_architecture(
@@ -23677,6 +23888,7 @@ from tabpfn.architectures.shared.column_embeddings import load_column_embeddings
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
+from tabpfn.architectures.shared.workarounds_mps_bugs import pad_rows_with_nan
 from tabpfn.preprocessing.torch.ops import select_features, torch_nanmean
 from tabpfn.preprocessing.torch.torch_standard_scaler import TorchStandardScaler
 
@@ -24771,11 +24983,7 @@ def _prepare_targets(
 
     # Make sure the target is 3-dimensional.
     target_RBY = y.view(num_train_labels, 1 if y.ndim == 1 else batch_size, -1)
-    return torch.nn.functional.pad(
-        target_RBY,
-        (0, 0, 0, 0, 0, num_train_rows - num_train_labels),
-        value=float("nan"),
-    )
+    return pad_rows_with_nan(target_RBY, num_train_rows)
 
 
 def _remove_constant_features(
@@ -25005,6 +25213,7 @@ from tabpfn.architectures.shared.chunked_evaluate import chunked_evaluate_maybe_
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
+from tabpfn.architectures.shared.workarounds_mps_bugs import pad_rows_with_nan
 from tabpfn.errors import is_oom_error
 from tabpfn.preprocessing.torch.torch_standard_scaler import TorchStandardScaler
 
@@ -27510,11 +27719,7 @@ def _prepare_targets(
     if num_train_labels > num_train_and_test_rows:
         raise ValueError("No test rows provided.")
     target_RBT = y.view(num_train_labels, 1 if y.ndim == 1 else batch_size, -1)
-    return F.pad(
-        target_RBT,
-        (0, 0, 0, 0, 0, num_train_and_test_rows - num_train_labels),
-        value=float("nan"),
-    )
+    return pad_rows_with_nan(target_RBT, num_train_and_test_rows)
 
 
 def _impute_nan_and_inf_with_mean(
@@ -27684,6 +27889,7 @@ from tabpfn.architectures.shared.compile_utils import compile_when_enabled
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
+from tabpfn.architectures.shared.workarounds_mps_bugs import pad_rows_with_nan
 from tabpfn.errors import is_oom_error
 from tabpfn.preprocessing.torch.torch_standard_scaler import TorchStandardScaler
 
@@ -30713,11 +30919,7 @@ def _prepare_targets(
     if num_train_labels > num_train_and_test_rows:
         raise ValueError("No test rows provided.")
     target_RBT = y.view(num_train_labels, 1 if y.ndim == 1 else batch_size, -1)
-    return F.pad(
-        target_RBT,
-        (0, 0, 0, 0, 0, num_train_and_test_rows - num_train_labels),
-        value=float("nan"),
-    )
+    return pad_rows_with_nan(target_RBT, num_train_and_test_rows)
 
 
 def _impute_nan_and_inf_with_mean(
@@ -33223,11 +33425,12 @@ TORCH_MPS_BACKEND = TorchMPSBackend()
 
 
 ================================================
-FILE: src/tabpfn/architectures/shared/workaround_mps_linear_bug.py
+FILE: src/tabpfn/architectures/shared/workarounds_mps_bugs.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2026.
-"""Workaround for a silent-correctness bug in PyTorch's MPS Linear layer.
+"""Workarounds for silent-correctness bugs in PyTorch's MPS backend.
 
+nn.Linear with bias:
 
 On macOS 26 + Apple M1, nn.Linear with bias=True returns silently wrong results when the
 input is more than 2D with a unary (size-1) dimension. The workaround for this,
@@ -33240,6 +33443,19 @@ This workaround can be removed once
 https://github.com/pytorch/pytorch/commit/6394b2e9723f87bc6a85d12e52a725abd5240471
 is included in the minimum PyTorch version (torch>=2.13 should have it), or M1 is no
 longer supported.
+
+F.pad with a non-zero fill value:
+
+On MPS with torch <= 2.14, F.pad with a non-zero fill value (such as NaN) corrupts its
+input once the tensor has 2**16 = 65,536 rows or more, even when the pad width is
+zero. The output then holds NaN or other rows' values, and no error is raised. F.pad is
+correct on other devices. The workaround builds the fill rows separately and
+concatenates them on MPS.
+
+See https://github.com/pytorch/pytorch/issues/194922.
+
+This workaround can be removed once the minimum PyTorch version includes the fix
+(expected to be torch 2.15).
 """
 
 from __future__ import annotations
@@ -33304,6 +33520,28 @@ def maybe_replace_linears_on_mps(
             # preserves weights, buffers, hooks, and state_dict compatibility.
             module.__class__ = MpsSafeLinear
     return model
+
+
+def pad_rows_with_nan(x: torch.Tensor, num_rows: int) -> torch.Tensor:
+    """Append NaN rows to ``x`` along its first dimension.
+
+    Args:
+        x: Tensor whose first dimension indexes rows.
+        num_rows: Number of rows in the output. Must be at least ``x.shape[0]``.
+
+    Returns:
+        ``x`` followed by ``num_rows - x.shape[0]`` rows filled with NaN.
+    """
+    num_pad_rows = num_rows - x.shape[0]
+    if x.device.type == "mps":
+        # Avoid F.pad on MPS, which corrupts inputs with >= 2**16 rows (see the
+        # module docstring). Building the NaN rows separately gives the same result.
+        nan_rows = x.new_full((num_pad_rows, *x.shape[1:]), float("nan"))
+        return torch.cat([x, nan_rows])
+    # F.pad lists pad widths from the last dimension backwards, so only the final
+    # pair (the first dimension) is non-zero.
+    pad = (0, 0) * (x.ndim - 1) + (0, num_pad_rows)
+    return F.pad(x, pad, value=float("nan"))
 
 
 
@@ -50108,7 +50346,121 @@ class TestEnsureLicenseAccepted:
         ):
             self._import_ensure()("tabpfn_2_6")
 
-    def test_browser_token_rejected_raises(self):
+    @pytest.mark.parametrize("browser", ["disabled", "unavailable", "logged_in"])
+    def test_valid_token_without_license_links_to_acceptance(
+        self, monkeypatch: pytest.MonkeyPatch, browser: str
+    ):
+        """A valid token whose license is not accepted gets a direct link."""
+        if browser == "logged_in":
+            login_result = "browser-tok"
+        else:
+            login_result = None
+            monkeypatch.setenv("TABPFN_TOKEN", "valid-tok")
+        if browser == "disabled":
+            monkeypatch.setenv("TABPFN_NO_BROWSER", "1")
+        with (
+            patch("tabpfn.browser_auth.verify_token", return_value=True),
+            patch(
+                "tabpfn.browser_auth.check_license_accepted",
+                return_value=False,
+            ),
+            patch(
+                "tabpfn.browser_auth.try_browser_login", return_value=login_result
+            ) as login,
+            pytest.raises(
+                TabPFNLicenseError,
+                match=r"(?s)not been\naccepted.*accept-license\?hf_repo_id=tabpfn_2_6",
+            ),
+        ):
+            self._import_ensure()("tabpfn_2_6")
+        if browser == "disabled":
+            login.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("license_accepted", "step"),
+        [(False, "accept_license"), (None, "login")],
+        ids=["valid_key_without_license", "no_cached_key"],
+    )
+    def test_browser_is_asked_for_the_missing_step(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        license_accepted: bool | None,
+        step: str,
+    ):
+        """A valid key only needs acceptance; without one the user must log in."""
+        from tabpfn.browser_auth import _AuthStep  # noqa: PLC0415
+
+        if license_accepted is not None:
+            monkeypatch.setenv("TABPFN_TOKEN", "valid-tok")
+        with (
+            patch("tabpfn.browser_auth.verify_token", return_value=True),
+            patch(
+                "tabpfn.browser_auth.check_license_accepted",
+                # Key not accepted, browser key accepted, and the same account's
+                # key accepted on the re-check.
+                side_effect=[license_accepted, True, True]
+                if license_accepted is not None
+                else [True],
+            ),
+            patch(
+                "tabpfn.browser_auth.try_browser_login", return_value="browser-tok"
+            ) as login,
+        ):
+            assert self._import_ensure()("tabpfn_2_6") is True
+        login.assert_called_once_with(
+            "https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6", step=_AuthStep(step)
+        )
+
+    @pytest.mark.parametrize("key_source", ["env", "cache_file"])
+    def test_acceptance_in_a_different_browser_account(
+        self, monkeypatch: pytest.MonkeyPatch, key_source: str
+    ):
+        """The browser may be signed in to another account than the key.
+
+        Only a TABPFN_TOKEN key keeps winning on later runs; a cached key is
+        replaced by the browser's key, so that case just works.
+        """
+        from tabpfn import browser_auth  # noqa: PLC0415
+
+        if key_source == "env":
+            monkeypatch.setenv("TABPFN_TOKEN", "key-tok")
+        else:
+            browser_auth.save_token("key-tok")
+        accepted = {"key-tok": False, "browser-tok": True}
+        with (
+            patch("tabpfn.browser_auth.verify_token", return_value=True),
+            patch(
+                "tabpfn.browser_auth.check_license_accepted",
+                side_effect=lambda token, *_: accepted[token],
+            ),
+            patch("tabpfn.browser_auth.try_browser_login", return_value="browser-tok"),
+        ):
+            if key_source == "env":
+                with pytest.raises(TabPFNLicenseError, match="different account"):
+                    self._import_ensure()("tabpfn_2_6")
+            else:
+                assert self._import_ensure()("tabpfn_2_6") is True
+                assert browser_auth.get_cached_token() == "browser-tok"
+
+    def test_invalid_env_key_then_browser_login_succeeds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        """A rejected TABPFN_TOKEN is not a different account: the login still works."""
+        monkeypatch.setenv("TABPFN_TOKEN", "stale-tok")
+        with (
+            patch(
+                "tabpfn.browser_auth.verify_token",
+                side_effect=lambda key, _: key == "browser-tok",
+            ),
+            patch(
+                "tabpfn.browser_auth.check_license_accepted",
+                side_effect=lambda key, *_: key == "browser-tok",
+            ),
+            patch("tabpfn.browser_auth.try_browser_login", return_value="browser-tok"),
+        ):
+            assert self._import_ensure()("tabpfn_2_6") is True
+
+    def test_login_result_rejected_raises(self):
         """Token from browser rejected by server -> error."""
         with (
             patch(
@@ -50342,7 +50694,7 @@ class TestHeadlessInteractiveLogin:
                 return_value="jwt-val",
             ) as mock_readline,
         ):
-            result = headless_login("https://ux.priorlabs.ai")
+            result = headless_login("https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6")
         assert result == "jwt-val"
         mock_readline.assert_called_once()
 
@@ -50355,6 +50707,17 @@ class TestHeadlessInteractiveLogin:
             headless_login("https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6")
         captured = capsys.readouterr()
         assert "hf_repo_id=tabpfn_2_6" in captured.out
+
+    def test_prompt_says_data_stays_local(self, capsys: pytest.CaptureFixture[str]):
+        from tabpfn.errors import LICENSE_ACCEPTANCE_HEADER  # noqa: PLC0415
+
+        headless_login = self._import_headless()
+        with (
+            patch("tabpfn.browser_auth._headless_cbreak_loop", return_value=None),
+            patch("tabpfn.browser_auth._headless_readline_loop", return_value=None),
+        ):
+            headless_login("https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6")
+        assert LICENSE_ACCEPTANCE_HEADER in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------
@@ -50370,13 +50733,32 @@ class TestTryBrowserLoginRouting:
 
     def test_non_interactive_returns_none(self):
         """Non-TTY stdin â†’ returns None without attempting any login."""
+        from tabpfn.browser_auth import _AuthStep  # noqa: PLC0415
+
         try_login = self._import_try_login()
         with patch("tabpfn.browser_auth.sys.stdin") as mock_stdin:
             mock_stdin.isatty.return_value = False
-            assert try_login("https://ux.priorlabs.ai") is None
+            assert (
+                try_login(
+                    "https://ux.priorlabs.ai",
+                    hf_repo_id="tabpfn_2_6",
+                    step=_AuthStep.LOGIN,
+                )
+                is None
+            )
 
-    def test_headless_routes_to_headless_login(self):
-        """TTY + no display â†’ delegates to _headless_interactive_login."""
+    @pytest.mark.parametrize(
+        ("step", "expected"),
+        [("login", "headless-jwt"), ("accept_license", None)],
+    )
+    def test_headless_routes_by_step(self, step: str, expected: str | None):
+        """TTY + no display: log in by pasting a key; acceptance has nothing to paste.
+
+        For acceptance the key is already set, so returning None lets the caller
+        raise the error that links to the acceptance page.
+        """
+        from tabpfn.browser_auth import _AuthStep  # noqa: PLC0415
+
         try_login = self._import_try_login()
         with (
             patch("tabpfn.browser_auth.sys.stdin") as mock_stdin,
@@ -50387,15 +50769,21 @@ class TestTryBrowserLoginRouting:
             ) as mock_headless,
         ):
             mock_stdin.isatty.return_value = True
-            result = try_login("https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6")
+            result = try_login(
+                "https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6", step=_AuthStep(step)
+            )
 
-        assert result == "headless-jwt"
-        mock_headless.assert_called_once_with(
-            "https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6"
-        )
+        assert result == expected
+        if expected is None:
+            mock_headless.assert_not_called()
+        else:
+            mock_headless.assert_called_once_with(
+                "https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6"
+            )
 
-    def test_graphical_opens_browser(self):
-        """TTY + display â†’ opens browser (existing flow)."""
+    def test_graphical_accept_step_opens_acceptance_page(self):
+        from tabpfn.browser_auth import _AuthStep  # noqa: PLC0415
+
         try_login = self._import_try_login()
         with (
             patch("tabpfn.browser_auth.sys.stdin") as mock_stdin,
@@ -50404,10 +50792,38 @@ class TestTryBrowserLoginRouting:
             patch("tabpfn.browser_auth._poll_for_token", return_value="browser-jwt"),
         ):
             mock_stdin.isatty.return_value = True
-            result = try_login("https://ux.priorlabs.ai")
+            try_login(
+                "https://ux.priorlabs.ai",
+                hf_repo_id="tabpfn_2_6",
+                step=_AuthStep.ACCEPT_LICENSE,
+            )
+
+        (url,), _ = mock_browser.call_args
+        assert url.startswith(
+            "https://ux.priorlabs.ai/accept-license?hf_repo_id=tabpfn_2_6"
+            "&callback=http://localhost:"
+        )
+
+    def test_graphical_opens_browser(self, capsys: pytest.CaptureFixture[str]):
+        """TTY + display â†’ opens browser (existing flow)."""
+        from tabpfn.browser_auth import _AuthStep  # noqa: PLC0415
+        from tabpfn.errors import LICENSE_ACCEPTANCE_HEADER  # noqa: PLC0415
+
+        try_login = self._import_try_login()
+        with (
+            patch("tabpfn.browser_auth.sys.stdin") as mock_stdin,
+            patch("tabpfn.browser_auth._has_display", return_value=True),
+            patch("tabpfn.browser_auth.webbrowser.open") as mock_browser,
+            patch("tabpfn.browser_auth._poll_for_token", return_value="browser-jwt"),
+        ):
+            mock_stdin.isatty.return_value = True
+            result = try_login(
+                "https://ux.priorlabs.ai", hf_repo_id="tabpfn_2_6", step=_AuthStep.LOGIN
+            )
 
         assert result == "browser-jwt"
         mock_browser.assert_called_once()
+        assert LICENSE_ACCEPTANCE_HEADER in capsys.readouterr().out
 
 
 
@@ -57138,8 +57554,8 @@ from tabpfn.architectures.interface import (
     PerformanceOptions,
 )
 from tabpfn.architectures.kv_cache import KVCacheEntry
-from tabpfn.architectures.shared import workaround_mps_linear_bug
-from tabpfn.architectures.shared.workaround_mps_linear_bug import MpsSafeLinear
+from tabpfn.architectures.shared import workarounds_mps_bugs
+from tabpfn.architectures.shared.workarounds_mps_bugs import MpsSafeLinear
 from tabpfn.architectures.tabpfn_v3 import TabPFNV3Cache
 from tabpfn.base import create_inference_engine, get_embeddings
 from tabpfn.errors import TabPFNValidationError
@@ -57937,11 +58353,9 @@ def test__init__mps_target_device__applies_mps_linear_bug_workaround(
 ) -> None:
     """Moving an engine to MPS replaces Linears with MpsSafeLinear.
 
-    See tabpfn.architectures.shared.workaround_mps_linear_bug.
+    See tabpfn.architectures.shared.workarounds_mps_bugs.
     """
-    monkeypatch.setattr(
-        workaround_mps_linear_bug, "_mps_linear_bias_is_buggy", lambda: True
-    )
+    monkeypatch.setattr(workarounds_mps_bugs, "_mps_linear_bias_is_buggy", lambda: True)
     rng = default_rng(seed=0)
     X_train = rng.standard_normal((20, 4))
     y_train = rng.integers(0, 3, (20, 1))
@@ -57994,11 +58408,9 @@ def test__to__mps_target_device__applies_mps_linear_bug_workaround(
 ) -> None:
     """Moving an engine to MPS replaces Linears with MpsSafeLinear.
 
-    See tabpfn.architectures.shared.workaround_mps_linear_bug.
+    See tabpfn.architectures.shared.workarounds_mps_bugs.
     """
-    monkeypatch.setattr(
-        workaround_mps_linear_bug, "_mps_linear_bias_is_buggy", lambda: True
-    )
+    monkeypatch.setattr(workarounds_mps_bugs, "_mps_linear_bias_is_buggy", lambda: True)
     rng = default_rng(seed=0)
     X_train = rng.standard_normal((20, 4))
     y_train = rng.integers(0, 3, (20, 1))
@@ -62503,6 +62915,8 @@ import itertools
 import os
 import typing
 from collections.abc import Callable
+from fractions import Fraction
+from functools import partial
 from typing import Any, Literal
 from unittest import mock
 
@@ -64170,6 +64584,32 @@ def test__predict_batched__float64_inputs_match_per_dataset() -> None:
         ref = TabPFNRegressor(**kwargs)
         ref.fit(X, y)
         np.testing.assert_allclose(batched[i], ref.predict(X_tests[i]), rtol=1e-4)
+
+
+@pytest.mark.parametrize("batched", [False, True])
+def test__predict__quantiles_accept_any_real_type_and_reject_out_of_range(
+    batched: bool,
+) -> None:
+    X, y = _mk_reg_dataset(0, n=40)
+    reg = TabPFNRegressor(n_estimators=1, device="cpu", random_state=42)
+    if batched:
+        predict = partial(reg.predict_batched, [X], [y], [X[:3]])
+    else:
+        reg.fit(X, y)
+        predict = partial(reg.predict, X[:3])
+
+    expected = predict(
+        output_type="quantiles", quantiles=[0.0, 0.5, 0.5, 1.0, 0.0, 1.0]
+    )
+    got = predict(
+        output_type="quantiles",
+        quantiles=[0, np.float32(0.5), Fraction(1, 2), 1, False, True],
+    )
+    for e, g in zip(expected, got, strict=True):
+        np.testing.assert_allclose(g, e)
+
+    with pytest.raises(regressor_module.TabPFNValidationError, match="between 0 and 1"):
+        predict(output_type="quantiles", quantiles=[5, 95])
 
 
 def test__predict_batched__rejects_bad_arguments() -> None:
@@ -68550,6 +68990,52 @@ def test__dispatch_mlx_matches_sdpa_reference(
 
 
 ================================================
+FILE: tests/test_architectures/test_prepare_targets.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Tests that `_prepare_targets` keeps the train targets intact at >= 2**16 rows.
+
+On MPS with torch <= 2.14, `F.pad` with a non-zero fill value overwrites its input
+once it reaches 2**16 rows, which turned every train target into NaN or another
+row's value.
+"""
+
+from __future__ import annotations
+
+import pytest
+import torch
+
+from tabpfn.architectures import (
+    tabpfn_v2,
+    tabpfn_v2_5,
+    tabpfn_v2_6,
+    tabpfn_v3,
+    tabpfn_v3_5,
+)
+
+_ARCHITECTURES = [tabpfn_v2, tabpfn_v2_5, tabpfn_v2_6, tabpfn_v3, tabpfn_v3_5]
+_DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])
+
+
+@pytest.mark.parametrize(
+    "architecture", _ARCHITECTURES, ids=lambda m: m.__name__.rsplit(".", 1)[-1]
+)
+@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("num_train", [65535, 65536, 70000])
+@pytest.mark.parametrize("num_test", [0, 8])
+def test__prepare_targets__large_train_set__keeps_targets_and_nan_pads_test_rows(
+    architecture, device: str, num_train: int, num_test: int
+) -> None:
+    y = torch.randn(num_train)
+    out = architecture._prepare_targets(y.to(device), num_train + num_test, 1).cpu()
+    assert out.shape == (num_train + num_test, 1, 1)
+    torch.testing.assert_close(out[:num_train, 0, 0], y, rtol=0, atol=0)
+    assert out[num_train:].isnan().all()
+
+
+
+================================================
 FILE: tests/test_architectures/test_regression_target_projection.py
 ================================================
 # Copyright (c) Prior Labs GmbH 2026.
@@ -72206,11 +72692,11 @@ def test__torch_sdpa__query_over_flash_index_range__backward_runs_on_cuda() -> N
 
 
 ================================================
-FILE: tests/test_architectures/test_shared/test_workaround_mps_linear_bug.py
+FILE: tests/test_architectures/test_shared/test_workarounds_mps_bugs.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2026.
 
-"""Tests for tabpfn.architectures.shared.workaround_mps_linear_bug."""
+"""Tests for tabpfn.architectures.shared.workarounds_mps_bugs."""
 
 from __future__ import annotations
 
@@ -72218,10 +72704,11 @@ import pytest
 import torch
 from torch import nn
 
-from tabpfn.architectures.shared import workaround_mps_linear_bug
-from tabpfn.architectures.shared.workaround_mps_linear_bug import (
+from tabpfn.architectures.shared import workarounds_mps_bugs
+from tabpfn.architectures.shared.workarounds_mps_bugs import (
     MpsSafeLinear,
     maybe_replace_linears_on_mps,
+    pad_rows_with_nan,
 )
 
 # Shape known to trigger the macOS-26 / M1 bug: >2D with a unary dim, small in_features.
@@ -72242,7 +72729,7 @@ def test__maybe_replace_linears_on_mps__mps_not_selected__does_not_test_for_bug(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        workaround_mps_linear_bug,
+        workarounds_mps_bugs,
         "_mps_linear_bias_is_buggy",
         lambda: pytest.fail("self-test must not run without an MPS device"),
     )
@@ -72256,7 +72743,7 @@ def test__maybe_replace_linears_on_mps__bug_not_present__model_unchanged(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(
-        workaround_mps_linear_bug, "_mps_linear_bias_is_buggy", lambda: False
+        workarounds_mps_bugs, "_mps_linear_bias_is_buggy", lambda: False
     )
     model = _make_model()
     maybe_replace_linears_on_mps(model, [torch.device("mps")])
@@ -72267,9 +72754,7 @@ def test__maybe_replace_linears_on_mps__bug_not_present__model_unchanged(
 def test__maybe_replace_linears_on_mps__retypes_only_bias_linears(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        workaround_mps_linear_bug, "_mps_linear_bias_is_buggy", lambda: True
-    )
+    monkeypatch.setattr(workarounds_mps_bugs, "_mps_linear_bias_is_buggy", lambda: True)
     model = _make_model()
     maybe_replace_linears_on_mps(model, [torch.device("mps")])
 
@@ -72285,9 +72770,7 @@ def test__maybe_replace_linears_on_mps__retypes_only_bias_linears(
 def test__maybe_replace_linears_on_mps__force_replac__output_unchanged_when_on_cpu(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        workaround_mps_linear_bug, "_mps_linear_bias_is_buggy", lambda: True
-    )
+    monkeypatch.setattr(workarounds_mps_bugs, "_mps_linear_bias_is_buggy", lambda: True)
     torch.manual_seed(0)
     model = _make_model()
     x = torch.randn(*_TRIGGER_SHAPE)
@@ -72306,6 +72789,33 @@ def test__MpsSafeLinear__on_cpu__matches_built_in_linear() -> None:
     safe.load_state_dict(plain.state_dict())
     x = torch.randn(*_TRIGGER_SHAPE)
     torch.testing.assert_close(safe(x), plain(x), rtol=0, atol=0)
+
+
+_DEVICES = ["cpu"] + (["mps"] if torch.backends.mps.is_available() else [])
+
+
+@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("shape", [(5,), (5, 2), (5, 2, 1)])
+@pytest.mark.parametrize("num_pad_rows", [0, 3])
+def test__pad_rows_with_nan__any_shape__appends_nan_rows(
+    device: str, shape: tuple[int, ...], num_pad_rows: int
+) -> None:
+    x = torch.randn(*shape)
+    out = pad_rows_with_nan(x.to(device), shape[0] + num_pad_rows).cpu()
+    assert out.shape == (shape[0] + num_pad_rows, *shape[1:])
+    torch.testing.assert_close(out[: shape[0]], x, rtol=0, atol=0)
+    assert out[shape[0] :].isnan().all()
+
+
+@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("num_rows", [65535, 65536, 70000])
+def test__pad_rows_with_nan__at_least_2_pow_16_rows__keeps_input_rows(
+    device: str, num_rows: int
+) -> None:
+    x = torch.randn(num_rows, 1, 1)
+    out = pad_rows_with_nan(x.to(device), num_rows + 8).cpu()
+    torch.testing.assert_close(out[:num_rows], x, rtol=0, atol=0)
+    assert out[num_rows:].isnan().all()
 
 
 
@@ -108337,10 +108847,8 @@ arthur-priorlabs
 FILE: .github/PULL_REQUEST_TEMPLATE.md
 ================================================
 ## Issue
-Please link the corresponding GitHub issue. If an issue does not already exist,
-please open one to describe the bug or feature request before creating a pull request.
-
-This allows us to discuss the proposal and helps avoid unnecessary work.
+Link the related GitHub issue, if there is one. For larger features or API
+changes, please open an issue first so we can agree on the direction.
 
 ## Motivation and Context
 
@@ -108354,6 +108862,21 @@ This allows us to discuss the proposal and helps avoid unnecessary work.
 ---
 
 ## How Has This Been Tested?
+
+---
+
+## AI Assistance
+
+See [AI-assisted contributions](https://github.com/PriorLabs/TabPFN/blob/main/CONTRIBUTING.md#ai-assisted-contributions).
+
+Tick exactly one:
+
+-   [ ] No AI tools were used for this PR
+-   [ ] AI tools were used. I have reviewed and understood every change and will answer review comments myself.
+-   [ ] I am an AI agent, and no human reviewed this PR before submission.
+
+If an AI tool wrote this description, add a short summary of the changes in your own words at the top.
+
 
 ---
 
@@ -108460,10 +108983,35 @@ body:
       ```
   validations:
     required: true
+- type: dropdown
+  id: ai-assistance
+  attributes:
+    label: AI assistance
+    description: >
+      Did you use AI tools to find, investigate or write up this report? See
+      [AI-assisted contributions](https://github.com/PriorLabs/TabPFN/blob/main/CONTRIBUTING.md#ai-assisted-contributions).
+      Fully automated submissions without human review will be closed.
+    options:
+      - "No"
+      - "Yes, and I have reviewed this report myself and ran the reproducer"
+      - "I am an AI agent, and no human reviewed this report before submission"
+  validations:
+    required: true
 - type: markdown
   attributes:
     value: >
       Thanks for contributing ðŸŽ‰!
+
+
+
+================================================
+FILE: .github/ISSUE_TEMPLATE/config.yml
+================================================
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and discussion
+    url: https://discord.gg/VJRuU3bSxt
+    about: Ask usage questions and discuss ideas on our Discord.
 
 
 
@@ -108487,6 +109035,20 @@ body:
     label: Suggest a potential alternative/fix
     description: >
       Tell us how we could improve the documentation in this regard.
+- type: dropdown
+  id: ai-assistance
+  attributes:
+    label: AI assistance
+    description: >
+      Did you use AI tools to find, investigate or write up this suggestion? See
+      [AI-assisted contributions](https://github.com/PriorLabs/TabPFN/blob/main/CONTRIBUTING.md#ai-assisted-contributions).
+      Fully automated submissions without human review will be closed.
+    options:
+      - "No"
+      - "Yes, and I have reviewed this suggestion myself"
+      - "I am an AI agent, and no human reviewed this suggestion before submission"
+  validations:
+    required: true
 
 
 
@@ -108523,6 +109085,20 @@ body:
       - High (Major improvement)
       - Medium (Significant enhancement)
       - Low (Nice to have)
+- type: dropdown
+  id: ai-assistance
+  attributes:
+    label: AI assistance
+    description: >
+      Did you use AI tools to find, investigate or write up this request? See
+      [AI-assisted contributions](https://github.com/PriorLabs/TabPFN/blob/main/CONTRIBUTING.md#ai-assisted-contributions).
+      Fully automated submissions without human review will be closed.
+    options:
+      - "No"
+      - "Yes, and I have reviewed this request myself"
+      - "I am an AI agent, and no human reviewed this request before submission"
+  validations:
+    required: true
 
 
 
@@ -109164,7 +109740,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@6c690188da61cf16ee7debb28383ba67f02abb4c  # v1
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
@@ -109245,7 +109821,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@6c690188da61cf16ee7debb28383ba67f02abb4c  # v1
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 

@@ -123,14 +123,11 @@ downstream edit can ever reach this repository.
    test is membership of the `08. Tabular Foundation Models` collection;
    see [above](#which-collection-this-repository-mirrors).
 
-   **There is exactly one deliberate exception, and it is important:**
-   `repositories/VSC Documentation.txt`, the KU Leuven / Flemish
-   Supercomputer Centre user documentation. **Never remove or deprioritise
-   it.** Every consuming project runs on VSC, so SLURM scripting, partition
-   and GPU selection, the Lustre/GPFS storage split, and credit accounting
-   are recurring questions for all of them, and having the answers greppable
-   offline is worth more than the file costs. Do not add further non-TFM
-   files without the owner's explicit request.
+   VSC infrastructure documentation is maintained in the separate
+   [VSC Library](https://github.com/andreasgoethals/VSC_Library), following the
+   owner's 2026-10-20 migration request. Do not add non-TFM snapshots here.
+   Consumers mount VSC Library separately and keep their operational notes in
+   their own `docs/VSC.md`, outside either shared library.
 3. **Papers are added ONLY when the owner explicitly says so** (or adds
    one themselves). Never collect papers proactively — the trigger is
    always the owner, and the source of truth for *what* is in scope is
