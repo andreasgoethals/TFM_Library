@@ -37,7 +37,7 @@ version got written the first time.
 Usage::
 
     python scripts/checks/check_docs.py
-    python scripts/checks/check_docs.py --quiet   # only the summary line
+    python scripts/checks/check_docs.py --quiet   # problems and summary only
 
 Exit code 0 when everything is consistent, 1 otherwise, so it composes
 with ``maintain.py`` and works as a pre-commit hook.
@@ -173,7 +173,8 @@ def check_neutrality(rep: Report) -> None:
     for doc in NEUTRAL_DOCS:
         text = (_ROOT / doc).read_text(encoding="utf-8")
         for marker in PROJECT_MARKERS:
-            n = text.count(marker)
+            # Case-insensitive: "creditpfn/" paths leak the project as well.
+            n = len(re.findall(re.escape(marker), text, re.I))
             if n:
                 rep.fail(f"{doc}: mentions consuming project {marker!r} "
                          f"{n}x — shared docs must stay project-neutral "
@@ -211,7 +212,7 @@ def check_placeholders(rep: Report) -> None:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--quiet", action="store_true",
-                    help="print only the final summary line")
+                    help="omit the header and counts; problems are always listed")
     args = ap.parse_args(argv)
 
     rep = Report()
@@ -229,9 +230,11 @@ def main(argv: list[str] | None = None) -> int:
         for k, v in counts.items():
             print(f"  {k:<22} {v}")
         print(bar)
-        if rep.problems:
-            for p in rep.problems:
-                print(f"  [PROBLEM] {p}")
+    # --quiet suppresses success chatter only; every problem stays visible.
+    if rep.problems:
+        for p in rep.problems:
+            print(f"  [PROBLEM] {p}")
+        if not args.quiet:
             print(bar)
     n = len(rep.problems)
     print(f"  {n} problem(s)." if n else

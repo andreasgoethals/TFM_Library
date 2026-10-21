@@ -2,6 +2,12 @@
 # scripts/dumps/refresh_repositories.py --only "TabPFN Wide.txt" (see README).
 repositories/TabPFN Wide.txt
 
+# Scratch files left by an interrupted or failed atomic refresh:
+# refresh_repositories.py / source_snapshot.py (*.refresh.tmp) and
+# refresh_external_sources.py (.source-*.tmp).
+*.refresh.tmp
+repositories/.source-*.tmp
+
 # Per-project notes written by DOWNSTREAM repositories inside their copy of
 # this folder (see PROJECT_SPECIFIC.template.md). Ignored here so a consuming
 # project can keep its own notes next to the literature without ever dirtying

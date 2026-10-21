@@ -6,6 +6,12 @@ One line per change; one dated section per day.
 
 ## 2026-10-20
 
+- **Audited all 62 summaries against the generated paper text and corrected verified errors.** Notable corrections: Müller 2021 proves loss = expected KL to the PPD and uses GP/BNN priors (no SCM experiment); TabPFNv2 never uses TabArena; FairPFN's real data are Law School and Adult only; Luo 2026's 7.6× is compressed checkpoint size, not inference memory; TabDPT-Turbo's 2.9–12.9× are corpus-size ratios; CausalFM handles identification before estimation; Mitra-v2 changed everything at once; TabPFN-Wide is synthetic-only; TabPFN-3.5 weights are downloadable under a restrictive licence; Effectively Shallow covers regression. Added omitted headline results and venues; labelled code-dump/model-card material as such.
+- Rebuilt 49 overview-table one-liners that contradicted their summaries (e.g. Liu & Ye's BETA is v1-based; Ye 2025 has no v2.5 link; CausalPFN's best rank is CATE-only).
+- SYNTHESIS: removed internal contradictions left by incremental additions (calibration "measured almost nowhere", regression "second-class", position-paper framing, O(n²) claim), integrated the trailing September addendum, propagated the corrected facts above, and unified timeline citation formats.
+- Removed project-specific credit-risk/PD/LGD framing from shared summaries and synthesis; credit content remains only where a paper is itself about credit data.
+- Tooling: `check_docs.py --quiet` now lists each problem and matches project names case-insensitively; the pre-commit hook blocks when no Python is found; propagation restores the previous pin if the consumer commit fails; post-refresh rechecks run once; snapshot refreshers skip oversized/undecodable files and leave timestamp-only changes untouched; stale text for replaced PDFs is detected; refresh temp files are gitignored. New tests (22 total).
+
 - Fixed nondeterministic omission of Yandex finetuning reports/configs caused by the scraper's unordered handling of negated ignore rules. Explicit text selection retains reports and TOML configurations while excluding weights/data; added a regression using a real local Git fixture.
 
 - Refreshed 19 ordinary implementation snapshots and automated the three former manual exceptions: TabForestPFN source/config/licenses, the complete official docs export and both immutable model cards. Reviewed the shorter current model-card sources before accepting their shrink; archived experiment outputs remain excluded.

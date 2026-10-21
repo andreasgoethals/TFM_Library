@@ -418,8 +418,8 @@ python scripts/propagate_to_downstream.py --push      # also push each project
 ```bash
 python scripts/papers/new_paper.py ~/Downloads/2607.27546v1.pdf
 python scripts/papers/new_paper.py paper.pdf --dry-run   # decide nothing
-python scripts/papers/extract_paper_text.py --all        # fill in anything missing
-python scripts/papers/extract_paper_text.py --check      # report gaps, write nothing
+python scripts/papers/extract_paper_text.py --all        # fill in missing or stale (PDF replaced) text
+python scripts/papers/extract_paper_text.py --check      # report missing/stale text, write nothing
 ```
 
 Placeholders read `TODO(new-paper)` and `check_docs.py` fails while any of

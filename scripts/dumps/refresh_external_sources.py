@@ -67,6 +67,8 @@ def replace(target: Path, content: str, *, force_shrink=False):
     body = content.encode("utf-8")
     if len(body) < 1000 or (target.exists() and not force_shrink and len(body) < target.stat().st_size * 0.5):
         raise ValueError(f"Shrink guard: preserve {target.name} until the source change is reviewed")
+    if source_snapshot.unchanged_except_timestamp(body, target):
+        return  # Only retrieved_utc differs: leave the existing snapshot untouched.
     fd, name = tempfile.mkstemp(prefix=".source-", suffix=".tmp", dir=target.parent)
     os.close(fd)
     temp = Path(name)
