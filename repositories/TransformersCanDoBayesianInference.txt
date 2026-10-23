@@ -1215,7 +1215,7 @@ def get_gp_prior_hyperparameters(config):
 
     return (config['prior_noise']
             , lambda : config['prior_outputscale']
-            , lambda : config['prior_lengthscale']  # lengthscale, HÃ¶her mehr sep
+            , lambda : config['prior_lengthscale']  # lengthscale, Höher mehr sep
             , True
             , list(config['prior_num_features_used_sampler'].values())[0]
             , config['prior_normalize_by_used_features']
@@ -1228,7 +1228,7 @@ def get_meta_gp_prior_hyperparameters(config):
 
     return (config['prior_noise']
             , outputscale_sampler
-            , lengthscale_sampler  # lengthscale, HÃ¶her mehr sep
+            , lengthscale_sampler  # lengthscale, Höher mehr sep
             , True
             , list(config['prior_num_features_used_sampler'].values())[0]
             , config['prior_normalize_by_used_features']
@@ -7815,7 +7815,7 @@ FILE: datasets/german.numer.txt
 ================================================
 FILE: datasets/heart.csv
 ================================================
-ï»¿age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,ca,thal,target
+﻿age,sex,cp,trestbps,chol,fbs,restecg,thalach,exang,oldpeak,slope,ca,thal,target
 63,1,3,145,233,1,0,150,0,2.3,0,0,1,1
 37,1,2,130,250,0,1,187,0,3.5,0,0,2,1
 41,0,1,130,204,0,0,172,0,1.4,2,0,2,1

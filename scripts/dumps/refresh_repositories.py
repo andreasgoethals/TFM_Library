@@ -485,14 +485,15 @@ def _ingest_with_optional_timeout(ingest_fn, url: str, tmp: Path,
     other exception propagates so the caller's error handler sees it.
     """
     kwargs = {"source": url, "output": str(tmp), **(patterns or {})}
+    from utf8_ingest import ingest_utf8
     if timeout is not None:
         try:
-            return ingest_fn(**kwargs, timeout=timeout)
+            return ingest_utf8(ingest_fn, **kwargs, timeout=timeout)
         except TypeError as exc:
             if "timeout" not in str(exc):
                 raise
             # Older gitingest — fall through to the no-timeout call.
-    return ingest_fn(**kwargs)
+    return ingest_utf8(ingest_fn, **kwargs)
 
 
 def _summarise_exception(exc: BaseException) -> str:

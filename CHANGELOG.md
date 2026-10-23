@@ -6,6 +6,7 @@ One line per change; one dated section per day.
 
 ## 2026-10-23
 
+- Refreshed registered repositories and official external sources. Fixed locale-dependent UTF-8 formatting for both ordinary and bounded source ingestion; added regression coverage for late Unicode characters, a split multibyte sample and restoration after formatter failures.
 - Reconciled the live 67-paper Tabular Foundation Models collection: added CARTE, the original LimiX report, LimiX-2M, TFM self-consistency and insurance-pricing studies with attached PDF versions, generated text, curated citation keys and substantive summaries.
 - Integrated knowledge-graph transfer, conditional modelling, scalar/attention architecture, probability consistency and insurance-specific evaluation into the synthesis. Preserved initial publication dates separately from the filed October insurance and November LimiX revisions.
 - Registered CARTE, LimiX and TabPFNInsurance source snapshots. New source entries reuse the bounded, immutable-revision downloader and embed provenance; model weights, datasets and generated artifacts are excluded. No Zotero records or downstream pins changed.

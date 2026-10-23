@@ -1,11 +1,11 @@
 TFM Library source snapshot
-Do not edit: regenerate with scripts/dumps/refresh_external_sources.py
+Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/FelixdenBreejen/TabForestPFN",
   "revision": "53114795d3c96f87348a7ccbb675665e9d3e5243",
   "revision_date": "2024-05-30T14:46:51+09:00",
   "slug": "FelixdenBreejen/TabForestPFN",
-  "retrieved_utc": "2026-10-20T10:41:30+00:00",
+  "retrieved_utc": "2026-10-23T08:30:27+00:00",
   "identity_source": "https://github.com/FelixdenBreejen/TabForestPFN",
   "included_files": 249,
   "excluded_files": 19267,
@@ -9749,7 +9749,7 @@ FILE: tabularbench/models/TabSurvey/LICENSE
 ================================================
 MIT License
 
-Copyright (c) 2022 Kathrin SeÃŸler, Tobias Leemann and Vadim Borisov 
+Copyright (c) 2022 Kathrin Seßler, Tobias Leemann and Vadim Borisov 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
 of this software and associated documentation files (the "Software"), to deal 
@@ -16762,7 +16762,7 @@ class CrossNet(nn.Module):
             elif self.parameterization == 'matrix':
                 xl_w = torch.matmul(self.kernels[i], x_l)  # W * xi  (bs, in_features, 1)
                 dot_ = xl_w + self.bias[i]  # W * xi + b
-                x_l = x_0 * dot_ + x_l  # x0 Â· (W * xi + b) +xl  Hadamard-product
+                x_l = x_0 * dot_ + x_l  # x0 · (W * xi + b) +xl  Hadamard-product
             else:  # error
                 raise ValueError("parameterization should be 'vector' or 'matrix'")
         x_l = torch.squeeze(x_l, dim=2)

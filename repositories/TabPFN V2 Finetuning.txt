@@ -221,7 +221,7 @@ from sklearn.model_selection import train_test_split
 
 from tabpfn import TabPFNClassifier
 
-# 1. Data â€” German-Credit-Data-Creditability (OpenML did=46562, 1000 samples, binary classification)
+# 1. Data — German-Credit-Data-Creditability (OpenML did=46562, 1000 samples, binary classification)
 X, y = fetch_openml(data_id=46562, as_frame=True, return_X_y=True)
 
 # 2. Split
@@ -392,7 +392,7 @@ def main() -> None:
     # We use the "Higgs" dataset (see https://www.openml.org/search?type=data&sort=runs&id=44129&status=active)
     # but only take a random subset of 100k samples for this example.
     # Under torchrun, the main process downloads the dataset first and the
-    # other ranks then read it from the warm sklearn cache â€” otherwise every
+    # other ranks then read it from the warm sklearn cache — otherwise every
     # rank would download it, and not all sklearn fetchers write their cache
     # atomically.
     with main_process_first():
@@ -431,8 +431,8 @@ def main() -> None:
         roc_auc = calculate_roc_auc(y_test, base_pred_proba)
         log_loss_score = log_loss(y_test, base_pred_proba)
 
-        print(f"ðŸ“Š Default TabPFN Test ROC: {roc_auc:.4f}")
-        print(f"ðŸ“Š Default TabPFN Test Log Loss: {log_loss_score:.4f}\n")
+        print(f"📊 Default TabPFN Test ROC: {roc_auc:.4f}")
+        print(f"📊 Default TabPFN Test Log Loss: {log_loss_score:.4f}\n")
 
         del base_clf
         gc.collect()
@@ -471,8 +471,8 @@ def main() -> None:
         roc_auc = calculate_roc_auc(y_test, y_pred_proba)
         loss = log_loss(y_test, y_pred_proba)
 
-        print(f"ðŸ“Š Finetuned TabPFN Test ROC: {roc_auc:.4f}")
-        print(f"ðŸ“Š Finetuned TabPFN Test Log Loss: {loss:.4f}")
+        print(f"📊 Finetuned TabPFN Test ROC: {roc_auc:.4f}")
+        print(f"📊 Finetuned TabPFN Test Log Loss: {loss:.4f}")
 
     if dist.is_initialized():
         dist.destroy_process_group()
@@ -565,7 +565,7 @@ def main() -> None:
     # We use the "diamonds" dataset (see https://www.openml.org/d/42225):
     # ~54k rows, predicting the price from carat, cut, color, clarity and size.
     # Under torchrun, the main process downloads the dataset first and the
-    # other ranks then read it from the warm sklearn cache â€” otherwise every
+    # other ranks then read it from the warm sklearn cache — otherwise every
     # rank would download it, and not all sklearn fetchers write their cache
     # atomically.
     with main_process_first():
@@ -598,8 +598,8 @@ def main() -> None:
         mse = mean_squared_error(y_test, base_pred)
         r2 = r2_score(y_test, base_pred)
 
-        print(f"ðŸ“Š Default TabPFN Test MSE: {mse:.4f}")
-        print(f"ðŸ“Š Default TabPFN Test RÂ²: {r2:.4f}\n")
+        print(f"📊 Default TabPFN Test MSE: {mse:.4f}")
+        print(f"📊 Default TabPFN Test R²: {r2:.4f}\n")
 
         del base_reg
         gc.collect()
@@ -637,8 +637,8 @@ def main() -> None:
         mse = mean_squared_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
 
-        print(f"ðŸ“Š Finetuned TabPFN Test MSE: {mse:.4f}")
-        print(f"ðŸ“Š Finetuned TabPFN Test RÂ²: {r2:.4f}")
+        print(f"📊 Finetuned TabPFN Test MSE: {mse:.4f}")
+        print(f"📊 Finetuned TabPFN Test R²: {r2:.4f}")
 
     if dist.is_initialized():
         dist.destroy_process_group()
@@ -663,7 +663,7 @@ FILE: examples/input_gradients.py
 With ``differentiable_input=True``, TabPFN keeps the autograd graph intact all
 the way from the input tensors to the predicted probabilities. Backpropagating
 a prediction through the frozen model therefore yields ``d prediction / d X``
-for every test sample and feature â€” a simple saliency map showing which
+for every test sample and feature — a simple saliency map showing which
 feature values drive each prediction.
 
 Run:
@@ -742,14 +742,14 @@ FILE: examples/kv_cache_fast_prediction.py
 
 `fit_mode="fit_with_cache"` builds a key-value (KV) cache *during* `fit`.
 This front-loads the cost of computing the training-set representation so
-`predict`/`predict_proba` run fasterâ€”especially when:
-  â€¢ the training set is large, and/or
-  â€¢ the test:train ratio is small (few predictions per many training points).
+`predict`/`predict_proba` run faster—especially when:
+  • the training set is large, and/or
+  • the test:train ratio is small (few predictions per many training points).
 
 Trade-off: additional memory roughly O(N_samples * N_features) to hold the cache.
 Implications:
-  â€¢ Expect *slower* `fit` but *faster* `predict`/`predict_proba`.
-  â€¢ Benefit grows with train size and repeated inference (CV folds, batch eval, etc.).
+  • Expect *slower* `fit` but *faster* `predict`/`predict_proba`.
+  • Benefit grows with train size and repeated inference (CV folds, batch eval, etc.).
 """
 
 import time
@@ -838,7 +838,7 @@ def main(
     out = reg.predict(X_test[selected], output_type="full")
 
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
-    fig.suptitle("TabPFN predicted distributions â€” diabetes dataset", fontsize=13)
+    fig.suptitle("TabPFN predicted distributions — diabetes dataset", fontsize=13)
 
     for i, (ax, idx, title) in enumerate(zip(axes, selected, titles, strict=True)):
         plot_regression_distribution(out, sample_idx=i, ax=ax)
@@ -1206,7 +1206,7 @@ def main() -> None:
         lossfn,
         device,
     )
-    print(f"Initial Test MSE={mse_test:.4f}, RÂ²={r2_test:.4f}")
+    print(f"Initial Test MSE={mse_test:.4f}, R²={r2_test:.4f}")
 
     # Mark the prompt tensors as the parameters to optimize.
     prompt_x_tensor.requires_grad_(requires_grad=True)
@@ -1241,7 +1241,7 @@ def main() -> None:
             device,
         )
         print(
-            f"Epoch {epoch + 1}/{do_epochs}: Test MSE={mse_test:.4f}, RÂ²={r2_test:.4f}"
+            f"Epoch {epoch + 1}/{do_epochs}: Test MSE={mse_test:.4f}, R²={r2_test:.4f}"
         )
 
 
@@ -1343,7 +1343,7 @@ def prepare_tabpfn_request(
 
     This utility converts NumPy arrays and configuration dictionaries into a
     JSON-encoded payload suitable for invoking a TabPFN 2.5 model hosted on
-    a SageMaker endpoint. It does not alter or validate data â€” it simply
+    a SageMaker endpoint. It does not alter or validate data — it simply
     prepares the transport format expected by the server.
 
     For larger datasets, we reconnect preparing and sending the request data

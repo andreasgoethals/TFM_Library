@@ -15,7 +15,8 @@ Directory structure:
     ├── .pre-commit-config.yaml
     ├── changelog/
     │   ├── README.md
-    │   └── 411.changed.md
+    │   ├── 411.changed.md
+    │   └── 413.fixed.md
     ├── examples/
     │   ├── README.md
     │   ├── bayesian_optimization/
@@ -170,7 +171,146 @@ Directory structure:
 ================================================
 FILE: README.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 7915: character maps to <undefined>
+# TabPFN Extensions
+
+[![PyPI version](https://badge.fury.io/py/tabpfn-extensions.svg)](https://badge.fury.io/py/tabpfn-extensions)
+[![Downloads](https://pepy.tech/badge/tabpfn-extensions)](https://pepy.tech/project/tabpfn-extensions)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Discord](https://img.shields.io/discord/1285598202732482621?color=7289da&label=Discord&logo=discord&logoColor=ffffff)](https://discord.gg/BHnX2Ptf4j)
+[![Twitter Follow](https://img.shields.io/twitter/follow/Prior_Labs?style=social)](https://twitter.com/Prior_Labs)
+![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen)
+![Last Commit](https://img.shields.io/github/last-commit/PriorLabs/tabpfn-extensions)
+[![colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PriorLabs/TabPFN/blob/main/examples/notebooks/TabPFN_Demo_Local.ipynb)
+
+> [!WARNING]
+>
+> #### Experimental Code Notice
+> Please note that the extensions in this repository are experimental.
+> -   They are less rigorously tested than the core `tabpfn` library.
+> -   APIs are subject to change without notice in future releases.
+> We welcome your feedback and contributions to help improve and stabilize them!
+
+## Interactive Notebook Tutorial
+> [!TIP]
+>
+> Dive right in with our interactive Colab notebook! It's the best way to get a hands-on feel for TabPFN, walking you through installation, classification, and regression examples.
+>
+> [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PriorLabs/TabPFN/blob/main/examples/notebooks/TabPFN_Demo_Local.ipynb)
+
+## Installation
+
+```bash
+# Clone and install the repository
+pip install "tabpfn-extensions[all] @ git+https://github.com/PriorLabs/tabpfn-extensions.git"
+```
+
+## Available Extensions
+
+- **interpretability**: Explain TabPFN predictions with SHAP values and feature selection
+- **many_class**: Handle classification problems with more classes than your TabPFN checkpoint supports
+- **unsupervised**: Data generation and outlier detection
+- **embedding**: Get TabPFN's internal dense sample embeddings
+- **image**: Put pictures in the table: declared image columns, holding file paths, base64, bytes or PIL images, become frozen DINOv3 features before TabPFN sees them
+- **tabebm**: Data augmentation using TabPFN-based Energy-Based Models
+- **pval_crt**: Statistical feature relevance testing (p-values)
+- **bayesian_optimization**: Bayesian optimization with TabPFN as the surrogate model and exact Expected Improvement on its predicted distribution
+
+See the [Documentation](#documentation) section below for guides, examples, and per-extension READMEs.
+
+### Backend Options
+
+Many TabPFN Extensions works with two TabPFN implementations:
+
+1. **TabPFN Package** — Full PyTorch implementation for local inference:
+   ```bash
+   pip install tabpfn
+   ```
+
+2. **TabPFN Client** — Lightweight API client for cloud-based inference:
+   ```bash
+   pip install "tabpfn-client>=0.2.7"
+   ```
+
+Choose the backend that fits your needs - most extensions work with either option!
+
+Exceptions to this are **embedding** and **bayesian_optimization**, which only work with the local `tabpfn` package.
+
+## Documentation
+
+Documentation for `tabpfn-extensions` is spread across several sources. If you are new to the project, the [examples](#examples) are usually the fastest way to get started; for deeper conceptual guides, see the [TabPFN Docs pages](#tabpfn-docs-pages).
+
+### Examples
+
+Runnable scripts and notebooks for extensions and general use cases live in the [`examples/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples) directory of this repository:
+
+- [`bayesian_optimization/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/bayesian_optimization) — Bayesian optimization with TabPFN as the surrogate and exact Expected Improvement, against a GP baseline
+- [`embedding/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/embedding) — access TabPFN's internal dense sample embeddings
+- [`image/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/image) — pictures as columns, embedded by a frozen DINOv3 and reduced by PCA
+- [`interpretability/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/interpretability) — SHAP values, partial dependence plots, feature selection
+- [`many_class/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/many_class) — classification with more classes than your checkpoint supports
+- [`predictive_distribution/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/predictive_distribution) — visualize the full predictive distribution from `TabPFNRegressor` and derive point estimates / credible intervals
+- [`pval_crt/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/pval_crt) — statistical feature relevance testing
+- [`survival/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/survival) — survival analysis
+- [`tabebm/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/tabebm) — data augmentation via TabEBM
+- [`unsupervised/`](https://github.com/PriorLabs/tabpfn-extensions/tree/main/examples/unsupervised) — data generation, imputation, and outlier detection
+
+### TabPFN Docs pages
+
+In-depth guides for selected extensions are available on [docs.priorlabs.ai](https://docs.priorlabs.ai):
+
+- [Many-class](https://docs.priorlabs.ai/extensions/many-class)
+
+### Per-extension READMEs
+
+Some extensions ship a dedicated README alongside their source code:
+
+- [`interpretability/`](https://github.com/PriorLabs/tabpfn-extensions/blob/main/src/tabpfn_extensions/interpretability/README.md)
+- [`pval_crt/`](https://github.com/PriorLabs/tabpfn-extensions/blob/main/src/tabpfn_extensions/pval_crt/README.md)
+- [`tabebm/`](https://github.com/PriorLabs/tabpfn-extensions/blob/main/src/tabpfn_extensions/tabebm/README.md)
+
+### Interactive notebook
+
+The main TabPFN demo notebook also covers several extensions — in particular the [unsupervised](https://github.com/PriorLabs/tabpfn-extensions/tree/main/src/tabpfn_extensions/unsupervised) and [interpretability](https://github.com/PriorLabs/tabpfn-extensions/tree/main/src/tabpfn_extensions/interpretability) extensions:
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PriorLabs/TabPFN/blob/main/examples/notebooks/TabPFN_Demo_Local.ipynb)
+
+## License
+
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+
+
+## Telemetry
+
+For details on telemetry, please see our [Telemetry Reference](https://github.com/PriorLabs/TabPFN/blob/main/TELEMETRY.md) and our [Privacy Policy](https://priorlabs.ai/privacy_policy/).
+
+## For Contributors
+
+Interested in adding your own extension? We welcome contributions!
+
+We use [uv](https://docs.astral.sh/uv/getting-started/installation/) to manage the project's environment, so install that first.
+
+```bash
+# Clone and set up for development
+git clone https://github.com/PriorLabs/tabpfn-extensions.git
+cd tabpfn-extensions
+uv sync
+source .venv/bin/activate
+
+# If you add optional dependencies for your extension in pyproject.toml, install them
+# like this
+uv sync --extra [your extension name]
+
+# Test your extension with fast mode
+FAST_TEST_MODE=1 pytest tests/test_your_extension.py -v
+```
+
+See our [Contribution Guide](CONTRIBUTING.md) for more details.
+
+[![Contributors](https://contrib.rocks/image?repo=priorlabs/tabpfn-extensions)](https://github.com/priorlabs/tabpfn-extensions/graphs/contributors)
+
+---
+Built with ❤️ by the TabPFN community
+
 
 
 ================================================
@@ -229,14 +369,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- The `dag` argument of `TabPFNUnsupervisedModel.generate_synthetic_data()` and `impute()` must now specify every feature as a key; parentless features are declared explicitly with an empty list (`{i: []}`). Partial DAGs previously gave unlisted features an empty parent list silently, sampling them marginally (independent of everything else) â€” rarely what a caller constraining a subset of features intends. An incomplete DAG now raises `ValueError` naming the missing features. ([#348](https://github.com/PriorLabs/tabpfn-extensions/pull/348))
+- The `dag` argument of `TabPFNUnsupervisedModel.generate_synthetic_data()` and `impute()` must now specify every feature as a key; parentless features are declared explicitly with an empty list (`{i: []}`). Partial DAGs previously gave unlisted features an empty parent list silently, sampling them marginally (independent of everything else) — rarely what a caller constraining a subset of features intends. An incomplete DAG now raises `ValueError` naming the missing features. ([#348](https://github.com/PriorLabs/tabpfn-extensions/pull/348))
 - Removed the deprecated `AutoTabPFNClassifier`/`AutoTabPFNRegressor` (`post_hoc_ensembles`) and `TunedTabPFNClassifier`/`TunedTabPFNRegressor` (`hpo`) extensions, including their extras. Both had been deprecated since the v3 release. ([#361](https://github.com/PriorLabs/tabpfn-extensions/pull/361))
 
 ### Added
 
 - Example scripts in `examples/` are now exercised in CI via a fast per-PR smoke test (path-filtered to example changes), guarding against examples that stop running. ([#327](https://github.com/PriorLabs/tabpfn-extensions/pull/327))
 - Add a `bayesian_optimization` extension using TabPFN as the surrogate model, following the PFNs4BO approach (Mueller et al., ICML 2023): `expected_improvement` computes EI in closed form from TabPFN's predicted bar distribution (no Gaussian assumption), and `propose_next_point` screens random candidates and refines the best ones by gradient ascent on EI via `differentiable_input=True`. Ships with an end-to-end example on the Hartmann-6 benchmark and a new `bayesian_optimization` optional-dependency extra (`tabpfn>=8.1.0`; `botorch` for the example's benchmark objective). ([#343](https://github.com/PriorLabs/tabpfn-extensions/pull/343))
-- Add a full run mode (`EXAMPLE_FULL=1`) to the example tests â€” every example runs at full size (`FAST_TEST_MODE` stripped) to completion, and a timeout is a failure â€” plus a scheduled GPU workflow (`test_examples_full.yml`) that runs it every two days. The slow `feature_selection`, `pdp_example`, and `pval_crt_demo` examples now shrink under `FAST_TEST_MODE=1` so the PR smoke gate verifies them to completion. ([#360](https://github.com/PriorLabs/tabpfn-extensions/pull/360))
+- Add a full run mode (`EXAMPLE_FULL=1`) to the example tests — every example runs at full size (`FAST_TEST_MODE` stripped) to completion, and a timeout is a failure — plus a scheduled GPU workflow (`test_examples_full.yml`) that runs it every two days. The slow `feature_selection`, `pdp_example`, and `pval_crt_demo` examples now shrink under `FAST_TEST_MODE=1` so the PR smoke gate verifies them to completion. ([#360](https://github.com/PriorLabs/tabpfn-extensions/pull/360))
 
 ### Changed
 
@@ -246,7 +386,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Repaired example scripts that had stopped running: raised the `interpretability` extra's `shapiq` floor to `>=1.2.0` (needed for `class_index` and `TabPFNExplainer`) so the SHAP/shapiq examples work again, and fixed the `unsupervised.experiments` import in the DAG example. ([#327](https://github.com/PriorLabs/tabpfn-extensions/pull/327))
-- Fixed `ClientTabPFNRegressor.predict(..., output_type="full")` raising on `tabpfn>=8.1`: the wrapper imported the removed `tabpfn.model.bar_distribution` module before calling the client, discarding the compatible `criterion` tabpfn-client already returns. The wrapper's `predict` override is removed entirely â€” tabpfn-client (>= 0.2.7, the version that started attaching the criterion itself) now handles all output types, un-breaking e.g. `TabPFNUnsupervisedModel.outliers()` on the client backend and forwarding output types such as `output_type="quantiles"` instead of silently returning means. The version floor is enforced: constructing `ClientTabPFNRegressor` with an older tabpfn-client raises an `ImportError` asking to upgrade, instead of failing much later with a bare `KeyError: 'criterion'`. Note that `predict(X, output_type=None)` is no longer accepted on the client backend; omit the argument for the default (mean) prediction, matching the local `tabpfn` API. ([#354](https://github.com/PriorLabs/tabpfn-extensions/pull/354))
+- Fixed `ClientTabPFNRegressor.predict(..., output_type="full")` raising on `tabpfn>=8.1`: the wrapper imported the removed `tabpfn.model.bar_distribution` module before calling the client, discarding the compatible `criterion` tabpfn-client already returns. The wrapper's `predict` override is removed entirely — tabpfn-client (>= 0.2.7, the version that started attaching the criterion itself) now handles all output types, un-breaking e.g. `TabPFNUnsupervisedModel.outliers()` on the client backend and forwarding output types such as `output_type="quantiles"` instead of silently returning means. The version floor is enforced: constructing `ClientTabPFNRegressor` with an older tabpfn-client raises an `ImportError` asking to upgrade, instead of failing much later with a bare `KeyError: 'criterion'`. Note that `predict(X, output_type=None)` is no longer accepted on the client backend; omit the argument for the default (mean) prediction, matching the local `tabpfn` API. ([#354](https://github.com/PriorLabs/tabpfn-extensions/pull/354))
 - Bayesian optimization now works on CUDA machines: `expected_improvement` moves the raw-space bar distribution to the logits' device (TabPFN builds it on cpu, crashing EI with a device mismatch), and the example moves its botorch benchmark objective to the evaluation device so the bounds buffer matches the candidate tensors. ([#360](https://github.com/PriorLabs/tabpfn-extensions/pull/360))
 - The GPU CI job now actually exercises the Bayesian optimization and CRT extensions on cuda: their tests select the device via the shared `TEST_DEVICE` (cuda when available) instead of pinning `device="cpu"`. ([#364](https://github.com/PriorLabs/tabpfn-extensions/pull/364))
 
@@ -264,7 +404,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support an optional `dag` argument in `TabPFNUnsupervisedModel.impute()` and `generate_synthetic_data()` to condition synthesis/imputation on a known causal structure (features processed in topological order, each conditioned on its DAG parents). ([#306](https://github.com/PriorLabs/tabpfn-extensions/pull/306))
 - Added a GPU CI job (`test_gpu`) that runs the test suite on an `ubuntu-22.04-4core-gpu` runner with CUDA forced, mirroring TabPFN's `test_gpu` job, to give the package GPU code-path coverage. ([#322](https://github.com/PriorLabs/tabpfn-extensions/pull/322))
 - The unsupervised `GenerateSyntheticDataExperiment` and `OutlierDetectionUnsupervisedExperiment` `run()` methods now accept a `categorical_features` argument to designate which columns are categorical, plus a `should_plot` flag to skip plotting. ([#326](https://github.com/PriorLabs/tabpfn-extensions/pull/326))
-- Add `simple_impute`, a fast, lightweight column-by-column missing-value imputer in `unsupervised` â€” a single-pass alternative to `TabPFNUnsupervisedModel.impute()`. ([#335](https://github.com/PriorLabs/tabpfn-extensions/pull/335))
+- Add `simple_impute`, a fast, lightweight column-by-column missing-value imputer in `unsupervised` — a single-pass alternative to `TabPFNUnsupervisedModel.impute()`. ([#335](https://github.com/PriorLabs/tabpfn-extensions/pull/335))
 - Add `get_tabpfn_inf_explainer`, a shapiq explainer that masks absent features with `+inf` so TabPFN's native missing-value handling absorbs them (no sampling, one forward pass per coalition). Requires the model to be built with `inference_config={"PASSTHROUGH_INF": True}` (`tabpfn>=8.1.0`). ([#344](https://github.com/PriorLabs/tabpfn-extensions/pull/344))
 
 ### Changed
@@ -276,7 +416,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `score_classification` no longer slices `y_pred[:, 1]` based on the number of unique labels in `y_true`, which produced incorrect ROC AUC scores for multiclass predictions whose `y_true` subset happened to contain only two classes. Positive-class selection and missing-class handling are now delegated to `safe_roc_auc_score`. ([#280](https://github.com/PriorLabs/tabpfn-extensions/pull/280))
-- `TabPFNUnsupervisedModel.density_` now models the requested feature for the unconditional term of the chain-rule decomposition instead of always using the first column. Previously every feature permutation in `outliers` (and `outliers_pdf`/`outliers_pmf`) opened with the first column's marginal â€” double-counting feature 0 and dropping the first permuted feature's marginal â€” and `generate_synthetic_data` sampled the first generated feature of each permutation from the first column's distribution. ([#307](https://github.com/PriorLabs/tabpfn-extensions/pull/307))
+- `TabPFNUnsupervisedModel.density_` now models the requested feature for the unconditional term of the chain-rule decomposition instead of always using the first column. Previously every feature permutation in `outliers` (and `outliers_pdf`/`outliers_pmf`) opened with the first column's marginal — double-counting feature 0 and dropping the first permuted feature's marginal — and `generate_synthetic_data` sampled the first generated feature of each permutation from the first column's distribution. ([#307](https://github.com/PriorLabs/tabpfn-extensions/pull/307))
 - Fix `TabPFNUnsupervisedModel.outliers` crashing on the MPS backend by casting the target to the logits dtype before moving it to the device. ([#311](https://github.com/PriorLabs/tabpfn-extensions/pull/311))
 - Infer TabPFN's supported class count from the model (`utils.get_max_num_classes`) instead of hard-coding it to 10, so the unsupervised model and `ManyClassClassifier` work correctly with TabPFN-3's higher class limit. `TabPFNUnsupervisedModel` now raises a clear error naming the column that needs a missing classifier/regressor, instead of a cryptic `AttributeError` on `None`. ([#312](https://github.com/PriorLabs/tabpfn-extensions/pull/312))
 - `TabPFNUnsupervisedModel` imputation/density now fits each column's conditional model only on rows whose target value is observed, instead of keeping rows with a missing target and replacing their label with 0. This removes a bias toward 0 and, when fitting on the same data being imputed, stops the query rows from leaking into their own training context. ([#313](https://github.com/PriorLabs/tabpfn-extensions/pull/313))
@@ -310,25 +450,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Towncrier inserts release sections immediately below the Unreleased
 heading at release time. PRs do not edit this file directly; they add a
-fragment file under changelog/ â€” see changelog/README.md. -->
+fragment file under changelog/ — see changelog/README.md. -->
 
 ## [0.4.1] - 2026-05-11
 
 ### Fixed
-- `misc/sklearn_compat.py` import failure on `scikit-learn` 1.8+. Upstream renamed `sklearn.utils.validation._is_pandas_df` to `is_pandas_df` (no underscore prefix), which made every `from tabpfn_extensions import ...` immediately `ImportError` on a fresh install resolving sklearn 1.8. Re-vendored `misc/sklearn_compat.py` from the upstream [sklearn-compat](https://github.com/sklearn-compat/sklearn-compat) 0.1.5 release (was 0.1.3, March 2025); the new version has a proper `# Upgrading for scikit-learn 1.8` block plus general cleanups. Only `validate_data` is consumed downstream and its signature hasn't changed. Caught by a TestPyPI smoke install of 0.4.0 before publishing to real PyPI â€” 0.4.0 was never published.
+- `misc/sklearn_compat.py` import failure on `scikit-learn` 1.8+. Upstream renamed `sklearn.utils.validation._is_pandas_df` to `is_pandas_df` (no underscore prefix), which made every `from tabpfn_extensions import ...` immediately `ImportError` on a fresh install resolving sklearn 1.8. Re-vendored `misc/sklearn_compat.py` from the upstream [sklearn-compat](https://github.com/sklearn-compat/sklearn-compat) 0.1.5 release (was 0.1.3, March 2025); the new version has a proper `# Upgrading for scikit-learn 1.8` block plus general cleanups. Only `validate_data` is consumed downstream and its signature hasn't changed. Caught by a TestPyPI smoke install of 0.4.0 before publishing to real PyPI — 0.4.0 was never published.
 
 ## [0.4.0] - 2026-05-11
 
 ### Added
-- KV-cache support across extensions where it materially helps (improved with TabPFN-3 â€” earlier `tabpfn` versions degrade gracefully with a `UserWarning`):
+- KV-cache support across extensions where it materially helps (improved with TabPFN-3 — earlier `tabpfn` versions degrade gracefully with a `UserWarning`):
   - New `tabpfn_extensions.utils.warn_if_no_kv_cache(model, *, context)` helper that warns when a TabPFN model isn't configured with `fit_mode="fit_with_cache"` or when `executor_.keep_cache_on_device` is `False` post-fit. Recognises the `tabpfn-client` backend and emits an alternative recommendation instead of misleading guidance (#284).
   - `pval_crt.tabpfn_crt`: new `use_kv_cache: bool = True` keyword argument. Enabling it sets `fit_mode="fit_with_cache"` on the internal predictive model and `keep_cache_on_device=True` after fit, with a graceful fallback when the installed `tabpfn` doesn't support the cache (#284).
   - `interpretability/pdp.partial_dependence_plots`: warns via `warn_if_no_kv_cache` when handed a TabPFN estimator (#284).
-  - `interpretability/get_tabpfn_imputation_explainer`: same warn helper applied; defaults `imputer="baseline"` (one forward pass per coalition, ~50Ã— faster than the previous `marginal` imputer with no faithfulness loss in practice) (#283).
+  - `interpretability/get_tabpfn_imputation_explainer`: same warn helper applied; defaults `imputer="baseline"` (one forward pass per coalition, ~50× faster than the previous `marginal` imputer with no faithfulness loss in practice) (#283).
 - `examples/interpretability/{shap,shapiq}_example.py` rewritten around California housing (regression, d=8, exact budget 2^8 = 256) and both engage the KV cache (#283).
 
 ### Changed
-- `ManyClassClassifier(estimator=TabPFNClassifier(), ...).fit(X, y)` no longer requires an explicit `alphabet_size`. The wrapper now reads `MAX_NUMBER_OF_CLASSES` via the base estimator's `get_inference_config()` when available (v3 â†’ 160). For older `tabpfn` releases that don't have `get_inference_config()`, it falls back to the historical hardcoded default of 10 if the base estimator's class lives in a `tabpfn`-prefixed module; non-TabPFN estimators still get the explicit-alphabet `ValueError`. The previous `estimator.max_num_classes_` fallback has been dead since this repo's initial commit â€” removed (#282).
+- `ManyClassClassifier(estimator=TabPFNClassifier(), ...).fit(X, y)` no longer requires an explicit `alphabet_size`. The wrapper now reads `MAX_NUMBER_OF_CLASSES` via the base estimator's `get_inference_config()` when available (v3 → 160). For older `tabpfn` releases that don't have `get_inference_config()`, it falls back to the historical hardcoded default of 10 if the base estimator's class lives in a `tabpfn`-prefixed module; non-TabPFN estimators still get the explicit-alphabet `ValueError`. The previous `estimator.max_num_classes_` fallback has been dead since this repo's initial commit — removed (#282).
 - `README.md` overhauled: dropped the workflow mermaid graph, removed RF-PFN / large-datasets references, retagged deprecated extensions, and reworded the many-class entry so it no longer hardcodes "10 classes" (#284).
 - `examples/README.md` refreshed to match the on-disk tree; `hpo/` and `phe/` example directories explicitly tagged as deprecated (#284).
 - `interpretability/README.md` updated to drop the SHAP section and document the KV-cache + baseline-imputer expectations (#283).
@@ -341,7 +481,7 @@ fragment file under changelog/ â€” see changelog/README.md. -->
 - The `rf_pfn` package (`RandomForestTabPFN*` / `DecisionTreeTabPFN*`), its tests (`tests/test_rf_pfn.py`, `tests/test_dt_pfn.py`), the `rf_pfn = []` optional-dependency extra, and the `examples/rf_pfn/` and `examples/large_datasets/` example directories (#284).
 - The `sklearn_ensembles` package (`tabpfn_extensions.sklearn_ensembles`) and its module-level imports. No external callers in the repo (#284).
 - The legacy `interpretability/shap.py` adapter and the `shap` runtime dependency. The `shapiq`-based path supersedes it, including for plotting (`shap.Explanation` wrappers still work with `shap.plots.*`) (#283).
-- `interpretability/experiments.py` â€” dead code. No callers anywhere in the repo, and internally referenced a `tabpfn.scripts.estimator.interpretability` path that no longer exists in current `tabpfn` (#284).
+- `interpretability/experiments.py` — dead code. No callers anywhere in the repo, and internally referenced a `tabpfn.scripts.estimator.interpretability` path that no longer exists in current `tabpfn` (#284).
 - The `dt_pfn` `model_type` branch from `hpo/search_space.py` / `hpo/tuned_tabpfn.py` and the matching test arm; depended on the removed `rf_pfn` package (#284).
 
 ### Fixed
@@ -351,7 +491,7 @@ fragment file under changelog/ â€” see changelog/README.md. -->
 
 ### Notes
 - `tabpfn` dependency pin remains `>=7.0.0` for this release. KV-cache examples need TabPFN-3 to actually engage the cache; on earlier `tabpfn` they emit a `UserWarning` and run without the speedup.
-- TabEBM remains broken against any released `tabpfn` â‰¥ 7.x because `tabpfn.config` was removed upstream. This is a pre-existing latent bug, tracked separately ([RES-1541](https://linear.app/priorlabs/issue/RES-1541)).
+- TabEBM remains broken against any released `tabpfn` ≥ 7.x because `tabpfn.config` was removed upstream. This is a pre-existing latent bug, tracked separately ([RES-1541](https://linear.app/priorlabs/issue/RES-1541)).
 
 ## [0.3.0] - 2026-04-24
 
@@ -406,7 +546,7 @@ fragment file under changelog/ â€” see changelog/README.md. -->
 
 ### Added
 - `TabEBM` class for synthetic tabular data generation using SGLD
-- `partial_dependence_plots` for visualizing feature influence (supports PDP and ICE via scikit-learnâ€™s `PartialDependenceDisplay`)
+- `partial_dependence_plots` for visualizing feature influence (supports PDP and ICE via scikit-learn’s `PartialDependenceDisplay`)
 - Usage analytics (anonymous, optional, enabled by default)
 
 ### Changed
@@ -416,7 +556,190 @@ fragment file under changelog/ â€” see changelog/README.md. -->
 ================================================
 FILE: CONTRIBUTING.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 2719: character maps to <undefined>
+# Contributing to TabPFN Extensions
+
+Welcome to TabPFN Extensions! This repository is a collection of community-contributed packages that extend and enhance TabPFN, a foundation model for tabular data. We welcome all contributions and aim to make the process as simple as possible.
+
+Before developing a feature / opening a PR, please open a GitHub issue and describe the bug or feature request.
+This allows us to discuss the proposal and helps avoid unnecessary work.
+
+## 📋 Quick Start
+
+1. **Setup your development environment**:
+
+    We use [uv](https://docs.astral.sh/uv/getting-started/installation/) to manage the project's environment, so install that first.
+    Then, run the following:
+```bash
+# Clone the repository
+git clone https://github.com/PriorLabs/tabpfn-extensions.git
+cd tabpfn-extensions
+
+# Install a lightweight environment for extension development
+uv sync  # Only installs base requirements
+# OR full install with all dependencies (may take longer)
+uv sync --all-extras
+
+# Activate the environment
+source .venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. **Create your extension package**:
+
+```bash
+mkdir -p src/tabpfn_extensions/your_package examples/your_package tests/
+```
+
+3. **Start coding**:
+   - Implement your extension in `src/tabpfn_extensions/your_package/`
+   - Create examples in `examples/your_package/`
+   - Write tests in `tests/test_your_package.py`
+
+4. **Test your code**:
+
+```bash
+# Quick test run for your package only
+FAST_TEST_MODE=1 pytest tests/test_your_package.py -v
+
+# Even faster test with debug mode (smaller datasets)
+TABPFN_DEBUG=1 FAST_TEST_MODE=1 pytest tests/test_your_package.py -v
+
+# Full test of your package (before submitting PR)
+pytest tests/test_your_package.py -v
+
+# Run all tests (optional, CI will do this anyway)
+pytest
+```
+
+## 🔄 TabPFN Compatibility
+
+TabPFN Extensions supports two different TabPFN implementations:
+
+1. **TabPFN Package** - Full PyTorch implementation for local inference
+2. **TabPFN Client** - Lightweight API client for cloud-based inference
+
+To ensure your extension works with both backends:
+
+1. **Import TabPFN in a flexible way**:
+
+```python
+try:
+    # Try standard TabPFN package first
+    from tabpfn import TabPFNClassifier, TabPFNRegressor
+except ImportError:
+    # Fall back to TabPFN client
+    from tabpfn_client import TabPFNClassifier, TabPFNRegressor
+```
+
+2. **Use common parameters** that are available in both implementations.
+
+3. **Add appropriate test markers** in your tests:
+   - `client_compatible` if your extension works with TabPFN client
+   - `local_compatible` if it requires the full TabPFN package
+
+## 📁 Repository Structure
+
+TabPFN Extensions uses a modular structure where each contribution lives in its own subpackage:
+
+```
+tabpfn-extensions/
+├── src/
+│   └── tabpfn_extensions/
+│       └── your_package/       # Your extension code
+├── examples/
+│   └── your_package/           # Usage examples
+└── tests/
+    └── test_your_package.py    # Tests for your extension
+```
+
+## 📝 Code Guidelines
+
+### Requirements
+
+- Python 3.9+ compatibility
+- Support for both TabPFN and TabPFN-client when possible
+- Minimize dependencies and document them in pyproject.toml
+- Follow scikit-learn API conventions when appropriate
+- Document all public functions and classes
+
+### Documentation
+
+Each extension should include:
+
+#### Essential:
+- Basic docstrings explaining what functions/classes do
+- At least one example script in the examples directory
+
+#### Recommended:
+- Google style format docstrings for key functions
+- Type hints for main functions and parameters
+- Comments explaining non-obvious code sections
+
+### Testing
+
+- Write tests using pytest
+- For quick test development, use `FAST_TEST_MODE=1 pytest tests/test_your_package.py`
+- Only run long tests (like full dataset tests) when `FAST_TEST_MODE` is not set
+- Use appropriate markers: `client_compatible`, `local_compatible`
+- Use the fixtures provided in conftest.py for TabPFN instances
+- Focus on testing your core functionality first, not edge cases
+
+## ✅ Contribution Checklist
+
+### Minimum Requirements
+- [ ] Added extension under src/tabpfn_extensions/
+- [ ] Included at least one example in examples/
+- [ ] Added required dependencies to pyproject.toml
+- [ ] Written basic tests that pass with FAST_TEST_MODE=1
+
+### Before Submitting PR
+- [ ] Documented public functions and classes
+- [ ] Ensured compatibility with both TabPFN backends (when possible)
+- [ ] All tests pass: `pytest tests/test_your_package.py`
+
+### Advanced/Optional
+- [ ] Added type hints for main functions
+- [ ] Run linting with ruff: `ruff check src/tabpfn_extensions/your_package/`
+- [ ] Run type checking: `mypy src/tabpfn_extensions/your_package/`
+
+## 📜 Legal & Security
+
+- Only contribute code you have rights to
+- Don't include sensitive or private data
+- All contributions must be Apache 2.0 licensed
+- No machine learning models or large datasets in the repository
+
+## 📦 Example Extension Structure
+
+Here's a minimal example of a complete extension:
+
+```
+src/tabpfn_extensions/sample_extension/
+├── __init__.py
+├── core.py
+└── utils.py
+
+examples/sample_extension/
+├── basic_usage.py
+└── advanced_features.py
+
+tests/
+└── test_sample_extension.py
+```
+
+## 🧪 Versioning and Releases
+
+We follow [Semantic Versioning](https://semver.org/), with version numbers in the format MAJOR.MINOR.PATCH:
+
+- MAJOR: Incompatible API changes
+- MINOR: New functionality in a backwards compatible manner
+- PATCH: Backwards compatible bug fixes
+
+## 🛠️ Need Help?
+
+- Join our [Discord](https://discord.com/channels/1285598202732482621/) for questions
+- Open an issue for bug reports
+- Check out existing extensions for examples
+
 
 
 ================================================
@@ -701,15 +1024,15 @@ requires-python = ">=3.10"
 authors = [
     { name = "Noah Hollmann", email = "noah.hollmann@charite.de" },
     { name = "Leo Grinsztajn" },
-    { name = "Samuel MÃ¼ller", email = "muellesa@cs.uni-freiburg.de" },
+    { name = "Samuel Müller", email = "muellesa@cs.uni-freiburg.de" },
     { name = "Lennart Purucker" },
     { name = "Arjun Krishnakumar" },
-    { name = "Max KÃ¶rfer" },
+    { name = "Max Körfer" },
     { name = "Shi Bin Hoo" },
     { name = "Robin Tibor Schirrmeister" },
     { name = "Frank Hutter", email = "fh@cs.uni-freiburg.de" },
     { name = "Eddie Bergman" },
-    { name = "Klemens FlÃ¶ge" },
+    { name = "Klemens Flöge" },
     { name = "Oscar Key" },
     { name = "Dominik Safaric" }
 ]
@@ -818,7 +1141,7 @@ examples = [
 # transitive copy. Worth revisiting once PyPI reports its MIT license again.
 constraint-dependencies = ["lightgbm<4.7.0"]
 exclude-newer = "7 days"
-exclude-newer-package = {torch = false, tabpfn = false}
+exclude-newer-package = {torch = false, tabpfn = false, certifi = "0 days", uv = "0 days"}
 
 [tool.licensecheck]
 only_licenses = ["APACHE", "MIT", "BSD", "ISC", "PYTHON", "UNLICENSE", "UNKNOWN"]
@@ -1171,7 +1494,7 @@ FILE: RELEASING.md
 # Releasing tabpfn-extensions
 
 Maintainer-facing guide to cutting a release. Contributors don't need
-to read this â€” see `changelog/README.md` for the fragment convention.
+to read this — see `changelog/README.md` for the fragment convention.
 
 The release pipeline is fully automated from a single workflow
 dispatch. There are two manual checkpoints: reviewing the
@@ -1186,8 +1509,8 @@ auto-generated release PR, and approving the `pypi` deployment.
    git rev-parse origin/main
    ```
 
-2. **Trigger `Create Release PR`.** Actions tab â†’ *Create Release PR*
-   â†’ *Run workflow*:
+2. **Trigger `Create Release PR`.** Actions tab → *Create Release PR*
+   → *Run workflow*:
    - `version`: the new version, no `v` prefix (e.g. `0.5.0`)
    - `base_ref`: the 40-char SHA from step 1
    - `base_branch`: leave as `main`
@@ -1199,7 +1522,7 @@ auto-generated release PR, and approving the `pypi` deployment.
    - Those fragments deleted
 
 3. **Review and merge the release PR.** Sanity-check the version bump
-   and the changelog. Merge with a regular merge commit (not squash â€”
+   and the changelog. Merge with a regular merge commit (not squash —
    the tag will point at the merge commit).
 
 4. **Auto-tag fires.** `release-tag-on-merge.yml` creates and pushes
@@ -1254,15 +1577,15 @@ testing the pipeline without committing to a stable version.
 | Release PR opened but version/changelog wrong | Close the PR, delete the branch, fix fragments on `main`, re-run `Create Release PR`. Do **not** hand-edit the release branch. |
 | `release-tag-on-merge` fails | Re-run from the Actions UI. If the tag was partially created locally but not pushed, the workflow's idempotency check handles it. |
 | `publish-testpypi` fails | Investigate (most common: TestPyPI propagation lag, dependency conflict in install-verify). Re-run *publish-testpypi* job; the build artifact is retained for 7 days. |
-| `publish-pypi` fails after approval | If artifacts already uploaded to PyPI, do **not** re-upload â€” yank the bad release via the PyPI UI and cut a new version. PyPI does not allow re-uploads of the same version. |
+| `publish-pypi` fails after approval | If artifacts already uploaded to PyPI, do **not** re-upload — yank the bad release via the PyPI UI and cut a new version. PyPI does not allow re-uploads of the same version. |
 | GitHub Release creation fails | Create it manually via `gh release create v<version> --notes-file <(...)` using the CHANGELOG section. |
 
 ## Yanking a release
 
-If a published release is broken, yank it (don't delete â€” that breaks
+If a published release is broken, yank it (don't delete — that breaks
 existing pins):
 
-- PyPI: project page â†’ *Manage* â†’ *Releases* â†’ *Options* â†’ *Yank*
+- PyPI: project page → *Manage* → *Releases* → *Options* → *Yank*
 - TestPyPI: same flow at test.pypi.org
 
 Yanked versions remain installable by exact pin but are excluded from
@@ -1278,7 +1601,7 @@ FILE: SECURITY.md
 ## Supported Versions
 
 We support only the most recent minor release. Older releases do not
-receive security patches â€” please upgrade.
+receive security patches — please upgrade.
 
 ## Reporting a Vulnerability
 
@@ -1326,19 +1649,19 @@ canonical list).
 
 | Upstream | Local path | Upstream license |
 |---|---|---|
-| sklearn-compat â€” single-file compat shim | `src/tabpfn_extensions/misc/sklearn_compat.py` | BSD-3-Clause |
+| sklearn-compat — single-file compat shim | `src/tabpfn_extensions/misc/sklearn_compat.py` | BSD-3-Clause |
 
 ---
 
 ## Per-upstream notices
 
-### sklearn-compat â€” compatibility shim
+### sklearn-compat — compatibility shim
 
 **Upstream:** https://github.com/sklearn-compat/sklearn-compat
 **Local path:** `src/tabpfn_extensions/misc/sklearn_compat.py` (single-file vendored distribution; ~1000 lines)
 **License:** BSD-3-Clause
 **Copyright:** Copyright (c) 2024, Guillaume Lemaitre (per the upstream `LICENSE`)
-**Modifications:** None of significance; vendored verbatim from upstream version 0.1.5 to avoid an extra runtime dependency. The single-file format is the distribution model sklearn-compat itself encourages for downstream users. File is kept as close to upstream as possible â€” both `ruff` formatting and `mypy` type-checking are suppressed at the top of the file.
+**Modifications:** None of significance; vendored verbatim from upstream version 0.1.5 to avoid an extra runtime dependency. The single-file format is the distribution model sklearn-compat itself encourages for downstream users. File is kept as close to upstream as possible — both `ruff` formatting and `mypy` type-checking are suppressed at the top of the file.
 
 ---
 
@@ -1356,7 +1679,7 @@ When vendoring or adapting third-party code:
 FILE: uv.lock
 ================================================
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
@@ -1383,8 +1706,10 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
+certifi = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 tabpfn = false
 torch = false
+uv = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 
 [manifest]
 constraints = [{ name = "lightgbm", specifier = "<4.7.0" }]
@@ -1597,11 +1922,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2026.4.22"
+version = "2026.10.19"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/25/ee/6caf7a40c36a1220410afe15a1cc64993a1f864871f698c0f93acb72842a/certifi-2026.4.22.tar.gz", hash = "sha256:8d455352a37b71bf76a79caa83a3d6c25afee4a385d632127b6afb3963f1c580", size = 137077, upload-time = "2026-04-22T11:26:11.191Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/bd/1436c50cc46699de0230fbaacc1d1de7bfec413176099949e9d5112e88f2/certifi-2026.10.19.tar.gz", hash = "sha256:035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae", size = 137598, upload-time = "2026-10-20T02:24:16.604Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/30/7cd8fdcdfbc5b869528b079bfb76dcdf6056b1a2097a662e5e8c04f42965/certifi-2026.4.22-py3-none-any.whl", hash = "sha256:3cb2210c8f88ba2318d29b0388d1023c8492ff72ecdde4ebdaddbb13a31b1c4a", size = 135707, upload-time = "2026-04-22T11:26:09.372Z" },
+    { url = "https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl", hash = "sha256:42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b", size = 136464, upload-time = "2026-10-20T02:24:15.072Z" },
 ]
 
 [[package]]
@@ -4774,12 +5099,12 @@ dependencies = [
     { name = "cloudpickle" },
     { name = "numba" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version == '3.11.*' and platform_machine != 'x86_64') or (python_full_version >= '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin')" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*' or (python_full_version >= '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin')" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "scikit-learn" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "scipy", version = "1.16.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version == '3.11.*' and platform_machine != 'x86_64') or (python_full_version >= '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and sys_platform != 'darwin')" },
+    { name = "scipy", version = "1.16.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*' or (python_full_version >= '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin')" },
     { name = "slicer" },
     { name = "tqdm" },
     { name = "typing-extensions" },
@@ -5044,7 +5369,7 @@ wheels = [
 
 [[package]]
 name = "tabpfn-extensions"
-version = "0.6.2"
+version = "0.6.3"
 source = { editable = "." }
 dependencies = [
     { name = "pandas" },
@@ -5106,7 +5431,7 @@ dev = [
     { name = "twine" },
 ]
 examples = [
-    { name = "shap", version = "0.49.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin') or (platform_machine == 'x86_64' and sys_platform == 'darwin')" },
+    { name = "shap", version = "0.49.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or (platform_machine == 'x86_64' and sys_platform == 'darwin')" },
     { name = "shap", version = "0.52.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and platform_machine != 'x86_64') or (python_full_version >= '3.12' and sys_platform != 'darwin')" },
     { name = "umap-learn" },
 ]
@@ -5502,28 +5827,28 @@ wheels = [
 
 [[package]]
 name = "uv"
-version = "0.11.15"
+version = "0.13.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/da/34/609d5d01ba21dc8f0974610ca7802fbb2c946a0c38665cfe5c5aeddbefb5/uv-0.11.15.tar.gz", hash = "sha256:755f959ec6a2fd8ccb6ee76ad90ab759d2eb1f4797444078645dd1ee4bca92d6", size = 4159545, upload-time = "2026-05-18T19:57:48.133Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/55/609455d21e87430c11fe734abfced50a3bdf177b2f49d41fbb19c199cbc3/uv-0.13.4.tar.gz", hash = "sha256:b0bff5b9a5061f7a35b1d0c1a94c19af134222c48eb7aadc42f85a038be1b248", size = 7482486, upload-time = "2026-10-20T15:12:06.801Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/7c/dcc230c5911884d8848145dabcac8fb95a5ed6f9fe1c57fae8242618f28a/uv-0.11.15-py3-none-linux_armv6l.whl", hash = "sha256:83b04ab49514a0a761ffedb36a748ee81f87746671e72088e5f32c9585e5f1a9", size = 23110183, upload-time = "2026-05-18T19:57:23.051Z" },
-    { url = "https://files.pythonhosted.org/packages/f4/f3/efd4e044b60eb9c3c12ee386be098d56c335538ccec7caa49349cfba9344/uv-0.11.15-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:b6cae61f737be075b90be9e3f07d961072aed7019f4c9b8ed5c5d41c4d6cade3", size = 22637941, upload-time = "2026-05-18T19:57:26.752Z" },
-    { url = "https://files.pythonhosted.org/packages/a6/b8/48627f895a1569e576822e0a8416aa4797eb4a4551de21a4ad97b9b5819d/uv-0.11.15-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9accae33619a9166e5c48531deb455d672cfb89f9357a00975e669c76b0bd49f", size = 21258803, upload-time = "2026-05-18T19:57:05.473Z" },
-    { url = "https://files.pythonhosted.org/packages/af/50/4bc8a148274feabee2d9c9f1fa15009e10c0228dfe57981ee3ea2ef1d481/uv-0.11.15-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:c0cf52cd6d50bb9e05e2d968f45f80761107e4cbc8d4a26d9758f9d8274aaec1", size = 23066178, upload-time = "2026-05-18T19:57:33.058Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/56/139fc3bec9a8b0a25bfe2196123adb9f16124da437bf4fbcf0d21cfcafb2/uv-0.11.15-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:49dc6ed70bff00937384f96cdc4b1a4742d18e5504ec2c4a1214dba2dee5687a", size = 22705332, upload-time = "2026-05-18T19:57:36.714Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/b0/b18b3dd204f8c213236a1ebd148e009861637129a8cce34df0e9aa22ed40/uv-0.11.15-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:adb9a89352539fdd8f7cd5f9966cf9f94fc5b98e0ccdf5003a04123dc6423bec", size = 22707534, upload-time = "2026-05-18T19:58:04.117Z" },
-    { url = "https://files.pythonhosted.org/packages/76/36/3ca09f95572df99d361b49c96b1297149e96e120d8d1ecf074095a4b6da4/uv-0.11.15-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:40ff67e3f8e8a7533781a2e892a534975a93acb83ea35460e64e7b2bf2111774", size = 24096607, upload-time = "2026-05-18T19:58:11.625Z" },
-    { url = "https://files.pythonhosted.org/packages/64/be/3bdee21a296bbf5336a526e3613d0e7d4538dacc39c62d7fcba55d15f6b0/uv-0.11.15-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:c6463a299ed7e6b5a800ed6f108af8e1588352629424133ddef7572b0e1e1118", size = 25082562, upload-time = "2026-05-18T19:57:40.69Z" },
-    { url = "https://files.pythonhosted.org/packages/cd/73/f371f3689ffe741066468d001d85f739fc4b5574de83b639ef19b5e8a7f4/uv-0.11.15-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:68c1e62d4b78578b90b833553286b65d6a7e327537716441068583ba652ec4f5", size = 24253391, upload-time = "2026-05-18T19:57:18.47Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/16/fe392d618af6b00c064b3e718d585dcf791546a77c5123a5bec07ce53a0a/uv-0.11.15-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98edf1bdaf82447014852051d93e3ee95012509c567bf057fd117e6bdbd9a807", size = 24415871, upload-time = "2026-05-18T19:58:19.651Z" },
-    { url = "https://files.pythonhosted.org/packages/6e/24/2e92a052fb6334fcd746d1c7cb57847c204b118c84f5da53c0f9e129f7b7/uv-0.11.15-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:be8f76d25bcf4c92bb384240ac1bf9aa7f51063d0bdeca4c9cf0ec3ed8b145e0", size = 23159007, upload-time = "2026-05-18T19:57:10.653Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/2e/6923d0658d164bb2c435ed1868aa2d49b3074594679917a001ff92dc95bb/uv-0.11.15-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:f9f4fbbf4fe485522054f3c7496c6e8e932d6436e4200ff3daf718db0b7c7bd5", size = 23769385, upload-time = "2026-05-18T19:58:15.856Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/99/7e34cd949e57360814e8064cc9fb7104df445d0f6a663504e5f7473480aa/uv-0.11.15-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:0ed920e896b2fd13a35031707e307e42fbb2681458b967440a17272d86d49137", size = 23860973, upload-time = "2026-05-18T19:57:55.575Z" },
-    { url = "https://files.pythonhosted.org/packages/28/98/8fe1f5f9d816e94569a0298dd8e0936801097625fa1952162951f0d628b6/uv-0.11.15-py3-none-musllinux_1_1_i686.whl", hash = "sha256:41d907611f3e6a13262807fd7f0a17849f76285ca80f536f6b3943732bdc6656", size = 23431392, upload-time = "2026-05-18T19:57:59.814Z" },
-    { url = "https://files.pythonhosted.org/packages/cc/6b/76a1ce2fa860026913a5941700cdc7d715fce9c3277a3fa3489cf2523ca0/uv-0.11.15-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:e3b68f8bf1a4568710f77e5bda9182ce7682811d89a8e7468c22460e032b234d", size = 24519478, upload-time = "2026-05-18T19:57:51.165Z" },
-    { url = "https://files.pythonhosted.org/packages/43/60/1d58e8a05718cb50494763115710b73846cacb651fd735d285233fd72c59/uv-0.11.15-py3-none-win32.whl", hash = "sha256:8e2da3076761086a5b76869c3f38ef0509c836046ef41ddd19485dfd7271dca9", size = 22020178, upload-time = "2026-05-18T19:58:07.64Z" },
-    { url = "https://files.pythonhosted.org/packages/55/53/40fcefcb348af660488597ed3c01363df7344e60611f8883750dc596f5c6/uv-0.11.15-py3-none-win_amd64.whl", hash = "sha256:cc3915ab291a1ecaf31de05f5d8bd70d09c66fe9911a53f70d9efa62ff0dbd8a", size = 24668779, upload-time = "2026-05-18T19:57:44.894Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/7d/fa3a9960c95af9bbe2a629048760d0b9b4fead8ccd4f2235af747ec7cdf0/uv-0.11.15-py3-none-win_arm64.whl", hash = "sha256:4f39426a13dee24897aed60c4b98058c66f18bd983885ac5f4a54a04b24fbddf", size = 23198178, upload-time = "2026-05-18T19:57:14.68Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/bd/4349da5356b17a1c0e36c8552c809925f86f6292de9b1f599f01e8e8093d/uv-0.13.4-py3-none-linux_armv6l.whl", hash = "sha256:205a4f93e568fb24f45a2f3834f1c0a8f1adb5f396bf473c71030ed707dce048", size = 18272390, upload-time = "2026-10-20T15:11:02.468Z" },
+    { url = "https://files.pythonhosted.org/packages/21/f2/0cb77a1ae43959772f8f7873eb1f4061907fbb1694ce55c79b231f639b1d/uv-0.13.4-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:b4bbacea78c9db136cd2ec3147cbfd9ed910b4db5e1877109bd74d0e73bb2eaf", size = 17384113, upload-time = "2026-10-20T15:11:07.172Z" },
+    { url = "https://files.pythonhosted.org/packages/26/44/5a8733dd1b2e8d6f9cffd1ff6428a3e11dcc7e146a7657e32cfb8d9fb4a4/uv-0.13.4-py3-none-macosx_11_0_arm64.whl", hash = "sha256:95f4eb2b991b53b50ec2b18ab612fca8ba1e7a75a47af0331fb8bcd21da3eb03", size = 14433723, upload-time = "2026-10-20T15:11:10.185Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/39/be14f051bf34a1822d634819890a2d0cba3b69101e633fb7b9f54d7b4020/uv-0.13.4-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:e90ab42825587821096cb0d071e387468da38cfa22818c91f9c0b3c0453048e8", size = 17816443, upload-time = "2026-10-20T15:11:13.674Z" },
+    { url = "https://files.pythonhosted.org/packages/97/a0/5df0f8bc6367dd37b98432a7c462e2918554f6db2a71211574852b8f0727/uv-0.13.4-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:3a9dcb6762c3ba249d8c084315ba03839082af3ece3536cc4164ec735c351d68", size = 17828025, upload-time = "2026-10-20T15:11:16.806Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/9c/2fed5357700b7c304b94214979e4efe680c3bc6e337a97eedaa372fe0947/uv-0.13.4-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:8ae6ff2b07892379dc767c9064c2b8bbfac88e767edac7ce28e1b0f15d86abb4", size = 17843737, upload-time = "2026-10-20T15:11:20.043Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/2e/ee026284f096236dc3e1abed0316f9edab65c0ea176ea0072c064e62478d/uv-0.13.4-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:25cc14ff4fd8335d3be2cc493a621a003fdafcb0fb1c953c905daabe4def5ab8", size = 18576350, upload-time = "2026-10-20T15:11:24.035Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/f1/67fbdb649c8c5d0cb38ea74829080479b77c8631cda5d77fc1b28f027ca7/uv-0.13.4-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:77062b02856c74697f48328d8a6583ab07e6da0a993e86c2db46f3d1da27c637", size = 19831234, upload-time = "2026-10-20T15:11:27.627Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/00/7d49e3a1a3e98e5244fa38e0c964dc8de568bf3bb101257a63dc2602efed/uv-0.13.4-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:fb0e2028d9a8929884344afb7d91d0f65d9783f640d28aede89fca3602bedde9", size = 19702886, upload-time = "2026-10-20T15:11:31.128Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/a1/de02c0913726728eca56ee258875cbba9c7b0572c63f494fd9f55c7852e3/uv-0.13.4-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:05e4332791b4d55b6dde8695b7fa6079b26991519f44760887c5dfbd5ca4fe53", size = 17181168, upload-time = "2026-10-20T15:11:34.583Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/cd/f4a3c7377674366798c56aabd0f9a1f05687c3939f5ba857a3ea6093ff84/uv-0.13.4-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:7b3cdf868e5415631fe797b648c0d6945d38d388f23367bdd0b6332e80a1fcb0", size = 16502020, upload-time = "2026-10-20T15:11:37.88Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/f4/ce79657c5a0f51b602db9a663529baafff03b9fe8cc41e09ad3f7246b88a/uv-0.13.4-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:4e6b08578c920b86910897f36bb6da7229c8e7e0187976570e2a538cb28b777e", size = 18000980, upload-time = "2026-10-20T15:11:41.59Z" },
+    { url = "https://files.pythonhosted.org/packages/21/e6/7d77022d5661f8e01578bc5423bf02af408220e7e7ac5ee15eb94742c7cb/uv-0.13.4-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:d86a5dec8ab30c70519c71ca5085c8aaf28664836cbc600951cedaa3fc678cbf", size = 18179083, upload-time = "2026-10-20T15:11:45.191Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/40/1bf0324800d38009774ba087a6fbffddc76a3e5bf42c081b9298b1236fb5/uv-0.13.4-py3-none-musllinux_1_1_i686.whl", hash = "sha256:5d89d1028c2e22977d9215cbb79cfe12559cb0c8a507a12e2f3a7e47930cf1bf", size = 18010389, upload-time = "2026-10-20T15:11:48.963Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/ec/f352ca2cc3b4b6191bb4ec8cdf4bc190eed0ba8bda4c33b7fd66c5d33cec/uv-0.13.4-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:52b5c753a7c2d5f8323a70bb4c93118988356331d0758afa6446c81f974e7196", size = 19004998, upload-time = "2026-10-20T15:11:52.628Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/4f/fc05ff4292edfe785b47874ec86d3d83ca2bf735cff8a9d2170ffb66ad83/uv-0.13.4-py3-none-win32.whl", hash = "sha256:d333f01852b817ba05612de31474739da1af7e5463d119b30a9c4331eba1f408", size = 16190502, upload-time = "2026-10-20T15:11:56.657Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/b9/b526eab6c72eacc705a58378f6850fde046b28c86fed01bd42da61367c6b/uv-0.13.4-py3-none-win_amd64.whl", hash = "sha256:b2ff80397273fff0e02c20eacae6882834c811827d6fc08f658db156fe754386", size = 15331833, upload-time = "2026-10-20T15:11:59.733Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/f7/4d5fa89d3d10ff6a84e547ef6e02c45b2f2d50e66682da778acf60db63f1/uv-0.13.4-py3-none-win_arm64.whl", hash = "sha256:deffa5a4afdb48f3e44fb26e80377d256b330ddcad0373daff4b54f6162b43a4", size = 15690151, upload-time = "2026-10-20T15:12:02.74Z" },
 ]
 
 [[package]]
@@ -5617,7 +5942,7 @@ FILE: changelog/README.md
 ================================================
 # Changelog Fragments
 
-This directory contains changelog "fragments" â€” small files describing
+This directory contains changelog "fragments" — small files describing
 the user-visible changes in each PR. At release time, the
 `release-create-pr.yml` workflow runs `towncrier build`, which assembles
 fragments into `CHANGELOG.md` and deletes them from this directory.
@@ -5628,7 +5953,7 @@ fragments into `CHANGELOG.md` and deletes them from this directory.
 2. Write one short, user-friendly sentence describing the change.
 
 ```bash
-# Using towncrier create (recommended â€” validates the category)
+# Using towncrier create (recommended — validates the category)
 towncrier create 712.added.md --content "Add support for custom loss functions in HPO"
 
 # Or manually
@@ -5647,7 +5972,7 @@ echo "Add support for custom loss functions in HPO" > changelog/712.added.md
 
 ## Multiple entries per PR
 
-You can add more than one fragment per PR â€” for example a feature
+You can add more than one fragment per PR — for example a feature
 addition that also fixes a related bug:
 
 ```bash
@@ -5672,6 +5997,13 @@ FILE: changelog/411.changed.md
 
 
 ================================================
+FILE: changelog/413.fixed.md
+================================================
+Development and release tooling no longer trusts the compromised eMudhra (emSign) CAs: pinned certifi, uv, pip and pypa/gh-action-pypi-publish are bumped to their fixed releases.
+
+
+
+================================================
 FILE: examples/README.md
 ================================================
 # TabPFN Extensions Examples
@@ -5682,16 +6014,16 @@ This directory contains examples for using TabPFN extensions. Each extension has
 
 ```
 examples/
-â”œâ”€â”€ embedding/         # Access TabPFN's internal dense sample embeddings
-â”œâ”€â”€ image/             # Pictures as columns: frozen DINOv3 embeddings for TabPFN
-â”œâ”€â”€ interpretability/  # SHAP, partial dependence, feature selection
-â”œâ”€â”€ many_class/        # More classes than the checkpoint supports
-â”œâ”€â”€ multioutput/       # Multi-output regression + multi-label classification (sklearn wrapper)
-â”œâ”€â”€ predictive_distribution/  # Visualize TabPFN's full predictive distribution + derive point estimates
-â”œâ”€â”€ pval_crt/          # Statistical feature relevance testing
-â”œâ”€â”€ survival/          # Survival analysis
-â”œâ”€â”€ tabebm/            # Data augmentation via TabEBM
-â””â”€â”€ unsupervised/      # Data generation, imputation, outlier detection
+├── embedding/         # Access TabPFN's internal dense sample embeddings
+├── image/             # Pictures as columns: frozen DINOv3 embeddings for TabPFN
+├── interpretability/  # SHAP, partial dependence, feature selection
+├── many_class/        # More classes than the checkpoint supports
+├── multioutput/       # Multi-output regression + multi-label classification (sklearn wrapper)
+├── predictive_distribution/  # Visualize TabPFN's full predictive distribution + derive point estimates
+├── pval_crt/          # Statistical feature relevance testing
+├── survival/          # Survival analysis
+├── tabebm/            # Data augmentation via TabEBM
+└── unsupervised/      # Data generation, imputation, outlier detection
 ```
 
 ## Running Examples
@@ -5767,8 +6099,8 @@ TabPFN is ahead at this budget on most initial designs, so the difference is
 visible in a single run. Do not read one seed as a benchmark; the cookbook
 repeats the experiment over seeds.
 
-For comparison the loop also runs BoTorch's GP with LogEI (the paper's
-configuration) and random search, all three from the same initial design.
+For comparison the loop also runs BoTorch's default GP with LogEI and random
+search, all three from the same initial design.
 
 NOTE: This example requires the extras of the bayesian_optimization
 extension: pip install "tabpfn-extensions[bayesian_optimization]". It needs
@@ -5852,7 +6184,7 @@ def run_tabpfn(init_x: torch.Tensor, init_y: torch.Tensor) -> torch.Tensor:
 
 
 def run_gp_logei(init_x: torch.Tensor, init_y: torch.Tensor) -> torch.Tensor:
-    """BoTorch's GP with LogEI, in the configuration of Ament et al. (2023)."""
+    """BoTorch's default GP with LogEI."""
     dim = init_x.shape[1]
     unit_bounds = torch.stack(
         [torch.zeros(dim, dtype=torch.double), torch.ones(dim, dtype=torch.double)],
@@ -5860,7 +6192,7 @@ def run_gp_logei(init_x: torch.Tensor, init_y: torch.Tensor) -> torch.Tensor:
     train_x = init_x.double().cpu()
     train_y = init_y.double().cpu().unsqueeze(-1)
     for _ in trange(N_BO_STEPS, desc="GP-LogEI "):
-        gp = SingleTaskGP(  # Matern-5/2 ARD kernel by default
+        gp = SingleTaskGP(  # RBF kernel with ARD by default
             train_x,
             train_y,
             input_transform=Normalize(d=dim),
@@ -5995,7 +6327,7 @@ FILE: examples/embedding/README.md
 ## Key Features
 
 - **Vanilla embeddings**: with `n_fold=0`, the model is trained once on the entire training set and used to embed both train and test data.
-- **K-fold cross-validation (recommended)**: with `n_fold>=2`, out-of-fold (OOF) embeddings are produced for the training data. Because TabPFN attends to training labels, train-set embeddings experience a distribution shift relative to test embeddings (where a dummy label is used). OOF embeddings fix this: each training sample is embedded in a fold where it was held out â€” matching the no-label-attention condition of unseen data. This is the robust variant described in *"A Closer Look at TabPFN v2: Strength, Limitation, and Extension"* (Ye et al., 2025, [arXiv:2502.17361](https://arxiv.org/abs/2502.17361)). A final model is also trained on the full training set for embedding new data. In the example [script](/examples/embedding/get_embeddings.py) you can see that using these robust embeddings generates performance gains with regards to the vanilla embeddings.
+- **K-fold cross-validation (recommended)**: with `n_fold>=2`, out-of-fold (OOF) embeddings are produced for the training data. Because TabPFN attends to training labels, train-set embeddings experience a distribution shift relative to test embeddings (where a dummy label is used). OOF embeddings fix this: each training sample is embedded in a fold where it was held out — matching the no-label-attention condition of unseen data. This is the robust variant described in *"A Closer Look at TabPFN v2: Strength, Limitation, and Extension"* (Ye et al., 2025, [arXiv:2502.17361](https://arxiv.org/abs/2502.17361)). A final model is also trained on the full training set for embedding new data. In the example [script](/examples/embedding/get_embeddings.py) you can see that using these robust embeddings generates performance gains with regards to the vanilla embeddings.
 - **scikit-learn-style API**: `fit` / `transform` / `fit_transform`.
 
 ## Usage
@@ -6009,13 +6341,13 @@ test_embeds = embedding.transform(X_test)                 # full-data model
 ```
 
 `transform(X)` always uses the final full-data model. It does **not** return
-cached OOF embeddings, even when `X` happens to equal the training set â€” use
+cached OOF embeddings, even when `X` happens to equal the training set — use
 `fit_transform(X_train, y_train)` (or read `embedding.train_embeddings_`)
 when you want OOF.
 
 **Output shape.** `transform` returns a 3D array of shape
 `(n_estimators, n_samples, embed_dim)`. This is not a drop-in input for
-`sklearn.pipeline.Pipeline` / `ColumnTransformer`, which expect 2D arrays â€”
+`sklearn.pipeline.Pipeline` / `ColumnTransformer`, which expect 2D arrays —
 select an ensemble member (`embeds[0]`) or aggregate across `axis=0` before
 passing the embeddings to a downstream 2D estimator.
 
@@ -6138,7 +6470,7 @@ print(
 # ---------------------------------------------------------------------------
 # Regression
 # ---------------------------------------------------------------------------
-# space_ga: 3107 samples, 6 features â€” a clean benchmark where TabPFN
+# space_ga: 3107 samples, 6 features — a clean benchmark where TabPFN
 # embeddings clearly outperform a plain Ridge regression baseline.
 print("\nLoading regression dataset (space_ga from OpenML)...")
 dataset = fetch_openml("space_ga", version=1, as_frame=False)
@@ -6155,7 +6487,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 model = Ridge()
 model.fit(X_train, y_train)
 print(
-    "Baseline Ridge Regression RÂ² Score: "
+    "Baseline Ridge Regression R² Score: "
     f"{r2_score(y_test, model.predict(X_test)):.4f}",
 )
 
@@ -6171,7 +6503,7 @@ model = Ridge()
 model.fit(train_embeddings[0], y_train)
 y_pred = model.predict(test_embeddings[0])
 print(
-    "Ridge with TabPFN (Vanilla) RÂ² Score: " f"{r2_score(y_test, y_pred):.4f}",
+    "Ridge with TabPFN (Vanilla) R² Score: " f"{r2_score(y_test, y_pred):.4f}",
 )
 
 # K-fold cross-validated TabPFN embeddings
@@ -6186,7 +6518,7 @@ model = Ridge()
 model.fit(train_embeddings[0], y_train)
 y_pred = model.predict(test_embeddings[0])
 print(
-    "Ridge with TabPFN (K-Fold CV) RÂ² Score: " f"{r2_score(y_test, y_pred):.4f}",
+    "Ridge with TabPFN (K-Fold CV) R² Score: " f"{r2_score(y_test, y_pred):.4f}",
 )
 
 
@@ -6526,7 +6858,7 @@ if FAST_TEST_MODE:
     # Selection cost grows with rows, candidate features, and rounds.
     X, y, feature_names = X[:100, :10], y[:100], feature_names[:10]
 
-# Initialize model. Single estimator keeps the runtime manageable â€” feature
+# Initialize model. Single estimator keeps the runtime manageable — feature
 # selection runs many TabPFN fits per round.
 clf = TabPFNClassifier(n_estimators=1)
 
@@ -6587,7 +6919,7 @@ if FAST_TEST_MODE:
 # PDP issues many predicts (grid_resolution per feature * #features) against
 # the same fitted model, so caching the encoder pass over X_train avoids
 # redoing it on every grid point. Falls back to a default constructor for
-# backends/versions that don't support fit_mode="fit_with_cache" â€” that's
+# backends/versions that don't support fit_mode="fit_with_cache" — that's
 # tabpfn-client (TypeError on the kwarg) and older local tabpfn (accepts
 # the kwarg but raises ValueError/NotImplementedError at fit time).
 try:
@@ -6699,21 +7031,21 @@ explanation = shapiq_to_shap_explanation(
     feature_names=feature_names,
 )
 
-# 1. Summary plot â€” beeswarm of feature attributions across all explained rows
+# 1. Summary plot — beeswarm of feature attributions across all explained rows
 shap.summary_plot(explanation)
 
-# 2. Scatter plot â€” SHAP value of feature 0 vs. its raw value, colored by the
+# 2. Scatter plot — SHAP value of feature 0 vs. its raw value, colored by the
 # feature shap picks as its strongest interaction partner. (New-API equivalent
 # of the legacy shap.dependence_plot.)
 shap.plots.scatter(explanation[:, 0])
 
-# 3. Bar plot â€” mean(|SHAP|) ranking of features
+# 3. Bar plot — mean(|SHAP|) ranking of features
 shap.plots.bar(explanation)
 
-# 4. Beeswarm plot â€” same data as summary, new-API styling
+# 4. Beeswarm plot — same data as summary, new-API styling
 shap.plots.beeswarm(explanation)
 
-# 5. Waterfall plot â€” explain a single row (E[f(X)] -> f(x) breakdown)
+# 5. Waterfall plot — explain a single row (E[f(X)] -> f(x) breakdown)
 shap.plots.waterfall(explanation[0])
 
 
@@ -6730,7 +7062,7 @@ Three paradigms for "feature removal" are illustrated:
      filled by an imputer (default: baseline). The baseline imputer models
      missing values by the mean of the training set for numeric features
      and the mode for categorical features. The training set is fixed
-     across coalitions, so the KV-cache fast path applies â€” make sure
+     across coalitions, so the KV-cache fast path applies — make sure
      to construct the model with `fit_mode="fit_with_cache"`.
 
   2. Inf-masking (`get_tabpfn_inf_explainer`): masked features are set to
@@ -6799,7 +7131,7 @@ sv_imp.plot_force(feature_names=feature_names)
 interaction_explainer = tabpfn_shapiq.get_tabpfn_imputation_explainer(
     model=reg,
     data=X_train,
-    index="k-SII",  # k-Shapley Interaction Index â€” extends SHAP to interactions
+    index="k-SII",  # k-Shapley Interaction Index — extends SHAP to interactions
     max_order=2,
 )
 print("Computing pairwise Shapley interactions (k-SII)...")
@@ -6834,7 +7166,7 @@ sv_inf.plot_force(feature_names=feature_names)
 
 
 # -----------------------------------------------------------------------------
-# 4. Remove-and-recontextualize (Rundel) â€” slower (no KV cache)
+# 4. Remove-and-recontextualize (Rundel) — slower (no KV cache)
 # -----------------------------------------------------------------------------
 # Commented out because this path is much slower than the imputation explainer
 # above, as it doesn't benefit from the KV cache: each coalition
@@ -6929,7 +7261,7 @@ FILE: examples/multioutput/multioutput_prediction.py
 TabPFN's classifier/regressor are single-output. For multiple regression
 targets or multi-label classification, wrap TabPFN with sklearn's standard
 ``MultiOutputRegressor`` / ``MultiOutputClassifier``. No TabPFN-specific
-wrapper class is needed â€” this file exists to make that pattern discoverable.
+wrapper class is needed — this file exists to make that pattern discoverable.
 """
 
 from __future__ import annotations
@@ -6943,7 +7275,7 @@ from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
 from tabpfn_extensions import TabPFNClassifier, TabPFNRegressor
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ multi-output regression â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────── multi-output regression ─────────────────────────
 
 X_reg, y_reg = make_regression(
     n_samples=120,
@@ -6964,7 +7296,7 @@ print("R^2 per target:", r2_score(y_te, y_pred, multioutput="raw_values"))
 print("R^2 (uniform avg):", r2_score(y_te, y_pred, multioutput="uniform_average"))
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ multi-label classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────── multi-label classification ──────────────────────
 
 X_clf, y_clf = make_multilabel_classification(
     n_samples=150,
@@ -7004,7 +7336,7 @@ sklearn compatibility, but the full distribution is available through
 
 *Per-x predictive density on a toy problem with three regimes: tight unimodal
 noise for `x < 4`, growing variance for `4 < x < 7`, and bimodal noise
-(`Â±1.5`) for `x > 7`. Each vertical column is the model's posterior
+(`±1.5`) for `x > 7`. Each vertical column is the model's posterior
 `p(y | x)`. In the bimodal region the mean (solid) sits in the empty trough
 between modes while the median (dashed) snaps to whichever mode currently
 carries more than half the mass and oscillates between the two as the local
@@ -7126,7 +7458,7 @@ case, prefer the median, the mode, or, better, keep the full distribution.
 *Each panel is a 1D slice of the heatmap above: `p(y | x)` at a fixed `x`.
 For `x in {1, 3}` the distribution is tight and unimodal, so mean and median
 agree. At `x = 5.5` the variance has grown but the distribution is still
-unimodal. By `x = 7` and `x = 9` two modes appear at roughly `Â±1.5`; the
+unimodal. By `x = 7` and `x = 9` two modes appear at roughly `±1.5`; the
 mean sits in the empty trough between them while the median snaps to the
 dominant mode. This is the failure mode the bar distribution is built to
 expose.*
@@ -7469,7 +7801,7 @@ def main(
     Args:
         n_train: Number of training samples to generate.
         n_test: Number of test-grid points.
-        n_estimators: Number of TabPFN estimators (lower â†’ faster).
+        n_estimators: Number of TabPFN estimators (lower → faster).
         no_show: If True, skip ``plt.show()`` (useful for CI / headless runs).
         out_dir: Directory for saved PNGs.  Defaults to the script's directory.
     """
@@ -7493,7 +7825,7 @@ def main(
         }
     )
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ toy dataset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────── toy dataset ────────────────────────────────
     # Three regimes along x (think of x as time):
     #   x in [0, 4]:   tight unimodal noise
     #   x in [4, 7]:   variance grows linearly (heteroscedastic)
@@ -7529,7 +7861,7 @@ def main(
     # Test grid covers the full input range, sorted for nicer plotting.
     X_test = np.linspace(0.0, 10.0, n_test, dtype=np.float32).reshape(-1, 1)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ fit & full prediction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────── fit & full prediction ──────────────────────────
 
     reg = TabPFNRegressor(n_estimators=n_estimators, random_state=0)
     reg.fit(X_train, y_train)
@@ -7552,7 +7884,7 @@ def main(
     )
     print(f"Bar borders span [{borders[0]:.2f}, {borders[-1]:.2f}]")
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ point estimates from the distribution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────── point estimates from the distribution ──────────
     # The convenience entries in ``preds`` are computed from ``logits`` plus
     # ``criterion``. You can reproduce them yourself, which is useful when you
     # want a custom summary statistic (e.g. a trimmed mean or a custom quantile):
@@ -7576,7 +7908,7 @@ def main(
     q05 = criterion.icdf(logits, 0.05).numpy()
     q95 = criterion.icdf(logits, 0.95).numpy()
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ main figure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ─────────────────────────────── main figure ────────────────────────────────
     # Full predictive density across x, with point estimates overlaid. The
     # heatmap exposes the three regimes (tight, heteroscedastic, bimodal);
     # the mean and median collapse all of that to a single curve.
@@ -7634,7 +7966,7 @@ def main(
         plt.show()
     plt.close(fig)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ showcase: plots you can build with plot_bar_distribution â”€â”€
+    # ───────────────── showcase: plots you can build with plot_bar_distribution ──
     # ``plot_bar_distribution`` is the helper in ``bar_distribution_plot.py``.
     # The two panels below are the views it produces out of the box: the
     # default per-bucket density, and a coarser merged version for faster /
@@ -7681,7 +8013,7 @@ def main(
         plt.show()
     plt.close(fig_showcase)
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ 1D density slices at a few test points â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ───────────────────── 1D density slices at a few test points ───────────────
     # Each column of the heatmap above is a 1D density over y. Plotting those
     # slices makes the three regimes obvious side by side: tight at low x,
     # wide and unimodal in the middle, bimodal on the right.
@@ -7765,13 +8097,13 @@ if __name__ == "__main__":
         type=int,
         default=4,
         metavar="N",
-        help="Number of TabPFN estimators â€” lower values run faster (default: 4).",
+        help="Number of TabPFN estimators — lower values run faster (default: 4).",
     )
     parser.add_argument(
         "--no-show",
         action="store_true",
         default=False,
-        help="Skip plt.show() â€” useful for headless / CI runs.",
+        help="Skip plt.show() — useful for headless / CI runs.",
     )
     parser.add_argument(
         "--out-dir",
@@ -7849,7 +8181,7 @@ FILE: examples/survival/survival_example.py
 
 Note: The survival prediction work is work-in-progress and still unoptimized,
   TabPFN survival may provide inconsistent improvements.
-Note: This may run slowly on CPU-only systemsâ€”GPU is recommended.
+Note: This may run slowly on CPU-only systems—GPU is recommended.
 """
 
 from __future__ import annotations
@@ -7969,9 +8301,9 @@ scores_tabpfn = cross_val_score(tabpfn_cv, X, y, scoring=cindex_scorer, cv=cv, n
 scores_cox = cross_val_score(cox_cv, X, y, scoring=cindex_scorer, cv=cv, n_jobs=-1)
 scores_rsf = cross_val_score(rsf_cv, X, y, scoring=cindex_scorer, cv=cv, n_jobs=-1)
 
-print(f"CV C-index TabPFN: {scores_tabpfn.mean():.3f} Â± {scores_tabpfn.std():.3f}")
-print(f"CV C-index CoxPH : {scores_cox.mean():.3f} Â± {scores_cox.std():.3f}")
-print(f"CV C-index RSF   : {scores_rsf.mean():.3f} Â± {scores_rsf.std():.3f}")
+print(f"CV C-index TabPFN: {scores_tabpfn.mean():.3f} ± {scores_tabpfn.std():.3f}")
+print(f"CV C-index CoxPH : {scores_cox.mean():.3f} ± {scores_cox.std():.3f}")
+print(f"CV C-index RSF   : {scores_rsf.mean():.3f} ± {scores_rsf.std():.3f}")
 
 # ============================ Survival curves S(t|x) ==========================
 # Use a compact time grid up to the 95th percentile of observed test times
@@ -8213,9 +8545,9 @@ def main():
     print(f"Improvement: {acc_augmented - acc_vanilla:.2f} percentage points")
 
     if acc_augmented > acc_vanilla:
-        print("âœ“ Data augmentation with TabEBM improved model performance!")
+        print("✓ Data augmentation with TabEBM improved model performance!")
     else:
-        print("âœ— Data augmentation with TabEBM did not improve model performance.")
+        print("✗ Data augmentation with TabEBM did not improve model performance.")
 
 
 if __name__ == "__main__":
@@ -8365,7 +8697,7 @@ FILE: examples/unsupervised/generate_data_following_dag.py
 Shows how to pass a Directed Acyclic Graph of inter-feature dependencies to
 ``TabPFNUnsupervisedModel.generate_synthetic_data``. With a DAG, each feature
 is generated in topological order and conditioned only on its declared
-parents â€” useful for counterfactual generation or scenarios where the user
+parents — useful for counterfactual generation or scenarios where the user
 encodes domain knowledge about feature dependencies.
 
 NB: the DAG used here is **illustrative only**, not a validated causal model
@@ -8399,7 +8731,7 @@ wine_dag_by_name = {
     "proline": ["alcohol", "total_phenols"],
 }
 
-# Convert feature-name DAG â†’ integer-index DAG (the public API expects ints)
+# Convert feature-name DAG → integer-index DAG (the public API expects ints)
 name_to_idx = {n: i for i, n in enumerate(attribute_names)}
 dag = {
     name_to_idx[child]: [name_to_idx[p] for p in parents]
@@ -8673,7 +9005,139 @@ FILE: scripts/__init__.py
 ================================================
 FILE: scripts/check_backend_compatibility.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8f in position 3617: character maps to <undefined>
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import re
+import sys
+
+
+def scan_for_device_hardcoding(file_path: str) -> list[int]:
+    """Scan file for hardcoded device parameters.
+
+    Args:
+        file_path: Path to the file to scan
+
+    Returns:
+        List of line numbers where 'device="cpu"' or similar is found
+    """
+    device_patterns = [
+        r'device\s*=\s*[\'"]cpu[\'"]',
+        r'device\s*=\s*[\'"]cuda[\'"]',
+    ]
+
+    hardcoded_lines = []
+
+    with open(file_path) as f:
+        for i, line in enumerate(f.readlines(), 1):
+            for pattern in device_patterns:
+                if re.search(pattern, line):
+                    hardcoded_lines.append(i)
+
+    return hardcoded_lines
+
+
+def scan_for_import_try_except(file_path: str) -> bool:
+    """Check if file has proper try-except for TabPFN imports.
+
+    Args:
+        file_path: Path to the file to scan
+
+    Returns:
+        True if file has proper try-except pattern, False otherwise
+    """
+    with open(file_path) as f:
+        content = f.read()
+
+    # Check for presence of try-except pattern for imports
+    import_pattern = re.compile(
+        r"try\s*:"
+        r"(?:.*?)"  # Match content in between
+        r"from\s+tabpfn\s+import"
+        r"(?:.*?)"  # Match any content
+        r"except\s+ImportError",
+        re.DOTALL,
+    )
+
+    return bool(import_pattern.search(content))
+
+
+def find_py_files(directory: str, exclude_dirs: set[str]) -> list[str]:
+    """Find all Python files in the directory.
+
+    Args:
+        directory: Directory to search for Python files
+        exclude_dirs: Set of directory names to exclude from search
+
+    Returns:
+        List of paths to Python files
+    """
+    py_files = []
+
+    for root, dirs, files in os.walk(directory):
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+        for file in files:
+            if file.endswith(".py"):
+                py_files.append(os.path.join(root, file))
+
+    return py_files
+
+
+def check_compatibility():
+    """Check all Python files for compatibility issues."""
+    # Directory to scan
+    src_dir = "src/tabpfn_extensions"
+
+    # Directories to exclude
+    exclude_dirs = {"__pycache__", ".git", "venv", "tests", "examples"}
+
+    # Find all Python files
+    py_files = find_py_files(src_dir, exclude_dirs)
+
+    # Results
+    issues = {
+        "device_hardcoding": [],
+        "missing_import_compatibility": [],
+    }
+
+    # Scan each file
+    for file_path in py_files:
+        hardcoded_lines = scan_for_device_hardcoding(file_path)
+        if hardcoded_lines:
+            issues["device_hardcoding"].append((file_path, hardcoded_lines))
+
+        has_import_compatibility = scan_for_import_try_except(file_path)
+        if not has_import_compatibility and "import" in open(file_path).read():
+            issues["missing_import_compatibility"].append(file_path)
+
+    # Print results
+    print(f"Scanned {len(py_files)} Python files")
+
+    print("\nFiles with hardcoded device parameters:")
+    for file_path, lines in issues["device_hardcoding"]:
+        print(f"  {file_path} (lines: {', '.join(map(str, lines))})")
+
+    print("\nFiles missing TabPFN backend compatibility imports:")
+    for file_path in issues["missing_import_compatibility"]:
+        print(f"  {file_path}")
+
+    # Return non-zero exit code if issues were found
+    if issues["device_hardcoding"] or issues["missing_import_compatibility"]:
+        print(
+            "\n⚠️  Backend compatibility issues found. Please fix them before committing.",
+        )
+        return 1
+    else:
+        print("\n✅ No backend compatibility issues found.")
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(check_compatibility())
+
 
 
 ================================================
@@ -8800,7 +9264,7 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
     repeated predicts against the same fitted model don't re-encode the
     training data each time. Extensions that issue many predicts per fit
     (e.g. imputation-based SHAP, certain feature-selection or HPO routines)
-    benefit from it â€” without the cache, the encoder pass over the training
+    benefit from it — without the cache, the encoder pass over the training
     set runs on every predict and these extensions can be 10-100x slower
     than necessary.
 
@@ -8812,7 +9276,7 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
         2. ``model.executor_.keep_cache_on_device`` is ``True`` (set AFTER
            ``.fit()``; usually the default but worth setting explicitly).
 
-    This helper warns if either is missing, but does not raise â€” users may
+    This helper warns if either is missing, but does not raise — users may
     have intentional reasons (e.g. memory).
 
     Args:
@@ -8839,7 +9303,7 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
         return
 
     # The managed API backend has no endpoint-side cache to reuse, and doesn't
-    # expose fit_mode â€” recommend the local package rather than firing the
+    # expose fit_mode — recommend the local package rather than firing the
     # generic "set fit_mode='fit_with_cache'" message, which would TypeError on
     # it. Walk the MRO because tabpfn-extensions wraps the client base classes
     # in tabpfn_extensions.utils, so the *immediate* class' __module__ is
@@ -8879,7 +9343,7 @@ def warn_if_no_kv_cache(model: Any, *, context: str = "This operation") -> None:
 
     executor = getattr(model, "executor_", None)
     if executor is None:
-        # model not fitted yet â€” we can't check; downstream code will fail anyway
+        # model not fitted yet — we can't check; downstream code will fail anyway
         return
     if not getattr(executor, "keep_cache_on_device", False):
         warnings.warn(
@@ -9248,7 +9712,7 @@ def infer_categorical_features(
 ) -> list[int]:
     """Infer which columns are categorical *features* (constraint (a) only).
 
-    This answers a data question â€” "is this column categorical?" â€” and is
+    This answers a data question — "is this column categorical?" — and is
     deliberately independent of any model constraint. Whether a categorical
     column has few enough levels for a TabPFN classifier to *predict* it
     (constraint (b)) is a separate concern; derive that limit with
@@ -9411,7 +9875,7 @@ FILE: src/tabpfn_extensions/bayesian_optimization/bo.py
 
 TabPFN predicts a full bar distribution over the target, so acquisition
 functions like Expected Improvement (EI) can be computed in closed form from
-the predicted logits â€” no Gaussian assumption needed. This follows the
+the predicted logits — no Gaussian assumption needed. This follows the
 PFNs4BO approach (Mueller et al., ICML 2023, https://arxiv.org/abs/2305.17535,
 https://github.com/automl/PFNs4BO), using the TabPFN foundation model as the
 surrogate.
@@ -9480,7 +9944,7 @@ def _aligned(out):
 
     TabPFN can hand back float64 bar-distribution buffers alongside logits we
     cast to float32, and the criterion's own arithmetic then multiplies the two
-    together â€” ``variance`` does ``probs @ bucket_mean_of_square`` and raises
+    together — ``variance`` does ``probs @ bucket_mean_of_square`` and raises
     "addmv input tensors must have the same dtype". Casting the module as well
     as the tensor keeps every acquisition path safe, not just the ones that
     happen to avoid the mixed-dtype matmul today.
@@ -10067,27 +10531,27 @@ class TabPFNEmbedding(TransformerMixin, BaseEstimator):
     """scikit-learn style transformer that extracts TabPFN embeddings.
 
     When ``n_fold >= 2``, ``fit`` produces out-of-fold (OOF) embeddings for the
-    training data â€” the robust variant from "A Closer Look at TabPFN v2:
-    Strength, Limitation, and Extension" (https://arxiv.org/abs/2502.17361) â€”
+    training data — the robust variant from "A Closer Look at TabPFN v2:
+    Strength, Limitation, and Extension" (https://arxiv.org/abs/2502.17361) —
     and then refits a single model on the full training set for use on unseen
     data. The OOF embeddings are stored on ``train_embeddings_`` and returned
     by ``fit_transform``.
 
-    ``transform(X)`` ALWAYS uses the final, full-data model â€” it does NOT
+    ``transform(X)`` ALWAYS uses the final, full-data model — it does NOT
     return cached OOF embeddings, even when ``X`` happens to equal the
     training set. For OOF embeddings call ``fit_transform`` (or read
     ``train_embeddings_``).
 
     Note on output shape: ``transform`` returns a 3D array of shape
     ``(n_estimators, n_samples, embed_dim)``. It is not a drop-in input for
-    ``sklearn.pipeline.Pipeline`` / ``ColumnTransformer`` â€” those expect 2D
+    ``sklearn.pipeline.Pipeline`` / ``ColumnTransformer`` — those expect 2D
     output. Pick an ensemble member (``embeds[0]``) or aggregate across
     ``axis=0`` before passing to a downstream 2D estimator.
 
     Parameters
     ----------
     n_fold : int, default=0
-        Number of folds for cross-validation. ``0`` disables CV â€” the model
+        Number of folds for cross-validation. ``0`` disables CV — the model
         is trained once on the entire training set and used for both train
         and unseen data.
     model : TabPFNClassifier or TabPFNRegressor, optional
@@ -10169,7 +10633,7 @@ class TabPFNEmbedding(TransformerMixin, BaseEstimator):
             f"No `model=` provided; inferred {inferred_name} from y "
             f"(type_of_target='{target_type}') with n_estimators=1. "
             "Integer-valued regression targets are detected as "
-            "classification â€” pass `model=` explicitly to avoid silent "
+            "classification — pass `model=` explicitly to avoid silent "
             "misclassification of the task or to use a different "
             "n_estimators.",
             UserWarning,
@@ -11185,7 +11649,7 @@ TabPFN classifies with an attention-based retrieval head (`ManyClassDecoder`):
 each test row attends to the training rows and predicts the attention-weighted
 average of their labels. `get_decoder_readout` recovers those per-training-row
 attention weights, so a prediction can be read as a label-vote over training
-points â€” `P(class c)` is the sum of a row's weights over training rows of class
+points — `P(class c)` is the sum of a row's weights over training rows of class
 `c`.
 
 ```python
@@ -11222,7 +11686,7 @@ class, scaled by vote weight).
 ## TabPFN Partial Dependence Plots
 
 ``partial_dependence_plots`` provides a way to visualize how one or two features
-influence the predictions of a TabPFN model. Built on scikit-learnâ€™s
+influence the predictions of a TabPFN model. Built on scikit-learn’s
 `PartialDependenceDisplay`, it supports both partial dependence (average effect)
 and ICE (individual conditional expectation) curves, making it easy to interpret
 feature impact on model outputs.
@@ -11238,12 +11702,12 @@ in-context models.
 
 We expose three adapters:
 
-* ``get_tabpfn_explainer`` â€” *remove-and-recontextualize* (Rundel et al. 2024).
+* ``get_tabpfn_explainer`` — *remove-and-recontextualize* (Rundel et al. 2024).
   TabPFN is re-fit for every coalition, so the KV cache cannot be reused
-  across coalitions â€” expect this path to be substantially slower than the
+  across coalitions — expect this path to be substantially slower than the
   imputation-based one below.
 
-* ``get_tabpfn_imputation_explainer`` â€” *imputation-based* removal (marginal / conditional /
+* ``get_tabpfn_imputation_explainer`` — *imputation-based* removal (marginal / conditional /
   baseline). The training set is fixed across coalitions, so the KV-cache fast path
   applies. Construct your TabPFN model with ``fit_mode="fit_with_cache"`` (set BEFORE
   ``.fit()``):
@@ -11256,8 +11720,8 @@ We expose three adapters:
 
   The wrapper warns at construction time if the model isn't configured this way.
 
-* ``get_tabpfn_inf_explainer`` â€” *inf-masking* removal. A masked feature is set to
-  ``+inf`` and TabPFN's native missing-value handling absorbs it as "missing" â€” no
+* ``get_tabpfn_inf_explainer`` — *inf-masking* removal. A masked feature is set to
+  ``+inf`` and TabPFN's native missing-value handling absorbs it as "missing" — no
   sampling, one forward pass per coalition. Like the imputation path the training set
   is fixed, so the KV cache applies. It requires the model to be built with
   ``inference_config={"PASSTHROUGH_INF": True}`` (``tabpfn>=8.1.0``) so ``+inf`` reaches
@@ -11298,7 +11762,7 @@ For SHAP-style plots (waterfall, beeswarm, summary, dependence) you have two opt
 
    ``shapiq_to_shap_explanation`` extracts first-order Shapley values from
    shapiq's output and wraps them in a ``shap.Explanation``. Requires
-   ``pip install shap`` â€” kept out of the ``interpretability`` extra by
+   ``pip install shap`` — kept out of the ``interpretability`` extra by
    design (shapiq is the runtime dependency; shap is opt-in for plotting).
 
 See ``examples/interpretability/shapiq_example.py`` and ``shap_example.py``
@@ -11332,7 +11796,7 @@ and
 }
 ```
 
-The original ``shap`` library â€” still used here for plotting via ``shap.Explanation`` â€”
+The original ``shap`` library — still used here for plotting via ``shap.Explanation`` —
 can be cited as:
 
 ```bibtext
@@ -11378,7 +11842,405 @@ __all__ = [
 ================================================
 FILE: src/tabpfn_extensions/interpretability/decoder_readout.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 1442: character maps to <undefined>
+#  Copyright (c) Prior Labs GmbH 2025.
+#  Licensed under the Apache License, Version 2.0
+"""Read out TabPFN's classification head as a label-vote over training rows.
+
+TabPFN classifies with an attention-based retrieval head (``ManyClassDecoder``):
+each test row attends to the training rows, and the prediction is the average of
+their one-hot labels weighted by that attention. The prediction is therefore a
+weighted vote, and ``P(class c)`` for a test row is the sum of its attention
+weights over the training rows whose label is ``c``.
+
+``get_decoder_readout`` recovers those per-training-row attention weights, so you
+can see *which* training points drive a prediction and by how much. The weights come
+from the head's own ``ManyClassDecoder.attention_weights`` (``tabpfn>=8.3.0``), read
+off a forward pre-hook during ``predict``; ``forward`` itself fuses the attention
+into a single kernel and never materializes them. For each test row the weights sum
+to 1 (averaged over the decoder's attention heads and over the ensemble members).
+Collapsing them by training label with ``class_vote`` reproduces the model's
+``predict_proba`` up to the head's log-clamping when ``softmax_temperature=1.0`` and
+``balance_probabilities=False``. Both are applied to the decoder's logits *after*
+this readout, so at the library default
+``softmax_temperature=0.9`` the temperature sharpens the vote (per estimator,
+``predict_proba`` ∝ ``vote ** (1 / T)``); ``predict_proba`` then differs from the
+vote by up to ~2 percentage points for binary and ~6 at 10 classes, and
+``balance_probabilities=True`` widens it further.
+
+Only the local ``tabpfn`` backend is supported: the client/API backend does not
+expose the model internals this reads from. Row subsampling
+(``TabPFNClassifier(..., subsample_samples=...)``) is not supported, since the
+weight columns would no longer align to a single set of training rows.
+"""
+
+from __future__ import annotations
+
+import math
+import warnings
+from typing import TYPE_CHECKING
+
+import numpy as np
+import torch
+from sklearn.utils.validation import check_is_fitted
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
+    from sklearn.base import BaseEstimator
+
+
+def _find_decoder(model: torch.nn.Module) -> torch.nn.Module:
+    """Locate the ``ManyClassDecoder`` submodule of a fitted TabPFN model."""
+    for module in model.modules():
+        if type(module).__name__ == "ManyClassDecoder":
+            return module
+    raise RuntimeError(
+        "No ManyClassDecoder found in the model. get_decoder_readout only "
+        "supports TabPFN classification models.",
+    )
+
+
+def get_decoder_readout(
+    estimator: BaseEstimator,
+    X: np.ndarray,
+    *,
+    average_over_estimators: bool = True,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Extract the decoder-head attention weights over training rows.
+
+    Args:
+        estimator: A fitted local ``TabPFNClassifier``.
+        X: Test inputs, shape ``(n_test, n_features)``.
+        average_over_estimators: If True (default), average the weights over the
+            preprocessing ensemble members, returning one weight matrix. If
+            False, keep the per-member weights on a leading axis.
+
+    Returns:
+        ``(weights, train_indices)``.
+
+        ``weights`` has shape ``(n_test, n_train)`` when
+        ``average_over_estimators`` is True, else
+        ``(n_estimators, n_test, n_train)``. Along the training axis the weights
+        are non-negative and sum to 1 for each test row: ``weights[i, j]`` is the
+        attention test row ``i`` pays to training row ``j``.
+
+        ``train_indices`` has shape ``(n_train,)`` and indexes the columns of
+        ``weights`` into the rows of the data the model was fit on (i.e.
+        ``weights[:, k]`` refers to training row ``train_indices[k]``).
+    """
+    check_is_fitted(estimator)
+    try:
+        model = estimator.model_
+    except AttributeError as err:
+        raise TypeError(
+            "get_decoder_readout requires a local tabpfn TabPFNClassifier; the "
+            "estimator does not expose a `model_` (the client/API backend is not "
+            "supported).",
+        ) from err
+    except ValueError as err:
+        raise NotImplementedError(
+            "get_decoder_readout does not support multi-model ensembles.",
+        ) from err
+
+    subsample_samples = estimator.inference_config_.SUBSAMPLE_SAMPLES
+    if subsample_samples is not None:
+        raise NotImplementedError(
+            "get_decoder_readout does not support row subsampling "
+            f"(inference_config SUBSAMPLE_SAMPLES={subsample_samples!r}): each "
+            "estimator would attend over a different subset of training rows, so "
+            "the weight columns would no longer align to a single set of rows. "
+            "Refit with SUBSAMPLE_SAMPLES=None.",
+        )
+
+    decoder = _find_decoder(model)
+    captured: list[np.ndarray] = []
+
+    def hook(module: torch.nn.Module, args: tuple) -> None:
+        weights = module.attention_weights(args[0], args[1])
+        captured.append(weights.detach().to(torch.float32).cpu().numpy())
+
+    handle = decoder.register_forward_pre_hook(hook)
+    try:
+        estimator.predict(X)
+    finally:
+        handle.remove()
+
+    if not captured:
+        raise RuntimeError(
+            "The decoder head was never invoked during predict; cannot read out "
+            "attention weights.",
+        )
+
+    if any(w.shape[-2] != len(X) for w in captured):
+        raise NotImplementedError(
+            "get_decoder_readout does not support test-row chunking: the decoder "
+            "ran on partial test batches (e.g. fit_mode='fit_with_cache' with more "
+            "than max_batched_test_rows rows), so the captured weights no longer "
+            "map to a single (n_test, n_train) matrix. Predict on fewer rows or "
+            "refit with fit_mode='fit_preprocessors'.",
+        )
+
+    weights = np.concatenate(captured, axis=0)  # (n_estimators, n_test, n_train)
+    train_indices = np.arange(weights.shape[-1])
+    if average_over_estimators:
+        weights = weights.mean(axis=0)
+    return weights, train_indices
+
+
+def class_vote(
+    weights: np.ndarray,
+    y_train: np.ndarray,
+    classes: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Collapse per-row readout weights into a per-class vote.
+
+    Sums the attention weights within each training label, turning the readout
+    into a class distribution. Averaged over the ensemble, this reproduces the
+    model's ``predict_proba`` up to the head's log-clamping when
+    ``softmax_temperature=1.0`` and ``balance_probabilities=False``. Both are
+    applied downstream of this readout, so at the library default
+    ``softmax_temperature=0.9`` the vote is sharpened (per estimator,
+    ``predict_proba`` ∝ ``vote ** (1 / T)``), differing by up to ~2 percentage
+    points for binary and ~6 at 10 classes. It is also exact only in full precision;
+    reduced precision costs ~1e-2 relative, so fit with
+    ``inference_precision=torch.float32`` for a tight match.
+
+    Args:
+        weights: Readout weights ``(n_test, n_train)`` from ``get_decoder_readout``.
+        y_train: Training labels aligned to the weight columns, shape ``(n_train,)``.
+        classes: Class order for the output columns. Defaults to the sorted unique
+            labels of ``y_train``.
+
+    Returns:
+        ``(votes, classes)`` where ``votes`` has shape ``(n_test, n_classes)`` and
+        each row sums to 1, and ``classes`` is the class order of its columns.
+    """
+    y_train = np.asarray(y_train)
+    if classes is None:
+        classes = np.unique(y_train)
+    votes = np.stack([weights[:, y_train == c].sum(axis=1) for c in classes], axis=1)
+    return votes, classes
+
+
+_DEFAULT_CLASS_COLORS = [
+    "#2a78d6",  # blue
+    "#eb6834",  # orange
+    "#1baf7a",  # aqua
+    "#4a3aa7",  # violet
+    "#e87ba4",  # magenta
+    "#008300",  # green
+    "#eda100",  # yellow
+    "#e34948",  # red
+]
+
+
+def _project_2d(
+    train_vecs: np.ndarray,
+    query_vecs: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, str]:
+    """Project train and query vectors to 2D (UMAP, falling back to PCA)."""
+    try:
+        from umap import UMAP
+
+        reducer = UMAP(n_components=2, random_state=0)
+        name = "UMAP"
+    except ImportError:
+        from sklearn.decomposition import PCA
+
+        warnings.warn(
+            "umap-learn is not installed; falling back to PCA for the 2D "
+            "projection. Install umap-learn for a projection that better "
+            "separates the classes.",
+            stacklevel=2,
+        )
+        reducer = PCA(n_components=2)
+        name = "PCA"
+
+    return reducer.fit_transform(train_vecs), reducer.transform(query_vecs), name
+
+
+def plot_decoder_readout(
+    weights: np.ndarray,
+    queries: list[int],
+    train_features: np.ndarray,
+    test_features: np.ndarray,
+    y_train: np.ndarray,
+    class_names: list[str],
+    *,
+    y_test: np.ndarray | None = None,
+    embeddings: tuple[np.ndarray, np.ndarray] | None = None,
+    query_titles: list[str] | None = None,
+    colors: list[str] | None = None,
+    title: str = "TabPFN decoder-head readout",
+    top_k: int = 20,
+) -> Figure:
+    """Draw the decoder readout for a set of queries over a 2D projection.
+
+    Each panel places one query and its ``top_k`` most-attended training rows on a
+    2D projection of the rows, drawing a line from the query to each attended row
+    colored by the row's class and scaled by its vote weight; the query star is
+    colored by the predicted class (``argmax`` of the class votes). The projection
+    uses ``embeddings`` (a ``(train_vecs, test_vecs)`` pair, e.g. TabPFN's
+    target-conditioned embeddings from ``get_embeddings``) when given, else UMAP
+    (falling back to PCA) over the raw ``train_features``/``test_features``.
+    Contrasting the two shows what the head keys on: distance in the embedding
+    space, where votes concentrate on the query's own class, versus the raw feature
+    space, where that locality is weaker.
+
+    Works for any number of classes. All test-row arrays (``weights``,
+    ``test_features``, the test vectors in ``embeddings``, ``y_test``) span the full
+    test set; ``queries`` indexes into them to select the rows to draw.
+
+    Args:
+        weights: Readout weights ``(n_test, n_train)`` from ``get_decoder_readout``.
+        queries: Indices into the test set of the rows to draw, one per panel.
+        train_features: Raw training features ``(n_train, n_features)``.
+        test_features: Raw test features ``(n_test, n_features)``; the queried rows
+            are selected internally.
+        y_train: Training labels aligned to the weight columns, ``(n_train,)``.
+        class_names: Per-class names, aligned to the sorted class labels (same
+            order as ``colors``), so ``class_names[i]`` names the ``i``-th class
+            in ``sorted(unique(y_train))`` rather than the label whose value is
+            ``i``. This keeps string and non-0-indexed integer labels working.
+        y_test: Optional test labels ``(n_test,)``; when given, each panel is
+            annotated with the query's true class.
+        embeddings: Optional ``(train_vecs, test_vecs)`` with ``test_vecs`` spanning
+            the full test set, projected instead of the raw features.
+        query_titles: Optional per-panel labels, aligned to ``queries``.
+        colors: Optional per-class colors, aligned to the sorted class labels.
+            Defaults to a colorblind-validated categorical palette.
+        title: Figure title; the projection name is appended.
+        top_k: Number of top-voting training rows to draw per query.
+
+    Returns:
+        The Matplotlib figure.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+    from scipy.stats import gaussian_kde
+
+    train_vecs, test_vecs = (
+        embeddings if embeddings is not None else (train_features, test_features)
+    )
+    Z_train, Z_query, proj_name = _project_2d(train_vecs, test_vecs[queries])
+    votes, classes = class_vote(weights, y_train)  # (n_test, n_classes)
+
+    if colors is None:
+        colors = (
+            _DEFAULT_CLASS_COLORS
+            if len(classes) <= len(_DEFAULT_CLASS_COLORS)
+            else [plt.cm.tab20(i % 20) for i in range(len(classes))]
+        )
+    color_of = dict(zip(classes, colors, strict=False))
+    name_of = dict(zip(classes, class_names, strict=False))
+
+    def class_density(ax: plt.Axes, xx: np.ndarray, yy: np.ndarray) -> None:
+        """Soft KDE background, one white-to-class-color contour set per class."""
+        grid = np.vstack([xx.ravel(), yy.ravel()])
+        for c in classes:
+            cmap = LinearSegmentedColormap.from_list("", ["white", color_of[c]])
+            density = gaussian_kde(Z_train[y_train == c].T)(grid).reshape(xx.shape)
+            ax.contourf(xx, yy, density, levels=5, cmap=cmap, alpha=0.12)
+
+    pad = 0.08 * np.ptp(Z_train, axis=0)
+    lo, hi = Z_train.min(axis=0) - pad, Z_train.max(axis=0) + pad
+    xx, yy = np.meshgrid(np.linspace(lo[0], hi[0], 200), np.linspace(lo[1], hi[1], 200))
+
+    n = len(queries)
+    ncols = min(2, n)
+    nrows = math.ceil(n / ncols)
+    fig, axes = plt.subplots(
+        nrows, ncols, figsize=(7.5 * ncols, 6.5 * nrows), squeeze=False
+    )
+    axes = axes.ravel()
+    for ax in axes[n:]:
+        ax.axis("off")
+
+    for pos, q in enumerate(queries):
+        ax = axes[pos]
+        class_density(ax, xx, yy)
+        for c in classes:
+            m = y_train == c
+            ax.scatter(*Z_train[m].T, s=12, color=color_of[c], alpha=0.35, linewidths=0)
+
+        w = weights[q]
+        top = np.argsort(w)[-top_k:]
+        w_max = w[top].max()
+        qx, qy = Z_query[pos]
+        for j in top:
+            color = color_of[y_train[j]]
+            frac = w[j] / w_max
+            ax.plot(
+                [qx, Z_train[j, 0]],
+                [qy, Z_train[j, 1]],
+                color=color,
+                lw=1 + 6 * frac,
+                alpha=0.25 + 0.6 * frac,
+                zorder=2,
+            )
+            ax.scatter(
+                *Z_train[j],
+                s=90,
+                color=color,
+                edgecolor="white",
+                linewidths=0.8,
+                zorder=3,
+            )
+
+        pred = classes[int(np.argmax(votes[q]))]
+        ax.scatter(
+            qx,
+            qy,
+            marker="*",
+            s=650,
+            color=color_of[pred],
+            edgecolor="black",
+            linewidths=1.6,
+            zorder=4,
+        )
+        ax.set(xticks=[], yticks=[])
+
+        parts = [f"pred = {name_of[pred]} (p = {votes[q].max():.2f})"]
+        if y_test is not None:
+            parts.append(f"true = {name_of[y_test[q]]}")
+        parts.append(f"top-{top_k} hold {w[top].sum():.0%} of the vote")
+        prefix = "" if query_titles is None else f"{query_titles[pos]}\n"
+        ax.set_title(prefix + "  ·  ".join(parts), fontsize=11)
+
+    handles = [
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            color="w",
+            markerfacecolor=color_of[c],
+            markersize=10,
+            label=name_of[c],
+        )
+        for c in classes
+    ]
+    handles.append(
+        plt.Line2D(
+            [],
+            [],
+            marker="*",
+            color="w",
+            markerfacecolor="#999999",
+            markeredgecolor="black",
+            markersize=18,
+            label="query",
+        )
+    )
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        ncol=len(handles),
+        frameon=False,
+        bbox_to_anchor=(0.5, -0.01),
+    )
+    fig.suptitle(f"{title} ({proj_name})", fontsize=15, fontweight="bold")
+    fig.tight_layout(rect=(0, 0.03, 1, 0.97))
+    return fig
+
 
 
 ================================================
@@ -11408,7 +12270,7 @@ class _VerboseSFS(SequentialFeatureSelector):
 
     Hook is the private ``_get_best_new_feature_score`` method. It's stable
     in current sklearn (1.6 / 1.7 / 1.8 all share the signature) but is
-    private API â€” if sklearn renames or restructures it, this will break
+    private API — if sklearn renames or restructures it, this will break
     visibly (no per-round output) rather than silently. Verbosity then
     falls back to the pre/post CV-score prints in ``_feature_selection``.
 
@@ -11441,10 +12303,10 @@ class _VerboseSFS(SequentialFeatureSelector):
         names = getattr(self, "_verbose_feature_names", None)
         label = names[idx] if names is not None else idx
         # Direction matters for the message: forward "picks to add",
-        # backward "picks to remove" â€” same _get_best_new_feature_score
+        # backward "picks to remove" — same _get_best_new_feature_score
         # method but the semantics differ.
         verb = "picked" if self.direction == "forward" else "dropped"
-        print(  # noqa: T201 â€” intentional verbose-mode output
+        print(  # noqa: T201 — intentional verbose-mode output
             f"  round {self._verbose_iter}/{self.n_features_to_select_}: "
             f"{verb} feature {label!r}, cv score = {score:.4f}",
         )
@@ -11459,7 +12321,7 @@ class FeatureSelectionResult:
         selector: The underlying fitted ``SequentialFeatureSelector``.
             Use it for ``.transform(X)`` to project to the selected
             columns, or for any sklearn-style downstream work.
-        support_mask: Boolean array of shape ``(n_features,)`` â€” ``True``
+        support_mask: Boolean array of shape ``(n_features,)`` — ``True``
             for the columns SFS picked.
         selected_indices: Integer indices of the selected columns, in
             ascending order.
@@ -11514,7 +12376,7 @@ def feature_selection(
     Note that while we expose feature selection here, **TabPFN is very
     robust to noisy / uninformative features** in its native
     in-context-learning regime, so the *accuracy gain* from running this
-    selector is often marginal â€” on real datasets the all-features
+    selector is often marginal — on real datasets the all-features
     baseline and the selected subset typically score within
     cross-validation noise of each other. The value of running selection
     on TabPFN is usually more in terms of interpretability.
@@ -11526,7 +12388,7 @@ def feature_selection(
     ``cv * sum_{i=0..k-1} (d - i)`` model fits, plus 2 more for the
     baseline / selected CV scores. ``n_jobs`` parallelizes
     candidate-feature evaluation within each round; pass ``-1`` for all
-    cores. Note that v3's KV cache does *not* help here â€” every candidate
+    cores. Note that v3's KV cache does *not* help here — every candidate
     has a different ``X_train`` so the cache invalidates between fits.
 
     Args:
@@ -11539,7 +12401,7 @@ def feature_selection(
         feature_names: Optional list of feature names. When provided, the
             returned ``FeatureSelectionResult`` carries the selected
             names under ``selected_names``.
-        cv: Cross-validation folds â€” int (k-fold), CV generator, or
+        cv: Cross-validation folds — int (k-fold), CV generator, or
             iterable of splits. Default 5.
         scoring: Metric to maximize. ``str`` (e.g. ``"roc_auc"``,
             ``"neg_log_loss"``, ``"r2"``) or a callable. Default ``None``
@@ -11551,7 +12413,7 @@ def feature_selection(
             are redundant.
         n_jobs: Parallelism over candidate features in each round.
             ``-1`` uses all cores. Default ``None`` is single-threaded.
-        tol: Stop condition for auto selection â€” only used when
+        tol: Stop condition for auto selection — only used when
             ``n_features_to_select="auto"``. Forward selection stops
             when adding a feature improves the CV score by less than
             ``tol``.
@@ -11637,7 +12499,7 @@ def _feature_selection(
     if verbose:
         print(  # noqa: T201
             f"Baseline CV score on all {X.shape[1]} features: "
-            f"{baseline_scores.mean():.4f} Â± {baseline_scores.std():.4f}"
+            f"{baseline_scores.mean():.4f} ± {baseline_scores.std():.4f}"
         )
 
     sfs_cls = _VerboseSFS if verbose else SequentialFeatureSelector
@@ -11652,7 +12514,7 @@ def _feature_selection(
         **kwargs,
     )
     if verbose:
-        # Plain attributes, not constructor args â€” sklearn's get_params
+        # Plain attributes, not constructor args — sklearn's get_params
         # introspects __init__ for parameter discovery and rejects extras.
         sfs._verbose_feature_names = feature_names  # type: ignore[attr-defined]
     sfs.fit(X, y)
@@ -11681,7 +12543,7 @@ def _feature_selection(
         )
         print(  # noqa: T201
             f"CV score on selected features: "
-            f"{selected_scores.mean():.4f} Â± {selected_scores.std():.4f}"
+            f"{selected_scores.mean():.4f} ± {selected_scores.std():.4f}"
         )
 
     return FeatureSelectionResult(
@@ -11787,8 +12649,8 @@ FILE: src/tabpfn_extensions/interpretability/shap.py
 """Bridge helpers for using the SHAP library's plotting ecosystem with
 Shapley values computed by shapiq.
 
-We use shapiq for the actual Shapley-value computation â€” it's faster and
-extension-friendly for TabPFN â€” but the SHAP library's plotting ecosystem
+We use shapiq for the actual Shapley-value computation — it's faster and
+extension-friendly for TabPFN — but the SHAP library's plotting ecosystem
 (``shap.plots.waterfall``, ``beeswarm``, ``summary``, ``dependence``, etc.)
 is mature and widely used. This module bridges the two.
 
@@ -11824,7 +12686,7 @@ def shapiq_to_shap_explanation(
     ``shap.Explanation``.
 
     Args:
-        explainer: A shapiq explainer â€” e.g. one returned by
+        explainer: A shapiq explainer — e.g. one returned by
             ``get_tabpfn_imputation_explainer(..., index="SV", max_order=1)``.
         X: ``(n, d)`` array of rows to explain.
         budget: Number of model evaluations shapiq is allowed per row. For
@@ -11841,7 +12703,7 @@ def shapiq_to_shap_explanation(
         shapiq's native plots on the ``InteractionValues`` object.
 
         Requires ``shap`` to be installed (``pip install shap``). It is
-        kept out of the ``interpretability`` extra by design â€” shapiq is
+        kept out of the ``interpretability`` extra by design — shapiq is
         the runtime dependency, shap is opt-in for plotting.
     """
     import shap
@@ -11875,17 +12737,17 @@ both basic Shapley values and interaction indices for more detailed model explan
 
 Three explanation paradigms are exposed:
 
-* :func:`get_tabpfn_explainer` â€” *remove-and-recontextualize* (Rundel et al. 2024).
+* :func:`get_tabpfn_explainer` — *remove-and-recontextualize* (Rundel et al. 2024).
   Re-fits TabPFN on each feature subset; cannot benefit from the KV cache
   because the training set changes per coalition.
 
-* :func:`get_tabpfn_imputation_explainer` â€” *imputation-based* removal (marginal /
+* :func:`get_tabpfn_imputation_explainer` — *imputation-based* removal (marginal /
   conditional / baseline). The training set is fixed across coalitions, so the
   KV cache (``fit_mode="fit_with_cache"``) drastically reduces wall time. A
   runtime warning is emitted if the cache isn't enabled when this explainer
   is constructed.
 
-* :func:`get_tabpfn_inf_explainer` â€” *missingness-based* removal. A masked
+* :func:`get_tabpfn_inf_explainer` — *missingness-based* removal. A masked
   feature is set to ``+inf`` and TabPFN's native missing-value handling
   absorbs it as "missing" (no sampling, one forward pass per coalition).
   The training set is fixed across coalitions, so it benefits from the KV
@@ -11897,8 +12759,8 @@ All three explainers route to the approximator recommended for TabPFN in the
 discussion at tabpfn-extensions#342 unless the caller selects one explicitly
 (see :func:`_resolve_approximator`): first-order Shapley values (``index="SV"``)
 use OddSHAP, while higher-order interactions use ProxySHAP. Both approximators
-fit a tree surrogate on sampled coalitions â€” OddSHAP on LightGBM, ProxySHAP on
-XGBoost â€” so those backends ship with the ``interpretability`` extra.
+fit a tree surrogate on sampled coalitions — OddSHAP on LightGBM, ProxySHAP on
+XGBoost — so those backends ship with the ``interpretability`` extra.
 
 OddSHAP and ProxySHAP require shapiq >= 1.6.0 (Python >= 3.12). On older setups
 the routing falls back to shapiq's ``"auto"`` selection and warns.
@@ -11937,8 +12799,8 @@ def _build_tabular_explainer(shapiq, **kwargs):
     shapiq emits a ``UserWarning`` when ``TabularExplainer`` is built with a
     TabPFN model, recommending ``TabPFNExplainer`` (Rundel) instead. That advice
     assumes the sampling-based imputers; the wrappers here deliberately use an
-    imputation/masking removal path â€” which, unlike Rundel, benefits from the KV
-    cache (one predict per coalition, no re-fit) â€” so the warning is misleading
+    imputation/masking removal path — which, unlike Rundel, benefits from the KV
+    cache (one predict per coalition, no re-fit) — so the warning is misleading
     and only that specific message is silenced.
     """
     with warnings.catch_warnings():
@@ -11970,7 +12832,7 @@ def _resolve_approximator(
 
     Both are returned as constructed instances (not the ``"proxyshap"`` string
     alias) so ``random_state`` is threaded through and so ``ProxySHAP`` handles
-    every index in its ``valid_indices`` â€” the string alias routes through a
+    every index in its ``valid_indices`` — the string alias routes through a
     config table that omits some (e.g. ``"STII"``), raising ``KeyError``. An
     index ``ProxySHAP`` does not support falls back to shapiq's ``"auto"``.
 
@@ -12079,8 +12941,8 @@ def get_tabpfn_explainer(
 
     References:
         .. [1] shapiq repository: https://github.com/mmschlk/shapiq
-        .. [2] Muschalik, M., Baniecki, H., Fumagalli, F., Kolpaczki, P., Hammer, B., HÃ¼llermeier, E. (2024). shapiq: Shapley Interactions for Machine Learning. In: The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track. url: https://openreview.net/forum?id=knxGmi6SJi
-        .. [3] Rundel, D., Kobialka, J., von Crailsheim, C., Feurer, M., Nagler, T., RÃ¼gamer, D. (2024). Interpretable Machine Learning for TabPFN. In: Longo, L., Lapuschkin, S., Seifert, C. (eds) Explainable Artificial Intelligence. xAI 2024. Communications in Computer and Information Science, vol 2154. Springer, Cham. https://doi.org/10.1007/978-3-031-63797-1_23
+        .. [2] Muschalik, M., Baniecki, H., Fumagalli, F., Kolpaczki, P., Hammer, B., Hüllermeier, E. (2024). shapiq: Shapley Interactions for Machine Learning. In: The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track. url: https://openreview.net/forum?id=knxGmi6SJi
+        .. [3] Rundel, D., Kobialka, J., von Crailsheim, C., Feurer, M., Nagler, T., Rügamer, D. (2024). Interpretable Machine Learning for TabPFN. In: Longo, L., Lapuschkin, S., Seifert, C. (eds) Explainable Artificial Intelligence. xAI 2024. Communications in Computer and Information Science, vol 2154. Springer, Cham. https://doi.org/10.1007/978-3-031-63797-1_23
 
     """
     shapiq = _require_shapiq()
@@ -12139,7 +13001,7 @@ def get_tabpfn_imputation_explainer(
     The default imputer is ``"baseline"`` (one fixed fill value per feature,
     so each coalition costs exactly one forward pass). Marginal/conditional
     imputers draw multiple samples per coalition and are 50-100x slower in
-    practice without commensurate gains for in-context models â€” switch to
+    practice without commensurate gains for in-context models — switch to
     them only if you have a specific reason.
 
     Args:
@@ -12180,7 +13042,7 @@ def get_tabpfn_imputation_explainer(
 
     References:
         .. [1] shapiq repository: https://github.com/mmschlk/shapiq
-        .. [2] Muschalik, M., Baniecki, H., Fumagalli, F., Kolpaczki, P., Hammer, B., HÃ¼llermeier, E. (2024). shapiq: Shapley Interactions for Machine Learning. In: The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track. url: https://openreview.net/forum?id=knxGmi6SJi
+        .. [2] Muschalik, M., Baniecki, H., Fumagalli, F., Kolpaczki, P., Hammer, B., Hüllermeier, E. (2024). shapiq: Shapley Interactions for Machine Learning. In: The Thirty-eight Conference on Neural Information Processing Systems Datasets and Benchmarks Track. url: https://openreview.net/forum?id=knxGmi6SJi
         .. [3] Lundberg, S. M., & Lee, S. I. (2017). A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems 30 (pp. 4765--4774).
 
     """
@@ -12247,14 +13109,14 @@ def get_tabpfn_inf_explainer(
 
     When a coalition leaves a feature out, this explainer sets that feature to
     ``+inf`` and lets TabPFN's native missing-value handling absorb it as
-    "missing" â€” no sampling from a background distribution, just one forward
+    "missing" — no sampling from a background distribution, just one forward
     pass per coalition. Since the training set never changes across
     coalitions, this is the fastest path on TabPFN v3: construct the model
     with ``fit_mode="fit_with_cache"`` and set
     ``model.executor_.keep_cache_on_device = True`` after ``.fit()`` so every
     coalition evaluation reuses one on-device KV cache.
 
-    This differs from :func:`get_tabpfn_imputation_explainer` â€” that one
+    This differs from :func:`get_tabpfn_imputation_explainer` — that one
     *samples* the absent features from a background distribution, so their
     values are drawn from the data. Here nothing is sampled: a masked feature
     is genuinely missing and TabPFN decides how to handle it. ``+inf`` (rather
@@ -12277,7 +13139,7 @@ def get_tabpfn_inf_explainer(
             True`` afterwards.
 
         data: Background data. Only its shape (number of features) and a single
-            row for shapiq's compatibility check are used â€” it does **not**
+            row for shapiq's compatibility check are used — it does **not**
             drive the masking, since absent features are replaced with ``+inf``
             rather than sampled.
 
@@ -12383,7 +13245,7 @@ def get_tabpfn_inf_explainer(
     inf_imputer = _InfImputer(
         model=_callable_model,
         data=data,
-        sample_size=1,  # unused â€” value_function is overridden
+        sample_size=1,  # unused — value_function is overridden
     )
 
     approximator = _resolve_approximator(
@@ -13357,7 +14219,7 @@ class ManyClassClassifier(BaseEstimator, ClassifierMixin):
 
         if self.no_mapping_needed_:
             logger.info(
-                "Base estimator supports up to %d classes; data has %d â€” fitting once (no codebook).",
+                "Base estimator supports up to %d classes; data has %d — fitting once (no codebook).",
                 self.alphabet_size_,
                 n_classes,
             )
@@ -13373,7 +14235,7 @@ class ManyClassClassifier(BaseEstimator, ClassifierMixin):
 
         n_estimators = self._get_n_estimators(n_classes, self.alphabet_size_)
         logger.info(
-            "Base estimator supports up to %d classes; data has %d â€” using %d-symbol output coding over %d base fits.",
+            "Base estimator supports up to %d classes; data has %d — using %d-symbol output coding over %d base fits.",
             self.alphabet_size_,
             n_classes,
             self.alphabet_size_,
@@ -13654,7 +14516,7 @@ FILE: src/tabpfn_extensions/misc/sklearn_compat.py
 # mypy: ignore-errors
 #
 # Vendored from sklearn-compat: https://github.com/sklearn-compat/sklearn-compat
-# (do not lint-format â€” keep as close to upstream as possible).
+# (do not lint-format — keep as close to upstream as possible).
 #
 # Copyright (c) 2024, Guillaume Lemaitre
 # SPDX-License-Identifier: BSD-3-Clause
@@ -14703,10 +15565,10 @@ covariates, while still using a strong foundation model.
 
 For example, this can be useful when:
 
-â€¢ validating whether a scientific variable is truly predictive  
-â€¢ auditing black-box model feature importance  
-â€¢ performing feature selection with statistically valid p-values  
-â€¢ working in regulated or high-stakes settings requiring hypothesis tests
+• validating whether a scientific variable is truly predictive  
+• auditing black-box model feature importance  
+• performing feature selection with statistically valid p-values  
+• working in regulated or high-stakes settings requiring hypothesis tests
 
 Unlike heuristic importance measures (e.g., permutation importance or SHAP),
 TabPFN-CRT provides formal hypothesis testing with calibrated p-values.
@@ -14733,7 +15595,7 @@ Crucially:
 Basic Usage
 ----------------------------------------------------------------------
 
-Example 1 â€” Test a single feature by index:
+Example 1 — Test a single feature by index:
 
     from tabpfn_extensions.pval_crt import tabpfn_crt
 
@@ -14748,7 +15610,7 @@ Example 1 â€” Test a single feature by index:
     print(result["p_value"], result["reject_null"])
 
 
-Example 2 â€” Test a single feature by name (when X is a DataFrame):
+Example 2 — Test a single feature by name (when X is a DataFrame):
 
     result = tabpfn_crt(
         X,
@@ -14759,7 +15621,7 @@ Example 2 â€” Test a single feature by name (when X is a DataFrame):
     print(result["p_value"])
 
 
-Example 3 â€” Test multiple features simultaneously:
+Example 3 — Test multiple features simultaneously:
 
     results = tabpfn_crt(
         X,
@@ -14784,7 +15646,7 @@ Single feature testing returns a dictionary containing:
 
 Multiple feature testing returns:
 
-- dict[feature â†’ result dictionary]
+- dict[feature → result dictionary]
 
 
 ----------------------------------------------------------------------
@@ -14792,7 +15654,7 @@ Relation to Prior Work
 ----------------------------------------------------------------------
 
 This implementation follows the Conditional Randomization Test framework
-(e.g., CandÃ¨s et al., 2018) and adapts it to modern foundation models by:
+(e.g., Candès et al., 2018) and adapts it to modern foundation models by:
 
 - using predictive log-likelihood as the test statistic
 - allowing flexible conditional modeling via TabPFN
@@ -14880,13 +15742,13 @@ def tabpfn_crt(
     model p(X_j | X_-j).
 
     Supports:
-        â€¢ single feature testing
-        â€¢ batch feature testing
+        • single feature testing
+        • batch feature testing
 
     Returns:
     -------
-    Single feature â†’ result dict
-    Multiple features â†’ dict[feature â†’ result dict]
+    Single feature → result dict
+    Multiple features → dict[feature → result dict]
     """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -14929,7 +15791,7 @@ def tabpfn_crt(
     # for X_tr is reused across every predict_proba / predict call. Users
     # can opt out via use_kv_cache=False (e.g., to save memory). Older
     # tabpfn versions accept the fit_mode kwarg but raise at fit time
-    # ("fit_with_cache is not supported for TabPFN v2.x yet") â€” fall back
+    # ("fit_with_cache is not supported for TabPFN v2.x yet") — fall back
     # to the default fit mode in that case.
     if use_kv_cache:
         model_y.fit_mode = "fit_with_cache"
@@ -14940,7 +15802,7 @@ def tabpfn_crt(
         if not use_kv_cache or "fit_with_cache" not in str(err):
             raise
         warnings.warn(
-            "Falling back from fit_mode='fit_with_cache' â€” the installed "
+            "Falling back from fit_mode='fit_with_cache' — the installed "
             "tabpfn version doesn't support it. CRT will run but without "
             "the KV cache speedup. Upgrade to the latest version of tabpfn "
             "(or pass use_kv_cache=False to suppress this warning).",
@@ -15047,9 +15909,9 @@ def _tabpfn_crt_single(
     This helper assumes that the main CRT preparation steps have already
     been completed, including:
 
-        â€¢ Train/evaluation data split
-        â€¢ Fitting the predictive model p(y | X)
-        â€¢ Computing the observed test statistic T_obs
+        • Train/evaluation data split
+        • Fitting the predictive model p(y | X)
+        • Computing the observed test statistic T_obs
 
     The helper performs only the feature-specific portion of the CRT:
 
@@ -15139,10 +16001,10 @@ def _tabpfn_crt_single(
 
     Notes:
     -----
-    â€¢ The predictive model p(y | X) is NOT refit during CRT resampling.
-    â€¢ The test is right-tailed: larger predictive log-density indicates
+    • The predictive model p(y | X) is NOT refit during CRT resampling.
+    • The test is right-tailed: larger predictive log-density indicates
       stronger evidence of feature relevance.
-    â€¢ A feature-specific RNG stream is used to guarantee reproducibility
+    • A feature-specific RNG stream is used to guarantee reproducibility
       independent of feature ordering.
     """
     rng_feature = np.random.RandomState(seed + j_idx)
@@ -15648,7 +16510,287 @@ __all__ = ["SurvivalTabPFN"]
 ================================================
 FILE: src/tabpfn_extensions/survival/survival.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 8550: character maps to <undefined>
+#  Copyright (c) Prior Labs GmbH 2025.
+#  Licensed under the Apache License, Version 2.0
+#
+#  Concept and code developed by Robert Hatch based on his solution at the
+#  Kaggle CIBMTR - Equity in post-HCT Survival Predictions Competition.
+#
+# INFO: The survival prediction work is work-in-progress and still unoptimized,
+#  TabPFN survival may provide inconsistent improvements.
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Literal
+
+import numpy as np
+import torch
+from sklearn.base import BaseEstimator
+
+# scikit-survival is an optional dependency; install with
+# `pip install scikit-survival` if you need SurvivalTabPFN.
+try:
+    from sksurv.base import SurvivalAnalysisMixin
+    from sksurv.util import check_y_survival
+except ImportError as _err:  # pragma: no cover
+    raise ImportError(
+        "SurvivalTabPFN requires scikit-survival. Install it with:\n\n"
+        "    pip install scikit-survival. Excluded due to GPL."
+    ) from _err
+
+from tabpfn_common_utils.telemetry import set_extension
+
+from tabpfn_extensions.utils import TabPFNClassifier, TabPFNRegressor
+
+
+@set_extension("survival")
+class SurvivalTabPFN(SurvivalAnalysisMixin, BaseEstimator):
+    """Two-head TabPFN survival scorer:
+      1) classifier -> P(event | X)
+      2) distributional regressor -> T | (event, X)
+
+    Scalar risk options (higher = riskier):
+      - "weighted_cdf" (default): sum_j w_j * CIF_1(tau_j | X),
+        where CIF_1(t | X) = P(T <= t, event=1 | X).
+      - "avg_cdf": uniform average of CIF_1(tau_j | X) across horizons.
+      - "p_over_mean": P(event|X) / E[T | event, X]  (legacy fallback).
+
+    Also exposes CIF-based curves for event=1:
+      - predict_cif_at(X, t_grid)
+          -> CIF_1(t|X) = P(T <= t, event=1 | X)
+      - predict_survival_from_cif_at(X, t_grid)
+          -> 1 - CIF_1(t|X)
+
+    Backwards-compatible aliases (deprecated):
+      - predict_cdf_at(X, t_grid)
+          -> same as predict_cif_at, returns CIF_1(t|X)
+      - predict_survival_at(X, t_grid)
+          -> same as predict_survival_from_cif_at
+
+    Parameters
+    ----------
+    cls_model : TabPFNClassifier | None
+        If None, created in fit with random_state.
+    reg_model : TabPFNRegressor | None
+        If None, created in fit with random_state.
+    risk_strategy : {"weighted_cdf","avg_cdf","p_over_mean"}, default="weighted_cdf"
+    default_horizons : iterable[float] | None
+    n_auto_horizons : int, default=6
+    auto_horizon_quantile_range : tuple[float,float], default=(0.10, 0.90)
+    exp_weight_gamma : float, default=0.85
+    eps : float, default=1e-9
+    random_state : any, default=None
+    """
+
+    def __init__(
+        self,
+        *,
+        cls_model: TabPFNClassifier | None = None,
+        reg_model: TabPFNRegressor | None = None,
+        risk_strategy: Literal[
+            "weighted_cdf", "avg_cdf", "p_over_mean"
+        ] = "weighted_cdf",
+        default_horizons: Iterable[float] | None = None,
+        n_auto_horizons: int = 6,
+        auto_horizon_quantile_range: tuple[float, float] = (0.10, 0.90),
+        exp_weight_gamma: float = 0.85,
+        eps: float = 1e-9,
+        random_state=None,
+    ):
+        # store constructor params (BaseEstimator will expose them to get/set_params)
+        self.cls_model = cls_model
+        self.reg_model = reg_model
+        self.risk_strategy = risk_strategy
+        self.default_horizons = (
+            None if default_horizons is None else list(default_horizons)
+        )
+        self.n_auto_horizons = int(n_auto_horizons)
+        self.auto_horizon_quantile_range = tuple(auto_horizon_quantile_range)
+        self.exp_weight_gamma = float(exp_weight_gamma)
+        self.eps = float(eps)
+        self.random_state = random_state
+
+        # fitted attributes (set in fit)
+        self._auto_horizons_: np.ndarray | None = None
+        self._cls_model: TabPFNClassifier | None = None
+        self._reg_model: TabPFNRegressor | None = None
+        self.n_features_in_: int | None = None
+
+    @property
+    def _predict_risk_score(self) -> bool:
+        # scikit-survival convention: higher = higher risk
+        return True
+
+    # ------------------------------ fit ------------------------------
+
+    def fit(self, X: np.ndarray, y: np.ndarray | list | dict) -> SurvivalTabPFN:
+        y_event, y_time = check_y_survival(y)
+
+        if np.sum(y_event) < 2:
+            raise ValueError(
+                f"Need at least 2 events to learn a time distribution, but found {np.sum(y_event)}."
+            )
+        if np.any(np.asarray(y_time) < 0):
+            raise ValueError("Times must be non-negative.")
+
+        X = np.asarray(X)
+        self.n_features_in_ = X.shape[1]
+
+        # instantiate sub-models if not provided
+        self._cls_model = self.cls_model or TabPFNClassifier(
+            random_state=self.random_state
+        )
+        self._reg_model = self.reg_model or TabPFNRegressor(
+            random_state=self.random_state
+        )
+
+        # 1) P(event|X)
+        self._cls_model.fit(X, y_event)
+
+        # 2) T | event, X
+        X_ev = X[y_event]
+        t_ev = np.asarray(y_time, dtype=float)[y_event]
+        self._reg_model.fit(X_ev, t_ev)
+
+        # 3) Auto horizons (if not provided)
+        if self.default_horizons is None:
+            q_lo, q_hi = self.auto_horizon_quantile_range
+            q_grid = np.linspace(q_lo, q_hi, num=self.n_auto_horizons)
+            taus = np.quantile(t_ev, q_grid).astype(float)
+            taus = np.unique(np.clip(taus, a_min=np.min(t_ev), a_max=np.max(t_ev)))
+            self._auto_horizons_ = taus
+        else:
+            self._auto_horizons_ = np.asarray(self.default_horizons, dtype=float)
+
+        return self
+
+    # ------------------------------ distributions ------------------------------
+
+    def predict_cif_at(self, X: np.ndarray, t_grid: Iterable[float]) -> np.ndarray:
+        """Event-1 cumulative incidence CIF_1(t|X).
+
+        Computes
+
+            CIF_1(t|X) = P(T <= t, event=1 | X)
+
+        via the factorization
+
+            P(event=1 | X) * P(T <= t | event=1, X).
+        """
+        if self._cls_model is None or self._reg_model is None:
+            raise RuntimeError("Estimator not fitted yet.")
+
+        t_grid = np.asarray(list(t_grid), dtype=float)
+        if t_grid.ndim != 1 or t_grid.size == 0:
+            raise ValueError("t_grid must be a 1-D, non-empty sequence of times.")
+
+        X = np.asarray(X)
+
+        p_event = self._cls_model.predict_proba(X)[:, 1]  #  P(event|X), (n,)
+
+        # P(T<=t | event, X) from regressor distribution
+        full = self._reg_model.predict(X, output_type="full")  # type: ignore
+        logits = torch.tensor(full["logits"])  # torch.Tensor [n, nbins]
+        criterion = full["criterion"]  # FullSupportBarDistribution
+
+        cifs = []
+        with torch.no_grad():
+            for tau in t_grid:
+                ys = torch.as_tensor(
+                    [float(tau)], device=logits.device, dtype=logits.dtype
+                )
+                cdf_tau = criterion.cdf(logits, ys).squeeze(-1).cpu().numpy()  # (n,)
+                cifs.append(cdf_tau)
+        F_event = np.column_stack(cifs)  # (n, m)
+
+        # Mix with event probability
+        F_mixed = p_event[:, None] * F_event
+        return F_mixed
+
+    def predict_survival_from_cif_at(
+        self, X: np.ndarray, t_grid: Iterable[float]
+    ) -> np.ndarray:
+        """Complement 1 - CIF_1(t|X) based on :meth:`predict_cif_at`.
+
+        Returns:
+            1 - CIF_1(t|X) = 1 - P(T <= t, event=1 | X),
+
+        i.e. the probability that event 1 has not yet occurred by time ``t``.
+        """
+        return 1.0 - self.predict_cif_at(X, t_grid)
+
+    # ------------------------------ scalar risk ------------------------------
+
+    def _horizons_and_weights(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return (horizons, weights) according to config/auto, normalized weights."""
+        if self._auto_horizons_ is None:
+            raise RuntimeError("Model not fitted; horizons are undefined.")
+
+        taus = self._auto_horizons_
+        m = taus.shape[0]
+
+        if self.risk_strategy == "avg_cdf":
+            w = np.full(m, 1.0 / max(m, 1), dtype=float)
+            return taus, w
+
+        if self.risk_strategy == "weighted_cdf":
+            # earliest horizons get largest weights: w_j ∝ gamma^(j), j=0..m-1
+            j = np.arange(m, dtype=float)
+            w = np.power(self.exp_weight_gamma, j)
+            w = w / (w.sum() + self.eps)
+            return taus, w
+
+        # Fallback strategy uses no horizons
+        return np.array([]), np.array([])
+
+    def predict_risk(
+        self,
+        X: np.ndarray,
+        *,
+        horizons: Iterable[float] | None = None,
+        weights: Iterable[float] | None = None,
+    ) -> np.ndarray:
+        if self._cls_model is None or self._reg_model is None:
+            raise RuntimeError("Estimator not fitted yet.")
+
+        strategy = self.risk_strategy
+
+        # If user passes horizons explicitly, we override strategy to CIF-based
+        if horizons is not None:
+            taus = np.asarray(list(horizons), dtype=float)
+            if taus.size == 0:
+                raise ValueError("If provided, 'horizons' cannot be empty.")
+            F = self.predict_cif_at(X, taus)  # (n, m)
+            if weights is None:
+                w = np.full(F.shape[1], 1.0 / F.shape[1], dtype=float)
+            else:
+                w = np.asarray(list(weights), dtype=float)
+                if w.shape[0] != F.shape[1]:
+                    raise ValueError("weights must match number of horizons.")
+                w = w / (w.sum() + self.eps)
+            return (F @ w).astype(float)
+
+        # No horizons provided: use configured strategy (CIF-based when applicable)
+        if strategy in ("weighted_cdf", "avg_cdf"):
+            taus, w = self._horizons_and_weights()
+            F = self.predict_cif_at(X, taus)  # (n, m)
+            return (F @ w).astype(float)
+
+        # Legacy fallback: P(event)/E[T | event, X]
+        p_event = self._cls_model.predict_proba(np.asarray(X))[:, 1]
+        full = self._reg_model.predict(np.asarray(X), output_type="full")  # type: ignore
+        logits = full["logits"]
+        criterion = full["criterion"]
+        with torch.no_grad():
+            mu_reg = criterion.mean(logits).cpu().numpy()
+        return (p_event * (1.0 / (mu_reg + self.eps))).astype(float)
+
+    # ------------------------------ scikit API ------------------------------
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return self.predict_risk(X, horizons=None)
+
 
 
 ================================================
@@ -15677,15 +16819,15 @@ Authored by [Andrei Margeloiu\*](https://www.linkedin.com/in/andreimargeloiu/), 
 
 **Primary Maintainer:** Xiangjian Jiang
 
-## ðŸ“Œ Overview
+## 📌 Overview
 
 ![image-20241001125640288](https://s2.loli.net/2024/10/01/5loipZJdOrtVS3Q.png)
 
 **TL;DR:** We introduce a high-performance tabular data augmentation method that is fast, requires no additional training, and can be applied to any downstream predictive model. The optimized implementation features advanced caching, GPU acceleration, and memory-efficient SGLD sampling.
 
-**Abstract:** Data collection is often difficult in critical fields such as medicine, physics, and chemistry. As a result, classification methods usually perform poorly with these small datasets, leading to weak predictive performance. Increasing the training set with additional synthetic data, similar to data augmentation in images, is commonly believed to improve downstream classification performance. However, current tabular generative methods that learn either the joint distribution p(x,y) p(\mathbf{x}, y) or the class-conditional distribution p(xâˆ£y) p(\mathbf{x} \mid y) often overfit on small datasets, resulting in poor-quality synthetic data, usually worsening classification performance compared to using real data alone. To solve these challenges, we introduce TabEBM, a novel class-conditional generative method using Energy-Based Models (EBMs). Unlike existing methods that use a shared model to approximate all class-conditional densities, our key innovation is to create distinct EBM generative models for each class, each modelling its class-specific data distribution individually. This approach creates robust energy landscapes, even in ambiguous class distributions. Our experiments show that TabEBM generates synthetic data with higher quality and better statistical fidelity than existing methods. When used for data augmentation, our synthetic data consistently improves the classification performance across diverse datasets of various sizes, especially small ones.
+**Abstract:** Data collection is often difficult in critical fields such as medicine, physics, and chemistry. As a result, classification methods usually perform poorly with these small datasets, leading to weak predictive performance. Increasing the training set with additional synthetic data, similar to data augmentation in images, is commonly believed to improve downstream classification performance. However, current tabular generative methods that learn either the joint distribution p(x,y) p(\mathbf{x}, y) or the class-conditional distribution p(x∣y) p(\mathbf{x} \mid y) often overfit on small datasets, resulting in poor-quality synthetic data, usually worsening classification performance compared to using real data alone. To solve these challenges, we introduce TabEBM, a novel class-conditional generative method using Energy-Based Models (EBMs). Unlike existing methods that use a shared model to approximate all class-conditional densities, our key innovation is to create distinct EBM generative models for each class, each modelling its class-specific data distribution individually. This approach creates robust energy landscapes, even in ambiguous class distributions. Our experiments show that TabEBM generates synthetic data with higher quality and better statistical fidelity than existing methods. When used for data augmentation, our synthetic data consistently improves the classification performance across diverse datasets of various sizes, especially small ones.
 
-## ðŸ“– Citation
+## 📖 Citation
 
 For attribution in academic contexts, please cite this work as:
 
@@ -15698,7 +16840,7 @@ For attribution in academic contexts, please cite this work as:
 }
 ```
 
-## ðŸ”‘ Features
+## 🔑 Features
 
 - **Optimized TabEBM Implementation**: High-performance TabEBM with advanced caching, memory optimizations, and GPU acceleration
 - **Fast Synthetic Data Generation**: Generate synthetic tabular data with minimal configuration and improved speed
@@ -15706,7 +16848,7 @@ For attribution in academic contexts, please cite this work as:
 - **Memory-Efficient SGLD**: Optimized Stochastic Gradient Langevin Dynamics with pre-computed noise tensors
 - **Comprehensive Tutorials**: Three interactive notebooks covering data generation, real-world augmentation, and density analysis
 
-### ðŸ”¥ Performance Optimizations
+### 🔥 Performance Optimizations
 
 - **Model Caching**: Intelligent caching system to avoid redundant model training across classes
 - **Vectorized Operations**: Optimized tensor operations and reduced device transfers for faster computation
@@ -16315,7 +17457,7 @@ class TabEBM:
         help define the energy landscape by providing clear decision boundaries.
 
         For 2D data, negatives are placed at the four corners of a square centered at origin.
-        For higher dimensions, random combinations of Â±distance_negative_class are used.
+        For higher dimensions, random combinations of ±distance_negative_class are used.
 
         Args:
             X: Real data samples (expected to be approximately standardized)
@@ -16343,7 +17485,7 @@ class TabEBM:
             # Use a set to ensure uniqueness and symmetry
             surrogate_set = set()
 
-            # Generate points with random Â±distance_negative_class coordinates
+            # Generate points with random ±distance_negative_class coordinates
             while len(surrogate_set) < 4:
                 point = np.random.choice(
                     [-distance_negative_class, distance_negative_class], num_features
@@ -16882,7 +18024,7 @@ FILE: src/tabpfn_extensions/unsupervised/simple_impute.py
 A lightweight alternative to :class:`TabPFNUnsupervisedModel.impute` that models
 each column the canonical way: treat the column being imputed as the target and
 *every other column* as features (missing values in those feature columns are
-left in place â€” TabPFN handles NaNs natively), fit on the rows where the target
+left in place — TabPFN handles NaNs natively), fit on the rows where the target
 is observed, and predict the rows where it is missing.
 
 Unlike the permutation-ensembled approach in :mod:`unsupervised`, this does a
@@ -16894,7 +18036,7 @@ order; pass ``use_imputed=True`` for chained, left-to-right imputation where a
 column filled earlier feeds into later columns.
 
 This module intentionally depends only on ``numpy`` and the package's own model
-helpers â€” not on :class:`TabPFNUnsupervisedModel`.
+helpers — not on :class:`TabPFNUnsupervisedModel`.
 
 Example usage:
     ```python
@@ -16928,7 +18070,7 @@ def impute_column(
 ) -> np.ndarray:
     """Impute column ``col`` of ``X`` (``np.nan`` = missing) in place.
 
-    Uses every other column as features (feature NaNs left in â€” TabPFN handles
+    Uses every other column as features (feature NaNs left in — TabPFN handles
     them), fits ``model`` on the rows where ``col`` is observed, and predicts the
     rows where it is missing.
 
@@ -17132,10 +18274,10 @@ def _resolve_dag_order(
     without parents must be stated explicitly with an empty list. Silently
     defaulting absent features to no parents would make them independent of
     everything else, which is rarely what a caller passing a partial DAG
-    intends â€” so incomplete DAGs are rejected instead.
+    intends — so incomplete DAGs are rejected instead.
 
     The caller's ``dag`` is **not** mutated. On a cyclic graph we raise
-    ``ValueError`` with the cycle path embedded in the message â€” easier for a
+    ``ValueError`` with the cycle path embedded in the message — easier for a
     user to debug than the raw stdlib ``CycleError`` traceback.
     """
     valid = set(all_features)
@@ -17647,8 +18789,8 @@ class TabPFNUnsupervisedModel(BaseEstimator):
         # Only rows whose target column is observed can serve as labeled context
         # for that column. Rows whose target is NaN carry no usable label: they
         # were previously kept with a fabricated 0 label (see nan_to_num below),
-        # which biases the fit toward 0 and â€” when the fit data is the same data
-        # being imputed â€” leaks the query rows into their own training context.
+        # which biases the fit toward 0 and — when the fit data is the same data
+        # being imputed — leaks the query rows into their own training context.
         # Dropping them addresses both. This is a no-op when the fit data has no
         # missing targets (e.g. fitting on complete reference data, the
         # recommended imputation workflow, or outlier detection on complete
@@ -17832,7 +18974,7 @@ class TabPFNUnsupervisedModel(BaseEstimator):
                     dtype=logits_tensor.dtype,
                     device=logits_tensor.device,
                 )
-                # criterion.forward returns the NLL, so -forward is log p_Î¸ directly.
+                # criterion.forward returns the NLL, so -forward is log p_θ directly.
                 log_pred = (
                     -pred["criterion"].forward(logits_tensor, y_tensor).to(log_p.device)
                 )
@@ -19421,8 +20563,8 @@ FILE: tests/test_client_full_output.py
 """Tests for the client-backend ``output_type`` handling (GH #350).
 
 ``ClientTabPFNRegressor`` used to override ``predict`` to import
-``FullSupportBarDistribution`` from ``tabpfn.model.bar_distribution`` â€” a
-module removed in tabpfn 8.1 â€” and raised before ever looking at the client
+``FullSupportBarDistribution`` from ``tabpfn.model.bar_distribution`` — a
+module removed in tabpfn 8.1 — and raised before ever looking at the client
 output. It also silently dropped any other ``output_type`` (e.g.
 ``"quantiles"``) instead of passing it to the parent predict.
 
@@ -20147,7 +21289,7 @@ class TestTabPFNEmbedding:
         classification_data: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
     ) -> None:
         """fit_transform returns OOF embeddings whereas transform always uses
-        the full-data model â€” calling transform(X_train) should therefore
+        the full-data model — calling transform(X_train) should therefore
         differ from the OOF result produced by fit_transform(X_train, y_train).
         """
         X_train, _X_test, y_train, _ = classification_data
@@ -21699,7 +22841,137 @@ def test__image_to_bytes__round_trips_through_open_images() -> None:
 ================================================
 FILE: tests/test_interpretability_decoder_readout.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 1629: character maps to <undefined>
+"""Tests for the decoder-head readout (``get_decoder_readout`` / ``class_vote``).
+
+Local-only: the readout reads TabPFN's ``ManyClassDecoder`` internals via the
+``model_`` handle, which the client backend does not expose. The weights come from
+the head's own ``attention_weights`` method, so these tests are mostly an
+upstream-contract guard: the key check is an end-to-end identity where collapsing
+the recovered attention weights by training label and averaging over the ensemble
+reproduces ``predict_proba`` up to the head's log-clamping. That identity only holds
+at ``softmax_temperature=1.0`` (the library default 0.9 sharpens the vote by
+``** (1 / T)`` downstream of the readout) and in full precision, so the fixtures fit
+at 1.0 with ``inference_precision=torch.float32`` and the check runs tight. If our row
+alignment were wrong, or if upstream's ``attention_weights`` drifted from what its
+fused ``forward`` computes, this would break.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+import torch
+
+from tabpfn_extensions.interpretability import class_vote, get_decoder_readout
+from tabpfn_extensions.utils import TabPFNClassifier
+
+
+@pytest.fixture(params=["classification_data", "multiclass_data"])
+def fitted_clf_split(request):
+    """A fitted local classifier plus the held-out test split it was not fit on.
+
+    Parametrized over a binary and a 5-class dataset. Fit at
+    ``softmax_temperature=1.0`` so the label-collapsed readout matches
+    ``predict_proba`` up to log-clamping alone; at the library default 0.9 the
+    temperature sharpens the vote (``∝ vote ** (1 / T)``) and the gap grows with
+    the class count.
+
+    ``inference_precision`` is pinned to float32 because ``inference_precision="auto"``
+    (the default) turns on bf16 autocast on CPUs with native bf16 support (Intel
+    AMX / AVX512-BF16, AMD Zen 4+; see ``tabpfn.utils.infer_autocast_inference_mode``).
+    In bf16 the head's ``log(clamp(vote) + 3e-5)`` and the softmax that undoes it no
+    longer round-trip, so the identity below holds only to ~1e-2 relative rather than
+    to float32 noise. Leaving the precision to the machine made the tight check pass
+    or fail depending on which CPU a CI runner happened to land on.
+    """
+    X, y = request.getfixturevalue(request.param)
+    n_train = 2 * len(X) // 3
+    X_train, X_test = X[:n_train], X[n_train:]
+    y_train, y_test = y[:n_train], y[n_train:]
+    clf = TabPFNClassifier(
+        device="cpu",
+        n_estimators=2,
+        random_state=0,
+        softmax_temperature=1.0,
+        inference_precision=torch.float32,
+    )
+    clf.fit(X_train, y_train)
+    # Guards the pin: were a forced dtype ever to stop disabling autocast upstream,
+    # fail here rather than let the tight identity check flake by hardware again.
+    assert getattr(clf, "use_autocast_", False) is False
+    return clf, X_train, X_test, y_train, y_test
+
+
+@pytest.mark.local_compatible
+def test_shapes_and_normalization(fitted_clf_split):
+    clf, X_train, X_test, _, _ = fitted_clf_split
+    weights, train_indices = get_decoder_readout(clf, X_test)
+
+    assert weights.shape == (len(X_test), len(X_train))
+    assert train_indices.shape == (len(X_train),)
+    np.testing.assert_array_equal(train_indices, np.arange(len(X_train)))
+    assert (weights >= 0).all()
+    np.testing.assert_allclose(weights.sum(axis=1), 1.0, atol=1e-4)
+
+
+@pytest.mark.local_compatible
+def test_per_estimator_axis(fitted_clf_split):
+    clf, X_train, X_test, _, _ = fitted_clf_split
+    per_est, _ = get_decoder_readout(clf, X_test, average_over_estimators=False)
+    avg, _ = get_decoder_readout(clf, X_test)
+
+    assert per_est.shape[1:] == (len(X_test), len(X_train))
+    assert per_est.shape[0] >= 1
+    np.testing.assert_allclose(per_est.mean(axis=0), avg, atol=1e-5)
+
+
+@pytest.mark.local_compatible
+def test_test_row_chunking_raises(classification_data, monkeypatch):
+    """Test-row chunking is rejected rather than silently mislabeling axes.
+
+    With ``fit_mode="fit_with_cache"`` and more than ``max_batched_test_rows`` test
+    rows, TabPFN runs the decoder once per chunk, so the captured weights no longer
+    map to a single ``(n_test, n_train)`` matrix.
+    """
+    from tabpfn.settings import settings
+
+    X, y = classification_data
+    n_train = 2 * len(X) // 3
+    X_train, X_test = X[:n_train], X[n_train:]
+    y_train = y[:n_train]
+    clf = TabPFNClassifier(
+        device="cpu", n_estimators=2, random_state=0, fit_mode="fit_with_cache"
+    )
+    clf.fit(X_train, y_train)
+
+    monkeypatch.setattr(settings.tabpfn, "max_batched_test_rows", 1)
+    with pytest.raises(NotImplementedError, match="test-row chunking"):
+        get_decoder_readout(clf, X_test)
+
+
+@pytest.mark.local_compatible
+def test_class_vote_matches_predict_proba(fitted_clf_split):
+    """The label-collapsed readout reproduces predict_proba exactly.
+
+    The decoder turns its vote into logits as ``log(clamp(vote, min=1e-5) + 3e-5)``,
+    and at ``softmax_temperature=1.0`` with ``average_before_softmax=False`` the
+    softmax simply undoes the log: per estimator, ``predict_proba`` is the clamped,
+    shifted vote renormalized, then averaged over the ensemble. Runs for both the binary and the 5-class
+    dataset.
+    """
+    clf, _, X_test, y_train, _ = fitted_clf_split
+    per_est, _ = get_decoder_readout(clf, X_test, average_over_estimators=False)
+    collapsed = [class_vote(w, y_train) for w in per_est]
+    votes = np.stack([v for v, _ in collapsed])
+    classes = collapsed[0][1]
+
+    np.testing.assert_array_equal(classes, clf.classes_)
+    np.testing.assert_allclose(votes.sum(axis=-1), 1.0, atol=1e-4)
+
+    shifted = np.clip(votes, 1e-5, None) + 3e-5
+    expected = (shifted / shifted.sum(axis=-1, keepdims=True)).mean(axis=0)
+    np.testing.assert_allclose(expected, clf.predict_proba(X_test), atol=1e-6)
+
 
 
 ================================================
@@ -21714,7 +22986,7 @@ The end-to-end cases are local-only, not because the feature is: the remote
 backends forward ``inference_config``/``PASSTHROUGH_INF`` to the TabPFN they
 run, and ``TestInfPassthroughDetection`` covers them with stubs. They run on
 CPU (fp32), where the
-value function is deterministic and the Shapley efficiency identity is tight â€”
+value function is deterministic and the Shapley efficiency identity is tight —
 so we can compare the imputer's masking against hand-built masked predictions
 exactly, rather than merely asserting the pipeline "runs".
 """
@@ -21775,7 +23047,7 @@ def test_value_function_masks_absent_features_with_inf(
 ):
     """The core behaviour: for each coalition the imputer sets exactly the
     *absent* features to +inf, keeps the present ones at x, and feeds that to the
-    model â€” matching a hand-built masked prediction, batched over coalitions.
+    model — matching a hand-built masked prediction, batched over coalitions.
     """
     X, _ = classification_data
     d = X.shape[1]
@@ -23268,13 +24540,13 @@ import torch
 from tabpfn_extensions import TabPFNClassifier, TabPFNRegressor, unsupervised
 from tabpfn_extensions.unsupervised.unsupervised import _resolve_dag_order
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ helper-level tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────── helper-level tests ──────────────────────────────
 
 
 @pytest.mark.client_compatible
 @pytest.mark.local_compatible
 def test_resolve_dag_order_basic():
-    """Topological order respects parent â†’ child."""
+    """Topological order respects parent → child."""
     dag = {0: [], 1: [0], 2: [1, 0]}
     ordered, full = _resolve_dag_order(dag, [0, 1, 2])
     assert ordered.index(0) < ordered.index(1)
@@ -23287,7 +24559,7 @@ def test_resolve_dag_order_basic():
 @pytest.mark.local_compatible
 def test_resolve_dag_order_rejects_partial_dag():
     """A DAG that omits features fails loudly instead of silently making the
-    omitted features marginal â€” parentless features must be stated with an
+    omitted features marginal — parentless features must be stated with an
     empty list.
     """
     with pytest.raises(ValueError, match="must specify every feature"):
@@ -23329,13 +24601,13 @@ def test_resolve_dag_order_does_not_mutate_caller_dict():
     assert user_dag == snapshot, "caller's DAG dict was mutated"
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ public API tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────── public API tests ────────────────────────────────
 
 
 @pytest.mark.client_compatible
 @pytest.mark.local_compatible
 def test_impute_rejects_dag_with_condition_on_all_features():
-    """The two modes are mutually exclusive â€” must raise a clear ValueError."""
+    """The two modes are mutually exclusive — must raise a clear ValueError."""
     X = torch.tensor(np.random.rand(5, 3), dtype=torch.float32)
     model = unsupervised.TabPFNUnsupervisedModel(
         tabpfn_clf=TabPFNClassifier(n_estimators=1),
@@ -23377,9 +24649,9 @@ def test_generate_synthetic_data_with_dag(monkeypatch):
 def test_impute_with_dag(monkeypatch):
     """End-to-end: imputation with a DAG fills every NaN and keeps the shape.
 
-    Uses a different DAG shape from the synthesis test above â€” a fork/diamond
+    Uses a different DAG shape from the synthesis test above — a fork/diamond
     (two children of a shared root that both feed a final feature) rather than
-    a simple chain â€” to exercise a column conditioned on multiple parents.
+    a simple chain — to exercise a column conditioned on multiple parents.
     """
     monkeypatch.setenv("FAST_TEST_MODE", "1")
 
@@ -23390,7 +24662,7 @@ def test_impute_with_dag(monkeypatch):
         tabpfn_reg=TabPFNRegressor(n_estimators=1),
     )
     # Fit on the complete data; impute a copy with missing values (the
-    # recommended workflow â€” the fitting context stays fully observed).
+    # recommended workflow — the fitting context stays fully observed).
     model.fit(torch.tensor(X))
 
     X_missing = X.copy()
@@ -24145,7 +25417,7 @@ body:
 - type: markdown
   attributes:
     value: >
-      Thanks for contributing ðŸŽ‰!
+      Thanks for contributing 🎉!
 
 
 
@@ -24325,7 +25597,7 @@ jobs:
         run: |
           cat << EOF
 
-          â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          ─────────────────────────────────────────────────────────────
           Missing changelog entry!
 
           Add a file: changelog/${{ github.event.pull_request.number }}.<category>.md
@@ -24336,7 +25608,7 @@ jobs:
 
           Or request the "no changelog needed" label from a maintainer.
           See changelog/README.md for details.
-          â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+          ─────────────────────────────────────────────────────────────
 
           EOF
           exit 1
@@ -24895,7 +26167,229 @@ jobs:
 ================================================
 FILE: .github/workflows/release-publish.yml
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x8f in position 4411: character maps to <undefined>
+name: Release to PyPI
+run-name: "publish ${{ github.ref_name }}"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Verify tag matches pyproject.toml version
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          v_tag = os.environ["VERSION"]
+          s = Path("pyproject.toml").read_text(encoding="utf-8")
+          m = re.search(r'(?ms)^\[project\]\s*\n.*?^\s*version\s*=\s*"([^"]+)"', s)
+          if not m:
+              raise SystemExit("Could not find [project].version in pyproject.toml")
+          v_file = m.group(1).strip()
+          if v_tag != v_file:
+              raise SystemExit(f"Version mismatch: tag={v_tag} pyproject={v_file}")
+          print("OK: tag matches pyproject version:", v_tag)
+          PY
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+
+      - name: Install build tool
+        run: uv tool install build
+
+      - name: Clean previous builds
+        run: git clean -xfd dist build *.egg-info || true
+
+      - name: Build package
+        run: uv tool run --from build pyproject-build
+
+      - name: Extract release notes from CHANGELOG.md
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          python - <<'PY'
+          import os, re, pathlib
+
+          v = os.environ["VERSION"]
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+
+          # Matches: ## [X.Y.Z] - YYYY-MM-DD
+          pat = rf"(?ms)^##\s+\[{re.escape(v)}\]\s+-\s+\d{{4}}-\d{{2}}-\d{{2}}\s*\n(.*?)(?=^##\s+\[|\Z)"
+          m = re.search(pat, text)
+          if not m:
+              raise SystemExit(f"Could not find Towncrier section for version {v} in CHANGELOG.md")
+
+          notes = m.group(1).strip() + "\n"
+          pathlib.Path("release_notes.md").write_text(notes, encoding="utf-8")
+          print("Wrote to release_notes.md")
+          PY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release_notes
+          path: release_notes.md
+          retention-days: 7
+
+  publish-testpypi:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'v')
+    environment:
+      name: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        # Pinned to an immutable version tag rather than a commit SHA: this is
+        # a Docker action that derives its image as
+        # ghcr.io/pypa/gh-action-pypi-publish:<ref>, and pypa publishes images
+        # for version/branch refs only, not per-commit SHAs — a SHA pin fails
+        # with "manifest unknown". v1.14.0 maps to the immutable :v1.14.0 image.
+        uses: pypa/gh-action-pypi-publish@v1.14.3
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          print-hash: true
+          skip-existing: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+
+      - name: Wait for TestPyPI propagation
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          PKG="tabpfn-extensions"
+          echo "⏳ Waiting for ${PKG}==${VERSION} on TestPyPI simple index..."
+          for i in $(seq 1 30); do
+            if curl -sf "https://test.pypi.org/simple/${PKG}/" | grep -qF "${VERSION}.tar.gz"; then
+              echo "✅ Found after $((i*10))s"
+              exit 0
+            fi
+            echo "  not yet (attempt ${i}/30, $((i*10))s elapsed)"
+            sleep 10
+          done
+          echo "❌ Timed out after 5 minutes waiting for TestPyPI propagation"
+          exit 1
+
+      - name: Test installation from TestPyPI
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          echo "🧪 Testing installation of tabpfn-extensions==${VERSION} from TestPyPI..."
+
+          TEST_DIR=$(mktemp -d)
+          cd "$TEST_DIR"
+
+          uv venv
+          source .venv/bin/activate
+
+          # --refresh-package: bypass uv's HTTP cache for this package.
+          # setup-uv restores the cache across runs; without --refresh-package,
+          # uv reads a stale simple-index page from a previous release and
+          # cannot see the version just published.
+          uv pip install \
+            --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple/ \
+            --index-strategy unsafe-best-match \
+            --refresh-package tabpfn-extensions \
+            tabpfn-extensions==${VERSION}
+
+          python - <<PY
+          import tabpfn_extensions
+          expected = "${VERSION}"
+          actual = tabpfn_extensions.__version__
+          assert actual == expected, f"version mismatch: expected {expected!r}, got {actual!r}"
+          print(f"OK: tabpfn_extensions.__version__ == {actual!r}")
+          PY
+
+          echo "✅ Installation test completed."
+
+  publish-pypi:
+    needs: [build, publish-testpypi]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref_name, 'v')
+    environment:
+      name: pypi
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        # See note on the TestPyPI publish step: pinned to the immutable
+        # version tag v1.14.0 because this Docker action cannot be SHA-pinned.
+        uses: pypa/gh-action-pypi-publish@v1.14.3
+        with:
+          print-hash: true
+          skip-existing: true
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download release notes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release_notes
+          path: .
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          # Create release if it doesn't exist; if it exists, just fail fast
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes-file release_notes.md
+
 
 
 ================================================

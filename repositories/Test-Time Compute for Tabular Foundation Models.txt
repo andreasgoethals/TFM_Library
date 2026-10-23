@@ -138,7 +138,7 @@ models (TFMs)? We study three axes on **TabPFN-3**, **TabICL v2** and **TabFM**,
 51 datasets of [TabArena](https://github.com/autogluon/tabarena) and on large OpenML tables:
 
 - **Adaptation** changes the model parameters: full finetuning and **DiagScale**, a
-  zero-initialized diagonal multiplier on the queryâ€“key similarity.
+  zero-initialized diagonal multiplier on the query–key similarity.
 - **Aggregation** changes the prediction pool: a pool of TabPFN-3 preprocessing/inference
   configurations, combined by out-of-fold greedy ensemble selection.
 - **Context construction** changes the conditioning data: attention-guided row retrieval, which
@@ -149,7 +149,7 @@ main experiments.
 
 ## Key findings
 
-- **DiagScale matches full finetuning with 0.003â€“0.03% of the parameters** on all three
+- **DiagScale matches full finetuning with 0.003–0.03% of the parameters** on all three
   backbones.
 - **Aggregation needs both a diverse pool and a selective reducer.** More native views saturate
   quickly; over 96 configurations, greedy selection lowers error by 2.4%, whereas uniform
@@ -162,10 +162,10 @@ main experiments.
 
 ## Main results
 
-TabArena Elo (see [Evaluation](#evaluation)); Î”Elo is against the TabArena default of the same
+TabArena Elo (see [Evaluation](#evaluation)); ΔElo is against the TabArena default of the same
 backbone (for TabFM, our frozen run). GPU-h: total over the 816 cells on one H100.
 
-| Backbone | Method | Elo | Î”Elo | GPU-h |
+| Backbone | Method | Elo | ΔElo | GPU-h |
 |---|---|---:|---:|---:|
 | TabPFN-3 | frozen (8 views) | 1658 | +1 | 0.5 |
 | | 32 native views | 1675 | +21 | 1.7 |
@@ -234,7 +234,7 @@ hf download nkh/test-time-compute-for-tabular-foundation-models-results \
 python -m ttc.eval.elo \
     --candidate hf_results/raw/tabpfn3_diagscale/results_per_split.csv \
     --reference-field hf_results/raw/tabfm_frozen/results_per_split.csv \
-    --baseline "TA-TABPFN-3 (default)"            # Î”Elo +26
+    --baseline "TA-TABPFN-3 (default)"            # ΔElo +26
 ```
 
 ## Reproducing the main experiments
@@ -243,7 +243,7 @@ python -m ttc.eval.elo \
 python -m ttc.run configs/<backbone>/<method>.yaml
 ```
 
-Each config runs one method on the full TabArena protocol (51 datasets, 816 dataset Ã— repeat Ã—
+Each config runs one method on the full TabArena protocol (51 datasets, 816 dataset × repeat ×
 fold cells) and writes `runs/eval/<tag>/results_per_split.csv`. Finished cells are cached, so a
 long run can be split across jobs with a `datasets:` list in the config.
 
@@ -286,7 +286,7 @@ about 4M rows are scored in 2M-row blocks, and oversized unions are truncated or
 python -m ttc.eval.paired --candidate <a.csv> --baseline <b.csv>
 ```
 
-- **Elo** (`ttc.eval.elo`, as in [Quick start](#quick-start)): TabArena's Bradleyâ€“Terry fit against
+- **Elo** (`ttc.eval.elo`, as in [Quick start](#quick-start)): TabArena's Bradley–Terry fit against
   the fixed 68-entry reference field, one candidate per fit, calibrated to RandomForest (default) =
   1000. The 67 TabArena references are fetched from TabArena; frozen TabFM comes from
   `--reference-field`.
@@ -597,7 +597,102 @@ include = ["ttc*"]
 ================================================
 FILE: THIRD_PARTY_NOTICES.md
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 1593: character maps to <undefined>
+# Third-party notices
+
+This repository does not vendor third-party source code. It ships **patches** (in `patches/`)
+against the projects below, plus a script (`scripts/install_forks.sh`) that downloads the
+unmodified upstream sources, applies the patches locally and installs them. No model weights
+(pretrained or fine-tuned) are distributed with this repository; each library downloads its
+own weights from its publisher under the publisher's terms.
+
+The patch files are derivative works of the respective upstream projects and are distributed
+under those projects' licenses, listed below.
+
+---
+
+## TabPFN (Prior Labs)
+
+- Upstream: https://github.com/PriorLabs/TabPFN (base: tag v8.0.7, commit `95ff6772`)
+- Patch: `patches/tabpfn/`, `patches/tabpfn.diff` (modified files under `src/tabpfn/finetuning/`)
+- Code license: **Prior Labs License v1.2 (Apache 2.0 with ADDITIONAL PROVISION)**, Dec 2025.
+  Sections 1-9 are the Apache License 2.0; Section 10 is added. Full text:
+  https://github.com/PriorLabs/TabPFN/blob/main/LICENSE (a copy is placed in
+  `third_party/tabpfn/LICENSE` by the install script).
+
+Section 10, quoted verbatim from the upstream `LICENSE`:
+
+> 10. Additional attribution.
+> If You distribute or make available the Work or any Derivative
+> Work thereof relating to any part of the source or model weights,
+> or a product or service (including another AI model) that contains
+> any source or model weights, You shall (A) provide a copy of this
+> License with any such materials; and (B) prominently display
+> “Built with PriorLabs-TabPFN” on each related website, user interface, blogpost,
+> about page, or product documentation. If You use the source or model
+> weights or model outputs to create, train, fine tune, distil, or
+> otherwise improve an AI model, which is distributed or made available,
+> you shall also include “TabPFN” at the beginning of any such AI model name.
+> To clarify, internal benchmarking and testing without external
+> communication shall not qualify as distribution or making available
+> pursuant to this Section 10 and no attribution under this Section 10
+> shall be required.
+
+What this requires of this repository (our patch is a Derivative Work relating to the source):
+
+1. Ship a copy of the Prior Labs License with the patch (Section 10(A); also Apache 4(a)).
+   -> `patches/tabpfn/LICENSE` must be present in the release.
+2. Prominently display **“Built with PriorLabs-TabPFN”** in the repository README / project
+   page and in any related website or blog post (Section 10(B)).
+3. Modified files must carry prominent notices that they were changed (Apache 4(b)); the
+   patch headers and `patches/README.md` serve this purpose.
+4. If we ever distribute a *model* fine-tuned from TabPFN (e.g. a DiagScale delta or a
+   fine-tuned checkpoint), its name must begin with “TabPFN” (Section 10, last sentence).
+   This release distributes no such model.
+
+TabPFN-3 model weights (`Prior-Labs/tabpfn_3`, used by default by `tabpfn` v8) are **not**
+covered by the code license: they are under the **TABPFN-3 License v1.0** (non-commercial;
+https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE). Users obtain them directly from
+Prior Labs (the library asks the user to accept the license and uses a `TABPFN_TOKEN`). That
+license allows distribution of Derivatives (e.g. fine-tuned weights) only for non-commercial
+purposes, with the license copy, the attribution notice “The TABPFN-3 Model is licensed by
+Prior Labs GmbH under the TABPFN-3 Non-Commercial License. Copyright © Prior Labs GmbH 2026.”,
+a statement of modification, and no hosted/API service (Section 3). It also restricts using
+Outputs to train a model competitive with TabPFN-3 (Section 2(d)).
+
+## TabICL (Soda team, Inria)
+
+- Upstream: https://github.com/soda-inria/tabicl (base: commit `46b91961` on `main`, between v2.1.1 and v2.2.0)
+- Patch: `patches/tabicl/`, `patches/tabicl.diff`
+- License: **BSD 3-Clause**, Copyright (c) 2025, Soda team @ Inria. Redistribution of the
+  patch must retain the copyright notice, conditions and disclaimer
+  (`patches/tabicl/LICENSE`); the Inria name may not be used to endorse derived products.
+- Weights: `jingang/TabICL` on the Hugging Face Hub, tagged `bsd-3-clause`.
+
+## TabFM (Google LLC)
+
+- Upstream: https://github.com/google-research/tabfm (base: commit `2fb67e86` on `main`)
+- Patch: `patches/tabfm/`, `patches/tabfm.diff`
+- Code license: **Apache License 2.0**, Copyright 2026 Google LLC. Keep the license copy
+  (`patches/tabfm/LICENSE`) and per-file headers; modified files are marked by the patch.
+- Weights: `google/tabfm-1.0.0-pytorch` on the Hugging Face Hub. The model card states:
+  “The model weights in this repository are released under the **TabFM Non-Commercial License
+  v1.0** - see [LICENSE](https://huggingface.co/google/tabfm-1.0.0-pytorch/blob/main/LICENSE).
+  The source code is Apache 2.0 licensed via google-research/tabfm.” The weights license
+  permits non-commercial research use only and, in Section 3(b), prohibits distributing the
+  TabFM Model **or any Derivative** (fine-tuned / adapted versions included). This repository
+  therefore must not ship TabFM weights or fine-tuned TabFM adapters/checkpoints.
+
+## TabArena (AutoGluon)
+
+- Upstream: https://github.com/autogluon/tabarena (pinned at commit `abd24c7f`, unmodified;
+  `packages/tabarena` and `packages/bencheval` are installed)
+- License: **Apache License 2.0**. TabArena pulls in AutoGluon (Apache-2.0) and other
+  dependencies under their own licenses.
+
+---
+
+Built with PriorLabs-TabPFN.
+
 
 
 ================================================
@@ -7657,7 +7752,7 @@ model libraries. Each package has
 | `tabpfn` | https://github.com/PriorLabs/TabPFN | `95ff6772` = tag **v8.0.7** | 8 commits, `95ff6772..bf9b2c99` | `f2094982` (fork `bf9b2c99`) |
 | `tabicl` | https://github.com/soda-inria/tabicl | `46b91961` on `main` (after v2.1.1, before v2.2.0) | 3 commits, `46b9196..efda645` | `2df5bffc` (fork `efda645`) |
 | `tabfm` | https://github.com/google-research/tabfm | `2fb67e86` on `main` (before v1.0.1) | 3 commits, `2fb67e8..78beef7` | `7abb8157` (fork `78beef7`) |
-| `tabarena` | https://github.com/autogluon/tabarena | `abd24c7f` on `main` | none (pinned only) | â€” |
+| `tabarena` | https://github.com/autogluon/tabarena | `abd24c7f` on `main` | none (pinned only) | — |
 
 All base commits are reachable from the public upstream `main` branch (checked against the
 upstream remotes). Every patch only touches the files listed below; none changes default
@@ -7793,7 +7888,7 @@ index 0accc02..a936b55 100644
 +    # ones-init vectors) so weight decay pulls toward the pretrained identity,
 +    # matching the diagscale convention. l_k is applied AFTER key_ln, mirroring
 +    # diag_delta's post-norm placement, so its logit effect is exactly
-+    # qáµ€ diag(1+Î´_k) k (T5, the original (IA)3 host, has no key norm).
++    # qᵀ diag(1+δ_k) k (T5, the original (IA)3 host, has no key norm).
 +    self.ia3_delta_k = None
 +    self.ia3_delta_v = None
  
@@ -7806,7 +7901,7 @@ index 0accc02..a936b55 100644
 +    if self.diag_delta is not None:
 +      # diagscale PEFT: diagonal similarity metric on the FINAL query (after
 +      # RoPE/RMSNorm/per_dim_scale, before SDPA-at-scale-1.0), so that
-+      # qÌƒÂ·k = qáµ€ diag(1+Î´) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
++      # q̃·k = qᵀ diag(1+δ) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
 +      q = q * (1.0 + self.diag_delta).to(q.dtype)
 +    if self.ia3_delta_k is not None:
 +      k = k * (1.0 + self.ia3_delta_k).to(k.dtype)
@@ -7871,16 +7966,16 @@ index 0000000..a834019
 +               training moves delta). The multiplier is applied to the final
 +               query right before SDPA (after RoPE / q-RMSNorm /
 +               per_dim_scale; SDPA runs at scale=1.0), so it is literally a
-+               learned diagonal similarity metric: qÌƒÂ·k = qáµ€ diag(1+Î´) k.
++               learned diagonal similarity metric: q̃·k = qᵀ diag(1+δ) k.
 +    ia3        (IA)3 (Liu et al. 2022) baseline: 1+delta multipliers on keys /
 +               values (post key_ln) and/or the FFN intermediate activation,
-+               cfg["parts"] âŠ† {"k","v","ff"} (default all three). Same zero-init
++               cfg["parts"] ⊆ {"k","v","ff"} (default all three). Same zero-init
 +               delta convention as diagscale so lr/wd sweeps are comparable;
 +               the k part is logit-equivalent to diagscale's q-side delta.
 +
 +Useful patterns (module names of the released TabFM v1.0.0):
 +    "."                  all 42 attention modules (53,760 delta params)
-+    r"^col_embedder\\."   the FIRST column embedder only â€” the most upstream
++    r"^col_embedder\\."   the FIRST column embedder only — the most upstream
 +                         attention that reads the training set (it embeds each
 +                         feature's distribution by attending over train rows);
 +                         6 modules, 1,536 delta params.
@@ -7920,13 +8015,13 @@ index 0000000..a834019
 +
 +def inject_ia3(model: torch.nn.Module, pattern: str, parts: tuple = ("k", "v", "ff")) -> int:
 +  """(IA)3 (Liu et al. 2022) adapters as zero-init deltas: 1+delta multipliers on keys /
-+  values ([nhead, hd], applied post key_ln â€” the metric-exact analog of diag_delta on q)
++  values ([nhead, hd], applied post key_ln — the metric-exact analog of diag_delta on q)
 +  and/or the FFN intermediate activation ([dim_ff]). `pattern` matches module names;
 +  `parts` selects which of k / v / ff to inject. Returns the number of injected tensors.
 +
 +  Zero-init deltas (rather than the paper's ones-init vectors) keep the multiplier
 +  identity at start AND give AdamW weight decay the correct prior (pull toward the
-+  pretrained model, not toward a zero function) â€” consistent with diagscale, so lr/wd
++  pretrained model, not toward a zero function) — consistent with diagscale, so lr/wd
 +  sweeps are directly comparable across the two adapter families.
 +  """
 +  rx = re.compile(pattern)
@@ -8255,7 +8350,7 @@ index a2b4e35..af5d995 100644
  
 +    # (IA)3 adapters rescale the final K/V after projection (and RoPE for K). The rescale runs on
 +    # BOTH the fresh-projection and cached-KV paths, so the need_kv return below must hand back the
-+    # PRE-rescale tensors â€” a cache holding rescaled K/V would get (1+delta)^2 on every reuse.
++    # PRE-rescale tensors — a cache holding rescaled K/V would get (1+delta)^2 on every reuse.
 +    k_raw, v_raw = k, v
 +    if ia3_delta_k is not None:
 +        k = k * (1.0 + ia3_delta_k).to(k.dtype)
@@ -8352,19 +8447,19 @@ index 0000000..aa42026
 +               zero-initialized so injection is behavior-preserving (the model
 +               reproduces the pretrained model exactly until training moves
 +               delta). The multiplier is applied to the final query right
-+               before SDPA â€” after RoPE and any SSMax scaling â€” so the
++               before SDPA — after RoPE and any SSMax scaling — so the
 +               attention logit is exactly a learned diagonal reweighting of
-+               the similarity bilinear form: qÌƒÂ·k = qáµ€ diag(1+Î´) k.
++               the similarity bilinear form: q̃·k = qᵀ diag(1+δ) k.
 +    ia3        (IA)3 (Liu et al. 2022) baseline: 1+delta multipliers on the
 +               final keys / values and/or the FFN intermediate activation,
-+               cfg["parts"] âŠ† {"k","v","ff"} (default all three). Same
++               cfg["parts"] ⊆ {"k","v","ff"} (default all three). Same
 +               zero-init delta convention as diagscale so lr/wd sweeps are
 +               comparable; the k part is logit-equivalent to diagscale's
 +               q-side delta.
 +
 +Useful patterns (module names of the released TabICL v2 checkpoints):
 +    "."                    all 21 attention modules
-+    r"^col_embedder\\."     the column embedder's set transformer (6 modules) â€”
++    r"^col_embedder\\."     the column embedder's set transformer (6 modules) —
 +                           the most upstream attention that reads train rows
 +    r"^icl_predictor\\."    the 12 ICL blocks attending over train rows
 +"""
@@ -8411,7 +8506,7 @@ index 0000000..aa42026
 +
 +    Zero-init deltas (rather than the paper's ones-init vectors) keep the
 +    multiplier identity at start AND give AdamW weight decay the correct prior
-+    (pull toward the pretrained model, not toward a zero function) â€”
++    (pull toward the pretrained model, not toward a zero function) —
 +    consistent with diagscale, so lr/wd sweeps are directly comparable across
 +    the two adapter families.
 +    """
@@ -8456,7 +8551,7 @@ index 0000000..aa42026
 +    leaves every backbone parameter's requires_grad flag untouched. On CUDA, flipping
 +    requires_grad on the col_embedder's parameters deterministically shifts the
 +    train-mode forward by ~5e-3 even at delta=0 (kernel selection keyed on the flag
-+    somewhere in that path; CPU is bit-exact, exact op not pinned down) â€” a caller
++    somewhere in that path; CPU is bit-exact, exact op not pinned down) — a caller
 +    that trains only the returned parameters anyway can keep flag parity with the
 +    unfrozen model and stay bit-exact at injection.
 +    """
@@ -8771,7 +8866,7 @@ index fb15ded4..82bee798 100644
              checkpoint_path=checkpoint_path,
 @@ -742,7 +762,27 @@ class FinetunedTabPFNBase(BaseEstimator, ABC):
          if is_main_process:
-             logger.info("--- ðŸš€ Starting Fine-tuning ---")
+             logger.info("--- 🚀 Starting Fine-tuning ---")
          patience_counter = 0
 -        best_model_state: dict[str, torch.Tensor] | None = None
 +        # best_model_state is seeded with a snapshot of the PRE-FINETUNING (base) weights so that
@@ -8821,7 +8916,7 @@ index fb15ded4..82bee798 100644
 +                    self.stopped_early_ = True
                      if is_main_process:
                          logger.info(
-                             "ðŸ›‘ Early stopping triggered. Best %s: %.4f",
+                             "🛑 Early stopping triggered. Best %s: %.4f",
 @@ -1046,6 +1089,12 @@ class FinetunedTabPFNBase(BaseEstimator, ABC):
          if self.early_stopping and best_model_state is not None:
              self.finetuned_estimator_.model_.load_state_dict(best_model_state)
@@ -8892,16 +8987,16 @@ index 00000000..8be9a10c
 +`finetune_cfg` constructor arguments.
 +
 +Modes:
-+    full    all parameters, requires_grad untouched (the original behavior â€” must stay
++    full    all parameters, requires_grad untouched (the original behavior — must stay
 +            equivalent to upstream; guarded by the validation ladder's identity rungs)
 +    bitfit  bias terms only (BitFit, Ben Zaken et al. 2022)
-+    regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] â€” the
++    regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] — the
 +            explicit form of "train only these layers"; inspect names first via
 +            `[n for n, _ in estimator.model_.named_parameters()]`
 +    lora    inject low-rank adapters (Hu et al. 2021) into the nn.Linear MODULES whose name
 +            matches finetune_cfg["pattern"], freeze the base weights, train only the adapters.
 +            finetune_cfg: {pattern, r=8, alpha=16, dropout=0.0}. NB pattern matches MODULE names
-+            (e.g. "...attention.q_proj"), not parameter names â€” inspect via
++            (e.g. "...attention.q_proj"), not parameter names — inspect via
 +            `[n for n, m in estimator.model_.named_modules() if isinstance(m, torch.nn.Linear)]`.
 +"""
 +from __future__ import annotations
@@ -8918,11 +9013,11 @@ index 00000000..8be9a10c
 +
 +
 +class LoRALinear(torch.nn.Module):
-+    """Wrap an nn.Linear with a frozen base + a trainable low-rank update B@AÂ·(alpha/r).
++    """Wrap an nn.Linear with a frozen base + a trainable low-rank update B@A·(alpha/r).
 +
 +    B is zero-initialized so the adapter starts as a no-op (forward == base): injection is
 +    therefore behavior-preserving, which also means a never-improved fit (best_epoch=-1) restored
-+    to these init weights reproduces base exactly â€” consistent with the base fall-back.
++    to these init weights reproduces base exactly — consistent with the base fall-back.
 +    """
 +
 +    def __init__(self, base: torch.nn.Linear, r: int, alpha: float, dropout: float):
@@ -8941,7 +9036,7 @@ index 00000000..8be9a10c
 +        torch.nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
 +        self.lora_dropout = torch.nn.Dropout(dropout) if dropout and dropout > 0 else torch.nn.Identity()
 +
-+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # base(x) + (x A^T) B^T Â· scaling
++    def forward(self, x: torch.Tensor) -> torch.Tensor:  # base(x) + (x A^T) B^T · scaling
 +        return self.base(x) + F.linear(F.linear(self.lora_dropout(x), self.lora_A), self.lora_B) * self.scaling
 +
 +
@@ -8977,7 +9072,7 @@ index 00000000..8be9a10c
 +
 +    delta is zero-initialized so injection starts as a no-op (forward == base). This is the direct,
 +    minimal parameterization of the "diagonal similarity metric" hypothesis: rather than finetuning
-+    base_mlp, learn a bare constant scale on the query, qÌƒ = base(q,n) * (1+delta). delta [H,D] is then
++    base_mlp, learn a bare constant scale on the query, q̃ = base(q,n) * (1+delta). delta [H,D] is then
 +    literally the learned metric correction (readable without reconstructing s from base_mlp weights).
 +    Mirrors LoRALinear: frozen base, zero-init adapter, wrapped in place at select_trainable time
 +    (after the checkpoint load), so it never interferes with strict loading.
@@ -9037,7 +9132,7 @@ index 00000000..8be9a10c
 +            param.requires_grad_(train)
 +            if train:
 +                selected.append(param)
-+        if not selected:  # wrapped Linears but no adapter params â€” should never happen, guard anyway
++        if not selected:  # wrapped Linears but no adapter params — should never happen, guard anyway
 +            raise ValueError(f"finetune_mode='lora' wrapped {n_wrapped} module(s) but selected 0 params")
 +        logger.info("finetune_mode=lora: wrapped %d Linear module(s)", n_wrapped)
 +    elif mode == "diagscale":
@@ -9103,7 +9198,7 @@ end-to-end (halves activation memory; lets wide datasets like APSFailure
 - _predict_step_pytorch: cast the input batch to the model's parameter
   dtype instead of hardcoding float32 (backward-compatible: an fp32
   model still gets fp32 inputs)
-- return out_t.float().cpu().numpy() â€” numpy has no bfloat16, so cast
+- return out_t.float().cpu().numpy() — numpy has no bfloat16, so cast
   logits back to fp32 before leaving torch
 ---
  tabfm/src/classifier_and_regressor.py | 7 +++++--
@@ -9156,7 +9251,7 @@ Port of the TabPFN-3 diagscale PEFT recipe (learned diagonal similarity
 metric) to the PyTorch TabFM. inject_diagscale registers a zero-init
 delta [nhead, hd] on matched MultiheadAttention modules; the forward
 multiplies the FINAL query (after RoPE / q-RMSNorm / per_dim_scale,
-before SDPA-at-scale-1.0) by 1+delta, so qÌƒÂ·k = qáµ€ diag(1+Î´) k exactly
+before SDPA-at-scale-1.0) by 1+delta, so q̃·k = qᵀ diag(1+δ) k exactly
 and injection is behavior-preserving at init. select_trainable(mode=
 full|regex|diagscale) picks the optimizer's params, mirroring the
 tabpfn fork's finetuning/peft.py.
@@ -9191,7 +9286,7 @@ index 0accc02..f783054 100644
 +    if self.diag_delta is not None:
 +      # diagscale PEFT: diagonal similarity metric on the FINAL query (after
 +      # RoPE/RMSNorm/per_dim_scale, before SDPA-at-scale-1.0), so that
-+      # qÌƒÂ·k = qáµ€ diag(1+Î´) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
++      # q̃·k = qᵀ diag(1+δ) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
 +      q = q * (1.0 + self.diag_delta).to(q.dtype)
      q, k, v = (z.transpose(1, 2) for z in (q, k, v))  # [B,N,T,D]
      # bf16 SDPA (flash already does the softmax in float32 internally).
@@ -9233,11 +9328,11 @@ index 0000000..a27e244
 +               training moves delta). The multiplier is applied to the final
 +               query right before SDPA (after RoPE / q-RMSNorm /
 +               per_dim_scale; SDPA runs at scale=1.0), so it is literally a
-+               learned diagonal similarity metric: qÌƒÂ·k = qáµ€ diag(1+Î´) k.
++               learned diagonal similarity metric: q̃·k = qᵀ diag(1+δ) k.
 +
 +Useful patterns (module names of the released TabFM v1.0.0):
 +    "."                  all 42 attention modules (53,760 delta params)
-+    r"^col_embedder\\."   the FIRST column embedder only â€” the most upstream
++    r"^col_embedder\\."   the FIRST column embedder only — the most upstream
 +                         attention that reads the training set (it embeds each
 +                         feature's distribution by attending over train rows);
 +                         6 modules, 1,536 delta params.
@@ -9493,7 +9588,7 @@ index f783054..a936b55 100644
 +    # ones-init vectors) so weight decay pulls toward the pretrained identity,
 +    # matching the diagscale convention. l_k is applied AFTER key_ln, mirroring
 +    # diag_delta's post-norm placement, so its logit effect is exactly
-+    # qáµ€ diag(1+Î´_k) k (T5, the original (IA)3 host, has no key norm).
++    # qᵀ diag(1+δ_k) k (T5, the original (IA)3 host, has no key norm).
 +    self.ia3_delta_k = None
 +    self.ia3_delta_v = None
  
@@ -9501,7 +9596,7 @@ index f783054..a936b55 100644
      b, tq, d = query.shape
 @@ -127,6 +135,10 @@ class MultiheadAttention(nn.Module):
        # RoPE/RMSNorm/per_dim_scale, before SDPA-at-scale-1.0), so that
-       # qÌƒÂ·k = qáµ€ diag(1+Î´) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
+       # q̃·k = qᵀ diag(1+δ) k exactly. delta: [nhead, hd] broadcast over [B,T,N,D].
        q = q * (1.0 + self.diag_delta).to(q.dtype)
 +    if self.ia3_delta_k is not None:
 +      k = k * (1.0 + self.ia3_delta_k).to(k.dtype)
@@ -9536,10 +9631,10 @@ index a27e244..a834019 100644
 @@ -30,6 +30,11 @@ Modes:
                 query right before SDPA (after RoPE / q-RMSNorm /
                 per_dim_scale; SDPA runs at scale=1.0), so it is literally a
-                learned diagonal similarity metric: qÌƒÂ·k = qáµ€ diag(1+Î´) k.
+                learned diagonal similarity metric: q̃·k = qᵀ diag(1+δ) k.
 +    ia3        (IA)3 (Liu et al. 2022) baseline: 1+delta multipliers on keys /
 +               values (post key_ln) and/or the FFN intermediate activation,
-+               cfg["parts"] âŠ† {"k","v","ff"} (default all three). Same zero-init
++               cfg["parts"] ⊆ {"k","v","ff"} (default all three). Same zero-init
 +               delta convention as diagscale so lr/wd sweeps are comparable;
 +               the k part is logit-equivalent to diagscale's q-side delta.
  
@@ -9560,13 +9655,13 @@ index a27e244..a834019 100644
  
 +def inject_ia3(model: torch.nn.Module, pattern: str, parts: tuple = ("k", "v", "ff")) -> int:
 +  """(IA)3 (Liu et al. 2022) adapters as zero-init deltas: 1+delta multipliers on keys /
-+  values ([nhead, hd], applied post key_ln â€” the metric-exact analog of diag_delta on q)
++  values ([nhead, hd], applied post key_ln — the metric-exact analog of diag_delta on q)
 +  and/or the FFN intermediate activation ([dim_ff]). `pattern` matches module names;
 +  `parts` selects which of k / v / ff to inject. Returns the number of injected tensors.
 +
 +  Zero-init deltas (rather than the paper's ones-init vectors) keep the multiplier
 +  identity at start AND give AdamW weight decay the correct prior (pull toward the
-+  pretrained model, not toward a zero function) â€” consistent with diagscale, so lr/wd
++  pretrained model, not toward a zero function) — consistent with diagscale, so lr/wd
 +  sweeps are directly comparable across the two adapter families.
 +  """
 +  rx = re.compile(pattern)
@@ -10072,19 +10167,19 @@ index 0000000..298e98c
 +               zero-initialized so injection is behavior-preserving (the model
 +               reproduces the pretrained model exactly until training moves
 +               delta). The multiplier is applied to the final query right
-+               before SDPA â€” after RoPE and any SSMax scaling â€” so the
++               before SDPA — after RoPE and any SSMax scaling — so the
 +               attention logit is exactly a learned diagonal reweighting of
-+               the similarity bilinear form: qÌƒÂ·k = qáµ€ diag(1+Î´) k.
++               the similarity bilinear form: q̃·k = qᵀ diag(1+δ) k.
 +    ia3        (IA)3 (Liu et al. 2022) baseline: 1+delta multipliers on the
 +               final keys / values and/or the FFN intermediate activation,
-+               cfg["parts"] âŠ† {"k","v","ff"} (default all three). Same
++               cfg["parts"] ⊆ {"k","v","ff"} (default all three). Same
 +               zero-init delta convention as diagscale so lr/wd sweeps are
 +               comparable; the k part is logit-equivalent to diagscale's
 +               q-side delta.
 +
 +Useful patterns (module names of the released TabICL v2 checkpoints):
 +    "."                    all 21 attention modules
-+    r"^col_embedder\\."     the column embedder's set transformer (6 modules) â€”
++    r"^col_embedder\\."     the column embedder's set transformer (6 modules) —
 +                           the most upstream attention that reads train rows
 +    r"^icl_predictor\\."    the 12 ICL blocks attending over train rows
 +"""
@@ -10131,7 +10226,7 @@ index 0000000..298e98c
 +
 +    Zero-init deltas (rather than the paper's ones-init vectors) keep the
 +    multiplier identity at start AND give AdamW weight decay the correct prior
-+    (pull toward the pretrained model, not toward a zero function) â€”
++    (pull toward the pretrained model, not toward a zero function) —
 +    consistent with diagscale, so lr/wd sweeps are directly comparable across
 +    the two adapter families.
 +    """
@@ -10430,7 +10525,7 @@ index 298e98c..05f1c2b 100644
 +    leaves every backbone parameter's requires_grad flag untouched. On CUDA, flipping
 +    requires_grad on the col_embedder's parameters deterministically shifts the
 +    train-mode forward by ~5e-3 even at delta=0 (kernel selection keyed on the flag
-+    somewhere in that path; CPU is bit-exact, exact op not pinned down) â€” a caller
++    somewhere in that path; CPU is bit-exact, exact op not pinned down) — a caller
 +    that trains only the returned parameters anyway can keep flag parity with the
 +    unfrozen model and stay bit-exact at injection.
 +    """
@@ -10521,7 +10616,7 @@ index cb84124..af5d995 100644
 -    # covering both the fresh-projection and cached-KV paths
 +    # (IA)3 adapters rescale the final K/V after projection (and RoPE for K). The rescale runs on
 +    # BOTH the fresh-projection and cached-KV paths, so the need_kv return below must hand back the
-+    # PRE-rescale tensors â€” a cache holding rescaled K/V would get (1+delta)^2 on every reuse.
++    # PRE-rescale tensors — a cache holding rescaled K/V would get (1+delta)^2 on every reuse.
 +    k_raw, v_raw = k, v
      if ia3_delta_k is not None:
          k = k * (1.0 + ia3_delta_k).to(k.dtype)
@@ -10954,10 +11049,10 @@ index 00000000..9b44a86c
 +`finetune_cfg` constructor arguments.
 +
 +Modes:
-+    full    all parameters, requires_grad untouched (the original behavior â€” must stay
++    full    all parameters, requires_grad untouched (the original behavior — must stay
 +            equivalent to upstream; guarded by the validation ladder's identity rungs)
 +    bitfit  bias terms only (BitFit, Ben Zaken et al. 2022)
-+    regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] â€” the
++    regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] — the
 +            explicit form of "train only these layers"; inspect names first via
 +            `[n for n, _ in estimator.model_.named_parameters()]`
 +"""
@@ -11036,7 +11131,7 @@ index 88ed31fa..2dadc7bd 100644
 --- a/src/tabpfn/finetuning/finetuned_base.py
 +++ b/src/tabpfn/finetuning/finetuned_base.py
 @@ -756,6 +756,12 @@ class FinetunedTabPFNBase(BaseEstimator, ABC):
-             logger.info("--- ðŸš€ Starting Fine-tuning ---")
+             logger.info("--- 🚀 Starting Fine-tuning ---")
          patience_counter = 0
          best_model_state: dict[str, torch.Tensor] | None = None
 +        # epoch bookkeeping (ttc-dev): exposed for experiment logging after fit.
@@ -11071,7 +11166,7 @@ index 88ed31fa..2dadc7bd 100644
 +                    self.stopped_early_ = True
                      if is_main_process:
                          logger.info(
-                             "ðŸ›‘ Early stopping triggered. Best %s: %.4f",
+                             "🛑 Early stopping triggered. Best %s: %.4f",
 -- 
 2.34.1
 
@@ -11133,10 +11228,10 @@ the loop previously shipped the LAST (degraded) epoch's weights: best_model_stat
 stayed None so the final restore never fired. Seed best_model_state with a pre-FT
 (base) CPU snapshot when early_stopping is on, so the existing restore ships base
 weights in that case. early_stopping=False is intentionally untouched (keeps the
-last-epoch weights â€” the fixed-epoch cost-performance trajectory relies on this).
+last-epoch weights — the fixed-epoch cost-performance trajectory relies on this).
 
 Validated end-to-end via predict_proba (the shipped inference clone): forcing
-_is_improvement->False gives early_stopping=True -> max|Î”proba| vs base = 0
+_is_improvement->False gives early_stopping=True -> max|Δproba| vs base = 0
 (restored exactly); early_stopping=False -> 0.71 (degraded, control).
 ---
  src/tabpfn/finetuning/finetuned_base.py | 20 +++++++++++++++++---
@@ -11148,7 +11243,7 @@ index 676af1ea..74d1d2ba 100644
 +++ b/src/tabpfn/finetuning/finetuned_base.py
 @@ -762,10 +762,24 @@ class FinetunedTabPFNBase(BaseEstimator, ABC):
          if is_main_process:
-             logger.info("--- ðŸš€ Starting Fine-tuning ---")
+             logger.info("--- 🚀 Starting Fine-tuning ---")
          patience_counter = 0
 -        best_model_state: dict[str, torch.Tensor] | None = None
 +        # best_model_state is seeded with a snapshot of the PRE-FINETUNING (base) weights so that
@@ -11193,14 +11288,14 @@ Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 New finetune_mode='lora': inject_lora() wraps every nn.Linear whose MODULE name matches
-finetune_cfg['pattern'] (default '.*' = full-model LoRA) with a LoRALinear â€” frozen base
+finetune_cfg['pattern'] (default '.*' = full-model LoRA) with a LoRALinear — frozen base
 plus a trainable low-rank update B@A*(alpha/r), B zero-initialized so injection is a no-op
 at start. select_trainable freezes the base and returns only the adapter params.
 
 B=0 init means a never-improved fit (best_epoch=-1) restored to its init weights reproduces
 base exactly, consistent with the base fall-back. Validated on H100: full-LoRA r=8 wraps 313
 Linear modules (3.22% trainable); 5 epochs shift predict_proba by 0.22; forced no-improvement
-under early stopping restores base predictions exactly (Î”=0).
+under early stopping restores base predictions exactly (Δ=0).
 ---
  src/tabpfn/finetuning/peft.py | 67 ++++++++++++++++++++++++++++++++++-
  1 file changed, 66 insertions(+), 1 deletion(-)
@@ -11210,13 +11305,13 @@ index 9b44a86c..2b5ae0c6 100644
 --- a/src/tabpfn/finetuning/peft.py
 +++ b/src/tabpfn/finetuning/peft.py
 @@ -11,18 +11,66 @@ Modes:
-     regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] â€” the
+     regex   parameters whose fully-qualified name matches finetune_cfg["pattern"] — the
              explicit form of "train only these layers"; inspect names first via
              `[n for n, _ in estimator.model_.named_parameters()]`
 +    lora    inject low-rank adapters (Hu et al. 2021) into the nn.Linear MODULES whose name
 +            matches finetune_cfg["pattern"], freeze the base weights, train only the adapters.
 +            finetune_cfg: {pattern, r=8, alpha=16, dropout=0.0}. NB pattern matches MODULE names
-+            (e.g. "...attention.q_proj"), not parameter names â€” inspect via
++            (e.g. "...attention.q_proj"), not parameter names — inspect via
 +            `[n for n, m in estimator.model_.named_modules() if isinstance(m, torch.nn.Linear)]`.
  """
  from __future__ import annotations
@@ -11233,11 +11328,11 @@ index 9b44a86c..2b5ae0c6 100644
  
  
 +class LoRALinear(torch.nn.Module):
-+    """Wrap an nn.Linear with a frozen base + a trainable low-rank update B@AÂ·(alpha/r).
++    """Wrap an nn.Linear with a frozen base + a trainable low-rank update B@A·(alpha/r).
 +
 +    B is zero-initialized so the adapter starts as a no-op (forward == base): injection is
 +    therefore behavior-preserving, which also means a never-improved fit (best_epoch=-1) restored
-+    to these init weights reproduces base exactly â€” consistent with the base fall-back.
++    to these init weights reproduces base exactly — consistent with the base fall-back.
 +    """
 +
 +    def __init__(self, base: torch.nn.Linear, r: int, alpha: float, dropout: float):
@@ -11254,7 +11349,7 @@ index 9b44a86c..2b5ae0c6 100644
 +        torch.nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
 +        self.lora_dropout = torch.nn.Dropout(dropout) if dropout and dropout > 0 else torch.nn.Identity()
 +
-+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # base(x) + (x A^T) B^T Â· scaling
++    def forward(self, x: torch.Tensor) -> torch.Tensor:  # base(x) + (x A^T) B^T · scaling
 +        return self.base(x) + F.linear(F.linear(self.lora_dropout(x), self.lora_A), self.lora_B) * self.scaling
 +
 +
@@ -11336,8 +11431,8 @@ identical random_state produced different adapters across runs (non-reproducible
 Also: LoRALinear rejects r<=0 (was a ZeroDivisionError on alpha/r); the lora branch raises if
 it wraps Linears but selects 0 adapter params (parity with the regex/bitfit empty-select guard).
 
-Validated on H100: two same-seed LoRA fits now give bit-identical predict_proba (Î”=0; was
-~0.25); LoRA still learns (Î” 0.25 vs base) and the best_epoch=-1 base fall-back holds (Î”=0).
+Validated on H100: two same-seed LoRA fits now give bit-identical predict_proba (Δ=0; was
+~0.25); LoRA still learns (Δ 0.25 vs base) and the best_epoch=-1 base fall-back holds (Δ=0).
 ---
  src/tabpfn/finetuning/peft.py | 29 +++++++++++++++++++++++------
  1 file changed, 23 insertions(+), 6 deletions(-)
@@ -11404,7 +11499,7 @@ index 2b5ae0c6..3b71db87 100644
              param.requires_grad_(train)
              if train:
                  selected.append(param)
-+        if not selected:  # wrapped Linears but no adapter params â€” should never happen, guard anyway
++        if not selected:  # wrapped Linears but no adapter params — should never happen, guard anyway
 +            raise ValueError(f"finetune_mode='lora' wrapped {n_wrapped} module(s) but selected 0 params")
          logger.info("finetune_mode=lora: wrapped %d Linear module(s)", n_wrapped)
      else:
@@ -11429,7 +11524,7 @@ Content-Transfer-Encoding: 8bit
 
 New DiagScale wrapper + inject_diagscale, mirroring the LoRA path: freeze a
 SoftmaxScalingMLP's base and multiply its output query by a trainable,
-zero-init per-(head,dim) factor, qÌƒ = base(q,n) * (1+delta). select_trainable
+zero-init per-(head,dim) factor, q̃ = base(q,n) * (1+delta). select_trainable
 gains a "diagscale" mode that injects the wrapper into modules matching
 cfg["pattern"] and trains only .delta. Lets a probe learn the diagonal
 similarity metric directly (delta is the readable metric correction), without
@@ -11451,7 +11546,7 @@ index 3b71db87..8be9a10c 100644
 +
 +    delta is zero-initialized so injection starts as a no-op (forward == base). This is the direct,
 +    minimal parameterization of the "diagonal similarity metric" hypothesis: rather than finetuning
-+    base_mlp, learn a bare constant scale on the query, qÌƒ = base(q,n) * (1+delta). delta [H,D] is then
++    base_mlp, learn a bare constant scale on the query, q̃ = base(q,n) * (1+delta). delta [H,D] is then
 +    literally the learned metric correction (readable without reconstructing s from base_mlp weights).
 +    Mirrors LoRALinear: frozen base, zero-init adapter, wrapped in place at select_trainable time
 +    (after the checkpoint load), so it never interferes with strict loading.
@@ -11487,7 +11582,7 @@ index 3b71db87..8be9a10c 100644
      model: torch.nn.Module,
      mode: str = "full",
 @@ -116,6 +153,19 @@ def select_trainable(
-         if not selected:  # wrapped Linears but no adapter params â€” should never happen, guard anyway
+         if not selected:  # wrapped Linears but no adapter params — should never happen, guard anyway
              raise ValueError(f"finetune_mode='lora' wrapped {n_wrapped} module(s) but selected 0 params")
          logger.info("finetune_mode=lora: wrapped %d Linear module(s)", n_wrapped)
 +    elif mode == "diagscale":
@@ -11563,7 +11658,207 @@ index 74d1d2ba..82bee798 100644
 ================================================
 FILE: patches/tabpfn/LICENSE
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x9d in position 11010: character maps to <undefined>
+
+          Prior Labs License (Apache 2.0 with ADDITIONAL PROVISION)
+                           Version 1.2, Dec 2025
+
+   This license is a derivative of the Apache 2.0 license
+   (http://www.apache.org/licenses/) with a single modification:
+   The added Paragraph 10 introduces an enhanced attribution requirement
+   inspired by the Llama 3 license.
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   ---------------------- ADDITIONAL PROVISION --------------------------
+
+    10. Additional attribution.
+    If You distribute or make available the Work or any Derivative
+    Work thereof relating to any part of the source or model weights,
+    or a product or service (including another AI model) that contains
+    any source or model weights, You shall (A) provide a copy of this
+    License with any such materials; and (B) prominently display
+    “Built with PriorLabs-TabPFN” on each related website, user interface, blogpost,
+    about page, or product documentation. If You use the source or model
+    weights or model outputs to create, train, fine tune, distil, or
+    otherwise improve an AI model, which is distributed or made available,
+    you shall also include “TabPFN” at the beginning of any such AI model name.
+    To clarify, internal benchmarking and testing without external
+    communication shall not qualify as distribution or making available
+    pursuant to this Section 10 and no attribution under this Section 10
+    shall be required.
+
+
+   END OF TERMS AND CONDITIONS
+
 
 
 ================================================
@@ -11750,19 +12045,19 @@ Per-cell TabArena test errors for the 12 methods ("arms") in the main comparison
 Every arm covers all 51 TabArena datasets (816 cells), so these files are enough to recompute
 the paper's Elo ratings and paired comparisons.
 
-**Code:** [GitHub]({github}) Â· **Paper:** [arXiv:2610.12005](https://arxiv.org/abs/2610.12005)
+**Code:** [GitHub]({github}) · **Paper:** [arXiv:2610.12005](https://arxiv.org/abs/2610.12005)
 
 ## Files
 
 | file | content |
 |---|---|
-| `data/results.parquet` | config `results`: one row per arm Ã— cell ({n_rows:,} rows) |
-| `data/arms.parquet`, `data/arms.csv` | config `arms`: one row per arm (config, Elo, Î”Elo, GPU hours, file checksum) |
+| `data/results.parquet` | config `results`: one row per arm × cell ({n_rows:,} rows) |
+| `data/arms.parquet`, `data/arms.csv` | config `arms`: one row per arm (config, Elo, ΔElo, GPU hours, file checksum) |
 | `raw/<arm>/results_per_split.csv` | each arm in TabArena's format, the input to `ttc.eval.elo` |
 
 ## Arms
 
-Î”Elo is measured against TabArena's default entry for TabPFN-3 and TabICL v2, and against our
+ΔElo is measured against TabArena's default entry for TabPFN-3 and TabICL v2, and against our
 frozen run for TabFM. GPU hours are fit + predict time over 816 cells on one H100.
 
 {arms_table}
@@ -11772,8 +12067,8 @@ frozen run for TabFM. GPU hours are fit + predict time over 816 cells on one H10
 | column | meaning |
 |---|---|
 | `arm`, `backbone`, `method`, `learning_rate` | arm identity; `learning_rate` is null without fine-tuning |
-| `dataset`, `fold` | TabArena dataset and split (`fold` enumerates repeat Ã— fold) |
-| `metric`, `metric_error` | `roc_auc` (binary, error = 1 âˆ’ AUC), `log_loss` (multiclass) or `rmse` (regression); lower is better |
+| `dataset`, `fold` | TabArena dataset and split (`fold` enumerates repeat × fold) |
+| `metric`, `metric_error` | `roc_auc` (binary, error = 1 − AUC), `log_loss` (multiclass) or `rmse` (regression); lower is better |
 | `time_train_s`, `time_infer_s` | wall-clock seconds per cell |
 | `problem_type` | `binary`, `multiclass` or `regression` |
 | other columns | TabArena bookkeeping (`tabarena_method`, `imputed`, ...); `metric_error_val` is not recorded (null) |
@@ -11796,14 +12091,14 @@ hf download {hf_repo} \\
 python -m ttc.eval.elo \\
     --candidate hf_results/raw/tabpfn3_diagscale/results_per_split.csv \\
     --reference-field hf_results/raw/tabfm_frozen/results_per_split.csv \\
-    --baseline "TA-TABPFN-3 (default)"            # Î”Elo +26
+    --baseline "TA-TABPFN-3 (default)"            # ΔElo +26
 ```
 
 ## Notes
 
 - **Elo.** Fixed field of 68 entries: the 67 official TabArena entries (fetched by TabArena, not
   included here) plus our frozen TabFM run. Each arm is added alone and rated with TabArena's
-  Bradleyâ€“Terry solver, `RF (default)` = 1000.
+  Bradley–Terry solver, `RF (default)` = 1000.
 - GPU fine-tuning is not bitwise deterministic; re-running an adaptation config gives slightly
   different cell errors.
 
@@ -11827,7 +12122,7 @@ TabICL v2 and TabFM weights (none included), are under their own licenses.
 
 
 def arms_markdown(arms: pd.DataFrame) -> str:
-    lines = ["| backbone | arm | LR | Elo | Î”Elo | GPU h |", "|---|---|---:|---:|---:|---:|"]
+    lines = ["| backbone | arm | LR | Elo | ΔElo | GPU h |", "|---|---|---:|---:|---:|---:|"]
     prev = None
     for a in arms.itertuples():
         backbone = "" if a.backbone == prev else a.backbone
@@ -12092,7 +12387,7 @@ from ttc.agg_model import AggregationTabPFN3Model
 
 # Modes this composition supports: they ADD adapter tensors and leave the pretrained weights frozen,
 # so a member can load the stock checkpoint and then have the adapters injected. Weight-modifying
-# modes (full / bitfit / regex â€” regex trains the ORIGINAL parameters selected by name) are rejected:
+# modes (full / bitfit / regex — regex trains the ORIGINAL parameters selected by name) are rejected:
 # there is no separable adapter to carry over.
 _ADAPTER_MODES = ("diagscale", "lora")
 # ...but tabpfn's select_trainable indexes cfg["pattern"] for these (KeyError without it).
@@ -12117,7 +12412,7 @@ class _DeltaInjectedEstimator:
         self._est.fit(X, y)
         model = getattr(self._est, "model_", None)
         if model is None:
-            raise RuntimeError("member estimator has no model_ after fit â€” cannot inject the delta")
+            raise RuntimeError("member estimator has no model_ after fit — cannot inject the delta")
         if self._mode == "diagscale":
             from tabpfn.finetuning.peft import inject_diagscale
             n = inject_diagscale(model, pattern=self._pattern)
@@ -12140,7 +12435,7 @@ class _DeltaInjectedEstimator:
 class FinetunedAggregationTabPFN3Model(AggregationTabPFN3Model):
     """Aggregation member pool over a per-task finetuned TabPFN-3 backbone.
 
-    Hyperparameters: the union of the two parents' â€”
+    Hyperparameters: the union of the two parents' —
         ``aggregation: {...}``  the member pool / reduction knobs (see AggregationTabPFN3Model)
         ``ft_*``                the finetuning knobs (ft_epochs / ft_lr / ft_mode / ft_regex ...);
                                 ``ft_epochs <= 0`` skips the finetune entirely, which makes this
@@ -12151,7 +12446,7 @@ class FinetunedAggregationTabPFN3Model(AggregationTabPFN3Model):
     ag_key = "TTC-AGGFT-TABPFN3"
     ag_name = "TTC-AggFT-TabPFN3"
 
-    # â”€â”€ every member is built from the stock checkpoint, then gets the deltas injected â”€â”€
+    # ── every member is built from the stock checkpoint, then gets the deltas injected ──
     def _build_estimator(self, native_cfg: dict, n_estimators: int):
         est = super()._build_estimator(native_cfg, n_estimators)
         sd = getattr(self, "_ft_adapter_sd", None)
@@ -12159,7 +12454,7 @@ class FinetunedAggregationTabPFN3Model(AggregationTabPFN3Model):
             return est                        # no finetune (identity rung) -> plain aggregation
         return _DeltaInjectedEstimator(est, sd, self._ft_pattern, self._ft_mode)
 
-    # â”€â”€ finetune the backbone once; keep the trained adapter tensors â”€â”€
+    # ── finetune the backbone once; keep the trained adapter tensors ──
     def _finetune_backbone(self, X, y, num_cpus: int, num_gpus: int, ft: dict) -> dict:
         import torch
         from tabpfn.finetuning import FinetunedTabPFNClassifier, FinetunedTabPFNRegressor
@@ -12274,7 +12569,7 @@ def _current_runner():
     """The tabarena ExperimentRunner on the call stack (has ``task``/``fold``/``repeat``).
 
     Used at predict time to reload THIS cell's exact test split in the task's deterministic row
-    order â€” AutoGluon reorders test rows internally and resets the index before ``_predict_proba``,
+    order — AutoGluon reorders test rows internally and resets the index before ``_predict_proba``,
     so we sidestep it entirely rather than try to recover the (unrecoverable) permutation."""
     import inspect
 
@@ -12286,7 +12581,7 @@ def _current_runner():
 
 
 def _current_exec_model():
-    """The tabarena AbstractExecModel on the call stack â€” holds the FITTED feature generator
+    """The tabarena AbstractExecModel on the call stack — holds the FITTED feature generator
     (``transform_X``) and ``label_cleaner``. We reuse them to process this cell's test split
     through the EXACT same pipeline the model was fit under (raw features would mismatch)."""
     import inspect
@@ -12299,12 +12594,12 @@ def _current_exec_model():
 
 
 def _fallback_to_config0(preds: list, times: list, failed: list, i: int, stage: str) -> None:
-    """Config `i` crashed at `stage` (val / OOF val / test): reuse config 0 â€” the base anchor â€” so the
+    """Config `i` crashed at `stage` (val / OOF val / test): reuse config 0 — the base anchor — so the
     parallel preds/times/failed lists stay aligned. MUST be called from inside an `except` block: if
     config 0 ITSELF failed (``preds`` empty) the bare ``raise`` re-raises the real error instead of
-    masking it as an IndexError on ``preds[0]``. Appends config 0's prediction by REFERENCE â€” it is
+    masking it as an IndexError on ``preds[0]``. Appends config 0's prediction by REFERENCE — it is
     only read downstream (combine/caruana never mutate it) and the dump's ``np.stack`` copies it."""
-    if not preds:  # config 0 (the base anchor) itself failed â€” nothing to fall back to
+    if not preds:  # config 0 (the base anchor) itself failed — nothing to fall back to
         raise
     warnings.warn(f"[agg] config {i} failed at {stage}; falling back to config 0",
                   RuntimeWarning, stacklevel=3)
@@ -12323,7 +12618,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
     DEFAULTS = {"n_configs": 40, "seed": 0, "n_est_val": 2, "n_est_test": 8,
                 "val_ratio": 0.1, "n_iterations": 40, "val_folds": 0}
 
-    # â”€â”€ hyperparameter routing â”€â”€
+    # ── hyperparameter routing ──
     def _get_ft_params(self) -> dict:
         """Presence of this method triggers tabarena's ft_log_dir / ft_run_label injection."""
         return {k: v for k, v in super()._get_model_params().items() if k.startswith("ft_")}
@@ -12338,9 +12633,9 @@ class AggregationTabPFN3Model(TabPFN3Model):
         raw = super()._get_model_params().get("aggregation") or {}
         return {**self.DEFAULTS, **raw}
 
-    # â”€â”€ device management: this model holds NO single `self.model` (estimators are built
+    # ── device management: this model holds NO single `self.model` (estimators are built
     #    per-config in fit/predict), so the base get_device/_set_device (which read self.model)
-    #    would hit None. Drive device off the stored string instead. â”€â”€
+    #    would hit None. Drive device off the stored string instead. ──
     def get_device(self) -> str:
         dev = getattr(self, "_agg_device", None) or "cpu"
         return dev.split(":")[0] if isinstance(dev, str) else "cpu"
@@ -12348,7 +12643,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
     def _set_device(self, device: str) -> None:
         self._agg_device = device
 
-    # â”€â”€ build one TabPFN estimator for a native config at a given view count â”€â”€
+    # ── build one TabPFN estimator for a native config at a given view count ──
     def _build_estimator(self, native_cfg: dict, n_estimators: int):
         from tabpfn import TabPFNClassifier, TabPFNRegressor
 
@@ -12364,11 +12659,11 @@ class AggregationTabPFN3Model(TabPFN3Model):
         )
         kwargs[self.seed_name] = self.fixed_random_state  # 'random_state'
         kwargs.update(native_cfg)  # softmax_temperature / balance_probabilities / inference_config
-        # auto_scale_n_estimators left at the TabPFN default (True) â€” matches base & FT inference.
+        # auto_scale_n_estimators left at the TabPFN default (True) — matches base & FT inference.
         cls = TabPFNClassifier if is_clf else TabPFNRegressor
         return cls(**kwargs)
 
-    # â”€â”€ fit: sample configs, carve val, run per-config val forwards â”€â”€
+    # ── fit: sample configs, carve val, run per-config val forwards ──
     def _fit(self, X, y, num_cpus: int = 1, num_gpus: int = 0, **kwargs):
         from ttc.aggregation import search_space as S
 
@@ -12401,7 +12696,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
         self._y_val, self._classes = y_enc, classes
         return self
 
-    # â”€â”€ validation scheme A: 90/10 holdout (default; FT-comparable) â”€â”€
+    # ── validation scheme A: 90/10 holdout (default; FT-comparable) ──
     def _val_holdout(self, X, y, native, p, is_clf):
         """Each config fits the 90% fit-context and predicts the 10% val (SAME stratified split rule
         as FinetunedTabPFN._get_train_val_split). Returns (val_preds, val_times, failed, y_enc,
@@ -12449,7 +12744,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
             classes = None
         return val_preds, val_times, failed, y_enc, classes
 
-    # â”€â”€ validation scheme B: k-fold cross-validated OOF over the FULL train (TabArena-aligned) â”€â”€
+    # ── validation scheme B: k-fold cross-validated OOF over the FULL train (TabArena-aligned) ──
     def _val_oof(self, X, y, native, p, is_clf, n_folds):
         """TabArena-aligned validation (mirrors num_bag_folds=8): each config produces OUT-OF-FOLD
         predictions over the FULL train via k-fold CV (100% coverage) instead of a 10% holdout, so
@@ -12458,7 +12753,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
         re-aligned to the GLOBAL class order (a fold whose train misses a rare class -> 0 there).
         The fold partition is FIXED across all configs (so OOF rows are comparable). Returns
         (val_preds, val_times, failed, y_enc, classes); val_preds[i] is config i's OOF over the full
-        train and y_enc is the full-train labels (encoded) â€” both span 100% of train."""
+        train and y_enc is the full-train labels (encoded) — both span 100% of train."""
         import numpy as np
         from sklearn.model_selection import KFold, StratifiedKFold
 
@@ -12511,7 +12806,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
         y_enc = np.array([col[v] for v in y_np], dtype=int) if is_clf else y_np.astype(float)
         return val_preds, val_times, failed, y_enc, classes
 
-    # â”€â”€ predict: per-config forwards on the harness's (shuffled) X, dump preds + aligned y_test â”€â”€
+    # ── predict: per-config forwards on the harness's (shuffled) X, dump preds + aligned y_test ──
     def _predict_proba(self, X, **kwargs):
         import numpy as np
 
@@ -12522,7 +12817,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
 
         p = self._agg_p
         is_clf = self.problem_type in ("binary", "multiclass")
-        # Predict on the X AutoGluon hands us â€” already through the exec model's feature generator
+        # Predict on the X AutoGluon hands us — already through the exec model's feature generator
         # (so features match training; raw features would silently degrade regression). The exec
         # model first SHUFFLES the test rows (shuffle_test, deterministic _make_perm(shuffle_seed))
         # and inverts the shuffle on the returned output. So our per-config test_proba is in the
@@ -12568,7 +12863,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
             test_preds = [test_preds[0] if bad else tp
                           for bad, tp in zip(combined_failed, test_preds)]
             # the substituted slot now holds config 0's prediction (a no-op duplicate), so its
-            # marginal test cost is 0 â€” zero the time too, keeping the per-config cost ledger aligned
+            # marginal test cost is 0 — zero the time too, keeping the per-config cost ledger aligned
             # to the prediction it stores (matches the test-failure fallback, which records 0.0).
             test_times = [0.0 if bad else tt for bad, tt in zip(combined_failed, test_times)]
         self._val_failed = combined_failed
@@ -12576,7 +12871,7 @@ class AggregationTabPFN3Model(TabPFN3Model):
         self._dump(test_preds, test_times, combined_failed, y_test)
 
         # Board headline = Caruana(full pool); returned in the shuffled order, which the exec model
-        # inverts back to the caller's order â€” so the board scores the real tuned+ensemble.
+        # inverts back to the caller's order — so the board scores the real tuned+ensemble.
         sf = R.score_fn_for(self.problem_type)
         w, _ = R.caruana_weights(self._val_proba, self._y_val, sf, n_iterations=p["n_iterations"])
         combined = R.combine(test_preds, w)
@@ -12670,7 +12965,7 @@ class CostEntry:
 def _cuda_sync(device: str) -> None:
     """Block until pending CUDA work on `device` finishes, so wall-clock isn't undercounted.
 
-    Syncs the operator's OWN device (parsed from the string), not the process current device â€”
+    Syncs the operator's OWN device (parsed from the string), not the process current device —
     matters once runs span >1 GPU. Warns (rather than silently passing) if torch/CUDA is absent,
     so an accidental non-GPU run doesn't yield silently-uncalibrated timings.
     """
@@ -12686,7 +12981,7 @@ def _cuda_sync(device: str) -> None:
     except Exception as e:
         import warnings
 
-        warnings.warn(f"_cuda_sync({device!r}) skipped: {e!r} â€” wall_s may be uncalibrated",
+        warnings.warn(f"_cuda_sync({device!r}) skipped: {e!r} — wall_s may be uncalibrated",
                       RuntimeWarning, stacklevel=2)
 
 
@@ -12755,8 +13050,8 @@ def _current_task_context() -> tuple[str | None, int | None, int | None]:
     """Recover ``(dataset name, fold, repeat)`` from the tabarena ExperimentRunner frame on the
     call stack.
 
-    AutoGluon hands the model only X/y; the task identity â€” including the CV ``fold``/``repeat``
-    â€” lives in the runner that called us (`ExperimentRunner.task_name/fold/repeat`). Logging
+    AutoGluon hands the model only X/y; the task identity — including the CV ``fold``/``repeat``
+    — lives in the runner that called us (`ExperimentRunner.task_name/fold/repeat`). Logging
     fold/repeat per fit lets downstream analysis join fits to result cells on the exact split
     instead of fragile file order (which a requeue can duplicate). Read-only stack walk; returns
     ``(None, None, None)`` outside a benchmark run.
@@ -12811,7 +13106,7 @@ class FinetunedTabPFN3Model(TabPFN3Model):
         return {k: v for k, v in super()._get_model_params().items() if k.startswith("ft_")}
 
     def _get_model_params(self) -> dict:
-        # ft_* params drive the finetuning loop only â€” never leak them into the underlying
+        # ft_* params drive the finetuning loop only — never leak them into the underlying
         # TabPFN estimator kwargs (the stock fallback path relies on this too).
         return {k: v for k, v in super()._get_model_params().items() if not k.startswith("ft_")}
 
@@ -12929,7 +13224,7 @@ class FinetunedTabFMModel(TabFMModel):
     """Google TabFM with per-task test-time finetuning (diagscale / (IA)3 / full / regex).
 
     Extends the zero-shot ``TabFMModel``: ``_fit`` finetunes the backbone on the task's training
-    data (``ttc.backbones.tabfm_finetune`` â€” the ported, validated sandbox loop) and deploys the
+    data (``ttc.backbones.tabfm_finetune`` — the ported, validated sandbox loop) and deploys the
     finetuned backbone through the normal TabFM estimator path (so ``predict`` / device management
     are inherited unchanged). Requires the patched ``tabfm`` (``tabfm.src.pytorch.peft``).
 
@@ -12950,7 +13245,7 @@ class FinetunedTabFMModel(TabFMModel):
 
     Deployment is single-view (``n_estimators=1``) by default to match the single-view finetune;
     pass ``n_estimators`` via hyperparameters to ensemble at inference (the trained delta is
-    view-agnostic â€” it lives inside attention, independent of view augmentation). Only the
+    view-agnostic — it lives inside attention, independent of view augmentation). Only the
     "default" preset is supported (the "ensemble" NNLS recipe is incompatible with single-view
     training).
     """
@@ -12959,7 +13254,7 @@ class FinetunedTabFMModel(TabFMModel):
     ag_name = "TTC-FT-TabFM"
 
     # bf16 finetune (2026-07-24): the FT trains+deploys in bf16 (like the base), which PRESERVES the
-    # delta (89-104% of the fp32 gain) â€” the old "bf16 quantizes the delta -> FT must be fp32" premise
+    # delta (89-104% of the fp32 gain) — the old "bf16 quantizes the delta -> FT must be fp32" premise
     # is FALSE. So the DEPLOY now mirrors the base exactly: bf16, full context, and the SAME two-level
     # cell-budget FEATURE cap (fits at 500 -> 500 = Google, else fall back to _OOM_FALLBACK_FEATURES;
     # constants inherited from TabFMModel). This keeps base(ft_epochs=0)-vs-FT deploy IDENTICAL so the
@@ -12989,7 +13284,7 @@ class FinetunedTabFMModel(TabFMModel):
         return {k: v for k, v in super()._get_model_params().items() if k.startswith("ft_")}
 
     def _get_model_params(self) -> dict:
-        # ft_* params drive the finetuning loop only â€” never leak into the TabFM estimator kwargs.
+        # ft_* params drive the finetuning loop only — never leak into the TabFM estimator kwargs.
         return {k: v for k, v in super()._get_model_params().items() if not k.startswith("ft_")}
 
     # Chunk the deploy inference over TEST ROWS. The 32-view fp32 forward builds ~57 GB of activations
@@ -13022,7 +13317,7 @@ class FinetunedTabFMModel(TabFMModel):
     def _fit(self, X, y, num_cpus: int = 1, num_gpus: int = 0, **kwargs):
         # Reclaim the PREVIOUS cell's GPU memory before this cell allocates its fresh 1.6B deepcopy +
         # 32-view deploy. Without this, the finetuned model + deploy activations from the prior task
-        # stay resident (~63 GB after a wide cell) and the next TALL cell's predict OOMs â€” verified
+        # stay resident (~63 GB after a wide cell) and the next TALL cell's predict OOMs — verified
         # jobs 12278 (APSFailure->GiveMeSomeCredit OOMs) vs 12279 (GiveMeSomeCredit alone fits).
         import gc
 
@@ -13030,7 +13325,7 @@ class FinetunedTabFMModel(TabFMModel):
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        # TF32 matmul (also set in tabfm_finetune._fresh_model) â€” set here too so it is active before
+        # TF32 matmul (also set in tabfm_finetune._fresh_model) — set here too so it is active before
         # any op regardless of path, keeping this deploy at the same matmul precision as the base.
         torch.backends.cuda.matmul.allow_tf32 = True
         ft = self._get_ft_params()
@@ -13114,7 +13409,7 @@ class FinetunedTabFMModel(TabFMModel):
             torch.cuda.empty_cache()
 
         # FINAL estimator: FULL-train context with the finetuned (bf16) backbone. Deploy MIRRORS the
-        # base â€” bf16, full context, cell-budget feature cap â€” so base(ft_epochs=0)-vs-FT is precision-
+        # base — bf16, full context, cell-budget feature cap — so base(ft_epochs=0)-vs-FT is precision-
         # and feature-matched. default preset only.
         params = dict(self._get_model_params())
         preset = params.pop("preset", "default")
@@ -13125,7 +13420,7 @@ class FinetunedTabFMModel(TabFMModel):
             params.pop(k, None)  # control keys; the deploy feature cap is applied below as an est kwarg
         if est_feat_cap and "max_num_features" not in params:
             params["max_num_features"] = est_feat_cap
-        # Deploy on FULL context, UNCAPPED rows â€” the bf16 backbone keeps full context on one 80GB GPU
+        # Deploy on FULL context, UNCAPPED rows — the bf16 backbone keeps full context on one 80GB GPU
         # (tall+wide tables already fell back to a 100-feature cap above, which fits full context in bf16),
         # exactly like the base. NO fp32 deploy row cap. bf16 = 2x the fp32 byte-headroom, so size the
         # (defensive, bit-identical) test-row chunk against 2x the cell limit.
@@ -13162,13 +13457,13 @@ class FinetunedTabFMModel(TabFMModel):
 
 
 class FinetunedTabICLModel(TabICLv2Model):
-    """TabICL v2 with per-task test-time finetuning (diagscale / (IA)Â³ / full / regex).
+    """TabICL v2 with per-task test-time finetuning (diagscale / (IA)³ / full / regex).
 
     Extends the zero-shot ``TabICLv2Model``: ``_fit`` finetunes the backbone on the task's training
-    data (``ttc.backbones.tabicl_finetune`` â€” the ported, validated sandbox loop) and deploys the
+    data (``ttc.backbones.tabicl_finetune`` — the ported, validated sandbox loop) and deploys the
     finetuned backbone through an adopted TabICL estimator (so ``predict`` / device management are
     inherited unchanged). Requires the patched ``tabicl`` (``tabicl._model.peft``, including the
-    (IA)Â³ KV-cache fix). Same ``ft_*`` convention as the other FT models:
+    (IA)³ KV-cache fix). Same ``ft_*`` convention as the other FT models:
 
         ft_epochs      gradient epochs (0 -> EXACT stock ``TabICLv2Model`` fit; the identity rung)
         ft_mode        full | diagscale | ia3 | regex   (default diagscale)
@@ -13185,7 +13480,7 @@ class FinetunedTabICLModel(TabICLv2Model):
 
     To keep the finetune episodes and the deployed estimator on IDENTICAL numeric inputs, features
     are ordinal-encoded/imputed up front by ``NumericEncoder`` (mirrors tabicl's own X_encoder_) via
-    a ``_preprocess`` override that is inert until ``_fit`` fits the encoder â€” so ft_epochs=0 stays
+    a ``_preprocess`` override that is inert until ``_fit`` fits the encoder — so ft_epochs=0 stays
     bit-exact stock. Only classification/binary + regression are supported (v2 covers all three).
     """
 
@@ -13196,7 +13491,7 @@ class FinetunedTabICLModel(TabICLv2Model):
     # it processes ALL features per view; the finetune BACKWARD then scales ~ ctx_rows x n_features x
     # n_views and OOMs on wide tables (Bioresponse 1776 feat: 2250x1776x2 = 8.0M cell-views -> 82 GB on
     # an 80 GB H100). Deploy/base do NOT OOM (inference keeps no backward activations), so we cap ONLY
-    # the finetune episode ROWS as a function of width (like TabFM's _FT_EPISODE_CELL_BUDGET) â€” deploy
+    # the finetune episode ROWS as a function of width (like TabFM's _FT_EPISODE_CELL_BUDGET) — deploy
     # stays full-feature/full-row so base-vs-FT stays matched. Budget chosen so the widest ALREADY-CACHED
     # dataset (APSFailure, 170 feat) keeps its full 10k rows (170x10000x2 = 3.4M), i.e. only the 3 very
     # wide tables (Bioresponse/hiva/QSAR-TID-11, >=1024 feat) get capped. Calibrated on H100 (see below).
@@ -13210,7 +13505,7 @@ class FinetunedTabICLModel(TabICLv2Model):
 
     def _preprocess(self, X, is_train: bool = False, **kwargs):
         # Standard tabicl preprocessing, then (finetune path only) numericize with the encoder fit
-        # in _fit â€” so episodes and deploy inference see identical inputs. Inert (stock) until the
+        # in _fit — so episodes and deploy inference see identical inputs. Inert (stock) until the
         # encoder exists, keeping the ft_epochs=0 identity rung bit-exact with base TabICLv2Model.
         X = super()._preprocess(X, is_train=is_train, **kwargs)
         enc = getattr(self, "_ft_encoder", None)
@@ -13231,7 +13526,7 @@ class FinetunedTabICLModel(TabICLv2Model):
         is_classification = self.problem_type in ["binary", "multiclass"]
         seed = int(self._get_model_params().get(self.seed_name) or 0)
 
-        # standard preprocess (categoricals kept â€” _ft_encoder still unset) -> fit numeric encoder
+        # standard preprocess (categoricals kept — _ft_encoder still unset) -> fit numeric encoder
         Xp = self.preprocess(X, y=y)
         from ttc.backbones.tabicl_finetune import (NumericEncoder, _make_est, _pristine_backbone,
                                                    finetune_tabicl)
@@ -13468,7 +13763,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# â”€â”€ score functions (lower = better) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── score functions (lower = better) ──────────────────────────────────────────────────────
 
 
 def log_loss(y_true, proba, eps: float = 1e-15) -> float:
@@ -13490,11 +13785,11 @@ def score_fn_for(problem_type: str):
     return log_loss if problem_type in ("binary", "multiclass") else rmse
 
 
-# â”€â”€ weight choosers (operate on VALIDATION predictions) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── weight choosers (operate on VALIDATION predictions) ────────────────────────────────────
 
 
 def uniform_weights(m: int) -> np.ndarray:
-    """Equal weights â€” no validation used."""
+    """Equal weights — no validation used."""
     return np.full(m, 1.0 / m, dtype=float)
 
 
@@ -13515,9 +13810,9 @@ def caruana_weights(val_preds, y_val, score_fn, n_iterations: int = 40) -> tuple
     is the per-round selection trace (for diagnostics).
 
     Vectorized across the m candidates: each round scores ALL candidates ``(ens_sum + preds[j]) /
-    (size+1)`` in batched numpy â€” the identical arithmetic ``score_fn`` does per candidate, with the
+    (size+1)`` in batched numpy — the identical arithmetic ``score_fn`` does per candidate, with the
     same NaN/tie handling (``nanargmin`` picks the lowest-index finite minimum; all-NaN -> 0, exactly
-    the old ``best_s=inf`` strict-``<`` loop) â€” instead of an m-long Python loop. This is the per-cell
+    the old ``best_s=inf`` strict-``<`` loop) — instead of an m-long Python loop. This is the per-cell
     hot path once k-fold OOF makes the val signal the FULL train (~10x the holdout). Candidates are
     processed in row-memory-bounded blocks so a wide proba never materializes a huge ``[m, n, C]``.
     A score_fn other than the built-in ``log_loss``/``rmse`` falls back to per-candidate scoring.
@@ -13555,7 +13850,7 @@ def caruana_weights(val_preds, y_val, score_fn, n_iterations: int = 40) -> tuple
     return counts / counts.sum(), picks
 
 
-# â”€â”€ apply weights to TEST predictions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── apply weights to TEST predictions ──────────────────────────────────────────────────────
 
 
 def combine(preds, weights) -> np.ndarray:
@@ -13599,7 +13894,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# â”€â”€ search space (tabpfnv2_5/hpo.py, minus zip_model_path) â€” {path-key: list of choices} â”€â”€
+# ── search space (tabpfnv2_5/hpo.py, minus zip_model_path) — {path-key: list of choices} ──
 SPACE: dict[str, list] = {
     "softmax_temperature": [0.25, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.25, 1.5],
     "balance_probabilities": [True, False],  # CLF only
@@ -13733,7 +14028,7 @@ FILE: src/ttc/backbones/__init__.py
 ================================================
 FILE: src/ttc/backbones/tabfm.py
 ================================================
-"""TabFMModel â€” AutoGluon/TabArena wrapper for Google's TabFM (PyTorch backend).
+"""TabFMModel — AutoGluon/TabArena wrapper for Google's TabFM (PyTorch backend).
 
 Registry key ``tabfm`` (see ttc.registry): the default preset ``TabFMClassifier(model)`` /
 ``TabFMRegressor(model)`` == Google's "TabFM" leaderboard entry (32 augmented views, uniform blend).
@@ -13743,7 +14038,7 @@ Mirrors ``tabarena.models.TabPFN3Model`` / ``TabICLModel``: subclass ``AbstractT
 inherited (``AbstractModel._predict_proba`` calls ``self.model.predict_proba`` for classification
 and ``.predict`` for regression), exactly as the TabPFN-3 and TabICL wrappers do.
 
-TabFM ships a PyTorch backend, so we stay entirely inside this repo's torch stack â€” no JAX. The
+TabFM ships a PyTorch backend, so we stay entirely inside this repo's torch stack — no JAX. The
 backbone weights download from Hugging Face (``google/tabfm-1.0.0-pytorch`` at the pinned
 ``TABFM_REVISION``) into ``HF_HOME`` on first use; ``tabfm_v1_0_0_pytorch.load`` caches them per
 (model_type, device) in-process, so the folds of one task load the backbone once.
@@ -13753,11 +14048,11 @@ Control hyperparameters (consumed here, never forwarded to the TabFM estimator):
 Every other hyperparameter is forwarded verbatim to ``TabFMClassifier`` / ``TabFMRegressor``
 (``n_estimators``, ``norm_methods``, ``softmax_temperature``, ``nnls_beta``, feature-cross / SVD
 schedules, ...), so the config-tune / views experiments can drive TabFM later with no change here.
-Note: the default preset already ensembles 32 augmented views internally â€” for an apples-to-apples
+Note: the default preset already ensembles 32 augmented views internally — for an apples-to-apples
 "single-view base" (to measure our own views axis without double-counting), pass ``n_estimators: 1``
 via the config's ``hyperparameters`` (plus a ``tag_suffix``).
 
-License note: the TabFM weights are under a non-commercial license â€” research / benchmark use only.
+License note: the TabFM weights are under a non-commercial license — research / benchmark use only.
 """
 from __future__ import annotations
 
@@ -13800,7 +14095,7 @@ def resolve_tabfm_checkpoint() -> str:
 
 
 class TabFMModel(AbstractTorchModel):
-    """Google TabFM (zero-shot tabular foundation model) â€” TabArena integration, PyTorch backend."""
+    """Google TabFM (zero-shot tabular foundation model) — TabArena integration, PyTorch backend."""
 
     ag_key = "TA-TABFM"
     ag_name = "TA-TabFM"
@@ -13810,16 +14105,16 @@ class TabFMModel(AbstractTorchModel):
     fixed_random_state: int = 0
     """Fixed seed for reproducibility (matches the TabPFN-3 wrapper convention)."""
 
-    # Row-cap safety net â€” DISABLED by default. bf16 (see `_load_backbone`) is the real memory fix;
+    # Row-cap safety net — DISABLED by default. bf16 (see `_load_backbone`) is the real memory fix;
     # capping context rows barely helped on WIDE data because the OOM is feature-dominated (the
     # categorical Fourier embedding over 170+ features), not row-dominated. Re-enable by setting the
     # `context_cell_budget` (>0) / `context_row_ceiling` hyperparameters: caps CONTEXT so
-    # rows*features stays under the cell budget and rows under the ceiling. Default preset only â€”
+    # rows*features stays under the cell budget and rows under the ceiling. Default preset only —
     # the ensemble preset's enable_nnls is mutually exclusive with max_num_rows.
     _CONTEXT_CELL_BUDGET = 0
     _CONTEXT_ROW_CEILING = 40_000
 
-    # Feature cap â€” a TWO-LEVEL cap decided by CONTEXT CELLS (train_rows x features), not features
+    # Feature cap — a TWO-LEVEL cap decided by CONTEXT CELLS (train_rows x features), not features
     # alone. Single-GPU OOM is driven by the categorical Fourier embedding over rows*features, so a
     # wide-but-SHORT table (few rows) fits its full features on one 80GB H100 while a tall-wide one
     # does not (measured 2026-07-24, bf16 32-view: MIC 111f x 1.5k rows -> 6.6GB, Bioresponse 1776f x
@@ -13829,7 +14124,7 @@ class TabFMModel(AbstractTorchModel):
     # to fit on the 1750 board: APSFailure/kddcup/Amazon at 100 = 3-5M cells). The earlier UNCONDITIONAL
     # flat `>100 -> 100` cap wrongly bit short-wide tables too (QSAR-TID-11 was our single worst cell vs
     # Google, +9.4% rel error, purely from 1024f -> 100 when 500 fit in 29GB); this version leaves them
-    # at 500 and only the genuinely OOM-ing tall+wide tables fall back to 100 â€” matching the corrected
+    # at 500 and only the genuinely OOM-ing tall+wide tables fall back to 100 — matching the corrected
     # board exactly (no re-run needed). Tune with `feature_cell_budget` (0 disables); `max_features_cap`
     # (>0) still forces an unconditional flat cap instead. Applies to BOTH presets.
     _FEATURE_CELL_BUDGET = 5_000_000   # max cells (rows x <=500 feat) that fit one 80GB H100 (proven ~4.4M ok / 7.1M OOM)
@@ -13837,7 +14132,7 @@ class TabFMModel(AbstractTorchModel):
     _OOM_FALLBACK_FEATURES = 100       # safe cap for tables that OOM even at 500 (1750-board-proven to fit)
 
     # fp32 full-context deploy OOMs above this many context-cells (rows*features, after the feature
-    # cap) on one 80GB GPU â€” measured: 24000x100=2.4M and kddcup 33333x100=3.3M FIT, APSFailure
+    # cap) on one 80GB GPU — measured: 24000x100=2.4M and kddcup 33333x100=3.3M FIT, APSFailure
     # 50666x100=5.1M OOMs. The base (no delta) drops to bf16 above this so it KEEPS full context
     # (the official protocol is full-context); the fp32 finetune path (bf16 would quantize the delta)
     # caps the context instead. Only APSFailure crosses it in TabArena.
@@ -13853,7 +14148,7 @@ class TabFMModel(AbstractTorchModel):
         """Load the pre-trained TabFM torch backbone (cached per device); cast to bf16 on GPU.
 
         TabFM is bf16-native (`# bf16 SDPA` in the model; Google benchmarked on TPU, which computes
-        in bf16), and bf16 ~halves activation memory â€” which is what lets large/WIDE datasets (e.g.
+        in bf16), and bf16 ~halves activation memory — which is what lets large/WIDE datasets (e.g.
         APSFailure 76k x 170) fit a single 80 GB GPU at FULL context. Pass the `compute_dtype`
         hyperparameter = "float32" to opt out. CPU stays fp32 (bf16 on CPU is slow, no memory win).
         """
@@ -13888,14 +14183,14 @@ class TabFMModel(AbstractTorchModel):
 
         # Match the finetune path (tabfm_finetune._fresh_model): run fp32 matmuls on the TF32 tensor
         # cores instead of the FP32 CUDA cores. ~7x faster than pure fp32 on H100, and the base
-        # (identity, no delta) has nothing to lose from the 10-bit mantissa â€” this keeps the base
+        # (identity, no delta) has nothing to lose from the 10-bit mantissa — this keeps the base
         # deploy at the SAME matmul precision as the diagscale/full deploy (their delta is TF32-safe,
         # validated by the TabPFN3/TabICL boards), so base-vs-FT stays precision-matched.
         import torch
         torch.backends.cuda.matmul.allow_tf32 = True
 
         params = dict(self._get_model_params())
-        preset = params.pop("preset", "default")  # control key â€” not a TabFM estimator kwarg
+        preset = params.pop("preset", "default")  # control key — not a TabFM estimator kwarg
         params.setdefault(self.seed_name, self.fixed_random_state)
 
         # Cap context to fit a single GPU (see class docstring). Pop the control keys either way so
@@ -13911,7 +14206,7 @@ class TabFMModel(AbstractTorchModel):
                 print(f"[TabFMModel] context cap: {n_rows}x{n_feats} -> max_num_rows={cap} "
                       f"(budget={budget} cells, ceiling={row_ceiling}) to avoid single-GPU OOM")
 
-        # Two-level feature cap decided by CELLS (train_rows x features) â€” see the class constants.
+        # Two-level feature cap decided by CELLS (train_rows x features) — see the class constants.
         # `max_features_cap` (>0) still forces an unconditional flat cap; otherwise: fits at 500 ->
         # 500 (= Google), else fall back to the safe 100-feature cap. Only tall+wide tables fall back.
         flat_cap = int(params.pop("max_features_cap", 0) or 0)
@@ -13933,8 +14228,8 @@ class TabFMModel(AbstractTorchModel):
         compute_dtype = params.pop("compute_dtype", "bfloat16")  # control key: bf16 = TabFM-native (TPU-like)
         # Keep FULL context (official protocol) even where fp32 would OOM: fall back to bf16 for those
         # cells only (in TabArena: just APSFailure). bf16-vs-fp32 inference accuracy is negligible, and
-        # the base has no delta to protect â€” so we trade precision, not context. (The finetune path,
-        # which DOES need fp32 for its delta, caps the context there instead â€” see FinetunedTabFMModel.)
+        # the base has no delta to protect — so we trade precision, not context. (The finetune path,
+        # which DOES need fp32 for its delta, caps the context there instead — see FinetunedTabFMModel.)
         eff_rows = int(params.get("max_num_rows") or X.shape[0])
         # effective feature count = our cap if set, else the estimator's own 500 default (capped by width)
         eff_cols = int(params.get("max_num_features") or min(int(X.shape[1]), self._ESTIMATOR_MAX_FEATURES))
@@ -13946,7 +14241,7 @@ class TabFMModel(AbstractTorchModel):
         # Adaptive test-row chunk for the chunked deploy predict (FinetunedTabFMModel._chunked): keep
         # the col-FF over (context + chunk) rows under the cell budget (bf16 = 2x the fp32 byte-
         # headroom). Solved from (rows, features), so low-cell datasets get the max chunk (fast) and
-        # only high-cell ones near the limit get a small chunk â€” no hardcoded per-dataset list.
+        # only high-cell ones near the limit get a small chunk — no hardcoded per-dataset list.
         cell_budget = self._FP32_CELL_LIMIT * (2 if compute_dtype == "bfloat16" else 1)
         self._deploy_chunk = int(min(getattr(self, "_FT_DEPLOY_TEST_CHUNK", 8000),
                                      max(1000, cell_budget // eff_cols - eff_rows)))
@@ -14051,7 +14346,7 @@ def prefetch_weights() -> None:
 ================================================
 FILE: src/ttc/backbones/tabfm_finetune.py
 ================================================
-"""Per-task test-time finetuning loop for TabFM â€” the machinery behind ``FinetunedTabFMModel``.
+"""Per-task test-time finetuning loop for TabFM — the machinery behind ``FinetunedTabFMModel``.
 
 A faithful port of the validated sandbox runner ``ttc.benchmarks.tabfm_diagscale._finetune``
 (clone ``ttc-diagscale`` @ ``diagscale``), stripped to the pieces the AutoGluon wrapper needs:
@@ -14062,10 +14357,10 @@ adapter deltas (zero-init -> injection is behaviour-preserving), and restores th
 (or the pretrained init when no epoch beats base -> never-worse-than-base).
 
 Protocol (mirrors ``tabpfn.finetuning.FinetunedTabPFNBase``, single-view TabFM edition):
-  * 10% val split with a 200-row floor (capped at 25% n) â€” the split does triple duty
+  * 10% val split with a 200-row floor (capped at 25% n) — the split does triple duty
     (early-stop epoch, and the caller's lr selection / never-worse fallback);
   * per-epoch random context/query splits of the 90% train part (loss on the query rows), using
-    the estimator's ``ensemble_generator_.transform_fold`` â€” the EXACT inference preprocessing;
+    the estimator's ``ensemble_generator_.transform_fold`` — the EXACT inference preprocessing;
   * ``n_estimators=1`` single-view (class shift asserted 0, so the CE labels are unambiguous);
   * AdamW + 10% linear warmup + cosine, grad-clip 1.0, early stopping on val (patience), best-epoch
     restore, and an injection identity guard (delta=0 must reproduce base predictions);
@@ -14083,7 +14378,7 @@ import math
 import numpy as np
 
 
-# â”€â”€ backbone / estimator construction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── backbone / estimator construction ───────────────────────────────────────────────────────────
 def _pristine_backbone(is_cls: bool):
     """Pretrained PyTorch TabFM on CPU fp32 (in-process cached by the tabfm loader); deep-copied per
     finetune so training never mutates the shared cache. Shares ``resolve_tabfm_checkpoint`` with the
@@ -14116,7 +14411,7 @@ def _make_est(model, is_cls: bool, seed: int, max_num_features: int | None = Non
     """Estimator adopting ``model``. ``n_estimators`` = ensemble views (1 = single-view; the official
     finetune protocol uses 2 for train/val). With n_estimators>1 each member gets its own feature
     shuffle + (clf) cyclic class shift; the loss un-shifts labels per member (see _finetune).
-    ``max_num_features`` caps the columns per member (wide-table memory fix) â€” needed on the finetune
+    ``max_num_features`` caps the columns per member (wide-table memory fix) — needed on the finetune
     est too, since its val / identity-guard predict runs FULL-context inference over the 90% split."""
     from tabfm import TabFMClassifier, TabFMRegressor
 
@@ -14150,7 +14445,7 @@ def _val_metric(est, X_val, y_val, is_cls: bool) -> float:
 
 
 def _delta_norms(model) -> dict:
-    """â€–deltaâ€– per injected adapter tensor, grouped by top-level component (0 => untrained)."""
+    """‖delta‖ per injected adapter tensor, grouped by top-level component (0 => untrained)."""
     out: dict[str, list[float]] = {}
     for name, p in model.named_parameters():
         leaf = name.rsplit(".", 1)[-1]
@@ -14193,7 +14488,7 @@ def _uncheckpoint_blocks(model) -> None:
     """Reverse _checkpoint_blocks: unwrap every _CkptBlock back to the raw block, so the DEPLOY forward
     carries NO checkpoint machinery. `predict_proba` runs grad-enabled (not under no_grad), so a
     checkpointed block pins its block-boundary activations for a backward that never comes (~50+ GB on a
-    tall test set) â€” the finetuned model OOMs on predict where the stock base does not (verified: identity
+    tall test set) — the finetuned model OOMs on predict where the stock base does not (verified: identity
     fp32 fits, FT fp32 OOMs on APSFailure)."""
     stacks = [model.icl_predictor.tf_icl.blocks, model.row_interactor.tf_row.blocks,
               model.row_interactor_2.tf_row.blocks, model.col_embedder.tf_col.blocks,
@@ -14221,7 +14516,7 @@ def _forward_tensors(model, Xs, ys_ctx, cat_masks, ds, device: str):
     return model(X_t, y_t, ts_t, cat_mask=cm_t, d=d_t)
 
 
-# â”€â”€ finetuning loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── finetuning loop ─────────────────────────────────────────────────────────────────────────────
 def _finetune(pristine, Xtr, ytr, is_cls, device, seed, *, mode, pattern, lr, epochs=30,
               patience=8, min_delta=1e-4, ctx_qry_cap=6144, qry_frac=0.2, weight_decay=0.01,
               grad_clip=1.0, peft_cfg=None, tag="", max_num_features=None, n_est_finetune=2):
@@ -14338,11 +14633,11 @@ def _finetune(pristine, Xtr, ytr, is_cls, device, seed, *, mode, pattern, lr, ep
     # bf16 full-FT underflow diagnostic: total L2 drift of the LAST-epoch weights from the pretrained
     # init, measured BEFORE the val-best restore, so it reflects whether training moved the weights AT
     # ALL (independent of val selection). Near-zero at small lr = AdamW's ~lr-sized steps fell below the
-    # bf16 ULP and the weights never actually moved. For diagscale init is 0, so this equals â€–deltaâ€–.
+    # bf16 ULP and the weights never actually moved. For diagscale init is 0, so this equals ‖delta‖.
     with torch.no_grad():
         drift = sum(float((p.detach().cpu().float() - s0.float()).pow(2).sum())
                     for p, s0 in zip(trainable, init_state)) ** 0.5
-    print(f"[tabfm-ft] {tag} param drift â€–w_last-w_initâ€–={drift:.4e}", flush=True)
+    print(f"[tabfm-ft] {tag} param drift ‖w_last-w_init‖={drift:.4e}", flush=True)
 
     with torch.no_grad():  # restore best epoch (or the pretrained init when best_epoch=-1)
         for p, s in zip(trainable, best_state):
@@ -14362,7 +14657,7 @@ def _finetune(pristine, Xtr, ytr, is_cls, device, seed, *, mode, pattern, lr, ep
     _uncheckpoint_blocks(model)  # deploy path must be checkpoint-free (else predict pins activations)
     # Free finetune-only GPU memory before the caller deploys. TabFM's fp32 32-view deploy inference
     # OOMs on tall datasets if the finetune's optimizer state (~13 GB for the 1.6B full-FT arm) + the
-    # per-param .grad buffers (~6 GB) are still held â€” empty_cache can't release memory the live
+    # per-param .grad buffers (~6 GB) are still held — empty_cache can't release memory the live
     # `opt`/grads reference, so drop the references first, then gc + empty_cache.
     import gc
     for p in model.parameters():
@@ -14387,7 +14682,7 @@ def finetune_tabfm(is_cls, Xtr, ytr, device, seed, *, mode, pattern, lr, epochs=
     estimator on the full-train context with the returned model. ``max_num_features`` caps columns
     on the fit/val estimator; row-subsample ``Xtr`` upstream for the row half of the fp32 cap.
     ``n_est_finetune`` = ensemble views per train/val step (official protocol default 2; the loss
-    un-shifts clf labels per member â€” see _finetune).
+    un-shifts clf labels per member — see _finetune).
     """
     pristine = _pristine_backbone(is_cls)
     return _finetune(pristine, Xtr, ytr, is_cls, device, seed, mode=mode, pattern=pattern, lr=lr,
@@ -14400,11 +14695,11 @@ def finetune_tabfm(is_cls, Xtr, ytr, device, seed, *, mode, pattern, lr, epochs=
 ================================================
 FILE: src/ttc/backbones/tabicl_finetune.py
 ================================================
-"""Per-task test-time finetuning loop for TabICL v2 â€” the machinery behind ``FinetunedTabICLModel``.
+"""Per-task test-time finetuning loop for TabICL v2 — the machinery behind ``FinetunedTabICLModel``.
 
 A faithful port of the validated sandbox runner ``ttc.benchmarks.tabicl_diagscale._finetune``
 (clone ``ttc-diagscale`` @ ``diagscale``), stripped to what the AutoGluon wrapper needs and fp32-only.
-Injects the diagscale / (IA)Â³ adapter via the tabicl fork's ``tabicl._model.peft`` (``ta_diagscale``
+Injects the diagscale / (IA)³ adapter via the tabicl fork's ``tabicl._model.peft`` (``ta_diagscale``
 env), trains ONLY the adapter deltas (zero-init -> behaviour-preserving), restores the val-best epoch
 (or the pretrained init when no epoch beats base -> never-worse-than-base).
 
@@ -14412,15 +14707,15 @@ TabICL specifics vs the TabFM loop (all forced by the backbone):
   * classifier and regressor are SEPARATE checkpoints (picked by task type);
   * training episodes use tabicl's own ``_build_meta_batch`` (ctx/qry split + inference-equivalent
     preprocessing + class remap), n_estimators=1 single view; loss = CE (cls) / pinball on the raw
-    quantile head (reg) â€” what the pretrained heads expect;
-  * ``select_trainable(..., freeze_others=False)`` â€” flipping requires_grad on col_embedder weights
-    shifts the CUDA train-mode forward ~5e-3 even at Î´=0 (kernel selection keyed on the flag); keeping
-    the flags on preserves kernel parity, only the returned Î´ params actually step;
+    quantile head (reg) — what the pretrained heads expect;
+  * ``select_trainable(..., freeze_others=False)`` — flipping requires_grad on col_embedder weights
+    shifts the CUDA train-mode forward ~5e-3 even at δ=0 (kernel selection keyed on the flag); keeping
+    the flags on preserves kernel parity, only the returned δ params actually step;
   * singleton-class guard (drop episode-sampled classes with <2 rows, else StratifiedShuffleSplit
     inside the builder raises); ``adapter_state`` keys strip the grad-checkpoint ``.blk.`` infix;
-  * the estimator is built with ``use_amp=False, use_fa3=False`` â€” the wrapper's "auto" turns on fp16
-    autocast for n>=1024 rows / >=60 features, quantizing ``1+Î´`` to the fp16 grid at eval. Eval is
-    always fp32. (The (IA)Â³ KV-cache double-scaling fix lives inside the fork's attention.py.)
+  * the estimator is built with ``use_amp=False, use_fa3=False`` — the wrapper's "auto" turns on fp16
+    autocast for n>=1024 rows / >=60 features, quantizing ``1+δ`` to the fp16 grid at eval. Eval is
+    always fp32. (The (IA)³ KV-cache double-scaling fix lives inside the fork's attention.py.)
 
 Feature encoding: episodes AND the deployed estimator must see IDENTICAL numeric inputs, so the caller
 numericizes up front with ``NumericEncoder`` (mirrors tabicl's own OrdinalEncoder+SimpleImputer) and
@@ -14480,7 +14775,7 @@ class NumericEncoder:
         return arr
 
 
-# â”€â”€ backbone / estimator construction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── backbone / estimator construction ───────────────────────────────────────────────────────────
 def _pristine_backbone(is_cls: bool, checkpoint_version: str | None = None):
     """Pretrained TabICL v2 on CPU fp32 (classifier or regressor checkpoint); deep-copied per
     finetune. Returns (model, model_config, model_path) so fresh sklearn wrappers can adopt a model
@@ -14509,7 +14804,7 @@ def _fresh_model(pristine, device: str):
 def _make_est(model, cfg, path, is_cls: bool, seed: int, device: str, n_estimators: int = 1):
     """Estimator adopting ``model`` in place (shadow ``_load_model`` so fit never reloads weights).
     ``use_amp``/``use_fa3`` pinned OFF: the wrapper's "auto" turns fp16 autocast on for n>=1024 rows
-    or >=60 features, quantizing ``1+Î´`` to the fp16 grid at eval and making eval precision differ
+    or >=60 features, quantizing ``1+δ`` to the fp16 grid at eval and making eval precision differ
     across datasets. Protocol: eval is always fp32."""
     from tabicl import TabICLClassifier, TabICLRegressor
 
@@ -14549,7 +14844,7 @@ def _checkpoint_blocks(model) -> None:
             blocks[i] = _CkptBlock(blk)
 
 
-# â”€â”€ finetuning loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── finetuning loop ─────────────────────────────────────────────────────────────────────────────
 def _episode_loss(model, batch, is_cls: bool, device: str):
     """Loss on one MetaBatch: CE on sliced logits (cls) / pinball on the raw quantile head (reg),
     matching tabicl._finetune classifier/regressor semantics."""
@@ -14571,7 +14866,7 @@ def _episode_loss(model, batch, is_cls: bool, device: str):
 
 
 def _skip_batch(batch, is_cls: bool) -> bool:
-    """Skip episodes whose query has classes absent from the context (CE undefined) â€”
+    """Skip episodes whose query has classes absent from the context (CE undefined) —
     tabicl._finetune.classifier._task_skip_batch."""
     import torch
 
@@ -16226,7 +16521,7 @@ from __future__ import annotations
 ================================================
 FILE: src/ttc/retrieval/host_probe.py
 ================================================
-"""host_probe â€” the SINGLE module that touches TabPFN-3 internals to capture model-space signals.
+"""host_probe — the SINGLE module that touches TabPFN-3 internals to capture model-space signals.
 
 Two captures, both run ONE instrumented host forward and return plain numpy (no live-model handle
 escapes), so every downstream SIGNAL stays a pure function of an injected SignalContext:
@@ -16237,14 +16532,14 @@ escapes), so every downstream SIGNAL stays a pure function of an injected Signal
 
   * capture_attention(host, X_test, n_train, indices=None, chunk=...) -> {call_idx: [n_test,n_train]}
       patches the v3 attention dispatcher, and for each test->train call (q_seq==n_test &
-      k_seq==n_train) computes softmax(qÂ·káµ€/âˆšd) over the train axis, MEAN over heads (Nori
+      k_seq==n_train) computes softmax(q·kᵀ/√d) over the train axis, MEAN over heads (Nori
       sample_attention recipe), chunked over queries. The LAST test->train call ~ the last ICL layer
-      (regression) â€” for classification the trailing call(s) are the class-decoder; the layer-selection
+      (regression) — for classification the trailing call(s) are the class-decoder; the layer-selection
       probe picks the best call-index empirically, so we never need to introspect icl_blocks here.
 
   * capture_attention_topk(predict_fn, X_test, n_train, k, indices) -> {call_idx: (idx, val)}
-      the SAME attention, but streamed to per-query top-k on the GPU â€” O(n_test*k) host memory, no
-      full [n_test, n_train] map â€” the only affordable form at n_train >~ 1M (LimiX-port scoring).
+      the SAME attention, but streamed to per-query top-k on the GPU — O(n_test*k) host memory, no
+      full [n_test, n_train] map — the only affordable form at n_train >~ 1M (LimiX-port scoring).
 
 This module is the documented version-coupling point: install_guard() fail-fasts if the patched
 dispatcher symbol is missing.
@@ -16259,7 +16554,7 @@ def install_guard() -> None:
     from tabpfn.architectures import tabpfn_v3 as v3
     if not hasattr(v3, "_batched_scaled_dot_product_attention"):
         raise RuntimeError(
-            "host_probe: tabpfn_v3._batched_scaled_dot_product_attention missing â€” TabPFN-3 internals "
+            "host_probe: tabpfn_v3._batched_scaled_dot_product_attention missing — TabPFN-3 internals "
             "changed; the model-space signals (model_key / attention) need re-grounding."
         )
 
@@ -16327,7 +16622,7 @@ def n_icl_layers(host):
 def capture_attention(predict_fn, X_test, n_train, indices=None, chunk: int = 2048):
     """{call_idx: softmax attention [n_test, n_train]} for the requested test->train call indices.
 
-    ``predict_fn`` MUST be the UNWRAPPED estimator predict (predict_proba/predict) â€” the retrieve
+    ``predict_fn`` MUST be the UNWRAPPED estimator predict (predict_proba/predict) — the retrieve
     operator wraps host.model.predict_proba, so passing the wrapped one would recurse infinitely.
 
     indices=None -> capture ALL test->train calls (probe / small data). indices=[i,...] -> only those.
@@ -16415,7 +16710,7 @@ def capture_attention_topk(predict_fn, X_test, n_train, k, indices, buf_gb: floa
                 kh = k_BSJD.transpose(1, 2).float()        # [B, Hk, J, D]
                 B, H, S, D = qh.shape
                 Hk, J = kh.shape[1], kh.shape[2]
-                if Hk == H or Hk == 1:                     # MHA, or MQA (broadcasts over H â€” no copy)
+                if Hk == H or Hk == 1:                     # MHA, or MQA (broadcasts over H — no copy)
                     kT = kh.transpose(-1, -2)              # [B, Hk, D, J]
                 else:                                      # true GQA: expand (correctness over memory)
                     kT = kh.repeat_interleave(H // Hk, dim=1).transpose(-1, -2)

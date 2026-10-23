@@ -280,7 +280,7 @@ clf = TabICLClassifier(
     model_path=None,  # path to checkpoint, None downloads from Hugging Face
     allow_auto_download=True,  # auto-download checkpoint if not found locally
     checkpoint_version="tabicl-classifier-v2-20260212.ckpt",  # pretrained checkpoint version
-    device=None,  # inference device: None auto-selects CUDA â†’ XPU â†’ MPS â†’ CPU
+    device=None,  # inference device: None auto-selects CUDA → XPU → MPS → CPU
     use_amp="auto",  # automatic mixed precision for faster inference
     use_fa3="auto",  # Flash Attention 3 for Hopper GPUs (e.g. H100)
     offload_mode="auto",  # automatically decide when to use cpu/disk offloading
@@ -300,8 +300,8 @@ clf = TabICLClassifier(
 | Model | Classification checkpoint | Regression checkpoint |
 |-------|--------------------------|----------------------|
 | **TabICLv2** ([arXiv](https://arxiv.org/abs/2602.11139)) | `tabicl-classifier-v2-20260212.ckpt` (default) | `tabicl-regressor-v2-20260212.ckpt` (default) |
-| **TabICLv1.1** (May 2025, no paper) | `tabicl-classifier-v1.1-20250506.ckpt` | â€” |
-| **TabICLv1** ([ICML 2025](https://arxiv.org/abs/2502.05564)) | `tabicl-classifier-v1-20250208.ckpt` | â€” |
+| **TabICLv1.1** (May 2025, no paper) | `tabicl-classifier-v1.1-20250506.ckpt` | — |
+| **TabICLv1** ([ICML 2025](https://arxiv.org/abs/2502.05564)) | `tabicl-classifier-v1-20250208.ckpt` | — |
 
 - **TabICLv2**: Our latest model, supporting both classification and regression.
   Strongly improved accuracy over v1 through better synthetic pre-training data,
@@ -480,14 +480,14 @@ bash scripts/train_v2_clf_stage3.sh   # loads the stage-2 checkpoint
 ```
 
 Available recipes:
-- **TabICLv2** ([arXiv](https://arxiv.org/abs/2602.11139), Â§4.1): classifier [stage 1](./scripts/train_v2_clf_stage1.sh), [stage 2](./scripts/train_v2_clf_stage2.sh),
+- **TabICLv2** ([arXiv](https://arxiv.org/abs/2602.11139), §4.1): classifier [stage 1](./scripts/train_v2_clf_stage1.sh), [stage 2](./scripts/train_v2_clf_stage2.sh),
   [stage 3](./scripts/train_v2_clf_stage3.sh); regressor [stage 1](./scripts/train_v2_reg_stage1.sh),
   [stage 2](./scripts/train_v2_reg_stage2.sh), [stage 3](./scripts/train_v2_reg_stage3.sh).
 - **TabICLv1**: [stage 1](./scripts/train_stage1.sh), [stage 2](./scripts/train_stage2.sh),
   [stage 3](./scripts/train_stage3.sh).
 
 By default, `tabicl.train` generates synthetic prior datasets **on the fly** in the DataLoader
-workers while training â€” this is how the TabICLv2 checkpoints were trained (and what the v2
+workers while training — this is how the TabICLv2 checkpoints were trained (and what the v2
 scripts do). Alternatively, datasets can be **pre-generated to disk** with
 `python -m tabicl.prior --save_dir /my/prior/dir --num_batches 100000 ...` and loaded during
 training via `--prior_dir`, which is how TabICLv1 was trained (the v1 scripts show both variants).
@@ -610,7 +610,7 @@ please cite our papers for **[TabICL](https://arxiv.org/abs/2502.05564)** and **
 ## Contributors
 
 - [Jingang Qu](https://github.com/jingangQu)
-- [David HolzmÃ¼ller](https://github.com/dholzmueller)
+- [David Holzmüller](https://github.com/dholzmueller)
 - [Marine Le Morvan](https://github.com/marineLM)
 
 ## Star history
@@ -664,7 +664,7 @@ Bug fixes
 
 - Fix `float16` input arrays crashing during Yeo-Johnson normalization in the preprocessing pipeline. The `PreprocessingPipeline` now upcasts `float16` to `float32` before fitting/transforming, avoiding scipy's narrow-exponent bound error. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @SebastienMelo in [#140](https://github.com/soda-inria/tabicl/issues/140))
 
-- Fix `predict_proba`/`predict` crashing with `TypeError` when a categorical column is all-NaN in the prediction batch. Removed the batch-global all-NaN feature-masking detection from the prediction path â€” it was intended for SHAP but did not work correctly with SHAP's coalition batching, and made predictions depend on batch composition. All-NaN columns now flow through normal preprocessing (OrdinalEncoder/SimpleImputer handle NaN natively). ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @Innixma in [#143](https://github.com/soda-inria/tabicl/issues/143))
+- Fix `predict_proba`/`predict` crashing with `TypeError` when a categorical column is all-NaN in the prediction batch. Removed the batch-global all-NaN feature-masking detection from the prediction path — it was intended for SHAP but did not work correctly with SHAP's coalition batching, and made predictions depend on batch composition. All-NaN columns now flow through normal preprocessing (OrdinalEncoder/SimpleImputer handle NaN natively). ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @Innixma in [#143](https://github.com/soda-inria/tabicl/issues/143))
 
 - Fix PyTorch autograd error when fine-tuning with partial module freezing (e.g. `freeze_col=True, freeze_row=True, freeze_icl=False`). An in-place operation on a tensor view from frozen modules conflicted with autograd; resolved by detaching before the in-place write. ([PR#151](https://github.com/soda-inria/tabicl/pull/151); reported by @denisfouchard in [#128](https://github.com/soda-inria/tabicl/issues/128))
 
@@ -759,7 +759,7 @@ Maintenance
 
 - `kv_cache` moved from `fit()` to `__init__()` following scikit-learn convention. `kv_cache` is now a constructor parameter for both `TabICLClassifier` and `TabICLRegressor`.
 
-- `TabICLForecaster` API changes â€” `output_selection` renamed to `point_estimate`
+- `TabICLForecaster` API changes — `output_selection` renamed to `point_estimate`
 
 - Fix KV cache dtype mismatch. When AMP is enabled, cached projections stored in float16 caused errors when loaded on CPU/MPS/CUDA without AMP. The cache is now auto-upcast to float32 during loading.
 
@@ -1019,9 +1019,9 @@ description = "TabICL: An open tabular foundation model"
 readme = "README.md"
 authors = [
     { name = "Jingang Qu" },
-    { name = "David HolzmÃ¼ller" } ,
+    { name = "David Holzmüller" } ,
     { name = "Marine Le Morvan" } ,
-    { name = "GaÃ«l Varoquaux" } ,
+    { name = "Gaël Varoquaux" } ,
 ]
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -1365,7 +1365,7 @@ FILE: docs/index.rst
         <div class="col-md-8">
             <ul class="sk-landing-header-body">
             <li>Fully open</li>
-            <li>Scikit-learn compatible Â· pip-installable</li>
+            <li>Scikit-learn compatible · pip-installable</li>
             <li>Easy-to-use and powerful</li>
             </ul>
         </div>
@@ -1405,7 +1405,7 @@ Calling fit just stores the data, learning happens during predict.
 What TabICL can do
 ------------------
 
-**Strong accuracy â€” zero tuning required.** TabICLv2 is competitive
+**Strong accuracy — zero tuning required.** TabICLv2 is competitive
 with heavily tuned XGBoost, CatBoost, and LightGBM, and outperforms them
 on ~80% of `TabArena <https://tabarena.ai>`__ datasets. It performs well
 on the `TabArena <https://tabarena.ai>`__ and
@@ -1525,19 +1525,19 @@ Available models
    * - | **TabICLv1.1**
        | (May 2025)
      - ``tabicl-classifier-v1.1-20250506.ckpt``
-     - â€”
+     - —
    * - | **TabICLv1**
        | (`ICML 2025 <https://arxiv.org/abs/2502.05564>`__)
      - ``tabicl-classifier-v1-20250208.ckpt``
-     - â€”
+     - —
 
-- **TabICLv2** â€” supports classification and regression.
+- **TabICLv2** — supports classification and regression.
   Improved accuracy through better synthetic pre-training data,
   architectural improvements, and better pre-training, with
   comparable runtime to v1.
-- **TabICLv1.1** â€” TabICLv1 post-trained on an early v2 prior.
+- **TabICLv1.1** — TabICLv1 post-trained on an early v2 prior.
   Classification only.
-- **TabICLv1** â€” original model. Classification only.
+- **TabICLv1** — original model. Classification only.
 
 FAQ
 ---
@@ -2547,7 +2547,7 @@ FILE: scripts/train_v2_clf_stage1.sh
 # (The regressor is a separate checkpoint; see train_v2_reg_stage{1,2,3}.sh.)
 #
 # Recipe from "TabICLv2: A better, faster, scalable, and open tabular foundation
-# model" (https://arxiv.org/abs/2602.11139), Â§4.1 / Appendix B.1. Three-stage
+# model" (https://arxiv.org/abs/2602.11139), §4.1 / Appendix B.1. Three-stage
 # curriculum that progressively increases dataset size (batch size 64 throughout):
 #
 #   Stage 1: 500K steps, 1,024 samples/dataset,       30-90% train, max LR 8e-4, grad clip 10
@@ -2852,14 +2852,14 @@ FILE: scripts/train_v2_reg_stage1.sh
 # (The classifier is a separate checkpoint; see train_v2_clf_stage{1,2,3}.sh.)
 #
 # Recipe from "TabICLv2: A better, faster, scalable, and open tabular foundation
-# model" (https://arxiv.org/abs/2602.11139), Â§4.1 / Appendix B.1. The regressor uses
+# model" (https://arxiv.org/abs/2602.11139), §4.1 / Appendix B.1. The regressor uses
 # the same three-stage curriculum as the classifier (batch size 64 throughout):
 #
 #   Stage 1: 500K steps, 1,024 samples/dataset,       30-90% train, max LR 8e-4, grad clip 10
 #   Stage 2:  40K steps, 400-10,240 samples (log-u), 79-81% train, max LR 1e-4, grad clip 10
 #   Stage 3:  10K steps, 400-60,000 samples (log-u), 79-81% train, max LR 2e-5, grad clip  1
 #
-# Differences from the classifier (paper Â§3 / Â§A.4, Table A.1): quantile regression
+# Differences from the classifier (paper §3 / §A.4, Table A.1): quantile regression
 # with a pinball loss over 999 quantiles (--regression_method quantile,
 # --num_quantiles 999; the trainer sets the model's max_classes to 0 and switches
 # the target embeddings to linear layers); the graph prior keeps the target
@@ -3224,7 +3224,7 @@ from typing import Optional, Union
 
 import torch
 
-# Preference order when ``device=None``: CUDA â†’ XPU â†’ MPS â†’ CPU.
+# Preference order when ``device=None``: CUDA → XPU → MPS → CPU.
 DEFAULT_DEVICE_PREFERENCE = ("cuda", "xpu", "mps", "cpu")
 
 # Virtualized Apple Silicon can silently corrupt MPS ``F.linear`` on 3D inputs.
@@ -3278,7 +3278,7 @@ def backend_is_available(device_type: str) -> bool:
 
 
 def resolve_default_device() -> torch.device:
-    """Return the default device: CUDA â†’ XPU â†’ MPS â†’ CPU.
+    """Return the default device: CUDA → XPU → MPS → CPU.
 
     On virtualized macOS hosts with known-bad MPS numerics, MPS is skipped and
     CPU is used instead (with a warning).
@@ -3453,18 +3453,18 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
 
     Subclass contract
     -----------------
-    * :meth:`_compute_batch_loss` â€” given a :class:`MetaBatch` and the
+    * :meth:`_compute_batch_loss` — given a :class:`MetaBatch` and the
       routed model, return a scalar loss tensor.
-    * :meth:`_create_inner_estimator` â€” construct an unfitted
+    * :meth:`_create_inner_estimator` — construct an unfitted
       :class:`~tabicl.TabICLClassifier` / :class:`~tabicl.TabICLRegressor`
       that the base composes for both validation and final inference.
-    * :meth:`_run_validation` â€” fit the inner estimator on the training
+    * :meth:`_run_validation` — fit the inner estimator on the training
       split and score it on the validation split, returning
       :class:`ValidationMetrics`.
-    * :meth:`_metric_improved` / :meth:`_initial_best_metric` â€” define the
+    * :meth:`_metric_improved` / :meth:`_initial_best_metric` — define the
       ordering of the primary metric (higher-is-better is the convention;
       MSE-style metrics are negated in :meth:`_run_validation`).
-    * :attr:`_model_type` / :attr:`_metric_name` â€” task flags used in data
+    * :attr:`_model_type` / :attr:`_metric_name` — task flags used in data
       preprocessing and logging.
 
     Parameters
@@ -3774,7 +3774,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
             ``TabICLRegressor(model_path=<path>)``.
 
             When ``None`` (default), no checkpoints are saved and fine-tuning
-            progress is lost if the run is interrupted â€” a ``UserWarning`` is
+            progress is lost if the run is interrupted — a ``UserWarning`` is
             emitted in that case.
 
         Returns
@@ -3786,8 +3786,8 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         -----
         The loop compares every epoch's validation metric against the
         pretrained checkpoint's metric (computed before any weight update).
-        The best weights encountered â€” possibly the pretrained ones if no
-        epoch improves on them â€” are restored before ``predict`` becomes
+        The best weights encountered — possibly the pretrained ones if no
+        epoch improves on them — are restored before ``predict`` becomes
         available, so fine-tuning never returns a model worse than the
         baseline on the validation set.
         """
@@ -3848,7 +3848,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         """Resolve the compute device.
 
         ``device_override`` (if given) wins; otherwise we honor ``self.device``
-        (``None`` â†’ auto-select ``cuda`` when available, else ``cpu``).
+        (``None`` → auto-select ``cuda`` when available, else ``cpu``).
         """
         if device_override is not None:
             return device_override
@@ -3884,7 +3884,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
 
         Frozen modules are kept in train mode alongside unfrozen ones by
         :meth:`_set_training_mode`. This avoids dtype mismatches at the
-        frozenâ†’unfrozen boundary that would occur if frozen submodules were
+        frozen→unfrozen boundary that would occur if frozen submodules were
         in eval mode (inference path with autocast).
 
         Returns
@@ -3905,7 +3905,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         Their parameters already have requires_grad=False so they won't
         accumulate gradients. Putting them in eval() would route through the
         inference forward path (InferenceManager with autocast), causing dtype
-        mismatches at the frozenâ†’unfrozen boundary.
+        mismatches at the frozen→unfrozen boundary.
         """
         self.model_.train(training)
 
@@ -4065,9 +4065,9 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
 
         Invoked by :meth:`fit` inside a ``try/finally`` that guarantees
         ``dist.destroy_process_group`` on exit. The method walks 13 linear
-        stages (DDP â†’ logger â†’ inputs â†’ split â†’ model load â†’ freeze â†’ DDP
-        wrap â†’ init-eval â†’ scheduler â†’ **main loop** â†’ restore best â†’
-        final checkpoint â†’ inference wiring) without branching on DDP except
+        stages (DDP → logger → inputs → split → model load → freeze → DDP
+        wrap → init-eval → scheduler → **main loop** → restore best →
+        final checkpoint → inference wiring) without branching on DDP except
         where rank-dependent behavior is needed.
         """
         from sklearn.utils.validation import check_X_y, check_array
@@ -4114,7 +4114,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         else:
             y_fit = y
 
-        # 4. Val split â€” done BEFORE encoding so the encoder is fit on train
+        # 4. Val split — done BEFORE encoding so the encoder is fit on train
         # only and validation categories/values don't leak into preprocessing.
         if X_val is not None and y_val is not None:
             X_train_orig, X_val_orig = X_original, X_val
@@ -4253,7 +4253,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                 world_size=world_size,
             )
             # Only show the nested per-batch bar when there's more than one
-            # chunk in the epoch â€” otherwise the outer epoch bar is enough.
+            # chunk in the epoch — otherwise the outer epoch bar is enough.
             batch_iter = (
                 tqdm(
                     meta_iter,
@@ -4397,7 +4397,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
                     )
                 break
 
-            # 10.6  Wall-clock time-budget check â€” stop if the *next* epoch
+            # 10.6  Wall-clock time-budget check — stop if the *next* epoch
             #       would push us past ``self.time_limit``. Decision is made
             #       on rank 0 and broadcast: rank-local wall clocks can drift,
             #       and if one rank ``break``s while others enter the next
@@ -4440,7 +4440,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
 
         # 11b. Always write a final best checkpoint so users have a single file
         # to point TabICLClassifier(model_path=...) at. If no epoch ever
-        # improved on the baseline, this is the baseline weights â€” which is
+        # improved on the baseline, this is the baseline weights — which is
         # exactly what the final estimator will use.
         if output_dir is not None and master:
             self._save_checkpoint(
@@ -4472,7 +4472,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
             self._final_estimator_.fit(X_full_encoded, y_original)
             # Make the final estimator self-contained on pickle. Two reasons:
             # (a) ``model_`` holds the fine-tuned weights, which aren't in any
-            #     on-disk checkpoint by default â€” the inner's pickle default
+            #     on-disk checkpoint by default — the inner's pickle default
             #     (`save_model_weights=False`) would silently lose them and
             #     reload the *pretrained* checkpoint on unpickle.
             # (b) the ``_load_model`` attribute we shadowed with a no-op lambda
@@ -4545,7 +4545,7 @@ class FinetunedTabICLBase(BaseEstimator, ABC):
         return state
 
     def __setstate__(self, state):
-        """Default unpickling â€” no device re-resolution needed because the
+        """Default unpickling — no device re-resolution needed because the
         inference path lives entirely inside ``self._final_estimator_``.
         """
         self.__dict__.update(state)
@@ -4667,7 +4667,7 @@ class FinetunedTabICLClassifier(ClassifierMixin, FinetunedTabICLBase):
     **Model loading**
 
     model_path : str, Path or None, default=None
-        Checkpoint file to fine-tune from. ``None`` â†’ download the default
+        Checkpoint file to fine-tune from. ``None`` → download the default
         TabICLv2 classifier checkpoint from Hugging Face Hub.
 
     allow_auto_download : bool, default=True
@@ -4702,7 +4702,7 @@ class FinetunedTabICLClassifier(ClassifierMixin, FinetunedTabICLBase):
     wandb_kwargs : dict or None, default=None
         When provided, enables Weights & Biases tracking by instantiating
         :class:`WandbLogger(**wandb_kwargs)` on rank 0. Supported keys are
-        those of :func:`wandb.init` â€” most commonly ``project``, ``name``
+        those of :func:`wandb.init` — most commonly ``project``, ``name``
         (the W&B run name), ``entity``, ``tags``, ``notes``, ``group``,
         ``mode`` (``"online" / "offline" / "disabled"``), and ``dir``. All
         keys are forwarded verbatim to ``wandb.init``.
@@ -4974,10 +4974,10 @@ FILE: src/tabicl/_finetune/data.py
 
 A fine-tuning *meta-batch* corresponds to one (context, query) split of a chunk
 of the real training dataset, preprocessed into ``n_estimators_finetune``
-ensemble variants (different normalizations, feature shuffles, and â€” for
-classification â€” class-label shuffles). The meta-batch is the unit a single
+ensemble variants (different normalizations, feature shuffles, and — for
+classification — class-label shuffles). The meta-batch is the unit a single
 forward pass consumes: the ensemble dimension is treated as the batch dimension
-of :class:`tabicl._model.tabicl.TabICL`, so one meta-batch â‰ˆ one
+of :class:`tabicl._model.tabicl.TabICL`, so one meta-batch ≈ one
 ``TabICL.forward`` call.
 
 Per-epoch chunking with fresh context/query splits keeps the in-context
@@ -5014,7 +5014,7 @@ class MetaBatch:
 
     y_train : Tensor, shape ``(E, train_size)``
         Context labels (per-estimator, with class shuffle already applied for
-        classification). Always float32 â€” the classifier forward casts to long
+        classification). Always float32 — the classifier forward casts to long
         where cross-entropy needs integer indices.
 
     y_query : Tensor, shape ``(E, test_size)``
@@ -5056,7 +5056,7 @@ def count_chunks(
     ``global_n_chunks // world_size`` chunks; the tail remainder is dropped
     to keep per-rank step counts equal (required so DDP's per-iteration
     gradient all-reduce does not deadlock). If the global chunk count is
-    smaller than ``world_size`` every rank falls back to the full list â€”
+    smaller than ``world_size`` every rank falls back to the full list —
     no parallelism, but no hang either.
 
     With the defaults ``rank=0, world_size=1`` behavior is unchanged.
@@ -5112,7 +5112,7 @@ def _split_ctx_query(
     query_size = max(1, min(query_size, n - 1))
     splitter_cls = StratifiedShuffleSplit if stratify else ShuffleSplit
     splitter = splitter_cls(n_splits=1, test_size=query_size, random_state=seed)
-    # StratifiedShuffleSplit.split only uses X for its length â€” pass a dummy.
+    # StratifiedShuffleSplit.split only uses X for its length — pass a dummy.
     dummy_X = np.zeros((n, 1))
     ctx_idx, qry_idx = next(splitter.split(dummy_X, y_chunk))
     return ctx_idx, qry_idx
@@ -5157,7 +5157,7 @@ def _build_meta_batch(
     """Build one MetaBatch from one chunk of the training set.
 
     Implements the context/query split + per-member preprocessing + class/feature
-    shuffling + z-normalization (regression). Returns CPU tensors â€” the caller
+    shuffling + z-normalization (regression). Returns CPU tensors — the caller
     is responsible for moving them to the device.
     """
     split_seed = epoch_seed + chunk_idx * 7919  # prime offset to decorrelate chunks
@@ -5257,7 +5257,7 @@ def iter_epoch_meta_batches(
     successive epochs see different random chunks / different (context, query)
     splits within each chunk. Preprocessors inside each chunk are seeded with
     ``preprocessing_seed`` (fixed across epochs) so normalization and shuffles
-    are stable â€” only the *samples* seen as context vs query change.
+    are stable — only the *samples* seen as context vs query change.
 
     Under DDP (``world_size > 1``) the chunk list is split across ranks with
     drop_last semantics: rank ``r`` yields chunks ``[r * k, (r + 1) * k)``
@@ -5466,7 +5466,7 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
 
     Subclass of :class:`FinetunedTabICLBase` that trains against pinball (quantile)
     loss applied directly to the raw quantile outputs of TabICL and scores
-    validation with MSE / MAE / RÂ² computed in raw y space via the wrapped
+    validation with MSE / MAE / R² computed in raw y space via the wrapped
     :class:`TabICLRegressor`.
 
     Minimal usage::
@@ -5556,7 +5556,7 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
     **Model loading**
 
     model_path : str, Path or None, default=None
-        Checkpoint file to fine-tune from. ``None`` â†’ download the default
+        Checkpoint file to fine-tune from. ``None`` → download the default
         TabICLv2 regressor checkpoint from Hugging Face Hub.
 
     allow_auto_download : bool, default=True
@@ -5591,7 +5591,7 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
     wandb_kwargs : dict or None, default=None
         When provided, enables Weights & Biases tracking by instantiating
         :class:`WandbLogger(**wandb_kwargs)` on rank 0. Supported keys are
-        those of :func:`wandb.init` â€” most commonly ``project``, ``name``
+        those of :func:`wandb.init` — most commonly ``project``, ``name``
         (the W&B run name), ``entity``, ``tags``, ``notes``, ``group``,
         ``mode`` (``"online" / "offline" / "disabled"``), and ``dir``. All
         keys are forwarded verbatim to ``wandb.init``.
@@ -5730,7 +5730,7 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
     def _compute_batch_loss(self, batch: MetaBatch, model) -> torch.Tensor:
         """Pinball loss over the model's raw quantile outputs."""
         # TabICL.forward in train mode emits raw quantiles of shape
-        # (E, test_size, Q). ``d`` is omitted â€” all ensemble members in a
+        # (E, test_size, Q). ``d`` is omitted — all ensemble members in a
         # fine-tuning batch share the same feature count, so ``d=None``
         # short-circuits the mask math inside TabICL.
         quantiles = model(batch.X, batch.y_train)
@@ -5749,7 +5749,7 @@ class FinetunedTabICLRegressor(RegressorMixin, FinetunedTabICLBase):
         X_val: np.ndarray,
         y_val: np.ndarray,
     ) -> ValidationMetrics:
-        """Fit ``inner`` on train, predict on val, return MSE/MAE/RÂ² metrics."""
+        """Fit ``inner`` on train, predict on val, return MSE/MAE/R² metrics."""
         # The caller (:meth:`FinetunedTabICLBase._validate_current_model`) has
         # already switched the underlying module to eval mode.
         try:
@@ -7207,7 +7207,7 @@ class ColEmbedding(nn.Module):
                 src, col_cache=col_cache, train_size=train_size, use_cache=use_cache, store_cache=store_cache
             )
         else:
-            # When using cache, skip y_train embedding â€” it's already baked
+            # When using cache, skip y_train embedding — it's already baked
             # into the cached K/V projections from the store_cache pass.
             if store_cache:
                 assert y_train is not None, "y_train must be provided when target_aware=True and store_cache=True."
@@ -9892,7 +9892,7 @@ class RowInteraction(nn.Module):
         cls_tokens = self.cls_tokens.expand(B, T, self.num_cls, self.embed_dim)
         # When col embedding is frozen (partial freezing, see #128), embeddings is a
         # no-grad view whose in-place mutation would conflict with autograd. Detach
-        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        # gives a fresh autograd leaf sharing the same storage — zero-copy.
         if torch.is_grad_enabled() and not embeddings.requires_grad:
             embeddings = embeddings.detach()
         embeddings[:, :, : self.num_cls] = cls_tokens.to(device)
@@ -9939,7 +9939,7 @@ class RowInteraction(nn.Module):
         cls_tokens = self.cls_tokens.expand(B, T, self.num_cls, self.embed_dim)
         # When col embedding is frozen (partial freezing, see #128), embeddings is a
         # no-grad view whose in-place mutation would conflict with autograd. Detach
-        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        # gives a fresh autograd leaf sharing the same storage — zero-copy.
         if torch.is_grad_enabled() and not embeddings.requires_grad:
             embeddings = embeddings.detach()
         embeddings[:, :, : self.num_cls] = cls_tokens.to(embeddings.device)
@@ -11426,7 +11426,7 @@ class ICLearning(nn.Module):
             Ry_train = self.y_encoder(y_train.unsqueeze(-1))
         # When upstream modules are frozen (partial freezing, see #128), R is a
         # no-grad view whose in-place mutation would conflict with autograd. Detach
-        # gives a fresh autograd leaf sharing the same storage â€” zero-copy.
+        # gives a fresh autograd leaf sharing the same storage — zero-copy.
         if torch.is_grad_enabled() and not R.requires_grad:
             R = R.detach()
         R[:, :train_size] = R[:, :train_size] + Ry_train
@@ -11865,7 +11865,7 @@ class ICLearning(nn.Module):
             - For regression (max_classes=0): out_dim = num_quantiles
             - For classification (max_classes>0): out_dim = max_classes
         """
-        # When using cache, skip y_train embedding â€” it's already baked
+        # When using cache, skip y_train embedding — it's already baked
         # into the cached K/V projections from the store_cache pass.
         if store_cache:
             assert y_train is not None, "y_train must be provided when store_cache=True"
@@ -12323,14 +12323,14 @@ def estimate_exp_tail_params(
     n = quantiles.shape[-1]
     k = min(num_tail_quantiles, n // 4)
 
-    # === Left tail: Q(Î±) = Î²_LÂ·ln(Î±) + c_L ===
+    # === Left tail: Q(α) = β_L·ln(α) + c_L ===
     alpha_left = alpha_levels[:k]
     q_left = quantiles[..., :k]  # Shape: (*batch_shape, k)
 
     # Log-transform alpha
     ln_alpha_left = torch.log(alpha_left.clamp(min=cfg.TOL))  # Shape: (k,)
 
-    # Linear regression: Î² = Cov(Q, ln(Î±)) / Var(ln(Î±))
+    # Linear regression: β = Cov(Q, ln(α)) / Var(ln(α))
     ln_alpha_mean = ln_alpha_left.mean()
     ln_alpha_centered = ln_alpha_left - ln_alpha_mean  # Shape: (k,)
 
@@ -12344,7 +12344,7 @@ def estimate_exp_tail_params(
     beta_l = cov_left / var_ln_alpha_left.clamp(min=cfg.TOL)
     beta_l = torch.clamp(beta_l.abs(), min=cfg.MIN_BETA, max=cfg.MAX_BETA)
 
-    # === Right tail: Q(Î±) = -Î²_RÂ·ln(1-Î±) + c_R ===
+    # === Right tail: Q(α) = -β_R·ln(1-α) + c_R ===
     alpha_right = alpha_levels[-k:]
     q_right = quantiles[..., -k:]  # Shape: (*batch_shape, k)
 
@@ -12361,7 +12361,7 @@ def estimate_exp_tail_params(
     cov_right = (q_right_centered * ln_1ma_centered).mean(dim=-1)
     var_ln_1ma = (ln_1ma_centered**2).mean()
 
-    # Note: Q = -Î²Â·ln(1-Î±) + c, so coefficient is -Î²
+    # Note: Q = -β·ln(1-α) + c, so coefficient is -β
     beta_r = -cov_right / var_ln_1ma.clamp(min=cfg.TOL)
     beta_r = torch.clamp(beta_r.abs(), min=cfg.MIN_BETA, max=cfg.MAX_BETA)
 
@@ -12418,7 +12418,7 @@ def estimate_gpd_tail_params(
     n = quantiles.shape[-1]
     k = min(num_tail_quantiles, n // 4)
 
-    # First get exponential estimates for Î¼ (scale parameter)
+    # First get exponential estimates for μ (scale parameter)
     beta_l, beta_r = estimate_exp_tail_params(quantiles, alpha_levels, num_tail_quantiles)
 
     # === Left tail - Pickands-like estimation ===
@@ -12435,7 +12435,7 @@ def estimate_gpd_tail_params(
     alpha_2 = alpha_levels[idx_2]
     alpha_3 = alpha_levels[idx_3]
 
-    # For left tail, smaller Î± = more extreme = smaller Q
+    # For left tail, smaller α = more extreme = smaller Q
     # Q spacing ratios
     delta_q_12 = q2_left - q1_left  # Q2 > Q1 for left tail
     delta_q_23 = q3_left - q2_left  # Q3 > Q2
@@ -12444,17 +12444,17 @@ def estimate_gpd_tail_params(
     ln_alpha_12 = torch.log((alpha_2 / alpha_1).clamp(min=cfg.TOL))
     ln_alpha_23 = torch.log((alpha_3 / alpha_2).clamp(min=cfg.TOL))
 
-    # For exponential tail: Î”Q_12 / Î”Q_23 = ln(Î±2/Î±1) / ln(Î±3/Î±2)
+    # For exponential tail: ΔQ_12 / ΔQ_23 = ln(α2/α1) / ln(α3/α2)
     expected_q_ratio = ln_alpha_12 / ln_alpha_23.clamp(min=cfg.TOL)
     actual_q_ratio = delta_q_12 / delta_q_23.clamp(min=cfg.TOL)
 
-    # Î· estimate: deviation from exponential behavior
-    # If actual_ratio > expected_ratio: heavier tail (Î· > 0)
-    # If actual_ratio < expected_ratio: lighter tail (Î· < 0)
+    # η estimate: deviation from exponential behavior
+    # If actual_ratio > expected_ratio: heavier tail (η > 0)
+    # If actual_ratio < expected_ratio: lighter tail (η < 0)
     ratio_deviation = actual_q_ratio / expected_q_ratio.clamp(min=cfg.TOL)
 
-    # Map deviation to Î· using log relationship
-    # Î· â‰ˆ (ln(ratio_deviation)) / (ln(Î±2/Î±1))
+    # Map deviation to η using log relationship
+    # η ≈ (ln(ratio_deviation)) / (ln(α2/α1))
     eta_l_raw = torch.where(
         ratio_deviation > cfg.TOL,
         torch.log(ratio_deviation.clamp(min=cfg.TOL)) / ln_alpha_12.abs().clamp(min=cfg.TOL),
@@ -12476,11 +12476,11 @@ def estimate_gpd_tail_params(
     alpha_2_r = alpha_levels[idx_2_r]
     alpha_3_r = alpha_levels[idx_3_r]
 
-    # For right tail, larger Î± = larger Q
+    # For right tail, larger α = larger Q
     delta_q_12_r = q1_right - q2_right  # Q1 > Q2 for right tail
     delta_q_23_r = q2_right - q3_right
 
-    # Use (1-Î±) ratios
+    # Use (1-α) ratios
     one_m_1 = (1 - alpha_1_r).clamp(min=cfg.TOL)
     one_m_2 = (1 - alpha_2_r).clamp(min=cfg.TOL)
     one_m_3 = (1 - alpha_3_r).clamp(min=cfg.TOL)
@@ -12587,10 +12587,10 @@ class QuantileDistribution(Distribution):
         alpha = alpha.expand(*self._batch_shape, -1)
 
         # Segment boundaries: (*batch_shape, num_segments) where num_segments = num_quantiles - 1
-        self.alpha_lo = alpha[..., :-1]  # Î±_i for segment i
-        self.alpha_hi = alpha[..., 1:]  # Î±_{i+1} for segment i
-        self.q_lo = self.quantiles[..., :-1]  # Q(Î±_i)
-        self.q_hi = self.quantiles[..., 1:]  # Q(Î±_{i+1})
+        self.alpha_lo = alpha[..., :-1]  # α_i for segment i
+        self.alpha_hi = alpha[..., 1:]  # α_{i+1} for segment i
+        self.q_lo = self.quantiles[..., :-1]  # Q(α_i)
+        self.q_hi = self.quantiles[..., 1:]  # Q(α_{i+1})
 
         # Segment properties
         self.delta_alpha = self.alpha_hi - self.alpha_lo  # Shape: (*batch_shape, num_segments)
@@ -12618,7 +12618,7 @@ class QuantileDistribution(Distribution):
         num_tail_q = cfg.TAIL_QUANTILES_FOR_ESTIMATION
 
         if self.tail_type == "exp":
-            # Estimate Î² using log-space regression
+            # Estimate β using log-space regression
             self.beta_l, self.beta_r = estimate_exp_tail_params(
                 self.quantiles,
                 self.alpha_levels,
@@ -12626,12 +12626,12 @@ class QuantileDistribution(Distribution):
             )
 
             # Compute tail coefficients
-            # Left: Q(Î±) = a_lÂ·ln(Î±) + b_l where a_l = Î²_l
+            # Left: Q(α) = a_l·ln(α) + b_l where a_l = β_l
             alpha_l_safe = max(self.alpha_l, self.tol)
             self.tail_a_l = self.beta_l
             self.tail_b_l = self.q_l - self.tail_a_l * torch.log(torch.tensor(alpha_l_safe, device=device, dtype=dtype))
 
-            # Right: Q(Î±) = a_rÂ·ln(1-Î±) + b_r where a_r = -Î²_r
+            # Right: Q(α) = a_r·ln(1-α) + b_r where a_r = -β_r
             alpha_r_safe = min(self.alpha_r, 1 - self.tol)
             self.tail_a_r = -self.beta_r
             self.tail_b_r = self.q_r - self.tail_a_r * torch.log(
@@ -12919,7 +12919,7 @@ class QuantileDistribution(Distribution):
         if added_dim:
             z = z.unsqueeze(-1)  # (*batch_shape, 1)
 
-        # N-D batched: q_lo (*batch_shape, S), z (*batch_shape, n) â†’ same batch dims required
+        # N-D batched: q_lo (*batch_shape, S), z (*batch_shape, n) → same batch dims required
         seg_idx = (
             torch.searchsorted(
                 self.q_lo.contiguous(),
@@ -13283,10 +13283,10 @@ class QuantileDistribution(Distribution):
         ai2, ai3 = alpha_i**2, alpha_i**3
         aip12, aip13 = alpha_ip1**2, alpha_ip1**3
 
-        # I1 = âˆ«_{Î±_i}^r 2Î±(z-Q)dÎ±
+        # I1 = ∫_{α_i}^r 2α(z-Q)dα
         I1 = (z_exp - q_i) * (r2 - ai2) - 2 * m * (r3 / 3 - alpha_i * r2 / 2 + ai3 / 6)
 
-        # I2 = âˆ«_r^{Î±_{i+1}} 2(1-Î±)(Q-z)dÎ±
+        # I2 = ∫_r^{α_{i+1}} 2(1-α)(Q-z)dα
         A = q_i - z_exp
         diff_a = alpha_ip1 - r
         diff_a2 = aip12 - r2
@@ -13348,7 +13348,7 @@ class QuantileDistribution(Distribution):
         # Spline: trapezoid rule
         spline_int = (self.delta_alpha * (self.q_lo + self.q_hi) / 2).sum(dim=-1)
 
-        # Right tail: (1-Î±_R) * (q_R - a_R) = (1-Î±_R) * (q_R + Î²_R)
+        # Right tail: (1-α_R) * (q_R - a_R) = (1-α_R) * (q_R + β_R)
         right_int = (1 - self.alpha_r) * (self.q_r - self.tail_a_r)
 
         return left_int + spline_int + right_int
@@ -13360,13 +13360,13 @@ class QuantileDistribution(Distribution):
         eta_l_safe = torch.clamp(self.eta_l, min=cfg.ETA_TOLERANCE, max=1 - cfg.ETA_TOLERANCE)
         eta_r_safe = torch.clamp(self.eta_r, min=cfg.ETA_TOLERANCE, max=1 - cfg.ETA_TOLERANCE)
 
-        # Left: Î±_L * (q_L - Î¼/(1-Î·))
+        # Left: α_L * (q_L - μ/(1-η))
         left_int = self.alpha_l * (self.q_l - self.mu_l / (1 - eta_l_safe))
 
         # Spline
         spline_int = (self.delta_alpha * (self.q_lo + self.q_hi) / 2).sum(dim=-1)
 
-        # Right: (1-Î±_R) * (q_R + Î¼/(1-Î·))
+        # Right: (1-α_R) * (q_R + μ/(1-η))
         right_int = (1 - self.alpha_r) * (self.q_r + self.mu_r / (1 - eta_r_safe))
 
         return left_int + spline_int + right_int
@@ -13390,13 +13390,13 @@ class QuantileDistribution(Distribution):
         a_l = self.tail_a_l
         a_r = self.tail_a_r
 
-        # E[ZÂ²] left: Î±_L * (q_LÂ² - 2*a*q_L + 2*aÂ²)
+        # E[Z²] left: α_L * (q_L² - 2*a*q_L + 2*a²)
         e_z2_left = self.alpha_l * (self.q_l**2 - 2 * a_l * self.q_l + 2 * a_l**2)
 
-        # E[ZÂ²] spline: âˆ‘ Î”Î± * (q_iÂ² + q_i*q_{i+1} + q_{i+1}Â²) / 3
+        # E[Z²] spline: ∑ Δα * (q_i² + q_i*q_{i+1} + q_{i+1}²) / 3
         e_z2_spline = (self.delta_alpha * (self.q_lo**2 + self.q_lo * self.q_hi + self.q_hi**2) / 3).sum(dim=-1)
 
-        # E[ZÂ²] right: (1-Î±_R) * (q_RÂ² - 2*a*q_R + 2*aÂ²)
+        # E[Z²] right: (1-α_R) * (q_R² - 2*a*q_R + 2*a²)
         e_z2_right = (1 - self.alpha_r) * (self.q_r**2 - 2 * a_r * self.q_r + 2 * a_r**2)
 
         e_z2 = e_z2_left + e_z2_spline + e_z2_right
@@ -13411,17 +13411,17 @@ class QuantileDistribution(Distribution):
         eta_l_safe = torch.clamp(self.eta_l, min=cfg.ETA_TOLERANCE, max=0.49)
         eta_r_safe = torch.clamp(self.eta_r, min=cfg.ETA_TOLERANCE, max=0.49)
 
-        # Left tail E[ZÂ²]
+        # Left tail E[Z²]
         c_l = self.q_l + self.mu_l / eta_l_safe
         d_l = self.mu_l / eta_l_safe
         one_m_eta_l = 1 - eta_l_safe
         one_m_2eta_l = torch.clamp(1 - 2 * eta_l_safe, min=cfg.ETA_TOLERANCE)
         e_z2_left = self.alpha_l * (c_l**2 - 2 * c_l * d_l / one_m_eta_l + d_l**2 / one_m_2eta_l)
 
-        # Spline E[ZÂ²]
+        # Spline E[Z²]
         e_z2_spline = (self.delta_alpha * (self.q_lo**2 + self.q_lo * self.q_hi + self.q_hi**2) / 3).sum(dim=-1)
 
-        # Right tail E[ZÂ²]
+        # Right tail E[Z²]
         c_r = self.q_r - self.mu_r / eta_r_safe
         d_r = self.mu_r / eta_r_safe
         one_m_eta_r = 1 - eta_r_safe
@@ -15338,23 +15338,23 @@ class TabICLBaseEstimator(BaseEstimator):
 
         **Always excluded (reconstructed on load by ``__setstate__``):**
 
-        - ``model_`` â€” The nn.Module is never fine-tuned, so its weights are
+        - ``model_`` — The nn.Module is never fine-tuned, so its weights are
           identical to the checkpoint and can be reloaded. Excluding it avoids
           saving 10s-100s MB of redundant data.
-        - ``device_`` â€” Hardware-specific (e.g. ``cuda:0``); meaningless on a
+        - ``device_`` — Hardware-specific (e.g. ``cuda:0``); meaningless on a
           different machine. Re-derived from the ``device`` init parameter.
-        - ``inference_config_`` â€” Contains ``MgrConfig`` objects with device
+        - ``inference_config_`` — Contains ``MgrConfig`` objects with device
           references. Rebuilt from init parameters.
-        - ``model_path_`` â€” Absolute filesystem path to the checkpoint; almost
+        - ``model_path_`` — Absolute filesystem path to the checkpoint; almost
           certainly invalid on another machine.
 
         **Optionally included (controlled by ``save()`` flags):**
 
-        - Model weights â€” When ``save_model_weights=True``, the state dict is
+        - Model weights — When ``save_model_weights=True``, the state dict is
           saved on CPU, making the file self-contained (no checkpoint needed).
-        - KV cache â€” Saved by default (moved to CPU for device portability).
+        - KV cache — Saved by default (moved to CPU for device portability).
           Excluding it yields a smaller file but requires rebuilding the cache.
-        - Training data â€” Saved by default. Can be excluded when KV cache is
+        - Training data — Saved by default. Can be excluded when KV cache is
           present, which is useful for data privacy since the KV cache encodes
           the training context and enables prediction without raw data.
 
@@ -15362,8 +15362,8 @@ class TabICLBaseEstimator(BaseEstimator):
 
         - ``ensemble_generator_``, ``X_encoder_``, ``y_encoder_``/``y_scaler_``,
           ``classes_``, ``n_classes_``, ``n_features_in_``, and all init
-          parameters â€” required for prediction and sklearn compatibility.
-        - Version metadata â€” embedded for compatibility checking on load.
+          parameters — required for prediction and sklearn compatibility.
+        - Version metadata — embedded for compatibility checking on load.
         """
         state = self.__dict__.copy()
 
@@ -18867,7 +18867,7 @@ class TabICLUnsupervised(BaseEstimator):
         Random seed for reproducibility.
 
     device : str or None, default=None
-        Device for inference. None auto-selects CUDA â†’ XPU â†’ MPS â†’ CPU.
+        Device for inference. None auto-selects CUDA → XPU → MPS → CPU.
 
     estimator_params : dict or None, default=None
         Additional keyword arguments forwarded to the inner
@@ -20027,12 +20027,12 @@ class TabICLForecaster:
 
         Available string names:
 
-        - ``"index"`` â€” :class:`IndexEncoder`: sequential position features.
-        - ``"datetime"`` â€” :class:`DatetimeEncoder`: calendar features
+        - ``"index"`` — :class:`IndexEncoder`: sequential position features.
+        - ``"datetime"`` — :class:`DatetimeEncoder`: calendar features
           (day-of-week, month, etc.).
-        - ``"fourier"`` â€” :class:`FourierEncoder`: Fourier basis features for
+        - ``"fourier"`` — :class:`FourierEncoder`: Fourier basis features for
           periodicity.
-        - ``"periodic"`` â€” :class:`AutoPeriodicEncoder`: automatically detected
+        - ``"periodic"`` — :class:`AutoPeriodicEncoder`: automatically detected
           seasonal features via FFT.
 
         Strings and ``TimeTransform`` instances can be mixed freely, which is
@@ -24928,7 +24928,7 @@ warnings.filterwarnings(
 
 
 def seed_worker(worker_id: int):
-    # Ensure Python & NumPy match the workerâ€™s torch seed.
+    # Ensure Python & NumPy match the worker’s torch seed.
     s = torch.initial_seed() % (2**32)
     print(f'Initializing worker {worker_id} with seed {s}', flush=True)
     random.seed(s)
@@ -30094,7 +30094,7 @@ def get_shap_explainer(
     return shap.Explainer(predict_fn, np.full((1, X.shape[1]), np.nan), **kwargs)
 
 
-# â”€â”€ visualisation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── visualisation helpers ───────────────────────────────────────────────
 
 
 def plot_shap(shap_values: Any, kind: str | tuple[str, ...] = "bar") -> None:
@@ -30166,7 +30166,7 @@ FILE: src/tabicl/shap/_shapiq.py
 """ShapIQ explanations for TabICL.
 
 `shapiq <https://github.com/mmschlk/shapiq>`_ computes Shapley interaction
-indices â€” richer than plain SHAP values because they also capture feature
+indices — richer than plain SHAP values because they also capture feature
 interactions.
 
 We provide a custom :class:`_NaNImputer` that replaces masked features with
@@ -30234,7 +30234,7 @@ class _NaNImputer(MarginalImputer):
         Parameters
         ----------
         coalitions : ndarray of shape (n_subsets, n_features)
-            Boolean mask â€” ``True`` means the feature is present.
+            Boolean mask — ``True`` means the feature is present.
 
         Returns
         -------
@@ -30269,14 +30269,14 @@ def get_shapiq_explainer(
     imputer : str or shapiq.Imputer instance, default="nan"
         How absent features are handled when evaluating coalitions:
 
-        - ``"nan"`` (default) â€” uses :class:`_NaNImputer` so that absent
+        - ``"nan"`` (default) — uses :class:`_NaNImputer` so that absent
           features become NaN, handled by TabICL's normal preprocessing
           (imputation).  Deterministic, no sampling noise.
-        - ``"marginal"`` â€” standard marginal-sampling imputation.
-        - ``"baseline"`` â€” replace absent features with a fixed baseline
+        - ``"marginal"`` — standard marginal-sampling imputation.
+        - ``"baseline"`` — replace absent features with a fixed baseline
           value (typically the mean of `data`).
-        - ``"conditional"`` â€” conditional-sampling imputation.
-        - Any :class:`shapiq.Imputer` instance â€” forwarded directly to
+        - ``"conditional"`` — conditional-sampling imputation.
+        - Any :class:`shapiq.Imputer` instance — forwarded directly to
           ``shapiq.TabularExplainer``.
 
         See the `shapiq imputer documentation
@@ -30286,12 +30286,12 @@ def get_shapiq_explainer(
     index : str, default="k-SII"
         Interaction index to compute.  Common choices:
 
-        - ``"SV"`` â€” Shapley values (set ``max_order=1``).
-        - ``"k-SII"`` â€” k-Shapley Interaction Index (default).
-        - ``"SII"`` â€” Shapley Interaction Index.
-        - ``"STII"`` â€” Shapley Taylor Interaction Index.
-        - ``"FSII"`` â€” Faithful Shapley Interaction Index.
-        - ``"FBII"`` â€” Faithful Banzhaf Interaction Index.
+        - ``"SV"`` — Shapley values (set ``max_order=1``).
+        - ``"k-SII"`` — k-Shapley Interaction Index (default).
+        - ``"SII"`` — Shapley Interaction Index.
+        - ``"STII"`` — Shapley Taylor Interaction Index.
+        - ``"FSII"`` — Faithful Shapley Interaction Index.
+        - ``"FBII"`` — Faithful Banzhaf Interaction Index.
 
         See the `shapiq index documentation
         <https://shapiq.readthedocs.io/en/latest/api/shapiq.interaction_values.html>`_
@@ -33678,9 +33678,9 @@ def test_resolve_amp_is_device_aware(
         ("mps", 20000, 100, "auto", False),
         ("xpu", 20000, 100, "auto", False),
         ("cuda", 100, 10, "auto", False),  # small data
-        ("cuda", 2000, 100, "auto", False),  # medium + AMP on â†’ FA3 off
-        ("cuda", 20000, 100, "auto", True),  # large + AMP on â†’ FA3 on
-        ("cuda", 2000, 100, False, True),  # medium + AMP off â†’ FA3 fallback
+        ("cuda", 2000, 100, "auto", False),  # medium + AMP on → FA3 off
+        ("cuda", 20000, 100, "auto", True),  # large + AMP on → FA3 on
+        ("cuda", 2000, 100, False, True),  # medium + AMP off → FA3 fallback
         ("mps", 2000, 100, False, False),  # AMP off does not enable FA3 off CUDA
     ],
 )
@@ -34226,7 +34226,7 @@ from tabicl import TabICLClassifier
 # %%
 # Generate 2D classification data
 # --------------------------------
-# We generate a simple twoâ€‘moon 2D dataset with fairly large noise. A 2D
+# We generate a simple two‑moon 2D dataset with fairly large noise. A 2D
 # dataset is useful for visualisation purposes and the noise makes the
 # classification porblem non-separable, which is a common situation in
 # real-world applications.
@@ -34344,7 +34344,331 @@ plt.show()
 ================================================
 FILE: tutorials/finetune_classifier.py
 ================================================
-Error reading file with 'cp1252': 'charmap' codec can't decode byte 0x81 in position 6364: character maps to <undefined>
+"""
+Fine-tuning TabICL for classification
+=====================================
+
+Adapt a pretrained TabICL classifier to a single dataset with
+:class:`tabicl.FinetunedTabICLClassifier` (cross-entropy on raw logits,
+same objective the pretrained head was fit with).
+
+.. note::
+
+    A CUDA GPU is recommended for large-scale fine-tuning. Multi-GPU via
+    ``torchrun --nproc-per-node=N`` (auto-detected).
+"""
+
+# %% Imports
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import accuracy_score, log_loss, roc_auc_score
+from sklearn.model_selection import train_test_split
+
+from tabicl import FinetunedTabICLClassifier, TabICLClassifier
+
+
+# %%
+# Target: one moderate feature (curved split), one hard feature (disc)
+# --------------------------------------------------------------------
+ISLAND_CENTER = np.array([-1.5, 0.5], dtype=np.float32)
+ISLAND_RADIUS = 0.9
+MAIN_AMP = 0.7  # sine amplitude of the main boundary
+MAIN_FREQ = 1.2  # sine frequency of the main boundary
+
+
+def target_fn(X: np.ndarray) -> np.ndarray:
+    y = (X[:, 0] + MAIN_AMP * np.sin(MAIN_FREQ * X[:, 1]) > 0).astype(np.int64)
+    inside = np.sum((X - ISLAND_CENTER) ** 2, axis=1) < ISLAND_RADIUS**2
+    return np.where(inside, 1, y)
+
+
+def make_dataset(n_samples: int = 1_500, random_state: int = 0):
+    rng = np.random.RandomState(random_state)
+    X = rng.uniform(-3.0, 3.0, size=(n_samples, 2)).astype(np.float32)
+    y = target_fn(X)
+    return X, y
+
+
+X, y = make_dataset(n_samples=1_500, random_state=0)
+
+# Split: 80 train (sparse at the disc) / 200 val (early stopping) / rest test.
+# Stratify on the joint (class, inside-disc) key so the training set
+# reliably captures ~5 disc points.
+in_island_all = np.sum((X - ISLAND_CENTER) ** 2, axis=1) < ISLAND_RADIUS**2
+strat_key = y.astype(int) * 2 + in_island_all.astype(int)
+
+X_train, X_rest, y_train, y_rest, _, strat_rest = train_test_split(
+    X, y, strat_key, train_size=80, random_state=0, stratify=strat_key
+)
+X_val, X_test, y_val, y_test = train_test_split(X_rest, y_rest, train_size=200, random_state=0, stratify=strat_rest)
+
+is_main_process = int(os.environ.get("LOCAL_RANK", "0")) == 0
+
+
+def _metrics(proba: np.ndarray, y_true: np.ndarray) -> tuple[float, float, float]:
+    preds = np.argmax(proba, axis=1)
+    return (
+        float(roc_auc_score(y_true, proba[:, 1])),
+        float(log_loss(y_true, proba, labels=[0, 1])),
+        float(accuracy_score(y_true, preds)),
+    )
+
+
+# %%
+# Baseline — zero-shot TabICL
+# ---------------------------
+#
+# Expected: draws the vertical split, smears the island.
+base = TabICLClassifier(n_estimators=2, random_state=0)
+base.fit(X_train, y_train)
+base_proba = base.predict_proba(X_test)
+base_auc, base_ll, base_acc = _metrics(base_proba, y_test)
+# Captured for the training-curve reference line in Figure 2.
+base_val_auc = float(roc_auc_score(y_val, base.predict_proba(X_val)[:, 1]))
+
+
+# %%
+# Fine-tune
+# ---------
+#
+# ``_HistoryLogger`` below is installed via the same
+# ``_make_experiment_logger`` hook ``wandb_kwargs`` uses, to capture per-epoch
+# val metrics for Figure 2 without pulling in W&B.
+history: dict[str, list[float]] = {
+    "epoch": [],
+    "val_roc_auc": [],
+    "val_log_loss": [],
+    "val_accuracy": [],
+    "train_loss": [],
+}
+
+
+class _HistoryLogger:
+    """Record per-epoch validation metrics into ``history``."""
+
+    def setup(self, config):
+        del config
+
+    def log_step(self, metrics, step):
+        del metrics, step
+
+    def log_epoch(self, metrics, step):
+        del step
+        history["epoch"].append(int(metrics.get("train/epoch", len(history["epoch"]))) + 1)
+        history["val_roc_auc"].append(float(metrics.get("val/roc_auc", np.nan)))
+        history["val_log_loss"].append(float(metrics.get("val/log_loss", np.nan)))
+        history["val_accuracy"].append(float(metrics.get("val/accuracy", np.nan)))
+        history["train_loss"].append(float(metrics.get("train/mean_loss", np.nan)))
+
+    def finish(self):
+        pass
+
+
+# n_estimators and epochs are kept low for fast doc builds;
+# for best results use n_estimators_inference=8, epochs=50+, patience=10.
+clf = FinetunedTabICLClassifier(
+    epochs=30,
+    learning_rate=1e-5,
+    n_estimators_finetune=2,
+    n_estimators_validation=2,
+    n_estimators_inference=2,
+    early_stopping=True,
+    patience=5,
+    eval_metric="roc_auc",
+    random_state=0,
+    verbose=True,
+)
+clf._make_experiment_logger = lambda: _HistoryLogger()
+clf.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+
+# %%
+# Evaluate on the held-out test set
+# ---------------------------------
+ft_proba = clf.predict_proba(X_test)
+ft_auc, ft_ll, ft_acc = _metrics(ft_proba, y_test)
+
+if is_main_process:
+    header = f"{'metric':<12}{'pretrained':>14}{'fine-tuned':>14}{'delta':>14}"
+    rule = "=" * len(header)
+    print()
+    print(rule)
+    print(f"Test-set metrics  (n_train={len(X_train)}, n_test={len(X_test)})")
+    print(rule)
+    print(header)
+    print("-" * len(header))
+    print(f"{'ROC-AUC':<12}{base_auc:>14.4f}{ft_auc:>14.4f}{ft_auc - base_auc:>+14.4f}")
+    print(f"{'log-loss':<12}{base_ll:>14.4f}{ft_ll:>14.4f}{ft_ll - base_ll:>+14.4f}")
+    print(f"{'accuracy':<12}{base_acc:>14.4f}{ft_acc:>14.4f}{ft_acc - base_acc:>+14.4f}")
+    print(rule)
+    print("higher is better: ROC-AUC, accuracy;  lower is better: log-loss")
+
+# %%
+# Figure 1 — Decision boundaries + probability contours
+# -----------------------------------------------------
+#
+# Dashed black curve = true main boundary. Dashed yellow ring = true
+# disc boundary. Panel titles split accuracy into inside-disc vs
+# outside-disc so the localized improvement is visible at a glance.
+if is_main_process:
+    h = 0.15
+    xx, yy = np.meshgrid(
+        np.arange(-3.0, 3.0 + h, h),
+        np.arange(-3.0, 3.0 + h, h),
+    )
+    grid = np.c_[xx.ravel(), yy.ravel()].astype(np.float32)
+    p_base = base.predict_proba(grid)[:, 1].reshape(xx.shape)
+    p_ft = clf.predict_proba(grid)[:, 1].reshape(xx.shape)
+
+    base_pred = np.argmax(base_proba, axis=1)
+    ft_pred = np.argmax(ft_proba, axis=1)
+    in_island_test = np.sum((X_test - ISLAND_CENTER) ** 2, axis=1) < ISLAND_RADIUS**2
+
+    # Precompute the true main boundary curve x₁ = −MAIN_AMP·sin(MAIN_FREQ·x₂)
+    x2_curve = np.linspace(-3.0, 3.0, 400)
+    x1_curve = -MAIN_AMP * np.sin(MAIN_FREQ * x2_curve)
+
+    fig1, axes = plt.subplots(1, 2, figsize=(12.0, 5.4), sharex=True, sharey=True, constrained_layout=True)
+    cf = None
+    # Consistent emerald for every "ground truth" reference so they read
+    # as a group, distinct from the solid-black model decision contour.
+    TRUTH_COLOR = "#10b981"
+    for ax, title, grid_p, preds, (auc, acc) in [
+        (axes[0], "Pretrained TabICL", p_base, base_pred, (base_auc, base_acc)),
+        (axes[1], "Fine-tuned TabICL", p_ft, ft_pred, (ft_auc, ft_acc)),
+    ]:
+        cf = ax.contourf(xx, yy, grid_p, levels=20, cmap="RdYlBu_r", alpha=0.85, vmin=0.0, vmax=1.0)
+        # 0.5 decision contour, heavy black — the model's own boundary.
+        ax.contour(xx, yy, grid_p, levels=[0.5], colors="black", linewidths=2.0)
+        # True main boundary (sine curve) — dashed reference, shared across
+        # panels so the comparison with the model boundary is direct.
+        ax.plot(x1_curve, x2_curve, color=TRUTH_COLOR, lw=2.0, ls="--", label="true main boundary")
+        # True disc boundary — both panels share this reference too.
+        theta = np.linspace(0, 2 * np.pi, 200)
+        ax.plot(
+            ISLAND_CENTER[0] + ISLAND_RADIUS * np.cos(theta),
+            ISLAND_CENTER[1] + ISLAND_RADIUS * np.sin(theta),
+            color=TRUTH_COLOR,
+            lw=2.4,
+            ls="--",
+            label="true disc boundary",
+        )
+        # Training data (shape-coded by true label).
+        m0 = y_train == 0
+        m1 = y_train == 1
+        ax.scatter(
+            X_train[m0, 0],
+            X_train[m0, 1],
+            marker="o",
+            c="#1d4ed8",
+            s=46,
+            edgecolor="white",
+            linewidths=1.0,
+            label="train y=0",
+        )
+        ax.scatter(
+            X_train[m1, 0],
+            X_train[m1, 1],
+            marker="s",
+            c="#b91c1c",
+            s=46,
+            edgecolor="white",
+            linewidths=1.0,
+            label="train y=1",
+        )
+        # Split test-set accuracy into "inside the disc" vs "outside"
+        # to quantify the localized improvement directly in the title.
+        acc_in = (
+            float((preds[in_island_test] == y_test[in_island_test]).mean()) if in_island_test.any() else float("nan")
+        )
+        acc_out = (
+            float((preds[~in_island_test] == y_test[~in_island_test]).mean())
+            if (~in_island_test).any()
+            else float("nan")
+        )
+        ax.set_title(f"{title}\nROC-AUC={auc:.3f}  acc={acc:.3f}", fontsize=12)
+        ax.set_xlabel("x₁", fontsize=11)
+        ax.set_xlim(-3, 3)
+        ax.set_ylim(-3, 3)
+        ax.tick_params(labelsize=10)
+        ax.grid(alpha=0.25)
+    axes[0].set_ylabel("x₂", fontsize=11)
+    axes[0].legend(loc="lower right", framealpha=0.92, fontsize=9)
+    cbar = fig1.colorbar(cf, ax=axes, shrink=0.85)
+    cbar.set_label("P(class 1)", fontsize=11)
+    cbar.ax.tick_params(labelsize=9)
+    fig1.suptitle("Decision boundaries: pretrained vs. fine-tuned", fontsize=14)
+
+# %%
+# Figure 2 — Training dynamics + metric comparison
+# ------------------------------------------------
+#
+# Left: val ROC-AUC per epoch; dashed line = pretrained floor, star =
+# best epoch kept by the safety net. Right: test-set ROC-AUC / log-loss /
+# accuracy bars.
+if is_main_process and history["epoch"]:
+    fig2, (ax_tr, ax_bar) = plt.subplots(1, 2, figsize=(12.8, 4.8), constrained_layout=True)
+
+    ep = history["epoch"]
+    val_auc = history["val_roc_auc"]
+    ax_tr.plot(ep, val_auc, "o-", color="#0f766e", lw=2.0, markersize=5, label="fine-tuning: val ROC-AUC")
+    ax_tr.axhline(
+        base_val_auc,
+        ls="--",
+        color="#64748b",
+        lw=1.5,
+        label=f"pretrained baseline ({base_val_auc:.3f})",
+    )
+    best_idx = int(np.nanargmax(val_auc))
+    ax_tr.scatter(
+        [ep[best_idx]],
+        [val_auc[best_idx]],
+        marker="*",
+        s=220,
+        color="#f59e0b",
+        edgecolor="black",
+        linewidths=0.8,
+        zorder=5,
+        label=f"best epoch ({val_auc[best_idx]:.3f} @ epoch {ep[best_idx]})",
+    )
+    ax_tr.set_xlabel("epoch")
+    ax_tr.set_ylabel("validation ROC-AUC (higher is better)")
+    ax_tr.set_title("Validation metric across fine-tuning epochs")
+    ax_tr.grid(alpha=0.3)
+    ax_tr.legend(fontsize=9, loc="lower right")
+
+    metric_names = ["ROC-AUC ↑", "log-loss ↓", "accuracy ↑"]
+    base_vals = [base_auc, base_ll, base_acc]
+    ft_vals = [ft_auc, ft_ll, ft_acc]
+    x_pos = np.arange(len(metric_names))
+    w = 0.38
+    bars_b = ax_bar.bar(x_pos - w / 2, base_vals, w, color="#64748b", label="pretrained")
+    bars_f = ax_bar.bar(x_pos + w / 2, ft_vals, w, color="#0f766e", label="fine-tuned")
+    for bars, vals in [(bars_b, base_vals), (bars_f, ft_vals)]:
+        for rect, v in zip(bars, vals):
+            y_anchor = v + (0.02 if v >= 0 else -0.04)
+            ax_bar.text(
+                rect.get_x() + rect.get_width() / 2,
+                y_anchor,
+                f"{v:.3f}",
+                ha="center",
+                va="bottom" if v >= 0 else "top",
+                fontsize=8,
+            )
+    ax_bar.set_xticks(x_pos)
+    ax_bar.set_xticklabels(metric_names)
+    ax_bar.set_title("Test-set metrics: pretrained vs. fine-tuned")
+    ax_bar.set_ylabel("metric value")
+    ax_bar.axhline(0, color="black", lw=0.5)
+    ax_bar.grid(alpha=0.25, axis="y")
+    ax_bar.legend(fontsize=9, loc="upper right")
+
+    fig2.suptitle("Training dynamics & test-set gains", fontsize=13)
+    plt.show()
+
+# %%
+
 
 
 ================================================
@@ -34408,7 +34732,7 @@ def _metrics(pred: np.ndarray, y_true: np.ndarray) -> tuple[float, float, float]
 
 
 # %%
-# Baseline â€” zero-shot TabICL
+# Baseline — zero-shot TabICL
 # ---------------------------
 #
 # Expected: draws the sine, smears the spike.
@@ -34495,7 +34819,7 @@ if is_main_process:
     print("lower is better: MSE, MAE;  higher is better: R2")
 
 # %%
-# Figure 1 â€” Predictions + residuals
+# Figure 1 — Predictions + residuals
 # ----------------------------------
 #
 # Yellow band = spike FWHM; the residual gap should collapse there
@@ -34507,7 +34831,7 @@ if is_main_process:
     q_ft = reg.predict(x_grid, output_type="quantiles", alphas=alphas)
 
     # Quantiles on the test grid so the residual panel can show the
-    # 10â€“90% band around zero (a calibration read at a glance).
+    # 10–90% band around zero (a calibration read at a glance).
     qt_base = base.predict(X_test, output_type="quantiles", alphas=alphas)
     qt_ft = reg.predict(X_test, output_type="quantiles", alphas=alphas)
     order = np.argsort(X_test.ravel())
@@ -34530,7 +34854,7 @@ if is_main_process:
             q[:, 2],
             color="#60a5fa",
             alpha=0.25,
-            label="10â€“90 % quantile band",
+            label="10–90 % quantile band",
         )
         ax.plot(x_grid.ravel(), q[:, 1], color="#1d4ed8", lw=2.2, label="predicted median")
         ax.plot(x_grid.ravel(), target_fn(x_grid.ravel()), color=TRUTH_COLOR, lw=2.0, ls="--", label="true target")
@@ -34546,23 +34870,23 @@ if is_main_process:
         # Shade the FWHM of the sharp spike to flag where the failure mode
         # lives. Both panels share the band so the comparison is direct.
         ax.axvspan(0.905, 1.095, color="#fde68a", alpha=0.45, zorder=0, label="spike FWHM")
-        ax.set_title(f"{title}\nMSE={mse:.3f}  RÂ²={r2:.3f}", fontsize=12)
+        ax.set_title(f"{title}\nMSE={mse:.3f}  R²={r2:.3f}", fontsize=12)
         ax.tick_params(labelsize=10)
         ax.grid(alpha=0.25)
     top[0].set_ylabel("y", fontsize=11)
     top[0].legend(loc="lower right", framealpha=0.92, fontsize=9)
 
-    # Residual panels: predicted âˆ’ true, with the 10â€“90% band relative to
+    # Residual panels: predicted − true, with the 10–90% band relative to
     # the predicted median so the shaded region is centered on zero.
     for ax, title, pred, qt in [
-        (bot[0], "Residuals â€” pretrained", base_pred, qt_base),
-        (bot[1], "Residuals â€” fine-tuned", ft_pred, qt_ft),
+        (bot[0], "Residuals — pretrained", base_pred, qt_base),
+        (bot[1], "Residuals — fine-tuned", ft_pred, qt_ft),
     ]:
         residual = pred - y_test
         lo = (qt[:, 0] - qt[:, 1])[order]
         hi = (qt[:, 2] - qt[:, 1])[order]
-        ax.fill_between(x_sorted, lo, hi, color="#60a5fa", alpha=0.22, label="10â€“90 % band (centered)")
-        ax.scatter(X_test.ravel(), residual, c="#334155", s=10, alpha=0.65, label="residual (pred âˆ’ y)")
+        ax.fill_between(x_sorted, lo, hi, color="#60a5fa", alpha=0.22, label="10–90 % band (centered)")
+        ax.scatter(X_test.ravel(), residual, c="#334155", s=10, alpha=0.65, label="residual (pred − y)")
         ax.axhline(0, color="black", lw=0.8)
         ax.axvspan(0.905, 1.095, color="#fde68a", alpha=0.45, zorder=0, label="spike FWHM")
 
@@ -34582,11 +34906,11 @@ if is_main_process:
     fig1.suptitle("Predictions + residuals: pretrained vs. fine-tuned", fontsize=14)
 
 # %%
-# Figure 2 â€” Training dynamics + metric comparison
+# Figure 2 — Training dynamics + metric comparison
 # ------------------------------------------------
 #
 # Left: val MSE per epoch; dashed line = pretrained floor, star = best
-# epoch kept by the safety net. Right: test-set MSE / MAE / RÂ² bars.
+# epoch kept by the safety net. Right: test-set MSE / MAE / R² bars.
 if is_main_process and history["epoch"]:
     fig2, (ax_tr, ax_bar) = plt.subplots(1, 2, figsize=(12.8, 4.8), constrained_layout=True)
 
@@ -34618,7 +34942,7 @@ if is_main_process and history["epoch"]:
     ax_tr.grid(alpha=0.3)
     ax_tr.legend(fontsize=9, loc="upper right")
 
-    metric_names = ["MSE â†“", "MAE â†“", "RÂ² â†‘"]
+    metric_names = ["MSE ↓", "MAE ↓", "R² ↑"]
     base_vals = [base_mse, base_mae, base_r2]
     ft_vals = [ft_mse, ft_mae, ft_r2]
     x_pos = np.arange(len(metric_names))
@@ -34699,7 +35023,7 @@ X, y = make_regression(
 
 reg = TabICLRegressor(n_estimators=2, device="cpu")  # use n_estimators=8 for best results
 scores = cross_val_score(reg, X, y, cv=5, scoring="r2")
-print(f"Regression RÂ² score: {scores.mean():.3f} (+/- {scores.std():.3f})")
+print(f"Regression R² score: {scores.mean():.3f} (+/- {scores.std():.3f})")
 
 # %%
 # Using KV caching for faster repeated inference
@@ -34948,7 +35272,7 @@ def plot_data_and_quantiles(X_test, y_test, quantiles):
     # Plot 10-90% interval
     ax.fill_between(x_sorted, quantiles[order, 0],
                     quantiles[order, 2], alpha=0.18,
-                    color="green", label="10â€“90% interval")
+                    color="green", label="10–90% interval")
 
     ax.legend(frameon=False)
     ax.set(xlabel="Input feature x", ylabel="Target variable y")
@@ -35363,7 +35687,7 @@ plt.show()
 # distribution given the previously sampled features, using the learned
 # conditionals :math:`P(X_k | X_{<k})`.
 #
-# The ``temperature`` parameter controls diversity â€” values near 0 give
+# The ``temperature`` parameter controls diversity — values near 0 give
 # near-deterministic (mode) samples, while 1.0 reflect the full distribution.
 
 # Generate synthetic data with TabICLUnsupervised

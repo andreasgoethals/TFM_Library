@@ -5,7 +5,7 @@ Do not edit: regenerate with the registered source refresh command.
   "revision": "7005920f956fdb8626250613a5344fee509ae159",
   "revision_date": "2026-10-09T15:16:18+02:00",
   "slug": "B-Deprez/tabpfn-insurance",
-  "retrieved_utc": "2026-10-23T07:20:17+00:00",
+  "retrieved_utc": "2026-10-23T08:23:35+00:00",
   "identity_source": "https://arxiv.org/abs/2605.22892",
   "included_files": 35,
   "excluded_files": 6,
@@ -198,7 +198,7 @@ FILE: README.md
 The source code of the experimental evaluation accompanying the paper *TabPFN for Insurance Pricing*.
 A preprint version of the work is available on arXiv at https://arxiv.org/abs/2605.22892.
 
-This repository benchmarks the tabular foundation model **TabPFN** against the two standard baselines in insurance pricing â€” a generalised linear model (GLM) and gradient-boosted trees (XGBoost) â€” on claim frequency, claim severity, and binary telematics classification tasks. All three model families share a common cross-validation, evaluation, and SHAP-interpretability pipeline so that comparisons are like-for-like.
+This repository benchmarks the tabular foundation model **TabPFN** against the two standard baselines in insurance pricing — a generalised linear model (GLM) and gradient-boosted trees (XGBoost) — on claim frequency, claim severity, and binary telematics classification tasks. All three model families share a common cross-validation, evaluation, and SHAP-interpretability pipeline so that comparisons are like-for-like.
 
 ## Citing
 Please cite our paper and/or code as follows:
@@ -218,7 +218,7 @@ Please cite our paper and/or code as follows:
 ## Data
 The experiments are run on three datasets from the [`CASdatasets`](http://cas.uqam.ca/) R package: `freMTPL2` (French MTPL, frequency and severity), `beMTPL97` (Belgian MTPL, frequency and severity), and `fretelematic` (French telematics, binary classification).
 
-This repository does not bundle any data. Datasets are loaded on demand from the R package via `rpy2` (see [src/data/loaders.py](src/data/loaders.py)) and cached as parquet files in `data/processed/` for fast subsequent access. Cleaning steps follow WÃ¼thrich & Buser (2021) for `freMTPL2` and Henckaerts et al. (2021) for `beMTPL97`; `fretelematic` is used as-is. Installing the `CASdatasets` R package is part of the setup instructions below.
+This repository does not bundle any data. Datasets are loaded on demand from the R package via `rpy2` (see [src/data/loaders.py](src/data/loaders.py)) and cached as parquet files in `data/processed/` for fast subsequent access. Cleaning steps follow Wüthrich & Buser (2021) for `freMTPL2` and Henckaerts et al. (2021) for `beMTPL97`; `fretelematic` is used as-is. Installing the `CASdatasets` R package is part of the setup instructions below.
 
 ## Repository structure
 The structure below lists folders and the scripts/notebooks containing code. Generated artefacts (parquet caches in `data/`, logs in `logs/`, result CSVs and plots in `res/`) are not shown.
@@ -264,14 +264,14 @@ The structure below lists folders and the scripts/notebooks containing code. Gen
 ## Installing
 Setup proceeds in four steps. The order matters: `rpy2` requires `R` to be installed first, and `tabpfn` requires `torch` to be installed first. Full rationale and verification snippets are in [`environment.txt`](environment.txt).
 
-**Step 1 â€” Create the conda environment (Python, R, rpy2, baseline packages).**
+**Step 1 — Create the conda environment (Python, R, rpy2, baseline packages).**
 
 ```bash
 conda env create -f environment.yaml
 conda activate tabpfn-insurance
 ```
 
-**Step 2 â€” Install PyTorch (platform-specific).** Pick exactly one option.
+**Step 2 — Install PyTorch (platform-specific).** Pick exactly one option.
 
 ```bash
 # Apple Silicon (MPS, recommended for local dev)
@@ -284,13 +284,13 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 ```
 
-**Step 3 â€” Install TabPFN (pip-only; must come after PyTorch).**
+**Step 3 — Install TabPFN (pip-only; must come after PyTorch).**
 
 ```bash
 pip install tabpfn
 ```
 
-**Step 4 â€” Install the `CASdatasets` R package.** `CASdatasets` is not on CRAN; it is fetched from the UQAM mirror. Its dependencies are installed via `conda-forge` (not via R's `install.packages`) so that pre-built binaries are used and no macOS SDK headers are required.
+**Step 4 — Install the `CASdatasets` R package.** `CASdatasets` is not on CRAN; it is fetched from the UQAM mirror. Its dependencies are installed via `conda-forge` (not via R's `install.packages`) so that pre-built binaries are used and no macOS SDK headers are required.
 
 ```bash
 conda install -c conda-forge r-lattice r-survival r-xts r-zoo r-matrix
@@ -320,7 +320,7 @@ Each script reads its YAML config from `config/`, writes per-fold metrics to `re
 ================================================
 FILE: CLAUDE.md
 ================================================
-# CLAUDE.md  *(PROPOSED â€” awaiting approval; rename to `CLAUDE.md` once accepted)*
+# CLAUDE.md  *(PROPOSED — awaiting approval; rename to `CLAUDE.md` once accepted)*
 
 Guidance for working in the **TabPFN for Insurance Pricing** repository. This file
 is the working memory for the reviewer-driven *exposure-fairness* fix (EAJ Referee 1).
@@ -328,7 +328,7 @@ is the working memory for the reviewer-driven *exposure-fairness* fix (EAJ Refer
 > **Why this file exists.** Referee 1 flagged that the frequency comparison is not
 > like-for-like: GLM and XGBoost account for policy **exposure** at estimation
 > (offset / `base_margin`), but TabPFN was fed unweighted annualised rates
-> (`ClaimNb/Exposure`) with `sample_weight=Exposure` â€” and **TabPFN does not
+> (`ClaimNb/Exposure`) with `sample_weight=Exposure` — and **TabPFN does not
 > support `sample_weight`**, so that weighting was a silent no-op. The frequency
 > "Strategy B" is therefore invalid. We fix **only** how TabPFN receives exposure,
 > keeping the current deviance-centric framing (Poisson/Gamma deviance + RMSE).
@@ -353,7 +353,7 @@ Unused arguments are accepted "for interface parity" and documented as ignored.
 **CV.** One shared stratified 5-fold split (`src/data/cv.py`, `cv_seed=42`,
 `cv_folds=5`), round-robin on the claim indicator, reused by all models. Per-fold
 claim-rate contract enforced in `contracts.validate_fold_claim_rates`.
-**Do not** import the notebook's single random split â€” keep 5-fold CV.
+**Do not** import the notebook's single random split — keep 5-fold CV.
 
 **Feature handling.** `config/features.yaml` is the authoritative per-feature
 encoding record. `encode_features(...)` builds the GLM (one-hot) / tree (label /
@@ -361,31 +361,31 @@ ordinal) design matrices; **`get_raw_features(...)` returns raw unencoded column
 for TabPFN** (TabPFN consumes mixed dtypes natively). All encoders are fit on the
 **training fold only**.
 
-**Targets / weights** (`preprocessing.get_targets`): freq â†’ `y=ClaimNb`,
-`weight=Exposure`, `log_exposure=log(Exposure)`; sev â†’ `y=AvgSeverity`,
+**Targets / weights** (`preprocessing.get_targets`): freq → `y=ClaimNb`,
+`weight=Exposure`, `log_exposure=log(Exposure)`; sev → `y=AvgSeverity`,
 `weight=ClaimNb`. `AvgSeverity = ClaimAmount / ClaimNb` (built in the loaders).
 
 **Results schema** (`src/utils/results.py`, **frozen**): one tidy row per
-measurement â€” `timestamp, experiment_id, dataset, model, task, fold, metric,
+measurement — `timestamp, experiment_id, dataset, model, task, fold, metric,
 value, tabpfn_version`. `fold` is an int or the string `"pooled"`.
 `append_results` is **append-only** (never overwrites; header written once).
 `tabpfn_version` is `""` for GLM/XGBoost, `"v2_6"`/`"v3"` for TabPFN.
 
 **TabPFN config conventions.** Version is selected via
 `TabPFNRegressor.create_default_for_version(ModelVersion.V2_6|V3, device=...)`
-(`src/methods/tabpfn_model.py`). Device auto-detect: CUDA â†’ MPS â†’ CPU. Large
+(`src/methods/tabpfn_model.py`). Device auto-detect: CUDA → MPS → CPU. Large
 inputs need `ignore_pretraining_limits=True` (v2.5/v2.6 ceilings 50k/100k rows;
 the Q2 sweep skips a version when a subsample exceeds its ceiling). GPU buffers
 are released between fits (`_release_gpu`) to avoid CUDA fragmentation.
 
-**Notebook style to borrow** (`notebooks/insurance_claim_modeling.ipynb`) â€” *style
+**Notebook style to borrow** (`notebooks/insurance_claim_modeling.ipynb`) — *style
 and technique only, not a runnable dependency*:
 - Exposure as an **ordinary input feature**; model the **bounded count**
   (`ClaimNb`), never the rate `ClaimNb/Exposure` (dividing by a tiny exposure
   explodes the tail).
 - Recover the annualised rate with a **counterfactual query**:
   `X_te = X_test[features + ["Exposure"]].copy(); X_te["Exposure"] = 1.0`, then
-  `predict(X_te)` â†’ Î¼ (expected count at one full year = annualised frequency).
+  `predict(X_te)` → μ (expected count at one full year = annualised frequency).
 - Clean sklearn-style structure; `n_estimators`, `ignore_pretraining_limits`,
   and target transforms declared explicitly.
 - **Out of scope** (do **not** import or let it steer metric choices): Gini,
@@ -393,16 +393,16 @@ and technique only, not a runnable dependency*:
 
 ---
 
-## 2. Exposure handling â€” how it works TODAY (survey)
+## 2. Exposure handling — how it works TODAY (survey)
 
 | Task | GLM | XGBoost | TabPFN |
 |------|-----|---------|--------|
-| **Frequency** | `y=ClaimNb`, Poisson log-link, **offset `log(Exposure)`**; predict Ã· exposure â†’ rate | `y=ClaimNb`, `count:poisson`, **`base_margin=log(Exposure)`**; predict Ã· exposure â†’ rate | **INVALID**: `y=ClaimNb/Exposure` (rate), fit on rate; `sample_weight=Exposure` **ignored** (unsupported). Inlined in `run_q2_frequency.py`, not via the wrapper. |
-| **Severity** | `y=AvgSeverity`, Gamma log-link, **`var_weights=ClaimNb`** | `y=AvgSeverity`, `reg:gamma`, **`sample_weight=ClaimNb`** | `y=log(AvgSeverity)`, predict `exp(...)` â†’ exp(E[log y]) â‰ˆ median, **biased low** (fixed in Step 6: built-in `1_plus_log`, original-scale mean); **`sample_weight=ClaimNb` passed but ignored** â†’ unweighted at estimation (dead kwarg). |
+| **Frequency** | `y=ClaimNb`, Poisson log-link, **offset `log(Exposure)`**; predict ÷ exposure → rate | `y=ClaimNb`, `count:poisson`, **`base_margin=log(Exposure)`**; predict ÷ exposure → rate | **INVALID**: `y=ClaimNb/Exposure` (rate), fit on rate; `sample_weight=Exposure` **ignored** (unsupported). Inlined in `run_q2_frequency.py`, not via the wrapper. |
+| **Severity** | `y=AvgSeverity`, Gamma log-link, **`var_weights=ClaimNb`** | `y=AvgSeverity`, `reg:gamma`, **`sample_weight=ClaimNb`** | `y=log(AvgSeverity)`, predict `exp(...)` → exp(E[log y]) ≈ median, **biased low** (fixed in Step 6: built-in `1_plus_log`, original-scale mean); **`sample_weight=ClaimNb` passed but ignored** → unweighted at estimation (dead kwarg). |
 
 **Evaluation is identical across models** (this must not change):
 - Frequency: `poisson_deviance(y=counts, mu=rate, exposure, sample_weight=exposure)`
-  and `exposure_weighted_rmse_rate`. Î¼ is a **rate** (expected count per unit
+  and `exposure_weighted_rmse_rate`. μ is a **rate** (expected count per unit
   exposure).
 - Severity: `gamma_deviance(y=AvgSeverity, mu, sample_weight=ClaimNb)` + RMSE/MAE/
   Pearson/Spearman. The `ClaimNb` weighting at **evaluation** is legitimate and stays.
@@ -411,11 +411,11 @@ and technique only, not a runnable dependency*:
 one. GLM and XGBoost both use a proper exposure offset in frequency
 (`offset` / `base_margin`) and both weight severity by `ClaimNb`. **No new
 asymmetry to fix.** (XGBoost `PoissonXGBoost` also *accepts* `sample_weight` but
-ignores it; `base_margin` is the real mechanism â€” this is intentional, not a bug.)
+ignores it; `base_margin` is the real mechanism — this is intentional, not a bug.)
 
 **Why the fix plugs in unchanged.** After the fix, TabPFN-freq is trained on the
 count `ClaimNb` with `Exposure` as a feature, and predicted at `Exposure=1.0`. The
-output Î¼ is the expected count at one year = an **annualised rate** â€” exactly the
+output μ is the expected count at one year = an **annualised rate** — exactly the
 scale the existing `poisson_deviance`/`exposure_weighted_rmse_rate` calls expect.
 `metrics.py` is untouched.
 
@@ -444,105 +444,105 @@ scale the existing `poisson_deviance`/`exposure_weighted_rmse_rate` calls expect
 
 ---
 
-## 4. Staged change plan (checklist â€” one step per turn, STOP after each)
+## 4. Staged change plan (checklist — one step per turn, STOP after each)
 
-- [x] **Step 0 â€” Survey + snapshot + this file.** DONE. No experiment code touched.
+- [x] **Step 0 — Survey + snapshot + this file.** DONE. No experiment code touched.
       Baseline saved to `res/_baseline_snapshot.csv` (identity keys + raw value
       string, timestamp dropped).
-- [x] **Step 1 â€” TabPFN frequency exposure refactor.** DONE *(IN-SCOPE:
+- [x] **Step 1 — TabPFN frequency exposure refactor.** DONE *(IN-SCOPE:
       `src/methods/tabpfn_model.py`; SHARED-additive: `config/features.yaml`
       key `tabpfn_freq_exposure_feature`, helpers `get_freq_exposure_col` /
       `get_raw_features_freq` in `preprocessing.py`; NEW: `tests/test_tabpfn_freq_exposure.py`).*
       `TabPFNFreq` models the count `ClaimNb` with exposure as an input feature and
-      predicts at `Exposure=1.0` â†’ Î¼. 6/6 tests pass (incl. real-TabPFN v3). No leak
-      into GLM/XGBoost; `metrics.py` unchanged; Î¼ plugs into the Poisson-deviance call
+      predicts at `Exposure=1.0` → μ. 6/6 tests pass (incl. real-TabPFN v3). No leak
+      into GLM/XGBoost; `metrics.py` unchanged; μ plugs into the Poisson-deviance call
       verbatim.
-- [~] **Step 2 â€” Wire into `scripts/run_q2_frequency.py` (TabPFN branch only).**
+- [~] **Step 2 — Wire into `scripts/run_q2_frequency.py` (TabPFN branch only).**
       CODE COMPLETE, awaiting the VSC run (see D8, D10). TabPFN branch uses
       `get_raw_features_freq` + counterfactual `Exposure=1.0`; new CLI
       `--force` / `--skip-baselines` / `--tabpfn-versions` / `--results-tag`.
       Regeneration = **new tagged files `res/*_expo.csv`** (D10, supersedes D8's
       in-place rewrite); since D12 the VSC run is **from scratch** (stage 1 recomputes
-      GLM/XGBoost); old Strategy-B files kept on the Mac for comparison. Heavy sweep runs on the **VSC (CUDA)** â€”
-      infeasible on the Mac (MPS predict on one beMTPL97 test fold â‰ˆ 9 min). Post-run:
+      GLM/XGBoost); old Strategy-B files kept on the Mac for comparison. Heavy sweep runs on the **VSC (CUDA)** —
+      infeasible on the Mac (MPS predict on one beMTPL97 test fold ≈ 9 min). Post-run:
       `verify_q2_regeneration.py --results-tag expo`.
-- [x] **Step 3 â€” Severity cleanup.** DONE *(IN-SCOPE: `scripts/run_q1_severity.py`
+- [x] **Step 3 — Severity cleanup.** DONE *(IN-SCOPE: `scripts/run_q1_severity.py`
       call-site now omits `sample_weight` for TabPFN; `TabPFNSev` docstring notes
       "unweighted at estimation"; NEW `tests/test_tabpfn_sev_unweighted.py`).*
       Log-transform kept. **Provably number-preserving** (test shows TabPFN trains on
-      identical inputs with/without the weight; GLM/XGBoost untouched) â†’ **no VSC
+      identical inputs with/without the weight; GLM/XGBoost untouched) → **no VSC
       re-run needed for Step 3**; existing severity results stay valid. *(Severity is
       nonetheless re-run for the separate Step 6 fix.)*
-- [~] **Step 4 â€” Re-run v3** and reconcile with v2_6. VSC-blocked: no code; runs on
+- [~] **Step 4 — Re-run v3** and reconcile with v2_6. VSC-blocked: no code; runs on
       the VSC (`--skip-baselines --results-tag expo --tabpfn-versions v3`), then reconcile the corrected
       v2_6 vs v3 numbers once both exist.
-- [x] **Step 5 â€” Docs.** DONE (write-up + flags). `EXPERIMENTS.md` "Exposure
+- [x] **Step 5 — Docs.** DONE (write-up + flags). `EXPERIMENTS.md` "Exposure
       Handling" rewritten to exposure-as-feature + counterfactual (freq) and
       log-target/unweighted-at-estimation (sev), with the not-a-true-offset
       limitation and an EAJ-Ref-1 revision note; Models-table note updated; the
-      accidental Claude.ai UI paste (former lines 1â€“193) stripped. Repo-local flags +
-      manuscript checklist â†’ `PAPER_REVISION_CHECKLIST.md` (notebook freq tables +
-      Figure 1 are computed â†’ regenerate on re-run; severity unaffected; preliminary
+      accidental Claude.ai UI paste (former lines 1–193) stripped. Repo-local flags +
+      manuscript checklist → `PAPER_REVISION_CHECKLIST.md` (notebook freq tables +
+      Figure 1 are computed → regenerate on re-run; severity unaffected; preliminary
       smoke suggests beMTPL97 frequency worsens materially, possibly flipping a
-      "competitive" claim â€” TO CONFIRM on VSC). Pre-existing outline staleness (Q2
+      "competitive" claim — TO CONFIRM on VSC). Pre-existing outline staleness (Q2
       datasets/sizes, Q1 10k note, single `results.csv`) left as-is per scope.
       **Remaining = numeric reconciliation after the VSC v2_6/v3 runs (ties to Step 4).**
-- [~] **Step 6 â€” Severity `1_plus_log` fix.** CODE COMPLETE, awaiting the VSC run
-      (see D11). *(IN-SCOPE: `TabPFNSev` in `src/methods/tabpfn_model.py` â€” raw
+- [~] **Step 6 — Severity `1_plus_log` fix.** CODE COMPLETE, awaiting the VSC run
+      (see D11). *(IN-SCOPE: `TabPFNSev` in `src/methods/tabpfn_model.py` — raw
       `AvgSeverity` + `inference_config={"REGRESSION_Y_PREPROCESS_TRANSFORMS":
       ("1_plus_log",)}`, `predict` returns TabPFN's original-scale mean, no `exp()`;
       SHARED-additive: `_make_regressor(..., **overrides)`, default unchanged for freq;
       `scripts/run_q1_severity.py` gains `--skip-baselines` / `--results-tag`;
       `verify_q2_regeneration.py --task sev`; tests updated.)* Not number-preserving:
-      VSC run `--results-tag log1p` (from scratch, D12) â†’ `res/*_severity_log1p.csv`.
+      VSC run `--results-tag log1p` (from scratch, D12) → `res/*_severity_log1p.csv`.
 
 **Invariant enforced by TEST after every step:** GLM/XGBoost statistical values
 (excluding `fit_predict_seconds`, which is wall-clock) diff byte-identically
 against `res/_baseline_snapshot.csv`, and the Poisson-deviance computation is
-unchanged. That guarantee â€” not a file ban â€” is what makes the fix trustworthy.
+unchanged. That guarantee — not a file ban — is what makes the fix trustworthy.
 
 ---
 
 ## 5. Decision log
 
-- **D1 â€” Author CLAUDE.md fresh.** No `CLAUDE.md` or `EXPERIMENTS.md` exists in the
+- **D1 — Author CLAUDE.md fresh.** No `CLAUDE.md` or `EXPERIMENTS.md` exists in the
   repo or its git history, though `tabpfn_model.py`/`preprocessing.py` reference a
-  "CLAUDE.md Â§Feature Encoding". This file is authored new. *(Open Q1.)*
-- **D2 â€” Exposure is TabPFN-freq-only in `features.yaml`.** `features.yaml` is read
+  "CLAUDE.md §Feature Encoding". This file is authored new. *(Open Q1.)*
+- **D2 — Exposure is TabPFN-freq-only in `features.yaml`.** `features.yaml` is read
   by BOTH `encode_features` (GLM/XGBoost) and `get_raw_features` (TabPFN). Adding
   `Exposure` to the shared `features` list would leak it into GLM/XGBoost inputs
   and break the frozen baselines. **Plan:** add an **additive, TabPFN-freq-only**
   config key (e.g. per-dataset `tabpfn_freq_extra_features: [Exposure]`) consumed
-  by a new freq-specific raw-feature path â€” never by `encode_features`. Exact shape
+  by a new freq-specific raw-feature path — never by `encode_features`. Exact shape
   finalized in Step 1.
-- **D3 â€” Model the bounded count, recover rate by counterfactual.** Fit on
+- **D3 — Model the bounded count, recover rate by counterfactual.** Fit on
   `ClaimNb` with `Exposure` as a feature; predict at `Exposure=1.0`. Matches the
-  notebook technique and yields Î¼ on the annualised-rate scale the metrics expect.
-- **D4 â€” Regenerate only the TabPFN frequency rows in Step 2.** GLM/XGBoost rows
+  notebook technique and yields μ on the annualised-rate scale the metrics expect.
+- **D4 — Regenerate only the TabPFN frequency rows in Step 2.** GLM/XGBoost rows
   are left exactly as recorded (not recomputed), which makes byte-identity trivially
   true and dodges XGBoost float-reproducibility risk. *(Open Q3.)*
-- **D5 â€” Deviance framing kept; no new metrics.** Gini/Tweedie/Lorenz/calibration/
+- **D5 — Deviance framing kept; no new metrics.** Gini/Tweedie/Lorenz/calibration/
   single-stage are out of scope per the user's decision.
-- **D6 â€” Exposure feed = config key + `get_raw_features_freq`; wrapper is dual-path.**
+- **D6 — Exposure feed = config key + `get_raw_features_freq`; wrapper is dual-path.**
   `tabpfn_freq_exposure_feature` names the exposure column (TabPFN-freq only).
   `TabPFNFreq` accepts exposure either already in `X` (the run_q2 path) or via
-  `sample_weight` which it injects (the run_q3 SHAP path) â€” so run_q3 keeps working
-  unchanged. `get_raw_features`/`encode_features`/`get_targets` untouched â†’ no leak.
-- **D7 â€” No target transform for the count.** Fit on raw `ClaimNb` counts (small,
+  `sample_weight` which it injects (the run_q3 SHAP path) — so run_q3 keeps working
+  unchanged. `get_raw_features`/`encode_features`/`get_targets` untouched → no leak.
+- **D7 — No target transform for the count.** Fit on raw `ClaimNb` counts (small,
   bounded); no rate, no log (unlike severity's log-transform).
-- **D8 â€” Step 2 regeneration: archive+rewrite, baselines verbatim, run on VSC.**
+- **D8 — Step 2 regeneration: archive+rewrite, baselines verbatim, run on VSC.**
   User chose **A (archive + rewrite in place)** and **preserve GLM/XGBoost verbatim**.
   `--force` archives the two freq CSVs to `res/archive/` and drops stale TabPFN rows
   (keeps GLM/XGBoost lines byte-for-byte); implies `--skip-baselines`. Staged:
   `--force --tabpfn-versions v2_6` (Step 2) then `--skip-baselines --tabpfn-versions v3`
-  (Step 4). All heavy runs execute on the **VSC (CUDA)** â€” see [[vsc-compute]]; the Mac
+  (Step 4). All heavy runs execute on the **VSC (CUDA)** — see [[vsc-compute]]; the Mac
   (MPS) is only used for small correctness smokes. `verify_q2_regeneration.py` checks
   baselines stayed byte-identical to the `--force` archive.
-- **D9 â€” Q3 SHAP shares the freq wrapper (FLAGGED, not changed).** Since `TabPFNFreq`
+- **D9 — Q3 SHAP shares the freq wrapper (FLAGGED, not changed).** Since `TabPFNFreq`
   changed, a future `run_q3_shap.py` run would produce corrected freq deviance and a
   SHAP array that now includes an exposure feature. run_q3 was NOT modified or re-run.
   Decide at Step 5 whether Q3 freq interpretability should be regenerated.
-- **D10 â€” Keep old results side by side: tagged output files (supersedes D8's
+- **D10 — Keep old results side by side: tagged output files (supersedes D8's
   in-place rewrite).** User wants the Strategy-B numbers kept for comparison. New
   `--results-tag expo` redirects output to `res/results_frequency_expo.csv` +
   `res/results_error_frequency_expo.csv`; with `--skip-baselines` a missing tagged
@@ -557,18 +557,18 @@ unchanged. That guarantee â€” not a file ban â€” is what makes the fix
   the originals. VSC's own `res/` held every baseline row twice (88/40 vs 44/20);
   replace it with the Mac copies (snapshot-verified) before stage 1, since the seed
   copies whatever is there.
-- **D11 â€” Severity uses TabPFN's built-in `1_plus_log` (Step 6).** The former
-  fit-on-`log(AvgSeverity)` + `exp(predict)` returned exp(E[log y]) â€” roughly the
-  median, below E[y] for right-skewed amounts â€” so TabPFN severity was biased low
+- **D11 — Severity uses TabPFN's built-in `1_plus_log` (Step 6).** The former
+  fit-on-`log(AvgSeverity)` + `exp(predict)` returned exp(E[log y]) — roughly the
+  median, below E[y] for right-skewed amounts — so TabPFN severity was biased low
   against GLM/XGBoost (which predict the mean). Now raw `AvgSeverity` with
   `inference_config={"REGRESSION_Y_PREPROCESS_TRANSFORMS": ("1_plus_log",)}` (the
   Prior Labs insurance cookbook setting); TabPFN inverts the whole predictive
   distribution, so `predict` = original-scale mean. Local smoke (beMTPL97 fold 0,
-  v3, 3k train / 1.5k test): mean pred 451 â†’ 1,322 vs observed 1,383; Gamma dev
-  3.84 â†’ 2.10. Re-run tagged `log1p` (D10 mechanism), old severity files kept.
+  v3, 3k train / 1.5k test): mean pred 451 → 1,322 vs observed 1,383; Gamma dev
+  3.84 → 2.10. Re-run tagged `log1p` (D10 mechanism), old severity files kept.
   Flag: `TabPFNSev.get_shap_values` now explains original-scale predictions (was
-  log scale) â€” Q3 severity SHAP changes if re-run; run_q3 not modified or re-run.
-- **D12 â€” VSC re-run from scratch (supersedes the copy-baselines part of D8/D10).**
+  log scale) — Q3 severity SHAP changes if re-run; run_q3 not modified or re-run.
+- **D12 — VSC re-run from scratch (supersedes the copy-baselines part of D8/D10).**
   User deleted all results on the VSC, so there is nothing to seed from. SLURM:
   Q2 stage 1 `--results-tag expo --tabpfn-versions v2_6` (GLM + XGBoost + v2_6),
   stage 2 `--skip-baselines --results-tag expo --tabpfn-versions v3` (appends);
@@ -579,9 +579,9 @@ unchanged. That guarantee â€” not a file ban â€” is what makes the fix
   `fit_predict_seconds` excluded) with a relative tolerance (`--rtol`, default
   1e-5) and reports the max relative difference, instead of byte-identical lines:
   recomputed baselines are NOT byte-identical. Mac rehearsal (real GLM/XGBoost,
-  stubbed TabPFN, empty `res/`) vs the snapshot-verified files: GLM â‰¤ 1.4e-11 rel,
-  XGBoost (`hist`) â‰¤ 4.2e-6 rel â€” invisible at table precision. So for a from-scratch
-  run the Â§4 invariant holds to `rtol`, not byte-for-byte. Run it on the Mac after
+  stubbed TabPFN, empty `res/`) vs the snapshot-verified files: GLM ≤ 1.4e-11 rel,
+  XGBoost (`hist`) ≤ 4.2e-6 rel — invisible at table precision. So for a from-scratch
+  run the §4 invariant holds to `rtol`, not byte-for-byte. Run it on the Mac after
   copying the tagged CSVs back (the old reference files live only there). Q3/Q4 are not part of the re-run: neither has results in `res/` (Q3 only
   partial freMTPL2 GLM/XGBoost arrays from May; Q4 none).
 
@@ -590,8 +590,8 @@ unchanged. That guarantee â€” not a file ban â€” is what makes the fix
 ## 6. Open questions for the user (raised in Step 0, not yet resolved)
 
 1. **CLAUDE.md / EXPERIMENTS.md don't exist.** Confirm authoring `CLAUDE.md` fresh.
-   For Step 5's "EXPERIMENTS.md â†’ Exposure Handling", where should that write-up
-   live â€” a new `EXPERIMENTS.md`, or a section in `README.md`?
+   For Step 5's "EXPERIMENTS.md → Exposure Handling", where should that write-up
+   live — a new `EXPERIMENTS.md`, or a section in `README.md`?
 2. **Conda envs.** Only `tabpfn-insurance` exists; there are no `tabpfn_v2` /
    `tabpfn_v3` environments. The v2_6/v3 split is the `tabpfn_version` axis inside
    the single env (`create_default_for_version`). Confirm that "re-run in the
@@ -599,7 +599,7 @@ unchanged. That guarantee â€” not a file ban â€” is what makes the fix
    in the one env.
 3. **No `--force` / regeneration mechanism exists.** `append_results` only ever
    appends, so re-running would duplicate rows. How should Step 2 regenerate the
-   invalid Strategy-B TabPFN freq rows â€” (a) archive+rewrite the two freq CSVs
+   invalid Strategy-B TabPFN freq rows — (a) archive+rewrite the two freq CSVs
    preserving GLM/XGBoost rows verbatim and replacing TabPFN rows, (b) add an
    `exposure_mode` column and append the new rows alongside the old, or (c) write a
    fresh results file? (Detailed in Step 2.)
@@ -609,26 +609,185 @@ unchanged. That guarantee â€” not a file ban â€” is what makes the fix
 ================================================
 FILE: environment.txt
 ================================================
-[Binary file]
+# Environment Setup
+# TabPFN for Insurance Pricing
+#
+# Read this file carefully before installing anything.
+# Steps must be followed in order — some packages have hard installation dependencies.
+# All commands assume you are in the project root directory.
+
+# ─────────────────────────────────────────────────────────────
+# STEP 1 — Create the conda environment (base packages + R)
+# ─────────────────────────────────────────────────────────────
+# This installs Python, R, rpy2, and all conda-available packages in one shot.
+# R must be installed via conda before rpy2; the environment.yaml handles this ordering
+# by listing r-base before rpy2 in the dependency list.
+
+conda env create -f environment.yaml
+conda activate tabpfn-insurance
+
+# ─────────────────────────────────────────────────────────────
+# STEP 2 — Install PyTorch (platform-specific)
+# ─────────────────────────────────────────────────────────────
+# PyTorch is NOT included in environment.yaml because the correct variant
+# depends on your hardware. Install exactly ONE of the options below.
+
+# Option A — Apple Silicon Mac (MPS backend, recommended for local dev)
+pip install torch torchvision torchaudio
+
+# Option B — Linux/Windows with CUDA 12.1
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Option C — CPU only (any platform, slowest)
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# After installing, verify the correct backend is available:
+#   python -c "import torch; print(torch.backends.mps.is_available(), torch.cuda.is_available())"
+
+# ─────────────────────────────────────────────────────────────
+# STEP 3 — Install TabPFN (pip-only, requires PyTorch from Step 2)
+# ─────────────────────────────────────────────────────────────
+# tabpfn is not available on conda-forge or the default channel.
+# It must be installed via pip after PyTorch is present.
+
+pip install tabpfn
+
+# ─────────────────────────────────────────────────────────────
+# STEP 4 — Install the CASdatasets R package
+# ─────────────────────────────────────────────────────────────
+# The R package CASdatasets is used via rpy2 to load freMTPL2freq,
+# freMTPL2sev, and bemtpl directly into Python. It is not on CRAN;
+# install from the project's own repository.
+
+conda install -c conda-forge r-lattice r-survival r-xts r-zoo r-matrix
+
+# CASdatasets depends on lattice, survival, xts (and their deps zoo, Matrix).
+# These must be installed via conda, NOT via R's install.packages from CRAN source.
+# Reason: the conda R environment lacks the macOS SDK headers needed to compile
+# C extensions, so any CRAN source build that touches C code fails with
+# "fatal error: 'stdlib.h' file not found". conda-forge ships pre-built binaries
+# that bypass compilation entirely.
+#
+# CASdatasets itself is pure R code (no C extensions), so it can be built from
+# source after the compiled dependencies are in place.
+
+Rscript -e "options(timeout=600); install.packages('CASdatasets', repos='http://cas.uqam.ca/pub/', type='source')"
+
+# The package is ~247 MB; the default R download timeout (60 s) is too short.
+# options(timeout=600) raises it to 10 minutes.
+
+# Verify:
+#   Rscript -e "library(CASdatasets); data(freMTPL2freq); cat(nrow(freMTPL2freq), '\n')"
+# Expected output: ~677991
+
+# ─────────────────────────────────────────────────────────────
+# STEP 5 — Register the kernel with Jupyter (optional)
+# ─────────────────────────────────────────────────────────────
+python -m ipykernel install --user --name tabpfn-insurance --display-name "TabPFN Insurance"
+
+# ─────────────────────────────────────────────────────────────
+# STEP 6 — Verify the full environment
+# ─────────────────────────────────────────────────────────────
+python - <<'EOF'
+import torch, tabpfn, xgboost, statsmodels, shap, rpy2, pandas, pyarrow
+print("torch      :", torch.__version__)
+print("tabpfn     :", tabpfn.__version__)
+print("xgboost    :", xgboost.__version__)
+print("statsmodels:", statsmodels.__version__)
+print("shap       :", shap.__version__)
+print("rpy2       :", rpy2.__version__)
+print("pandas     :", pandas.__version__)
+print("pyarrow    :", pyarrow.__version__)
+device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+print("device     :", device)
+EOF
+
+# ─────────────────────────────────────────────────────────────
+# Notes on known caveats
+# ─────────────────────────────────────────────────────────────
+# - rpy2 requires R to be installed first (handled by environment.yaml ordering).
+# - tabpfn requires torch to be installed first (handled by Step 2 → Step 3 ordering).
+# - CASdatasets is not on CRAN; it must be fetched from the UQAM mirror (Step 4).
+# - On Apple Silicon, MPS acceleration works out of the box with Option A above.
+# - On Linux with CUDA, replace Step 2 Option A with Option B and match the CUDA version
+#   to your driver (check: nvidia-smi | grep "CUDA Version").
+
 
 
 ================================================
 FILE: environment.yaml
 ================================================
-[Binary file]
+name: tabpfn-insurance
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  # ── Python ──────────────────────────────────────────────────
+  - python=3.11
+
+  # ── R + rpy2 (R must appear before rpy2) ────────────────────
+  - r-base>=4.3
+  - rpy2>=3.5
+  # CASdatasets R package dependencies — must be installed via conda, not CRAN.
+  # The conda R environment lacks the macOS SDK headers to compile C extensions
+  # from CRAN source; conda-forge provides pre-built binaries instead.
+  - r-lattice
+  - r-survival
+  - r-xts
+  - r-zoo
+  - r-matrix
+
+  # ── Core data / numerics ────────────────────────────────────
+  - numpy>=1.26
+  - pandas>=2.1
+  - scipy>=1.11
+  - pyarrow>=14.0        # parquet read/write for processed data
+
+  # ── Modelling ───────────────────────────────────────────────
+  - statsmodels>=0.14    # GLM (Poisson + Gamma)
+  - xgboost>=2.0
+
+  # ── Interpretability ────────────────────────────────────────
+  - shap>=0.44
+
+  # ── Config / utilities ──────────────────────────────────────
+  - pyyaml>=6.0
+  - tqdm>=4.66
+
+  # ── Jupyter ─────────────────────────────────────────────────
+  - jupyterlab>=4.0
+  - ipykernel>=6.0
+  - ipywidgets>=8.0
+
+  # ── Plotting ────────────────────────────────────────────────
+  - matplotlib>=3.8
+  - seaborn>=0.13
+
+  # ── pip (packages unavailable on conda-forge) ───────────────
+  # NOTE: PyTorch is intentionally excluded here — see environment.txt Step 2
+  #       for platform-specific installation (MPS / CUDA / CPU).
+  #       tabpfn depends on torch and must be installed after it (Step 3).
+  - pip
+  - pip:
+    # Internal model version "v3" requires tabpfn>=8.0 (exposes
+    # ModelVersion.V3); the older default was the v2.6 architecture.
+    - tabpfn>=8.0
+
 
 
 ================================================
 FILE: EXPERIMENTS.md
 ================================================
 # Experiment Outline
-> TabPFN for Insurance Pricing â€” Letter for EAJ (â‰¤5 pages)
+> TabPFN for Insurance Pricing — Letter for EAJ (≤5 pages)
  
 ---
  
 ## Research Question
  
-Can TabPFN â€” a tabular foundation model requiring no fitting on the target dataset â€” compete
+Can TabPFN — a tabular foundation model requiring no fitting on the target dataset — compete
 with tuned GLMs and GBMs for insurance pricing, and what is the practical cost of its
 10,000-sample ceiling for frequency modelling?
  
@@ -650,13 +809,13 @@ with tuned GLMs and GBMs for insurance pricing, and what is the practical cost o
 |---|---|---|---|
 | GLM | Baseline | `statsmodels` | Poisson (freq) + Gamma (sev), log link, log-exposure offset. GAM binning done once on full training fold. |
 | XGBoost | Baseline | `xgboost` | Fixed hyperparameters from Henckaerts et al. (2021): `max_depth=3`, `n_estimators=500`, `learning_rate=0.01`, `subsample=0.75`. |
-| TabPFN | Focal model | `tabpfn` | `TabPFNRegressor`, default config, no tuning. Exposure handled per task (see *Exposure Handling*). Auto-detect device: CUDA â†’ MPS â†’ CPU, in that order. |
+| TabPFN | Focal model | `tabpfn` | `TabPFNRegressor`, default config, no tuning. Exposure handled per task (see *Exposure Handling*). Auto-detect device: CUDA → MPS → CPU, in that order. |
  
 ---
  
 ## Data Cleaning
  
-Follow the standard cleaning steps from WÃ¼thrich & Buser (2021) for `freMTPL2freq`/`freMTPL2sev`
+Follow the standard cleaning steps from Wüthrich & Buser (2021) for `freMTPL2freq`/`freMTPL2sev`
 (e.g. removal of records with implausible exposure values). Apply the same principle to `bemtpl`
 following Henckaerts et al. (2021). Document any removed records in the loader log.
  
@@ -691,10 +850,10 @@ TabPFN supports neither a Poisson **offset** (as the GLM uses) nor
 **`sample_weight` / `base_margin`** (as XGBoost uses), so exposure cannot enter
 the way it does for the baselines. It is handled per task as follows.
  
-- **Frequency â€” exposure as an input feature (counterfactual annualisation).**
+- **Frequency — exposure as an input feature (counterfactual annualisation).**
   Train on the *bounded* count `ClaimNb` (never the rate `ClaimNb/Exposure`,
   which explodes for tiny exposures), with `Exposure` added as an ordinary input
-  feature. Recover the annualised rate Î¼ by a **counterfactual query**: evaluate
+  feature. Recover the annualised rate μ by a **counterfactual query**: evaluate
   every test policy at a full year of exposure (`Exposure = 1.0`), so the
   expected-count output is already the per-year rate that the exposure-weighted
   Poisson deviance expects (metric unchanged).
@@ -704,25 +863,25 @@ the way it does for the baselines. It is handled per task as follows.
   > the exposure effect. It is the fairest option available given TabPFN has
   > neither an offset nor `sample_weight`, but it is not identical to an offset.
  
-- **Severity â€” `1_plus_log` target, unweighted at estimation.** Response =
+- **Severity — `1_plus_log` target, unweighted at estimation.** Response =
   `AvgSeverity` (`AvgSeverity = ClaimAmount / ClaimNb`) on the original scale,
   with TabPFN's built-in `1_plus_log` target transform
   (`inference_config={"REGRESSION_Y_PREPROCESS_TRANSFORMS": ("1_plus_log",)}`, as in
   the Prior Labs insurance cookbook). TabPFN maps its whole predictive
   distribution back to the original scale, so `predict` returns E[y]. TabPFN
-  cannot take `sample_weight`, so â€” unlike the GLM
-  (`var_weights=ClaimNb`) and XGBoost (`sample_weight=ClaimNb`) â€” TabPFN severity
+  cannot take `sample_weight`, so — unlike the GLM
+  (`var_weights=ClaimNb`) and XGBoost (`sample_weight=ClaimNb`) — TabPFN severity
   is **unweighted at estimation**; the `ClaimNb` weighting legitimately remains at
   **evaluation** (Gamma deviance is weighted by `ClaimNb` for all models).
  
 > **Revision note (EAJ Referee 1).** This supersedes the earlier *Strategy B*,
 > which fed TabPFN the rate `ClaimNb/Exposure` with `sample_weight=Exposure` for
 > frequency. TabPFN ignores `sample_weight`, so that weighting was a silent no-op
-> and the frequency comparison was not like-for-like â€” frequency results must be
+> and the frequency comparison was not like-for-like — frequency results must be
 > regenerated. The severity `sample_weight` no-op alone changed nothing, but
 > severity is ALSO regenerated: the former manual fit-on-`log(y)` / `exp()`
-> back-transform returned exp(E[log y]) â€” roughly the median, systematically
-> below the mean for right-skewed claim amounts â€” and is replaced by the
+> back-transform returned exp(E[log y]) — roughly the median, systematically
+> below the mean for right-skewed claim amounts — and is replaced by the
 > `1_plus_log` mean. Old results are kept in the untagged `res/` files; the
 > corrected runs are `res/*_expo.csv` (frequency) and `res/*_log1p.csv` (severity).
 ---
@@ -732,13 +891,13 @@ the way it does for the baselines. It is handled per task as follows.
 - **5-fold CV**, single repetition, fixed `seed = 42`
 - Stratified by claim indicator (`ClaimNb > 0`) using round-robin assignment
 - One split object reused by all models
-- Assert claim rate per fold within Â±0.5pp of overall rate
+- Assert claim rate per fold within ±0.5pp of overall rate
 - Record wall-clock fit + predict time per fold per model
 ---
  
 ## Experiments
  
-### Q1 â€” Severity benchmark â†’ Table 1
+### Q1 — Severity benchmark → Table 1
  
 **Question:** Is TabPFN competitive with GLM and XGBoost on severity, with zero tuning?
  
@@ -747,13 +906,13 @@ the way it does for the baselines. It is handled per task as follows.
 | **Datasets** | French MTPL severity + Belgian MTPL severity |
 | **Models** | GLM, XGBoost, TabPFN |
 | **Metric** | Gamma deviance (weighted by `ClaimNb`) |
-| **Reporting** | Mean Â± std over 5 folds (per-fold) + pooled OOF score |
+| **Reporting** | Mean ± std over 5 folds (per-fold) + pooled OOF score |
 | **TabPFN note** | French severity (>10k rows): subsample training set to 10k per fold |
-| **Output** | **Table 1**: gamma deviance, 2 datasets Ã— 3 models |
+| **Output** | **Table 1**: gamma deviance, 2 datasets × 3 models |
  
 ---
  
-### Q2 â€” Frequency ceiling â†’ Figure 1
+### Q2 — Frequency ceiling → Figure 1
  
 **Question:** What is the cost of TabPFN's 10,000-sample ceiling for frequency modelling?
  
@@ -767,7 +926,7 @@ the way it does for the baselines. It is handled per task as follows.
  
 ---
  
-### Q3 â€” Interpretability â†’ Figure 2
+### Q3 — Interpretability → Figure 2
  
 **Question:** Does TabPFN learn actuarially meaningful feature-response patterns?
  
@@ -776,7 +935,7 @@ the way it does for the baselines. It is handled per task as follows.
 | **Dataset** | French MTPL severity |
 | **Scope** | Fold 1 only |
 | **Method** | SHAP beeswarm for TabPFN (built-in) and XGBoost (`TreeExplainer`); GLM coefficients on same test fold |
-| **Output** | **Figure 2**: side-by-side SHAP summary â€” TabPFN vs. XGBoost vs. GLM coefficients |
+| **Output** | **Figure 2**: side-by-side SHAP summary — TabPFN vs. XGBoost vs. GLM coefficients |
  
 ---
  
@@ -787,7 +946,7 @@ the way it does for the baselines. It is handled per task as follows.
 | Poisson deviance | Frequency | `2 * mean(y * log(y / (e * mu)) - (y - e*mu))` where `mu` = predicted rate |
 | Gamma deviance | Severity | `2 * weighted_mean((y - mu)/mu - log(y/mu))` weighted by `ClaimNb` |
  
-Both computed per-fold (mean Â± std) **and** as a pooled OOF score.
+Both computed per-fold (mean ± std) **and** as a pooled OOF score.
 All metric logic lives in `src/utils/metrics.py`.
  
 ---
@@ -797,7 +956,7 @@ All metric logic lives in `src/utils/metrics.py`.
 | Item | Content | Script |
 |---|---|---|
 | `res/results.csv` | All deviance scores, all folds, all models | Appended by all experiment scripts |
-| **Table 1** | Gamma deviance: French + Belgian severity Ã— 3 models | `scripts/run_q1_severity.py` |
+| **Table 1** | Gamma deviance: French + Belgian severity × 3 models | `scripts/run_q1_severity.py` |
 | **Figure 1** | Poisson deviance vs. subsample size (French frequency) | `scripts/run_q2_frequency.py` |
 | **Figure 2** | SHAP beeswarm: TabPFN vs. XGBoost vs. GLM (French severity, fold 1) | `scripts/run_q3_shap.py` |
 | `res/shap/` | Raw SHAP arrays and GLM coefficients | `scripts/run_q3_shap.py` |
@@ -811,7 +970,7 @@ Figures are plotted in `notebooks/` from the saved outputs, not inside scripts.
 | Section | Content | Length |
 |---|---|---|
 | Abstract | TabPFN, ICL, insurance pricing, competitive on severity, sample ceiling | 6 sentences |
-| 1. Introduction | GLM dominance â†’ ML â†’ foundation models â†’ contribution | ~0.6 pages |
+| 1. Introduction | GLM dominance → ML → foundation models → contribution | ~0.6 pages |
 | 2. TabPFN and the pricing setup | ICL concept; freq-sev decomposition; exposure strategy B; sample ceiling | ~0.8 pages |
 | 3. Empirical study | Two datasets; models; CV scheme; Table 1; Figure 1; Figure 2 | ~1.8 pages |
 | 4. Discussion | When to use TabPFN; limitations (ceiling, no offset); future work | ~0.6 pages |
@@ -850,16 +1009,16 @@ SOFTWARE.
 ================================================
 FILE: PAPER_REVISION_CHECKLIST.md
 ================================================
-# Paper revision checklist â€” exposure-fairness fix (EAJ Referee 1)
+# Paper revision checklist — exposure-fairness fix (EAJ Referee 1)
 
 What changed: **TabPFN only.** Frequency: exposure is now an input feature and the
-annualised rate Î¼ is read off a counterfactual `Exposure=1.0` query (was: fit on
+annualised rate μ is read off a counterfactual `Exposure=1.0` query (was: fit on
 `ClaimNb/Exposure` with a silently-ignored `sample_weight`). Severity: TabPFN's
 built-in `1_plus_log` target transform with the original-scale predictive mean
-(was: fit on `log(AvgSeverity)`, `exp()` the prediction â€” roughly the median,
+(was: fit on `log(AvgSeverity)`, `exp()` the prediction — roughly the median,
 biased low). **GLM and XGBoost are unchanged.** This file flags repo-local language to revise and lists
 the manuscript claims to re-examine once the corrected VSC numbers land. Nothing
-here has been auto-edited â€” flags only.
+here has been auto-edited — flags only.
 
 ## How to regenerate the corrected numbers (VSC / CUDA)
 
@@ -870,7 +1029,7 @@ python scripts/verify_q2_regeneration.py --results-tag expo                     
 python scripts/run_q1_severity.py --results-tag log1p                                          # Step 6 (+ GLM/XGBoost)
 python scripts/verify_q2_regeneration.py --task sev --results-tag log1p                        # baselines unchanged?
 ```
-The corrected runs land in NEW files â€” `res/results_frequency_expo.csv` +
+The corrected runs land in NEW files — `res/results_frequency_expo.csv` +
 `res/results_error_frequency_expo.csv` and `res/results_severity_log1p.csv` +
 `res/results_error_severity_log1p.csv` (GLM/XGBoost recomputed; the verify script,
 run on the Mac next to the old files, checks they reproduce the old values). The
@@ -880,46 +1039,46 @@ files instead of the originals and re-run it.
 
 ## Repo-local language flagged (regenerated on re-run; not hand-edited)
 
-- **`notebooks/results_tables.ipynb`** â€” the committed cell OUTPUTS hold OLD
+- **`notebooks/results_tables.ipynb`** — the committed cell OUTPUTS hold OLD
   Strategy-B frequency numbers:
   - cell 5 / cell 19: frequency Poisson-deviance (and RMSE-on-rate) tables.
-  - cell 13: Figure 1 â€” per-fold Poisson deviance vs subsample size (both datasets).
+  - cell 13: Figure 1 — per-fold Poisson deviance vs subsample size (both datasets).
   These are *computed* from `res/`, so re-running after the corrected sweep updates
   them. Severity cells (3, 7, 15, 16) also change: re-run on `res/*_log1p.csv`.
-- **`config/experiment_q2_frequency.yaml`** â€” header framing "Figure 1 â€” Poisson
+- **`config/experiment_q2_frequency.yaml`** — header framing "Figure 1 — Poisson
   deviance vs. subsample size" and "cost of TabPFN's 10,000-sample ceiling for
   frequency". Structurally still valid; the plotted VALUES change.
-- **`README.md` (line 8)** â€” "comparisons are like-for-like". Now *more* accurate:
+- **`README.md` (line 8)** — "comparisons are like-for-like". Now *more* accurate:
   the fix is precisely what makes the frequency comparison like-for-like. No edit
   needed, but the frequency verdict behind the title/abstract may shift.
 
 ## Manuscript claims to re-examine (once corrected numbers exist)
 
-- [ ] **Figure 1** â€” regenerate. TabPFN's frequency curve moves; the GLM/XGBoost
+- [ ] **Figure 1** — regenerate. TabPFN's frequency curve moves; the GLM/XGBoost
       reference lines do not. Re-read the figure's takeaway text.
-- [ ] **Every TabPFN frequency Poisson-deviance table cell** â€” regenerate (all
-      sizes Ã— versions Ã— both datasets).
-- [ ] **Frequency exposure-weighted RMSE-on-rate** rows â€” regenerate.
-- [ ] **Abstract / conclusion frequency verdict** â€” re-verify direction. A
-      preliminary ONE-FOLD smoke (beMTPL97, `tabpfn_2000`, v3) moved from â‰ˆ0.347
-      (old 5-fold mean) to â‰ˆ0.652 (corrected fold 0) â€” i.e. from *below* GLM
-      (â‰ˆ0.555) to *above* it. If the full 5-fold run confirms this, any "TabPFN is
+- [ ] **Every TabPFN frequency Poisson-deviance table cell** — regenerate (all
+      sizes × versions × both datasets).
+- [ ] **Frequency exposure-weighted RMSE-on-rate** rows — regenerate.
+- [ ] **Abstract / conclusion frequency verdict** — re-verify direction. A
+      preliminary ONE-FOLD smoke (beMTPL97, `tabpfn_2000`, v3) moved from ≈0.347
+      (old 5-fold mean) to ≈0.652 (corrected fold 0) — i.e. from *below* GLM
+      (≈0.555) to *above* it. If the full 5-fold run confirms this, any "TabPFN is
       competitive with / matches GLM on frequency" statement for beMTPL97 likely
       **flips** and must be rewritten. **TO CONFIRM on the VSC.**
-- [ ] **"Cost of the 10k-sample ceiling"** narrative for frequency â€” the cost curve
+- [ ] **"Cost of the 10k-sample ceiling"** narrative for frequency — the cost curve
       changes; re-state.
-- [ ] **Exposure-handling methodology** â€” describe exposure-as-feature +
+- [ ] **Exposure-handling methodology** — describe exposure-as-feature +
       counterfactual `Exposure=1.0`, and state the limitation: this is NOT a true
       offset (TabPFN learns the exposure effect rather than having a unit slope on
       `log(Exposure)` imposed). Goes in `EXPERIMENTS.md` (pending).
 - [ ] **Remove old "Strategy B" (rate) framing** for frequency wherever the
       manuscript describes how TabPFN was fed exposure.
-- [ ] **Severity â€” TabPFN numbers CHANGE (1_plus_log fix).** The dead
+- [ ] **Severity — TabPFN numbers CHANGE (1_plus_log fix).** The dead
       `sample_weight=ClaimNb` removal alone was number-preserving, but TabPFN
       severity now returns the predictive mean via the built-in `1_plus_log`
       transform instead of exp(E[log y]). Local smoke (beMTPL97 fold 0, v3, 3k
-      train): mean prediction 451 â†’ 1,322 vs observed 1,383; Gamma deviance
-      3.84 â†’ 2.10. Re-examine every severity claim (Table 1, "competitive on
+      train): mean prediction 451 → 1,322 vs observed 1,383; Gamma deviance
+      3.84 → 2.10. Re-examine every severity claim (Table 1, "competitive on
       severity") once the VSC `_log1p` run lands. GLM/XGBoost severity untouched.
 
 ## Not-yet-decided (tracked in CLAUDE.md)
@@ -934,7 +1093,7 @@ files instead of the originals and re-run it.
 FILE: config/data.yaml
 ================================================
 # Data loading configuration
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Loading strategy: datasets are loaded live via rpy2 from the CASdatasets R
 # package on first access, then cached as parquet in data/processed/ for speed.
 # Set cache_processed: false to force a fresh load from R every run.
@@ -942,9 +1101,9 @@ FILE: config/data.yaml
 loading_strategy: rpy2
 cache_processed: true
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Datasets
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 datasets:
 
   freMTPL2:
@@ -954,7 +1113,7 @@ datasets:
       id_col: IDpol
       target_col: ClaimNb
       exposure_col: Exposure
-      # Cleaning follows WÃ¼thrich & Buser (2021).
+      # Cleaning follows Wüthrich & Buser (2021).
       cleaning:
         - filter: "Exposure > 0"
           description: "Remove records with zero or negative exposure"
@@ -980,9 +1139,9 @@ datasets:
   beMTPL97:
     # beMTPL97 is a single R object used for both frequency and severity tasks.
     # Assumption: column names follow the standard CASdatasets naming convention:
-    #   nclaims  â€“ number of claims (frequency target)
-    #   expo     â€“ exposure in years (fraction of year at risk)
-    #   amount   â€“ total claim amount (severity numerator; 0 for policies with no claims)
+    #   nclaims  – number of claims (frequency target)
+    #   expo     – exposure in years (fraction of year at risk)
+    #   amount   – total claim amount (severity numerator; 0 for policies with no claims)
     # Spatial columns long/lat are present but not listed in the feature table
     # from the experiment outline; they are excluded from modelling (see features.yaml).
     r_object: beMTPL97
@@ -1005,7 +1164,7 @@ datasets:
   fretelematic:
     # French telematics dataset (1,177 policies) from CASdatasets.
     # Binary classification: target = Claim ("yes"/"no").
-    # No cleaning required â€” dataset is already clean.
+    # No cleaning required — dataset is already clean.
     r_object: fretelematic
     expected_rows: 1177
     clf:
@@ -1016,13 +1175,13 @@ datasets:
 ================================================
 FILE: config/experiment_q1_severity.yaml
 ================================================
-# Q1 â€” Severity benchmark
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Q1 — Severity benchmark
+# ──────────────────────────────────────────────────────────────────────────────
 # Research question: Is TabPFN competitive with GLM and XGBoost on severity,
 # with zero tuning?
 #
-# Output: Table 1 â€” Gamma deviance (mean Â± std over 5 folds + pooled OOF)
-#         for French MTPL severity and Belgian MTPL severity Ã— 3 models.
+# Output: Table 1 — Gamma deviance (mean ± std over 5 folds + pooled OOF)
+#         for French MTPL severity and Belgian MTPL severity × 3 models.
 
 experiment_id: experiment_q1_severity
 task: sev
@@ -1053,16 +1212,16 @@ tabpfn:
 ================================================
 FILE: config/experiment_q2_frequency.yaml
 ================================================
-# Q2 â€” Frequency ceiling
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Q2 — Frequency ceiling
+# ──────────────────────────────────────────────────────────────────────────────
 # Research question: What is the cost of TabPFN's 10,000-sample ceiling for
 # frequency modelling?
 #
 # GLM and XGBoost run on the full training fold (no subsampling).
 # TabPFN runs at each subsample size listed below; results are nested
-# (2k âŠ‚ 5k âŠ‚ 10k â€” same random draw, first N rows taken).
+# (2k ⊂ 5k ⊂ 10k — same random draw, first N rows taken).
 #
-# Output: Figure 1 â€” Poisson deviance vs. subsample size for French and Belgian
+# Output: Figure 1 — Poisson deviance vs. subsample size for French and Belgian
 #         MTPL frequency; GLM and XGBoost as horizontal reference lines.
 
 experiment_id: experiment_q2_frequency
@@ -1083,7 +1242,7 @@ tabpfn:
   # Subsample sizes to evaluate. The script draws max(numeric sizes) rows
   # per fold (seed = cv_seed + fold_index) and uses the first N for each size.
   # The "full" sentinel triggers an additional fit on the entire training
-  # fold (no subsampling) â€” used to exercise v3's expanded context size.
+  # fold (no subsampling) — used to exercise v3's expanded context size.
   # v2.5 and v2.6 have fixed pretraining ceilings (50k and 100k rows
   # respectively): the script automatically skips them whenever the subsample
   # exceeds their supported limit (e.g. on the "full" pass for freMTPL2 /
@@ -1099,22 +1258,22 @@ tabpfn:
 ================================================
 FILE: config/experiment_q3_shap.yaml
 ================================================
-# Q3 â€” Interpretability / SHAP
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Q3 — Interpretability / SHAP
+# ──────────────────────────────────────────────────────────────────────────────
 # Research question: Does TabPFN learn actuarially meaningful feature-response
 # patterns?
 #
-# Scope: fold 1 (index 0) only on each dataset Ã— task combination.
+# Scope: fold 1 (index 0) only on each dataset × task combination.
 # One fold is sufficient for the qualitative beeswarm comparison.
 #
 # SHAP strategy per model:
-#   TabPFN   â€” built-in SHAP method (TabPFNRegressor.get_shap_values or
+#   TabPFN   — built-in SHAP method (TabPFNRegressor.get_shap_values or
 #               KernelExplainer fallback if unavailable)
-#   XGBoost  â€” shap.TreeExplainer
-#   GLM      â€” standardised coefficients on the test fold (not SHAP);
+#   XGBoost  — shap.TreeExplainer
+#   GLM      — standardised coefficients on the test fold (not SHAP);
 #               stored alongside SHAP arrays for plotting on the same axis
 #
-# Output: Figure 2 â€” side-by-side beeswarm (4 rows Ã— 3 cols):
+# Output: Figure 2 — side-by-side beeswarm (4 rows × 3 cols):
 #           rows = freMTPL2 freq | freMTPL2 sev | beMTPL97 freq | beMTPL97 sev
 #           cols = TabPFN | XGBoost | GLM coefficients
 #         Raw arrays saved to res/shap/.
@@ -1149,8 +1308,8 @@ tabpfn:
 ================================================
 FILE: config/experiment_q4_fretelematic.yaml
 ================================================
-# Q4 â€” fretelematic binary classification benchmark.
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Q4 — fretelematic binary classification benchmark.
+# ──────────────────────────────────────────────────────────────────────────────
 # Compares GLM (logistic), XGBoost, and TabPFN on the fretelematic telematics
 # dataset (1,177 policies).  Primary metric: AUC-ROC.
 # Separate mini-section in the paper with its own results table.
@@ -1174,17 +1333,17 @@ tabpfn:
 ================================================
 FILE: config/features.yaml
 ================================================
-# Feature encoding decisions â€” authoritative per-feature record.
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Feature encoding decisions — authoritative per-feature record.
+# ──────────────────────────────────────────────────────────────────────────────
 # Source: experiment_outline.md, informed by notebooks/explore_categoricals.ipynb
 # All encoding parameters are fit on the training fold only.
 #
 # Encoding types:
-#   ordinal_string  â€“ GLM: one-hot (drop_first=True); tree: integer map per `order`
-#   ordinal_integer â€“ both: as-is (numeric, no transformation)
-#   nominal_string  â€“ GLM: one-hot (drop_first=True); tree: label encoding (fit on train)
-#   binary          â€“ both: 0/1 per `mapping`
-#   numeric         â€“ both: as-is (no transformation)
+#   ordinal_string  – GLM: one-hot (drop_first=True); tree: integer map per `order`
+#   ordinal_integer – both: as-is (numeric, no transformation)
+#   nominal_string  – GLM: one-hot (drop_first=True); tree: label encoding (fit on train)
+#   binary          – both: 0/1 per `mapping`
+#   numeric         – both: as-is (no transformation)
 #
 # Assumption: `Density` (freMTPL2freq) is included as a numeric feature even
 # though it is not listed in the experiment outline feature table, as it is
@@ -1259,7 +1418,7 @@ datasets:
         glm: numeric
         tree: numeric
 
-    # TabPFN frequency only â€” exposure fed as an input feature (see header note).
+    # TabPFN frequency only — exposure fed as an input feature (see header note).
     tabpfn_freq_exposure_feature: Exposure
 
   beMTPL97:
@@ -1322,7 +1481,7 @@ datasets:
         glm: numeric
         tree: numeric
 
-    # TabPFN frequency only â€” exposure fed as an input feature (see header note).
+    # TabPFN frequency only — exposure fed as an input feature (see header note).
     tabpfn_freq_exposure_feature: expo
 
   fretelematic:
@@ -2667,7 +2826,7 @@ for n_estimators in n_estimators_list:
 ================================================
 FILE: scripts/run_q1_severity.py
 ================================================
-"""Q1 â€” Severity benchmark.
+"""Q1 — Severity benchmark.
 
 Runs 5-fold CV for GLM, XGBoost, and TabPFN on French and Belgian MTPL
 severity data.  Records per-fold and pooled Gamma deviance in
@@ -2731,7 +2890,7 @@ def _release_gpu() -> None:
     if torch is not None and torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-# â”€â”€ Project root on sys.path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Project root on sys.path ──────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -2807,11 +2966,11 @@ def run_dataset(dataset: str, cfg: dict, run_baselines_flag: bool = True) -> Non
     logger.info("Dataset: %s  |  Task: %s", dataset, task)
     logger.info("=" * 70)
 
-    # â”€â”€ Load & validate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Load & validate ───────────────────────────────────────────────────────
     df = load_dataset(dataset, task)
     validate_dataset(df, dataset, task)
 
-    # â”€â”€ CV splits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── CV splits ─────────────────────────────────────────────────────────────
     splits = make_cv_splits(df, dataset, cfg)
 
     feat_cfg = yaml.safe_load(open(PROJECT_ROOT / "config" / "features.yaml"))
@@ -2914,7 +3073,7 @@ def run_dataset(dataset: str, cfg: dict, run_baselines_flag: bool = True) -> Non
             ))
 
             # Release the fitted model and fold-scoped arrays before the next
-            # fold loads. Critical for TabPFN on GPU â€” the CUDA caching
+            # fold loads. Critical for TabPFN on GPU — the CUDA caching
             # allocator otherwise fragments across folds and can segfault.
             del model, train_df, test_df, X_train, X_test, mu_test
             del y_train, w_train, log_exp_train, log_exp_test
@@ -2958,9 +3117,9 @@ def run_dataset(dataset: str, cfg: dict, run_baselines_flag: bool = True) -> Non
     _release_gpu()
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Tagged re-run: keep the old results side by side (mirrors run_q2_frequency.py)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 _BASELINE_MODELS = ("glm", "xgboost")
 
@@ -3046,7 +3205,7 @@ def main() -> None:
         _release_gpu()
 
     logger.info(
-        "Q1 complete â€” deviances appended to %s, error metrics to %s",
+        "Q1 complete — deviances appended to %s, error metrics to %s",
         RESULTS_PATH, ERROR_METRICS_PATH,
     )
 
@@ -3059,7 +3218,7 @@ if __name__ == "__main__":
 ================================================
 FILE: scripts/run_q2_frequency.py
 ================================================
-"""Q2 â€” Frequency ceiling.
+"""Q2 — Frequency ceiling.
 
 Evaluates TabPFN at subsample sizes {2k, 5k, 10k} and compares against
 GLM and XGBoost baselines on both French and Belgian MTPL frequency data.
@@ -3067,15 +3226,15 @@ GLM and XGBoost baselines on both French and Belgian MTPL frequency data.
 Exposure handling (EAJ Referee 1 fix). GLM uses a log-exposure offset and
 XGBoost a log-exposure base_margin; TabPFN supports neither, so for TabPFN
 exposure is an **input feature** (via ``get_raw_features_freq``): the model is
-trained on the bounded COUNT ``ClaimNb`` and the annualised rate Î¼ is recovered
-by a counterfactual query at Exposure=1.0. Î¼ plugs into the same
-exposure-weighted Poisson-deviance call as the baselines â€” the metric is
+trained on the bounded COUNT ``ClaimNb`` and the annualised rate μ is recovered
+by a counterfactual query at Exposure=1.0. μ plugs into the same
+exposure-weighted Poisson-deviance call as the baselines — the metric is
 unchanged. (Not a true offset: TabPFN learns the exposure effect rather than
 having a unit slope on log(Exposure) imposed.)
 
 Subsampling is nested: the script draws max(subsample_sizes) training rows
 per fold (seed = cv_seed + fold) and reuses the first N rows for each
-smaller size (2k âŠ‚ 5k âŠ‚ 10k), keeping the comparison fair.
+smaller size (2k ⊂ 5k ⊂ 10k), keeping the comparison fair.
 
 Per-fold and pooled Poisson deviance are written to
 ``res/results_frequency.csv``; the exposure-weighted RMSE-on-rate metric is
@@ -3141,7 +3300,7 @@ def _release_gpu() -> None:
     if torch is not None and torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-# â”€â”€ Project root on sys.path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Project root on sys.path ──────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -3331,12 +3490,12 @@ def run_tabpfn_subsample(
         y_test, w_test, _ = get_targets(test_df, dataset, task)
         del train_df, test_df
 
-        # Model the bounded COUNT (ClaimNb) directly â€” NOT the rate. y_train_full
+        # Model the bounded COUNT (ClaimNb) directly — NOT the rate. y_train_full
         # is already ClaimNb; keep it as the fit target and slice per size.
         y_count_full = np.asarray(y_train_full, dtype=float)
 
         # Counterfactual test frame: every policy at a FULL year of exposure, so
-        # the model's expected-count output IS the annualised rate Î¼.
+        # the model's expected-count output IS the annualised rate μ.
         X_test_cf = X_test.copy()
         X_test_cf[exp_col] = 1.0
 
@@ -3388,7 +3547,7 @@ def run_tabpfn_subsample(
                 t0 = time.perf_counter()
                 model = _make_regressor(current_version, device)
                 model.fit(X_sub, y_sub)                 # fit on ClaimNb counts
-                mu_test = model.predict(X_test_cf)       # Exposure=1.0 â†’ annualised Î¼
+                mu_test = model.predict(X_test_cf)       # Exposure=1.0 → annualised μ
                 elapsed = time.perf_counter() - t0
 
                 dev = poisson_deviance(y_test, mu_test, w_test, sample_weight=w_test)
@@ -3427,7 +3586,7 @@ def run_tabpfn_subsample(
                 # Critical: release the fitted TabPFN and its GPU buffers
                 # before the next (size, version) iteration. Without this,
                 # the CUDA caching allocator fragments across the
-                # sizes Ã— versions Ã— n_folds fits and eventually segfaults.
+                # sizes × versions × n_folds fits and eventually segfaults.
                 del model, mu_test
                 _release_gpu()
 
@@ -3470,9 +3629,9 @@ def run_dataset(
     _release_gpu()
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Regeneration: archive + keep baselines (decision A â€” see CLAUDE.md)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
+# Regeneration: archive + keep baselines (decision A — see CLAUDE.md)
+# ──────────────────────────────────────────────────────────────────────────────
 
 _BASELINE_MODELS = ("glm", "xgboost")
 
@@ -3611,7 +3770,7 @@ def main() -> None:
         _release_gpu()
 
     logger.info(
-        "Q2 complete â€” deviances appended to %s, error metrics to %s",
+        "Q2 complete — deviances appended to %s, error metrics to %s",
         RESULTS_PATH, ERROR_METRICS_PATH,
     )
 
@@ -3624,20 +3783,20 @@ if __name__ == "__main__":
 ================================================
 FILE: scripts/run_q3_shap.py
 ================================================
-"""Q3 â€” Interpretability / SHAP.
+"""Q3 — Interpretability / SHAP.
 
 Computes SHAP values (or GLM coefficients) on fold 0 for all four
-dataset Ã— task combinations:
-    freMTPL2 Ã— freq,  freMTPL2 Ã— sev,
-    beMTPL97 Ã— freq,  beMTPL97 Ã— sev
+dataset × task combinations:
+    freMTPL2 × freq,  freMTPL2 × sev,
+    beMTPL97 × freq,  beMTPL97 × sev
 
 Raw arrays are saved to res/shap/ and per-fold deviances are appended to
 res/results.csv.
 
 SHAP strategy:
-    TabPFN  â€” built-in SHAP (KernelExplainer fallback)
-    XGBoost â€” shap.TreeExplainer
-    GLM     â€” standardised coefficients (coef * std(X_train)) on test fold
+    TabPFN  — built-in SHAP (KernelExplainer fallback)
+    XGBoost — shap.TreeExplainer
+    GLM     — standardised coefficients (coef * std(X_train)) on test fold
 
 Usage:
     python scripts/run_q3_shap.py
@@ -3654,7 +3813,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-# â”€â”€ Project root on sys.path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Project root on sys.path ──────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -3674,9 +3833,9 @@ SHAP_DIR = PROJECT_ROOT / "res" / "shap"
 logger = logging.getLogger(__name__)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # SHAP / coefficient computation helpers
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _shap_xgboost(model, X_test: pd.DataFrame) -> np.ndarray:
     """Compute SHAP values for an XGBoost model via TreeExplainer."""
@@ -3693,7 +3852,7 @@ def _shap_tabpfn(model, X_test: pd.DataFrame) -> np.ndarray:
 
 
 def _glm_standardised_coefs(model, X_train: pd.DataFrame) -> pd.Series:
-    """Return standardised GLM coefficients (coef Ã— std(X_train)).
+    """Return standardised GLM coefficients (coef × std(X_train)).
 
     Multiplying each raw coefficient by the standard deviation of its feature
     puts all coefficients on a comparable scale.  The intercept is excluded.
@@ -3722,12 +3881,12 @@ def _save_series(s: pd.Series, dataset: str, task: str, model_name: str) -> None
     logger.info("Saved GLM coefficients to %s", fname)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Per (dataset, task) runner
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def run_combo(dataset: str, task: str, cfg: dict, feat_cfg: dict) -> None:
-    """Run SHAP / coefficient computation for one dataset Ã— task pair."""
+    """Run SHAP / coefficient computation for one dataset × task pair."""
     experiment_id = cfg["experiment_id"]
     shap_fold: int = cfg["shap_fold"]
     tabpfn_max: int = cfg["tabpfn"]["max_train_size"]
@@ -3750,7 +3909,7 @@ def run_combo(dataset: str, task: str, cfg: dict, feat_cfg: dict) -> None:
 
     result_rows: list[dict] = []
 
-    # â”€â”€ GLM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── GLM ───────────────────────────────────────────────────────────────────
     logger.info("  Fitting GLM")
     X_tr_glm, X_te_glm = encode_features(train_df, test_df, dataset, "glm", feat_cfg)
     y_tr, w_tr, log_exp_tr = get_targets(train_df, dataset, task)
@@ -3775,7 +3934,7 @@ def run_combo(dataset: str, task: str, cfg: dict, feat_cfg: dict) -> None:
                          "fit_predict_seconds", elapsed_glm),
     ]
 
-    # â”€â”€ XGBoost â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── XGBoost ───────────────────────────────────────────────────────────────
     logger.info("  Fitting XGBoost")
     X_tr_tree, X_te_tree = encode_features(train_df, test_df, dataset, "tree", feat_cfg)
 
@@ -3802,7 +3961,7 @@ def run_combo(dataset: str, task: str, cfg: dict, feat_cfg: dict) -> None:
                          "fit_predict_seconds", elapsed_xgb),
     ]
 
-    # â”€â”€ TabPFN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── TabPFN ────────────────────────────────────────────────────────────────
     # Raw unencoded features go directly to TabPFN (no tree encoding).
     # Each requested version is fitted independently; the SHAP array is saved
     # under res/shap/ with a version-suffixed filename.
@@ -3870,9 +4029,9 @@ def _metric_name(task: str) -> str:
     return "poisson_deviance" if task == "freq" else "gamma_deviance"
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Entry point
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     with open(CFG_PATH) as f:
@@ -3887,7 +4046,7 @@ def main() -> None:
         for task in cfg["tasks"]:
             run_combo(dataset, task, cfg, feat_cfg)
 
-    logger.info("Q3 complete â€” SHAP arrays in res/shap/, deviances in res/results.csv")
+    logger.info("Q3 complete — SHAP arrays in res/shap/, deviances in res/results.csv")
 
 
 if __name__ == "__main__":
@@ -3898,7 +4057,7 @@ if __name__ == "__main__":
 ================================================
 FILE: scripts/run_q4_fretelematic.py
 ================================================
-"""Q4 â€” fretelematic binary classification benchmark.
+"""Q4 — fretelematic binary classification benchmark.
 
 Runs 5-fold CV for LogisticGLM, BinaryXGBoost, and TabPFNClf on the
 fretelematic telematics dataset (1,177 policies).  Records per-fold and
@@ -3935,7 +4094,7 @@ def _release_gpu() -> None:
         torch.cuda.empty_cache()
 
 
-# â”€â”€ Project root on sys.path â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Project root on sys.path ──────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -4100,7 +4259,7 @@ def main() -> None:
 
     run_dataset(cfg["dataset"], cfg)
 
-    logger.info("Q4 complete â€” AUC-ROC results appended to %s", RESULTS_PATH)
+    logger.info("Q4 complete — AUC-ROC results appended to %s", RESULTS_PATH)
 
 
 if __name__ == "__main__":
@@ -4256,7 +4415,7 @@ def main() -> int:
             ok = False
             print(f"!! {live.name}: {summary} Exceeds --rtol {args.rtol:g}.")
 
-    print("\n" + ("OK â€” baselines unchanged." if ok else "DRIFT â€” do not trust the run."))
+    print("\n" + ("OK — baselines unchanged." if ok else "DRIFT — do not trust the run."))
     return 0 if ok else 1
 
 
@@ -4268,11 +4427,11 @@ if __name__ == "__main__":
 ================================================
 FILE: slurm/README.md
 ================================================
-# SLURM jobs (VSC â€” wice / gpu_h100)
+# SLURM jobs (VSC — wice / gpu_h100)
 
 Batch jobs for the exposure-revision re-runs. One job = one whole script (kept
 deliberately simple). All jobs `cd $VSC_DATA/tabpfn/tabpfn_insurance`, activate
-the `tabpfn-insurance` conda env, and request 1Ã—H100 + 8 CPUs + 64 GB. Logs land
+the `tabpfn-insurance` conda env, and request 1×H100 + 8 CPUs + 64 GB. Logs land
 in `slurm/logs/%x_%j.{out,err}` (job name + job id). Submit from the repo root.
 
 | Script | Runs | Wall-time |
@@ -4288,11 +4447,11 @@ in `slurm/logs/%x_%j.{out,err}` (job name + job id). Submit from the repo root.
 cd $VSC_DATA/tabpfn/tabpfn_insurance
 
 # Everything runs from scratch (res/ may be empty): GLM/XGBoost are recomputed.
-# Q1 severity â€” independent, submit any time. Writes res/results_severity_log1p.csv
+# Q1 severity — independent, submit any time. Writes res/results_severity_log1p.csv
 # + res/results_error_severity_log1p.csv.
 sbatch slurm/submit_q1_severity.slurm
 
-# Q2 frequency â€” EITHER one job (GLM + XGBoost + TabPFN v2_6 + v3) ...
+# Q2 frequency — EITHER one job (GLM + XGBoost + TabPFN v2_6 + v3) ...
 sbatch slurm/submit_q2_freq.slurm
 
 # ... OR staged (never both: they write the same res/*_expo.csv files). v2_6 first:
@@ -4314,8 +4473,8 @@ python scripts/verify_q2_regeneration.py --task sev --results-tag log1p
 
 ## Notes
 
-- **Why v3 gets 24 h / may need more memory.** v3 runs the `"full"` subsample â€”
-  freMTPL2's full training fold is ~490k rows â€” which is by far the heaviest fit.
+- **Why v3 gets 24 h / may need more memory.** v3 runs the `"full"` subsample —
+  freMTPL2's full training fold is ~490k rows — which is by far the heaviest fit.
   If it OOMs at 64 GB, raise `--mem` to `128g` in `submit_q2_freq_v3.slurm`. v2_6
   is capped at its 100k pretraining ceiling, so its large sizes are skipped
   automatically and it finishes sooner.
@@ -4342,7 +4501,268 @@ FILE: src/data/__init__.py
 ================================================
 FILE: src/data/contracts.py
 ================================================
-[Binary file]
+"""Dataset contracts — structural and statistical assertions on loaded data.
+
+Call the appropriate validate_* function immediately after loading a dataset.
+All functions raise ``ValueError`` on violation; they never silently pass.
+
+Post-split fold-level assertions are provided separately via
+``validate_fold_claim_rates``, which must be called after CV splitting.
+"""
+
+from __future__ import annotations
+
+import logging
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+# Tolerance on expected row counts (±1 %)
+ROW_COUNT_TOL = 0.01
+# Maximum allowed deviation of per-fold claim rate from overall rate (5 pp)
+FOLD_RATE_TOL = 0.05
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Internal helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _check_row_count(df: pd.DataFrame, expected: int, label: str) -> None:
+    lo = int(expected * (1 - ROW_COUNT_TOL))
+    hi = int(expected * (1 + ROW_COUNT_TOL))
+    if not (lo <= len(df) <= hi):
+        raise ValueError(
+            f"[{label}] Row count {len(df):,} outside expected range "
+            f"[{lo:,}, {hi:,}] (expected ≈ {expected:,})"
+        )
+    logger.info("[%s] Row count OK: %d (expected ≈ %d)", label, len(df), expected)
+
+
+def _check_columns(df: pd.DataFrame, required: list[str], label: str) -> None:
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"[{label}] Missing required columns: {missing}")
+    logger.info("[%s] All required columns present", label)
+
+
+def _check_no_nulls(df: pd.DataFrame, cols: list[str], label: str) -> None:
+    for col in cols:
+        n_null = df[col].isna().sum()
+        if n_null > 0:
+            raise ValueError(
+                f"[{label}] Column '{col}' has {n_null} unexpected null values"
+            )
+    logger.info("[%s] No nulls in critical columns: %s", label, cols)
+
+
+def _check_non_negative(df: pd.DataFrame, col: str, label: str) -> None:
+    n_neg = (df[col] < 0).sum()
+    if n_neg > 0:
+        raise ValueError(
+            f"[{label}] Column '{col}' has {n_neg} negative values"
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# freMTPL2 contracts
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Expected row count after cleaning (approx — contracts allow ±1%)
+_FREMTPL2_FREQ_EXPECTED_ROWS = 677_991
+_FREMTPL2_SEV_EXPECTED_ROWS = 24_885    # post-join/clean; observed on first run
+
+_FREMTPL2_FREQ_REQUIRED_COLS = [
+    "IDpol", "ClaimNb", "Exposure",
+    "Area", "VehPower", "VehAge", "DrivAge", "BonusMalus",
+    "VehBrand", "VehGas", "Region", "Density",
+]
+_FREMTPL2_SEV_REQUIRED_COLS = [
+    "IDpol", "ClaimNb", "Exposure", "ClaimAmount", "AvgSeverity",
+    "Area", "VehPower", "VehAge", "DrivAge", "BonusMalus",
+    "VehBrand", "VehGas", "Region", "Density",
+]
+
+
+def validate_freMTPL2(df: pd.DataFrame, task: str) -> None:
+    """Validate a loaded freMTPL2 DataFrame.
+
+    Args:
+        df: DataFrame returned by ``load_freMTPL2_freq`` or ``load_freMTPL2_sev``.
+        task: ``"freq"`` or ``"sev"``.
+
+    Raises:
+        ValueError: on any contract violation.
+    """
+    label = f"freMTPL2_{task}"
+    if task == "freq":
+        _check_row_count(df, _FREMTPL2_FREQ_EXPECTED_ROWS, label)
+        _check_columns(df, _FREMTPL2_FREQ_REQUIRED_COLS, label)
+        _check_no_nulls(df, ["ClaimNb", "Exposure"], label)
+        _check_non_negative(df, "ClaimNb", label)
+        _check_non_negative(df, "Exposure", label)
+        if (df["Exposure"] > 1).any():
+            raise ValueError(f"[{label}] Exposure > 1 found after cleaning")
+    elif task == "sev":
+        _check_row_count(df, _FREMTPL2_SEV_EXPECTED_ROWS, label)
+        _check_columns(df, _FREMTPL2_SEV_REQUIRED_COLS, label)
+        _check_no_nulls(df, ["ClaimNb", "ClaimAmount", "AvgSeverity"], label)
+        _check_non_negative(df, "ClaimNb", label)
+        if (df["ClaimNb"] == 0).any():
+            raise ValueError(f"[{label}] Severity dataset contains rows with ClaimNb=0")
+        if (df["ClaimAmount"] <= 0).any():
+            raise ValueError(f"[{label}] Non-positive ClaimAmount values found")
+        if (df["AvgSeverity"] <= 0).any():
+            raise ValueError(f"[{label}] Non-positive AvgSeverity values found")
+    else:
+        raise ValueError(f"Unknown task '{task}'; expected 'freq' or 'sev'")
+    logger.info("[%s] All contracts passed", label)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# beMTPL97 contracts
+# ──────────────────────────────────────────────────────────────────────────────
+
+_BEMTPL97_FREQ_EXPECTED_ROWS = 163_212
+_BEMTPL97_SEV_EXPECTED_ROWS = 18_276   # post-filter; observed on first run
+
+_BEMTPL97_FREQ_REQUIRED_COLS = [
+    "nclaims", "expo",
+    "coverage", "sex", "fuel", "use", "fleet",
+    "bm", "power", "agec", "ageph",
+]
+_BEMTPL97_SEV_REQUIRED_COLS = _BEMTPL97_FREQ_REQUIRED_COLS + ["amount", "AvgSeverity"]
+
+
+def validate_beMTPL97(df: pd.DataFrame, task: str) -> None:
+    """Validate a loaded beMTPL97 DataFrame.
+
+    Args:
+        df: DataFrame returned by ``load_beMTPL97_freq`` or ``load_beMTPL97_sev``.
+        task: ``"freq"`` or ``"sev"``.
+
+    Raises:
+        ValueError: on any contract violation.
+    """
+    label = f"beMTPL97_{task}"
+    if task == "freq":
+        _check_row_count(df, _BEMTPL97_FREQ_EXPECTED_ROWS, label)
+        _check_columns(df, _BEMTPL97_FREQ_REQUIRED_COLS, label)
+        _check_no_nulls(df, ["nclaims", "expo"], label)
+        _check_non_negative(df, "nclaims", label)
+        _check_non_negative(df, "expo", label)
+        if (df["expo"] > 1).any():
+            raise ValueError(f"[{label}] expo > 1 found after cleaning")
+    elif task == "sev":
+        _check_row_count(df, _BEMTPL97_SEV_EXPECTED_ROWS, label)
+        _check_columns(df, _BEMTPL97_SEV_REQUIRED_COLS, label)
+        _check_no_nulls(df, ["nclaims", "amount", "AvgSeverity"], label)
+        if (df["nclaims"] == 0).any():
+            raise ValueError(f"[{label}] Severity dataset contains rows with nclaims=0")
+        if (df["amount"] <= 0).any():
+            raise ValueError(f"[{label}] Non-positive amount values found")
+        if (df["AvgSeverity"] <= 0).any():
+            raise ValueError(f"[{label}] Non-positive AvgSeverity values found")
+    else:
+        raise ValueError(f"Unknown task '{task}'; expected 'freq' or 'sev'")
+    logger.info("[%s] All contracts passed", label)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# fretelematic contracts
+# ──────────────────────────────────────────────────────────────────────────────
+
+_FRETELEMATIC_EXPECTED_ROWS = 1_177
+
+_FRETELEMATIC_REQUIRED_COLS = [
+    "Policy_ID", "Claim", "Claim_binary",
+    "Total_Distance", "Drive_Score", "Time_Day", "Style_Score",
+    "Corner_Score", "Acceleration_Score", "Braking_Score",
+    "Total_Night_Time", "Total_Time", "Insured_Age",
+    "Acceleration", "Brake", "Corner", "Insured_Gender",
+]
+
+
+def validate_fretelematic(df: pd.DataFrame) -> None:
+    """Validate a loaded fretelematic DataFrame.
+
+    Args:
+        df: DataFrame returned by ``load_fretelematic``.
+
+    Raises:
+        ValueError: on any contract violation.
+    """
+    label = "fretelematic_clf"
+    _check_row_count(df, _FRETELEMATIC_EXPECTED_ROWS, label)
+    _check_columns(df, _FRETELEMATIC_REQUIRED_COLS, label)
+    _check_no_nulls(df, ["Claim", "Claim_binary"], label)
+    if not set(df["Claim"].unique()).issubset({"yes", "no"}):
+        raise ValueError(f"[{label}] Claim column contains unexpected values: {df['Claim'].unique()}")
+    if not set(df["Claim_binary"].unique()).issubset({0, 1}):
+        raise ValueError(f"[{label}] Claim_binary must contain only 0 and 1")
+    logger.info("[%s] All contracts passed", label)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Post-split fold-level contract
+# ──────────────────────────────────────────────────────────────────────────────
+
+def validate_fold_claim_rates(
+    df: pd.DataFrame,
+    fold_indices: list[np.ndarray],
+    claim_col: str,
+    label: str,
+) -> None:
+    """Assert that per-fold claim rates stay within ±0.5 pp of the overall rate.
+
+    Args:
+        df: full (unsplit) DataFrame.
+        fold_indices: list of test-fold index arrays (one per fold).
+        claim_col: binary claim indicator column (1 if claim, 0 otherwise).
+        label: dataset label for logging/error messages.
+
+    Raises:
+        ValueError: if any fold's claim rate deviates by more than 0.5 pp.
+    """
+    overall_rate = df[claim_col].mean()
+    logger.info("[%s] Overall claim rate: %.4f", label, overall_rate)
+    for i, test_idx in enumerate(fold_indices):
+        fold_rate = df.loc[test_idx, claim_col].mean()
+        deviation = abs(fold_rate - overall_rate)
+        if deviation > FOLD_RATE_TOL:
+            raise ValueError(
+                f"[{label}] Fold {i} claim rate {fold_rate:.4f} deviates "
+                f"{deviation:.4f} from overall {overall_rate:.4f} "
+                f"(tolerance {FOLD_RATE_TOL})"
+            )
+        logger.info(
+            "[%s] Fold %d claim rate: %.4f (deviation %.4f pp — OK)",
+            label, i, fold_rate, deviation * 100,
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Convenience dispatcher
+# ──────────────────────────────────────────────────────────────────────────────
+
+def validate_dataset(df: pd.DataFrame, dataset: str, task: str) -> None:
+    """Dispatch to the appropriate validator.
+
+    Args:
+        df: loaded DataFrame.
+        dataset: ``"freMTPL2"``, ``"beMTPL97"``, or ``"fretelematic"``.
+        task: ``"freq"``, ``"sev"``, or ``"clf"``.
+    """
+    if dataset == "freMTPL2":
+        validate_freMTPL2(df, task)
+    elif dataset == "beMTPL97":
+        validate_beMTPL97(df, task)
+    elif dataset == "fretelematic":
+        validate_fretelematic(df)
+    else:
+        raise ValueError(f"Unknown dataset '{dataset}'")
+
 
 
 ================================================
@@ -4397,7 +4817,7 @@ def make_cv_splits(
         cfg: experiment config dict (must contain ``cv_seed`` and ``cv_folds``).
 
     Returns:
-        List of ``(train_idx, test_idx)`` pairs â€” one per fold.  Indices are
+        List of ``(train_idx, test_idx)`` pairs — one per fold.  Indices are
         integer positions (iloc-compatible).
     """
     n_folds: int = cfg["cv_folds"]
@@ -4479,7 +4899,7 @@ FILE: src/data/loaders.py
 
 Datasets are loaded via rpy2 from the CASdatasets R package and optionally
 cached as parquet files in data/processed/ for faster subsequent access.
-Cleaning steps follow WÃ¼thrich & Buser (2021) for freMTPL2 and
+Cleaning steps follow Wüthrich & Buser (2021) for freMTPL2 and
 Henckaerts et al. (2021) for beMTPL97.
 """
 
@@ -4500,9 +4920,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_CFG_PATH = PROJECT_ROOT / "config" / "data.yaml"
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # R_HOME detection
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _ensure_r_home() -> None:
     """Set R_HOME if not already in the environment.
@@ -4512,9 +4932,9 @@ def _ensure_r_home() -> None:
     shell variable is not always propagated automatically.  This function
     checks three locations in order:
 
-    1. ``R_HOME`` already set â€” nothing to do.
-    2. ``{sys.prefix}/lib/R`` exists (conda environment with r-base) â€” use it.
-    3. Ask the ``R`` binary on PATH via ``R RHOME`` â€” use its output.
+    1. ``R_HOME`` already set — nothing to do.
+    2. ``{sys.prefix}/lib/R`` exists (conda environment with r-base) — use it.
+    3. Ask the ``R`` binary on PATH via ``R RHOME`` — use its output.
     """
     if os.environ.get("R_HOME"):
         logger.debug("R_HOME already set: %s", os.environ["R_HOME"])
@@ -4551,9 +4971,9 @@ def _ensure_r_home() -> None:
     )
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Internal helpers
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _load_data_cfg() -> dict:
     """Load data.yaml configuration."""
@@ -4585,13 +5005,13 @@ def _apply_cleaning(df: pd.DataFrame, rules: list[dict], label: str) -> pd.DataF
         n_removed = (~mask).sum()
         if n_removed:
             logger.info(
-                "[%s] Removed %d rows â€” %s (filter: %s)",
+                "[%s] Removed %d rows — %s (filter: %s)",
                 label, n_removed, rule["description"], rule["filter"],
             )
         df = df[mask].copy()
     n_after = len(df)
     logger.info(
-        "[%s] Cleaning complete: %d â†’ %d rows (%d removed, %.2f%%)",
+        "[%s] Cleaning complete: %d → %d rows (%d removed, %.2f%%)",
         label, n_before, n_after, n_before - n_after,
         100.0 * (n_before - n_after) / n_before,
     )
@@ -4605,7 +5025,7 @@ def _cache_path(name: str) -> Path:
 def _try_cache(name: str) -> pd.DataFrame | None:
     p = _cache_path(name)
     if p.exists():
-        logger.info("Cache hit â€” loading '%s' from %s", name, p)
+        logger.info("Cache hit — loading '%s' from %s", name, p)
         return pd.read_parquet(p)
     return None
 
@@ -4614,18 +5034,18 @@ def _write_cache(df: pd.DataFrame, name: str) -> None:
     p = _cache_path(name)
     p.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(p, index=False)
-    logger.info("Cached '%s' â†’ %s (%d rows)", name, p, len(df))
+    logger.info("Cached '%s' → %s (%d rows)", name, p, len(df))
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Public loaders
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def load_freMTPL2_freq(cfg: dict | None = None) -> pd.DataFrame:
     """Load and clean freMTPL2freq for frequency modelling.
 
     Returns a DataFrame with one row per policy.  All cleaning steps from
-    config/data.yaml (WÃ¼thrich & Buser 2021) are applied before returning.
+    config/data.yaml (Wüthrich & Buser 2021) are applied before returning.
     """
     if cfg is None:
         cfg = _load_data_cfg()
@@ -4665,14 +5085,14 @@ def load_freMTPL2_sev(cfg: dict | None = None) -> pd.DataFrame:
     freq_cfg = cfg["datasets"]["freMTPL2"]["freq"]
     sev_cfg = cfg["datasets"]["freMTPL2"]["sev"]
 
-    # â”€â”€ Load and clean frequency base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Load and clean frequency base ─────────────────────────────────────────
     freq_df = _load_r_dataset(freq_cfg["r_object"])
     freq_df = _apply_cleaning(freq_df, freq_cfg["cleaning"], "freMTPL2_freq")
     # Keep only policies with at least one claim
     freq_with_claims = freq_df[freq_df["ClaimNb"] > 0].copy()
     logger.info("freMTPL2_freq: %d policies with ClaimNb > 0", len(freq_with_claims))
 
-    # â”€â”€ Load severity claims table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Load severity claims table ────────────────────────────────────────────
     sev_raw = _load_r_dataset(sev_cfg["r_object_sev"])
     logger.info("freMTPL2sev raw: %d claim rows", len(sev_raw))
     # Aggregate multiple claim rows per policy (sum amounts)
@@ -4680,14 +5100,14 @@ def load_freMTPL2_sev(cfg: dict | None = None) -> pd.DataFrame:
         sev_raw.groupby("IDpol", as_index=False)["ClaimAmount"].sum()
     )
 
-    # â”€â”€ Join â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Join ──────────────────────────────────────────────────────────────────
     df = freq_with_claims.merge(sev_agg, on="IDpol", how="inner")
     logger.info("After join: %d rows", len(df))
 
-    # â”€â”€ Apply severity-level cleaning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Apply severity-level cleaning ─────────────────────────────────────────
     df = _apply_cleaning(df, sev_cfg["cleaning"], "freMTPL2_sev")
 
-    # â”€â”€ Derived target â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Derived target ────────────────────────────────────────────────────────
     df["AvgSeverity"] = df["ClaimAmount"] / df["ClaimNb"]
 
     if use_cache:
@@ -4761,7 +5181,7 @@ def load_fretelematic(cfg: dict | None = None) -> pd.DataFrame:
     """Load the fretelematic dataset for binary classification.
 
     Loads the ``fretelematic`` object from CASdatasets via rpy2.  No cleaning
-    is applied â€” the dataset is already clean.  A ``Claim_binary`` column
+    is applied — the dataset is already clean.  A ``Claim_binary`` column
     (0 = no claim, 1 = claim) is derived from the raw ``Claim`` column to
     support CV stratification and target extraction.
     """
@@ -4785,9 +5205,9 @@ def load_fretelematic(cfg: dict | None = None) -> pd.DataFrame:
     return df
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Convenience dispatcher
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def load_dataset(dataset: str, task: str, cfg: dict | None = None) -> pd.DataFrame:
     """Dispatch to the appropriate loader.
@@ -4817,7 +5237,7 @@ def load_dataset(dataset: str, task: str, cfg: dict | None = None) -> pd.DataFra
 ================================================
 FILE: src/data/preprocessing.py
 ================================================
-"""Feature encoding â€” fold-by-fold preprocessing.
+"""Feature encoding — fold-by-fold preprocessing.
 
 All encoding parameters (category orders, label maps) are fit on the training
 fold and applied to both train and test folds.  The authoritative per-feature
@@ -4826,13 +5246,13 @@ encoding decisions live in ``config/features.yaml``.
 Public API
 ----------
 encode_features(train_df, test_df, dataset, model_family, feat_cfg=None)
-    â†’ (X_train, X_test)  â€” encoded feature DataFrames
+    → (X_train, X_test)  — encoded feature DataFrames
 
 get_raw_features(df, dataset, feat_cfg=None)
-    â†’ pd.DataFrame  â€” unencoded feature columns for TabPFN-2.6
+    → pd.DataFrame  — unencoded feature columns for TabPFN-2.6
 
 get_feature_names(dataset, model_family, feat_cfg=None)
-    â†’ list[str]  â€” column names that encode_features will produce (train only)
+    → list[str]  — column names that encode_features will produce (train only)
 """
 
 from __future__ import annotations
@@ -4850,18 +5270,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FEATURES_CFG_PATH = PROJECT_ROOT / "config" / "features.yaml"
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Config loading
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _load_feat_cfg() -> dict:
     with open(FEATURES_CFG_PATH) as f:
         return yaml.safe_load(f)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Per-column encoders
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _encode_numeric(
     name: str,
@@ -4991,9 +5411,9 @@ def _encode_nominal_string_tree(
     return apply(train_series), apply(test_series)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Main encoder
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def encode_features(
     train_df: pd.DataFrame,
@@ -5032,7 +5452,7 @@ def encode_features(
         encoding = feat["glm"] if model_family == "glm" else feat["tree"]
 
         if name not in train_df.columns:
-            logger.warning("Feature '%s' not found in DataFrame â€” skipping", name)
+            logger.warning("Feature '%s' not found in DataFrame — skipping", name)
             continue
 
         tr_s = train_df[name]
@@ -5079,9 +5499,9 @@ def encode_features(
     return X_train, X_test
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Target and weight extraction helpers
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def get_targets(
     df: pd.DataFrame,
@@ -5096,9 +5516,9 @@ def get_targets(
         For freq: claim counts (ClaimNb / nclaims).
         For sev: average severity (AvgSeverity).
     weight : np.ndarray
-        For freq: exposure (Exposure / expo) â€” used as sample_weight for
+        For freq: exposure (Exposure / expo) — used as sample_weight for
             TabPFN/XGBoost Strategy B and as offset denominator for GLM.
-        For sev: claim count (ClaimNb / nclaims) â€” sample weight.
+        For sev: claim count (ClaimNb / nclaims) — sample weight.
     log_exposure : np.ndarray
         log(exposure) for the GLM Poisson offset.  For severity tasks this is
         an array of zeros (not used).
@@ -5128,9 +5548,9 @@ def get_targets(
     return y, weight, log_exposure
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Raw feature extraction for TabPFN-2.6
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def get_raw_features(
     df: pd.DataFrame,
@@ -5141,7 +5561,7 @@ def get_raw_features(
 
     TabPFN-2.6 handles mixed data types (strings, integers, floats) and missing
     values natively, so no encoding is applied.  Only the feature columns
-    listed in ``config/features.yaml`` are selected â€” target, exposure, ID, and
+    listed in ``config/features.yaml`` are selected — target, exposure, ID, and
     derived columns are excluded automatically.
 
     Args:
@@ -5158,13 +5578,13 @@ def get_raw_features(
     cols = [f["name"] for f in features if f["name"] in df.columns]
     missing = [f["name"] for f in features if f["name"] not in df.columns]
     if missing:
-        logger.warning("get_raw_features: columns not found in DataFrame â€” %s", missing)
+        logger.warning("get_raw_features: columns not found in DataFrame — %s", missing)
     return df[cols].reset_index(drop=True)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Exposure-as-feature helpers for the TabPFN FREQUENCY task
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Exposure fairness fix (EAJ Referee 1): TabPFN supports neither a Poisson offset
 # nor sample_weight, so exposure is handed to it as an ordinary input feature and
 # the annualised rate is recovered later with a counterfactual Exposure=1.0 query.
@@ -5195,10 +5615,10 @@ def get_raw_features_freq(
     Extends :func:`get_raw_features` by adding the exposure column named in
     ``tabpfn_freq_exposure_feature`` as the last input feature.  The model is then
     trained on the bounded count (``ClaimNb``) with exposure among the inputs; the
-    annualised rate Î¼ is recovered by querying at ``Exposure=1.0`` (see
+    annualised rate μ is recovered by querying at ``Exposure=1.0`` (see
     ``TabPFNFreq``).
 
-    Note this is NOT a true offset â€” TabPFN *learns* the exposure effect rather
+    Note this is NOT a true offset — TabPFN *learns* the exposure effect rather
     than having a unit slope on ``log(Exposure)`` imposed, which is the fairest
     option available given TabPFN has neither an offset nor sample_weight.
     """
@@ -5266,7 +5686,7 @@ class PoissonGLM:
         """Fit the Poisson GLM.
 
         Args:
-            X_train: encoded feature matrix (no intercept column needed â€”
+            X_train: encoded feature matrix (no intercept column needed —
                 statsmodels adds one automatically via ``add_constant``).
             y_train: claim counts.
             sample_weight: ignored for Poisson GLM (exposure enters via offset).
@@ -5338,7 +5758,7 @@ class GammaGLM:
         Args:
             X_train: encoded feature matrix.
             y_train: average severity (ClaimAmount / ClaimNb).
-            sample_weight: ClaimNb â€” used as frequency weights.
+            sample_weight: ClaimNb — used as frequency weights.
             log_exposure: unused for severity; accepted for interface parity.
         """
         self._feature_names = list(X_train.columns)
@@ -5435,9 +5855,9 @@ class LogisticGLM:
         return pd.Series(self._result.params, index=names, name="coefficient")
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Factory
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def make_glm(task: str) -> PoissonGLM | GammaGLM | LogisticGLM:
     """Return the appropriate GLM for the given task.
@@ -5461,7 +5881,7 @@ FILE: src/methods/tabpfn_model.py
 """TabPFN wrappers for insurance pricing (frequency, severity, and binary classification).
 
 TabPFN handles mixed data types (strings, integers, floats) and missing
-values natively â€” no feature encoding is required.  Raw feature columns from
+values natively — no feature encoding is required.  Raw feature columns from
 ``get_raw_features()`` are passed directly to the model.
 
 The internal ``ModelVersion`` (``v2_5``, ``v2_6`` or ``v3``) is selected per
@@ -5471,9 +5891,9 @@ Exposure / target handling:
     Frequency  : exposure-as-feature (EAJ Referee 1 fix). TabPFN supports
                  neither a Poisson offset nor sample_weight, so exposure is an
                  ordinary input feature; the model is trained on the bounded
-                 COUNT (ClaimNb) and the annualised rate Î¼ is recovered with a
+                 COUNT (ClaimNb) and the annualised rate μ is recovered with a
                  counterfactual Exposure=1.0 query at predict time. This is NOT a
-                 true offset â€” the model learns the exposure effect rather than
+                 true offset — the model learns the exposure effect rather than
                  having a unit slope on log(Exposure) imposed.
     Severity   : response = raw AvgSeverity with TabPFN's built-in ``1_plus_log``
                  target transform (fit on log(1 + y)); ``predict`` returns the
@@ -5481,9 +5901,9 @@ Exposure / target handling:
                  no manual exp() back-transform (which would give roughly the
                  median, biased below the mean).
 
-TabPFNRegressor.fit() accepts only (X, y) â€” no sample_weight argument.
+TabPFNRegressor.fit() accepts only (X, y) — no sample_weight argument.
 
-Device auto-detection order: CUDA â†’ MPS â†’ CPU.
+Device auto-detection order: CUDA → MPS → CPU.
 
 Training is capped at ``max_train_size`` rows.  When the training fold
 exceeds this limit a random subsample is drawn (seed = fold_seed).
@@ -5498,7 +5918,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Mapping of public string labels â†’ tabpfn.constants.ModelVersion enum members.
+# Mapping of public string labels → tabpfn.constants.ModelVersion enum members.
 # Resolved lazily inside helpers so importing this module does not require tabpfn.
 _VERSION_LABELS = ("v2_5", "v2_6", "v3")
 
@@ -5597,12 +6017,12 @@ class TabPFNFreq:
     so exposure cannot enter the way it does for the baselines. Instead:
 
     * **Exposure is an ordinary input feature.** The model is trained on the
-      *bounded* claim COUNT ``ClaimNb`` â€” never the rate ``ClaimNb/Exposure``,
-      which explodes for tiny exposures â€” with exposure as one of the inputs.
+      *bounded* claim COUNT ``ClaimNb`` — never the rate ``ClaimNb/Exposure``,
+      which explodes for tiny exposures — with exposure as one of the inputs.
     * **The annualised rate is recovered by a counterfactual query.**
       ``predict`` sets the exposure feature to ``1.0`` for every row, so the
       model's expected-count output is already the expected count over a full
-      year = the annualised frequency Î¼ â€” exactly the rate scale that the
+      year = the annualised frequency μ — exactly the rate scale that the
       exposure-weighted Poisson deviance expects, so it plugs into the existing
       metric unchanged.
 
@@ -5615,7 +6035,7 @@ class TabPFNFreq:
       1. already present in ``X_train`` as ``exposure_col`` (the frequency runner
          builds features with ``get_raw_features_freq``); or
       2. supplied via ``sample_weight`` while absent from ``X_train`` (the SHAP
-         path passes raw features plus exposure as the weight) â€” it is then
+         path passes raw features plus exposure as the weight) — it is then
          injected as the ``exposure_col`` feature.
     """
 
@@ -5667,7 +6087,7 @@ class TabPFNFreq:
             X_train: raw (unencoded) feature DataFrame. If it already contains
                 ``exposure_col`` it is used as-is; otherwise the exposure is taken
                 from ``sample_weight`` and injected as that feature.
-            y_train: claim COUNTS (ClaimNb) â€” modelled directly, NOT converted to
+            y_train: claim COUNTS (ClaimNb) — modelled directly, NOT converted to
                 a rate and NOT log-transformed (counts are small and bounded).
             sample_weight: exposure array; used to populate the exposure feature
                 when it is not already a column of ``X_train``.
@@ -5684,13 +6104,13 @@ class TabPFNFreq:
 
         self._feature_names = list(X_aug.columns)
 
-        # Model the bounded count directly â€” no rate, no log transform.
+        # Model the bounded count directly — no rate, no log transform.
         y_count = np.asarray(y_train, dtype=float)
 
         X_sub, y_sub = _subsample(X_aug, y_count, self.max_train_size, fold_seed)
         if len(X_sub) < len(X_aug):
             logger.info(
-                "TabPFNFreq: subsampled %d â†’ %d rows (seed=%d)",
+                "TabPFNFreq: subsampled %d → %d rows (seed=%d)",
                 len(X_aug), len(X_sub), fold_seed,
             )
 
@@ -5704,11 +6124,11 @@ class TabPFNFreq:
         X_test: pd.DataFrame,
         log_exposure: np.ndarray | None = None,
     ) -> np.ndarray:
-        """Return the annualised claim rate Î¼ via a counterfactual Exposure=1 query.
+        """Return the annualised claim rate μ via a counterfactual Exposure=1 query.
 
         Every test row is evaluated at a full year of exposure, so the model's
         expected-count output is already the per-year rate. ``log_exposure`` is
-        accepted for interface parity but unused â€” the counterfactual query, not
+        accepted for interface parity but unused — the counterfactual query, not
         an offset, does the annualisation.
         """
         if self._model is None:
@@ -5728,7 +6148,7 @@ class TabPFNSev:
     raw AvgSeverity; TabPFN's built-in ``1_plus_log`` transform fits on
     log(1 + y) and maps the predictive distribution back, so ``predict`` returns
     its MEAN on the original scale. This replaces the former manual
-    fit-on-log(y) / exp(prediction), which returned exp(E[log y]) â€” roughly the
+    fit-on-log(y) / exp(prediction), which returned exp(E[log y]) — roughly the
     median, systematically below E[y] for right-skewed claim amounts.
 
     Unweighted at estimation: TabPFN supports no sample_weight, so the ClaimNb
@@ -5765,7 +6185,7 @@ class TabPFNSev:
         Args:
             X_train: raw (unencoded) feature DataFrame.
             y_train: average severity (AvgSeverity = ClaimAmount / ClaimNb),
-                passed on the original scale â€” TabPFN applies log(1 + y).
+                passed on the original scale — TabPFN applies log(1 + y).
             sample_weight: accepted for interface parity; not used (TabPFN
                 does not support sample_weight in fit()).
             log_exposure: unused for severity; accepted for interface parity.
@@ -5777,7 +6197,7 @@ class TabPFNSev:
         X_sub, y_sub = _subsample(X_train, y, self.max_train_size, fold_seed)
         if len(X_sub) < len(X_train):
             logger.info(
-                "TabPFNSev: subsampled %d â†’ %d rows (seed=%d)",
+                "TabPFNSev: subsampled %d → %d rows (seed=%d)",
                 len(X_train), len(X_sub), fold_seed,
             )
 
@@ -5860,7 +6280,7 @@ class TabPFNClf:
         X_sub, y_sub = _subsample(X_train, y_int, self.max_train_size, fold_seed)
         if len(X_sub) < len(X_train):
             logger.info(
-                "TabPFNClf: subsampled %d â†’ %d rows (seed=%d)",
+                "TabPFNClf: subsampled %d → %d rows (seed=%d)",
                 len(X_train), len(X_sub), fold_seed,
             )
 
@@ -5889,7 +6309,7 @@ class TabPFNFreqWithShap(TabPFNFreq):
 
     The explained frame is the counterfactual Exposure=1.0 query, so it matches
     the feature set the model was trained on (raw features + exposure). Note this
-    means the returned SHAP array now includes an exposure column â€” a downstream
+    means the returned SHAP array now includes an exposure column — a downstream
     change for Q3 frequency interpretability, flagged for a separate decision.
     """
 
@@ -5907,9 +6327,9 @@ class TabPFNFreqWithShap(TabPFNFreq):
         return explainer.shap_values(X_query, nsamples=100)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Factory
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def make_tabpfn(
     task: str,
@@ -5924,7 +6344,7 @@ def make_tabpfn(
         task: ``"freq"``, ``"sev"``, or ``"clf"``.
         max_train_size: maximum training rows.
         shap: if True, return a SHAP-capable variant for Q3 (freq/sev only).
-        tabpfn_version: internal ``ModelVersion`` to use â€” ``"v2_5"``, ``"v2_6"`` or ``"v3"``.
+        tabpfn_version: internal ``ModelVersion`` to use — ``"v2_5"``, ``"v2_6"`` or ``"v3"``.
         exposure_col: (freq only) name of the exposure input feature. Frequency
             runners pass the dataset's real exposure column (``Exposure`` /
             ``expo``); callers that supply exposure via ``sample_weight`` can rely
@@ -5966,7 +6386,7 @@ import xgboost as xgb
 
 logger = logging.getLogger(__name__)
 
-# â”€â”€ Fixed hyperparameters (Henckaerts et al. 2021) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Fixed hyperparameters (Henckaerts et al. 2021) ────────────────────────────
 _HENCKAERTS_PARAMS = dict(
     max_depth=3,
     n_estimators=500,
@@ -6002,7 +6422,7 @@ class PoissonXGBoost:
         Args:
             X_train: encoded feature matrix.
             y_train: claim counts.
-            sample_weight: exposure â€” passed as sample_weight (secondary to
+            sample_weight: exposure — passed as sample_weight (secondary to
                 base_margin but kept for interface parity; XGBoost Poisson
                 with base_margin is the primary exposure-handling mechanism).
             log_exposure: log(Exposure) used as base_margin offset.
@@ -6070,7 +6490,7 @@ class GammaXGBoost:
         Args:
             X_train: encoded feature matrix.
             y_train: average severity (ClaimAmount / ClaimNb).
-            sample_weight: ClaimNb â€” frequency weights for Gamma loss.
+            sample_weight: ClaimNb — frequency weights for Gamma loss.
             log_exposure: unused for severity; accepted for interface parity.
         """
         self._feature_names = list(X_train.columns)
@@ -6158,9 +6578,9 @@ class BinaryXGBoost:
         return self._feature_names
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Factory
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def make_xgboost(task: str) -> PoissonXGBoost | GammaXGBoost | BinaryXGBoost:
     """Return the appropriate XGBoost model for the given task.
@@ -6236,7 +6656,7 @@ def setup_logging(experiment_id: str, level_console: int = logging.INFO) -> None
         root.addHandler(fh)
 
     logging.getLogger(__name__).info(
-        "Logging initialised â€” console: %s, file: %s",
+        "Logging initialised — console: %s, file: %s",
         logging.getLevelName(level_console),
         log_path,
     )
@@ -6249,17 +6669,17 @@ FILE: src/utils/metrics.py
 """Evaluation metrics for insurance pricing models.
 
 Primary metrics:
-    poisson_deviance  â€” frequency modelling
-    gamma_deviance    â€” severity modelling
-    auc_roc           â€” binary classification (fretelematic)
+    poisson_deviance  — frequency modelling
+    gamma_deviance    — severity modelling
+    auc_roc           — binary classification (fretelematic)
 
 Secondary error-based metrics:
-    rmse, mae                    â€” severity (unweighted by default)
-    exposure_weighted_rmse_rate  â€” frequency (rate scale, exposure weights)
+    rmse, mae                    — severity (unweighted by default)
+    exposure_weighted_rmse_rate  — frequency (rate scale, exposure weights)
 
 Calibration-style metrics (severity only):
-    pearson_corr   â€” linear correlation between predictions and actuals
-    spearman_corr  â€” rank correlation between predictions and actuals
+    pearson_corr   — linear correlation between predictions and actuals
+    spearman_corr  — rank correlation between predictions and actuals
 
 Both deviance functions are computed at the observation level and then averaged
 (optionally weighted).  Use ``pooled_*`` variants for the aggregate OOF score.
@@ -6282,9 +6702,9 @@ logger = logging.getLogger(__name__)
 _EPS = 1e-10   # numerical floor to avoid log(0)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Poisson deviance
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def poisson_deviance(
     y_count: np.ndarray,
@@ -6343,9 +6763,9 @@ def pooled_poisson_deviance(
     return poisson_deviance(y, mu, e, w)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Gamma deviance
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def gamma_deviance(
     y: np.ndarray,
@@ -6360,7 +6780,7 @@ def gamma_deviance(
     Args:
         y: observed average severity.
         mu: predicted average severity.
-        sample_weight: typically ClaimNb â€” used as observation weight.
+        sample_weight: typically ClaimNb — used as observation weight.
 
     Returns:
         Scalar weighted mean Gamma deviance.
@@ -6391,9 +6811,9 @@ def pooled_gamma_deviance(
     return gamma_deviance(y, mu, w)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# RMSE / MAE  (severity â€” unweighted by default)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
+# RMSE / MAE  (severity — unweighted by default)
+# ──────────────────────────────────────────────────────────────────────────────
 
 def rmse(
     y_true: np.ndarray,
@@ -6443,9 +6863,9 @@ def mae(
     return float(np.average(ae, weights=w))
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Correlation between predictions and actuals  (severity â€” calibration check)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
+# Correlation between predictions and actuals  (severity — calibration check)
+# ──────────────────────────────────────────────────────────────────────────────
 
 def pearson_corr(
     y_true: np.ndarray,
@@ -6495,7 +6915,7 @@ def spearman_corr(
 ) -> float:
     """Spearman rank correlation between predictions and actuals.
 
-    Measures monotonic agreement â€” invariant to any monotone re-scaling of
+    Measures monotonic agreement — invariant to any monotone re-scaling of
     the predictions. Useful for diagnosing whether a regressor that is
     mis-calibrated on the original scale still ranks observations correctly.
     No weighting (weighted Spearman is non-standard); pass through any
@@ -6511,9 +6931,9 @@ def spearman_corr(
     return float(rho)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Exposure-weighted RMSE (frequency â€” rate scale)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
+# Exposure-weighted RMSE (frequency — rate scale)
+# ──────────────────────────────────────────────────────────────────────────────
 
 def exposure_weighted_rmse_rate(
     y_rate_true: np.ndarray,
@@ -6536,9 +6956,9 @@ def exposure_weighted_rmse_rate(
     return rmse(y_rate_true, y_rate_pred, sample_weight=exposure)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # AUC-ROC
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def auc_roc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     """Compute the Area Under the ROC Curve.
@@ -6562,9 +6982,9 @@ def pooled_auc_roc(
     return auc_roc(np.concatenate(y_trues), np.concatenate(y_scores))
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Convenience dispatcher
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def compute_deviance(
     task: str,
@@ -6614,7 +7034,7 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RESULTS_PATH = PROJECT_ROOT / "res" / "results.csv"
 
-# Canonical column order â€” every appended row must contain these fields.
+# Canonical column order — every appended row must contain these fields.
 # ``tabpfn_version`` records which internal TabPFN ModelVersion produced the
 # row (``"v2_6"`` or ``"v3"``); it is blank for non-TabPFN models.
 RESULT_COLUMNS = [
@@ -6727,14 +7147,14 @@ Two layers:
     - the target is the claim COUNT, not the rate ``ClaimNb/Exposure``;
     - exposure is present as an input feature with the correct per-row values;
     - ``predict`` issues the counterfactual Exposure=1.0 query (so, for a model
-      whose expected count equals exposure, Î¼ = 1.0 â€” the true annualised rate);
+      whose expected count equals exposure, μ = 1.0 — the true annualised rate);
     - the model's output changes when the input exposure changes (exposure is a
       live feature, not ignored).
 
 * **Real-TabPFN behaviour** (skips if TabPFN/model is unavailable). On synthetic
   data where ``ClaimNb`` scales with exposure, checks the fitted model predicts
-  more claims at higher exposure, and that the Exposure=1.0 query returns Î¼ on the
-  annualised scale (Î¼ larger than the exposure-diluted observed counts).
+  more claims at higher exposure, and that the Exposure=1.0 query returns μ on the
+  annualised scale (μ larger than the exposure-diluted observed counts).
 
 Runnable directly (``python tests/test_tabpfn_freq_exposure.py``) since pytest is
 not part of the environment; also collectable by pytest if installed.
@@ -6755,15 +7175,15 @@ from src.methods import tabpfn_model
 from src.methods.tabpfn_model import TabPFNFreq
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Fake regressor + monkeypatch helper (deterministic layer)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 class _EchoExposureRegressor:
     """Fake TabPFN regressor: records fit inputs; predict echoes the exposure col.
 
     A model whose expected count equals the exposure corresponds to a true
-    annualised rate of exactly 1.0 per year â€” convenient for asserting the
+    annualised rate of exactly 1.0 per year — convenient for asserting the
     counterfactual Exposure=1.0 query recovers that rate.
     """
 
@@ -6816,9 +7236,9 @@ def _toy_frame(n: int = 40, seed: int = 0):
     return X, exposure, counts
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Deterministic tests
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def test_target_is_count_not_rate():
     """The model is trained on ClaimNb, never on ClaimNb/Exposure."""
@@ -6847,9 +7267,9 @@ def test_exposure_injected_as_feature_with_values():
 
 
 def test_predict_is_counterfactual_annualised_rate():
-    """predict() queries at Exposure=1.0 â†’ Î¼ is the annualised rate.
+    """predict() queries at Exposure=1.0 → μ is the annualised rate.
 
-    For the echo model (expected count == exposure â‡’ true rate 1.0/yr), the
+    For the echo model (expected count == exposure ⇒ true rate 1.0/yr), the
     Exposure=1.0 query must return 1.0 for every test row regardless of the test
     frame's own exposure values.
     """
@@ -6880,16 +7300,16 @@ def test_exposure_already_in_X_used_as_is():
     X_with_exp = X.copy()
     X_with_exp["Exposure"] = exposure
     with _patch_make_regressor() as p:
-        # No sample_weight passed â€” exposure must come from the X column.
+        # No sample_weight passed — exposure must come from the X column.
         model = TabPFNFreq(exposure_col="Exposure").fit(X_with_exp, counts)
         np.testing.assert_allclose(p.last.fit_X["Exposure"].to_numpy(), exposure)
         mu = model.predict(X_with_exp)   # counterfactual overwrites to 1.0
     np.testing.assert_allclose(mu, 1.0)
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Real-TabPFN behavioural test (skips gracefully)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 class _Skip(Exception):
     """Signals a skipped test when the real TabPFN model is unavailable."""
@@ -6897,7 +7317,7 @@ class _Skip(Exception):
 
 def test_real_tabpfn_exposure_behaviour():
     """On data where ClaimNb scales with exposure, the fitted model predicts more
-    claims at higher exposure, and the Exposure=1.0 query returns annualised Î¼."""
+    claims at higher exposure, and the Exposure=1.0 query returns annualised μ."""
     rng = np.random.default_rng(7)
     n = 400
     x = rng.uniform(0.0, 1.0, size=n)
@@ -6916,21 +7336,21 @@ def test_real_tabpfn_exposure_behaviour():
         mu = model.predict(X)
     except _Skip:
         raise
-    except Exception as exc:  # model download/hardware/version issues â†’ skip
+    except Exception as exc:  # model download/hardware/version issues → skip
         raise _Skip(f"real TabPFN unavailable: {type(exc).__name__}: {exc}")
 
     assert np.mean(high) > np.mean(low), "more exposure should raise expected counts"
-    assert np.all(np.isfinite(mu)) and np.all(mu >= 0), "Î¼ must be finite, non-negative"
-    # Î¼ is per-year; observed counts are diluted by exposure (<1 on average), so
-    # the annualised Î¼ should sit above the mean observed count.
-    assert np.mean(mu) > np.mean(counts), "annualised Î¼ should exceed exposure-diluted counts"
+    assert np.all(np.isfinite(mu)) and np.all(mu >= 0), "μ must be finite, non-negative"
+    # μ is per-year; observed counts are diluted by exposure (<1 on average), so
+    # the annualised μ should sit above the mean observed count.
+    assert np.mean(mu) > np.mean(counts), "annualised μ should exceed exposure-diluted counts"
     # ...and land in a generous band around the true annual rate.
-    assert 0.1 < float(np.mean(mu)) < 1.5, f"mean Î¼={np.mean(mu):.3f} off annualised scale"
+    assert 0.1 < float(np.mean(mu)) < 1.5, f"mean μ={np.mean(mu):.3f} off annualised scale"
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 # Script runner (pytest not required)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ──────────────────────────────────────────────────────────────────────────────
 
 def _all_tests():
     return [
@@ -6973,7 +7393,7 @@ FILE: tests/test_tabpfn_sev_unweighted.py
 ================================================
 """Unit tests for TabPFN severity (Step 3 cleanup + Step 6 1_plus_log fix).
 
-Proves â€” deterministically, with no real TabPFN â€” that:
+Proves — deterministically, with no real TabPFN — that:
   * dropping the dead ``sample_weight=ClaimNb`` from the TabPFN severity fit
     cannot change the numbers: the model is trained on exactly the same inputs
     with or without the weight (it was always ignored);
