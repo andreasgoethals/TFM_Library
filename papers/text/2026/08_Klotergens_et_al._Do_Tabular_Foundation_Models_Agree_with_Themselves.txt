@@ -1,0 +1,1618 @@
+Do Tabular Foundation Models Agree with Themselves?
+Christian Klötergens, Vijaya Krishna Yalavarthi, Lars Schmidt-Thieme, Tom Hanika
+Institute of Computer Science & VWFS DARC, University of Hildesheim, Hildesheim, Germany
+kloetergens@ismll.de
+Abstract
+TabularFoundationModels(TFMs)arecurrentlythebestap-
+proachtotabularpredictionproblems.Theyareconstructedas
+transformers that approximate the Bayesian posterior predic-
+tivedistributionbasedonapre-trainingprior.Theseunivariate
+predictorscanbeconvertedintomultivariateonesautoregres-
+sively by sampling one target and adding it to the features.
+However, the faithfulness of the resulting joint has not been
+investigated. Furthermore, TFMs cannot be evaluated against
+the posterior itself, at least not on real-world datasets, be-
+cause the ground-truth distribution is unknown. We therefore
+propose asking a different question: could a model’s predic-
+tions result fromanyjoint distribution? To answer this ques-
+tion, we pose two requirements that any such model must
+satisfy. The first is marginalization consistency, which de-
+mands that marginalized conditionals are equal to directly
+predicted marginals. The second is factorization consistency,
+which demands that different factorization orders result in
+equal joint distributions. Every TFM that we evaluate vio-
+lates both of these requirements for both classification and
+regression across all datasets.
+1 Introduction
+Tabular Foundation Models (TFMs) rest on a claim about
+Bayesianinference.Mülleretal.(2022)showedthatatrans-
+former trained to predict held-out targets on datasets drawn
+from a prior approximates the Bayesian posterior predictive
+distribution(PPD)underthatprior.Theprior-datafittednet-
+work (PFN) blueprint built on this claim now underwrites
+TFMs such as TabPFN (Hollmann et al. 2025), TabICL (Qu
+et al. 2025), TabDPT (Ma et al. 2025) and most recently
+TabFM (Kong and Das 2026), which are the state-of-the-art
+for tabular prediction tasks.
+WhilethepredictionheadsofcurrentTFMsarerestricted
+to univariate distributions, practitioners use them to model
+multivariate distributions, relying on the claim that they ap-
+proximateBayesianinference.Avalueofonetargetcansim-
+ply be appended as a feature to condition the prediction of
+another. Chaining such conditionals turns a univariate pre-
+dictor into an autoregressive construction of a multivariate
+joint (Vetter et al. 2025). What the theory promises in the
+limit, however, says nothing about how closely a trained
+model actually attains it. How closely Bayesian inference is
+actually approximated by the TFMs has not been analyzed.
+0.0
+0.2
+0.4
+(a) ˆ/u1D45D(/u1D44E| /u1D465)
+1 2 3 4 5 6 7 8
+0.0
+0.2
+0.4
+(b) /summationtext.12
+/u1D456=1 ˆ/u1D45D(/u1D44E| /u1D44F/u1D456, /u1D465) ˆ/u1D45D(/u1D44F/u1D456| /u1D465)
+0.0
+0.5
+(c) ˆ/u1D45D(/u1D44E| /u1D44F1, /u1D465)
+1 2 3 4 5 6 7 8
+0.0
+0.5
+(d) ˆ/u1D45D(/u1D44E| /u1D44F2, /u1D465)
+0.0 0.5 1.0
+(e) ˆ/u1D45D(/u1D44F| /u1D465)
+Figure 1: A marginalization-consistency violation on a sin-
+gleWinetest instance from TabPFNv3. The violation is
+observable when comparing panels(a)and(b), which show
+distributions that should be equal, but are not.(a)represents
+the distribution of theQuality -Ratingusing all predictors
+butColor. The distribution depicted in(b)is computed by
+mixing theQuality -Ratingprediction under the assump-
+tion that theColoris red(c)and white(d), weighted by the
+probability for each color(e).
+It is also unclear how it would be measured, given that only
+a single sample is available per row. Hence, the PPD under
+the pretraining prior is unknown, so there is no reference
+distributionagainstwhichamodel’soutputcouldbescored.
+Wethereforefollowadifferentapproach.Ratherthanasking
+howfaramodel’spredictionssitfromtheBayesianposterior,
+we ask whether they could have come fromanyjoint distri-
+bution at all. A well-defined joint distribution constrains its
+own marginals and conditionals. They must obey the law of
+total probability, and the chain rule must factorize it identi-
+cally in either order. These constraints can be checked from
+a model’s own predictions alone, without any ground-truth
+labelsandwithoutknowingtheprior.Figure1showswhata
+failure looks like using a single row from theWinedataset
+as an example. We compare two predicted distributions of
+theQuality -Ratingfor some bottle of wine. The first dis-
+arXiv:2608.06004v1  [cs.LG]  6 Aug 2026
+
+tribution is predicted directly using all available features but
+ignoringtheColor.Theseconddistributioniscomputedby
+mixingtheconditionalsundertheassumptionsthatthecolor
+is either red or white (which are all possible wine colors
+in the dataset). The mixture is weighted by the probability
+for the respective color. The true joint distribution over all
+columns in the dataset is unknown, yet we know that both
+queries should result in the same marginal distribution of
+Quality -Rating. TabPFNv3, however, computes two very
+different distributions, indicating that the model does not
+follow a well-defined distribution.
+ToguidetheongoingresearchonTFMstowardsminimiz-
+ing or even eliminating such inconsistencies, we formulate
+two requirements that any model whose predictions are in-
+ducedbyawell-definedjointmustsatisfy.First,marginaliza-
+tionconsistency,whichtiesthemodel’sconditionalsbackto
+its directly predicted marginals. Second,factorization con-
+sistency,whichdemandsthatthetwochain-ruleordersbuild
+the same joint distribution. We formally show that these two
+consistency requirements are closely connected. Factoriza-
+tionconsistencyimpliesmarginalizationconsistency,butnot
+viceversa.Hence,everyobservedmarginalizationfailureal-
+ready certifies that changing the order of factorization will
+lead to different distributions.
+We also design experiments to evaluate whether and to
+what extent different TFM classifiers and (probabilistic) re-
+gressors violate each consistency requirement. Every model
+we evaluate violates both conditions, on every dataset, for
+both classification and regression. Our results show that the
+recently released TabFM is themost consistentclassifier.
+However, this model currently does not offer probabilistic
+regression. For regressors we do not find a model that is the
+most consistent across datasets and requirements. Further-
+more, our experiments show that our proposed measures of
+violation for each requirement strongly correlate with each
+other. Our contributions are:
+•We formulate two consistency requirements that a TFM
+must satisfy for its implied joint to be well-defined.
+•From these requirements we derive metrics that quantify
+theextentofviolationswhichfunctionwithoutknowledge
+of the ground truth distribution.
+•Applying the derived metrics we add to the evaluation of
+TFMs by comparing them in terms of consistency. Our
+resultsshowthatallcurrentstate-of-the-artTFMsviolate
+both requirements on all datasets.
+2 Tabular Foundation Models
+Tabular foundation models transfer the in-context learning
+paradigm to supervised prediction on tables. The standard
+blueprint is the prior-data fitted network (PFN; Figure 2). A
+transformer is pretrained on millions of synthetic datasets
+drawn from a prior over data-generating processes (for in-
+stance, randomly sampled structural causal models) by pre-
+dicting held-out target values from the remainder of each
+dataset. After pretraining, the model solves a new task with-
+out any gradient updates. It consumes a labeled training set
+D={(x i, yi)}n
+i=1 as its context together with a test fea-
+ture vectorx, and a single forward pass returns a predic-
+(a) Pretraining
+???
+synthetic datasets
+D(k) ∼prior
+Transformer ˆp
+
+y|x,D (k)
+for held-out targets
+updateθto minimize NLL
+(b) Inference
+?
+Transformer
+single
+forward pass 1 2 3 4 y
+ˆp(y|x,D)
+contextD featuresx targety
+Figure2:Theprior-datafittednetworkblueprint.(a)Atrans-
+former is pretrained to predict held-out targets on synthetic
+datasetsD (k) drawn from a prior. (b) With frozen weights,
+a single forward pass on a real training setDand test point
+xreturns a univariate predictive density approximating the
+posterior predictive under that prior.
+tive distributionˆp(y|x;D)over the target. The pretrain-
+ingobjectiveshapesthisoutputintoanapproximationofthe
+Bayesianposteriorpredictivedistributionunderthesynthetic
+prior (Müller et al. 2022).
+OneNotationforBothPredictionTasksTFMsservetwo
+prediction tasks through two predictive heads: a categorical
+head over a finite set of classes, and a distributional head for
+probabilistic regression of a continuous value. The distribu-
+tionalheadisrealizedasabin-wisedensity(Hollmannetal.
+2025) or as a set of predicted quantiles (Qu et al. 2026), de-
+pendingonthemodel.Wetreatclassificationandregression
+in a unified way. A targetyj takes values in a target space
+Y j that is either finite (classification) or a continuous subset
+ofR(regression), andˆpalways denotes the density of the
+predictive distribution with respect to the base measure of
+that space: the counting measure in the finite case, whereˆp
+isaprobabilitymassfunctionand
+R
+Y j · · ·dy j isafinitesum,
+andtheLebesguemeasureinthecontinuouscase.Wethere-
+fore speak ofdensitiesandintegralsthroughout, and every
+statement in this section and in Section 3 applies verbatim
+to classification targets, regression targets, and to a pair of
+targets of mixed type.
+Implied Joint DistributionsWhile the predictive head
+is univariate, the in-context interface is agnostic to which
+columns act as features and which single column acts as
+the target. This flexibility provides conditional predictions
+for free. To condition the prediction of one target on the
+value of another, that value is simply appended as an ad-
+ditional feature column (to the test pointxand, using the
+observed values, to every row of the context setD) (Vetter
+et al. 2025). Chaining such conditionals turns the univariate
+predictorintoaconstructionformultivariatejoints.Forthis,
+y= (y 1, . . . , yd)∈ Y 1 × · · · × Y d collectsdtargets of
+
+interest. For any permutationπof{1, . . . , d}, the chain rule
+implies the autoregressive factorization
+ˆpπ(y|x) =
+dY
+j=1
+ˆp
+
+yπ(j) yπ(<j) ,x
+
+,(1)
+wherey π(<j) := (y π(1), . . . , yπ(j−1) )denotes the already-
+processed targets. Each factor is produced by a separate in-
+context inference in which these targets are treated as fea-
+tures.Thecontextseteachfactorisconditionedontherefore
+differsfromfactortofactor.Wesuppressitin(1)andmakeit
+explicitinSection3,whereitcarriestheargument.Sampling
+fromˆpπ proceedsancestrally:drawy π(1) ∼ˆp(yπ(1) |x),ap-
+pend the sample to the feature vector, drawyπ(2) from the
+resulting conditional, and so on.
+3 Consistency Properties
+We formalize two requirements for TFMs that are necessary
+to guarantee that the predicted posteriors stem from a well-
+defined multivariate distribution. We begin with the weaker
+of the two, and then show that one implies the other.
+Notationforapairoftargets.Bothrequirementsalready
+applyford= 2,sowestatethemfortwotargetsandwriteA
+andBfor the two target columns,a∈ Y A andb∈ Y B for
+their values. Superscripts index target columns throughout:
+DAisthecontextsetinwhichcolumnAisthetargetandBis
+oneofthefeatures,andD A
+−B isthesamecontextwithcolumn
+Bremovedaltogether,whichiswhatthemodelseeswhenit
+predictsAwithout knowingB. Ford >2both conditions
+applyverbatimtoanypairoftargets,withtheremainingones
+held fixed as features.
+3.1 Marginalization Consistency
+The most basic requirement ties the model’s conditionals
+back to its direct univariate predictions. The autoregres-
+sive construction samples the intermediate target from the
+model’s own predictive distribution; taking this detour must
+not change what the modelbelievesabout the remaining
+target.Therefore,marginalizingthefactorizationoverthein-
+termediate target must recover the marginal that the model
+predicts directly. The following definition is in the spirit
+of the Kolmogorov Extension Theorem for stochastic pro-
+cesses (Øksendal 2003).
+Definition 1(Marginalization consistency).A model is
+marginalization-consistentiff for everyxand alla∈ Y A,
+ˆp(a|x;D A
+−B) =
+Z
+Y B
+ˆp(a|b,x;D A) ˆp(b|x;D B
+−A) db.
+(C1)
+A violation means that the model’s marginal estimate of
+ais inconsistent with its own conditional predictions with
+respect tob. The two predictions differ in their context set,
+i.e.,bisdroppedontheleft-handsidebutpresentontheright-
+handside.Foranywell-definedjointdistributiontheidentity
+holds. Condition (C1) demands that the model’s predictions
+obey the law of total probability; in Bayesian terms, it is an
+instance of the martingale property of coherent predictive
+systems (Berti, Pratelli, and Rigo 2004; Fong, Holmes, and
+Walker 2023).
+3.2 Factorization Consistency
+The second, stronger requirement concerns the constructed
+joint distribution itself rather than its univariate projections.
+The chain rule factorizes a joint density in either order,
+p(a, b|x) =p(a|b,x)p(b|x) =p(b|a,x)p(a|x). If
+the model’s predictive densities are induced by a common
+joint, the two autoregressive constructions must therefore
+agree, i.e.,ˆp(a,b) = ˆp(b,a).
+Definition 2(Factorization consistency).A model is
+factorization-consistentiff for everyxand alla∈ Y A,
+b∈ Y B,
+ˆp(a|b,x;D A) ˆp(b|x;D B
+−A)
+= ˆp(b|a,x;D B) ˆp(a|x;D A
+−B)
+(C2)
+If this property is violated, the autoregressive approach
+dependsontheorderinwhichthetargetsaresampled.Equa-
+tion (C2) is a compatibility condition, which characterizes
+when a family of conditionals and marginals can arise from
+one joint distribution (Besag 1974; Arnold and Press 1989).
+3.3 The Properties Are Strictly Ordered
+Although Definitions 1 and 2 arise from different aspects
+of coherence (agreement between conditional and marginal
+predictions on the one hand, agreement between two factor-
+izations on the other), they are not independent. Whenever
+the predicted conditionals are properly normalized densi-
+ties,factorizationconsistencyalreadyentailsmarginalization
+consistency.
+Proposition 1((C2) implies (C1)).If a model is
+factorization-consistent (Definition 2), then it is also
+marginalization-consistent (Definition 1).
+Proof.Letxbe a feature vector anda∈ Y A. We show that
+theRHSof(C1),themarginaldensitythattheautoregressive
+construction assigns toa, reduces toˆp(a|x;DA
+−B).
+Z
+Y B
+ˆp(a|b,x;D A) ˆp(b|x;D B
+−A) db
+(C2)
+=
+Z
+Y B
+ˆp(b|a,x;D B) ˆp(a|x;D A
+−B) db
+= ˆp(a|x;D A
+−B)
+Z
+Y B
+ˆp(b|a,x;D B) db
+| {z }
+= 1
+= ˆp(a|x;D A
+−B)
+The first step applies (C2) to the integrand, the second pulls
+ˆp(a|x;D A
+−B)out of the integral, since it does not depend
+onb.Thethirdstepusesthatˆp(· |a,x;D B)isanormalized
+probability density and therefore integrates to one. Without
+thenormalization,(C1)holdsonlyuptosomeconstantfactor.
+The contrapositive of Proposition 1 yields the pragmatic
+approach of only testing for (C1). Yet, since our work aims
+at fostering the understanding of these two properties, we
+investigatebothoftheminthefollowing.Moreover,wewant
+toquantifytheextenttowhicheitherconditionisviolatedby
+TFMs.
+
+Proposition 2((C1) does not imply (C2)).Marginalization
+consistency does not imply factorization consistency.
+Proof.We provide a counterexample in Appendix A.
+Consistency matters.The ground-truth data-generating
+process that any TFM aims to captureisa single joint dis-
+tribution, whose marginals and conditionals cohere by con-
+struction. Both (C1) and (C2) therefore necessarily hold for
+thetrueunderlyingdistribution.Amodelthatviolateseither
+has provably departed fromanyvalid joint. Therefore, such
+a model cannot be considered as an accurate estimate of the
+underlying distribution.
+The incoherence also propagates into any downstream
+task. Autoregressive data generation (Vetter et al. 2025)
+draws records from an arbitrary and order-dependent joint.
+Therefore,onecannottrustthesejointsfordecisionsthatare
+based on the dependence between targets.
+4 Experiments
+We want to put the just-introduced conditions to a test on
+current TFMs. The goal is to detect and quantify to which
+extenteachconditionisviolated.Theproposedmethodshall
+establish a new aspect for analyzing and comparing TFMs
+and their prediction capabilities. Furthermore, we examine
+the relationship between the two consistency requirements.
+4.1 Setup
+Models.We conduct our experiments on several state-
+of-the-art TFMs: TabPFNv2/v3 (Hollmann et al. 2025;
+Grinsztajn et al. 2026), whose regression head returns
+a bin-wise piecewise-constant density, TabICLv2 (Qu
+et al. 2026), whose head returns predicted quantiles, and
+TabDPTv1.2 (Ma et al. 2025; Hosseinzadeh et al. 2026),
+whose head is a softmax over equal-width bins of the stan-
+dardized target space. For classification, we additionally in-
+cludeTabICLv1(Quetal.2025)andTabFM(KongandDas
+2026). While the former does not provide a regressor, the
+latter offers point regression only.
+Datasets.We employ tabular datasets from
+OpenML (Feurer et al. 2021) in which two columns
+form a natural pair of targets that plausibly depend on
+each other given the remaining features, with all remaining
+columns serving as the feature vectorx. We evaluate on
+a broad suite spanning both classification and regression;
+Appendix B lists every dataset’s target pair, size, feature
+counts, and OpenML ID, together with the selection criteria
+and preprocessing applied.
+Measuringdisagreement.Eachcheckcomparestwopre-
+dictivedistributionsoverthesametargetspace,andwequan-
+tify their discrepancy with the total-variation distance
+TV(p, q) = 1
+2
+X
+c
+|pc −q c| ∈[0,1],(2)
+where the sum runs over the classes (classification) or over
+the cells of a discretization of the target space (regression).
+TVequals0iff the distributions coincide and1iff they are
+disjoint, and it can be read as follows: a value oftmeans
+there is an event to which the two sides of the check assign
+probabilitiesdifferingbyt.BecauseTVisboundedandunit-
+free, classification and regression results are reported on the
+same scale.
+The classification results can be consideredexact. The
+targetspacesarefinite,soboththemarginalizingintegraland
+the two chain-rule joints are finite sums that we evaluate in
+closedformfromthemodel’scategoricalheads.Anynonzero
+TVis a violation by definition.
+For regression the random variables of interest are con-
+tinuous,andthereforewecannotenumeratethetargetspace.
+The distribution of targets modeled by current TFM imple-
+mentations can be accessed by their quantile function called
+ˆF −1.Fromit,wederiveabin-wiseuniformapproximationof
+thedensity.Consecutivequantilelevelsdefinebinsofknown
+probabilitymass,withinwhichthemassisspreaduniformly.
+Two predictive distributions can then be compared byTV
+over these bins as in (2); see Appendix C for details. We run
+every check under5-fold cross-testing.
+All experiments were run on NVIDIA RTX 2080 Ti and
+A40 GPUs with 11GB and 48GB of memory, respectively.
+4.2 Marginalization Consistency
+Condition (C1) asks whether marginalizing the autoregres-
+sive factorization over the intermediate targetbrecovers
+the directly predicted marginal ofa. We form the mixtureR
+Y B ˆp(a|b,x;D A) ˆp(b|x;D B
+−A) dbfrom the model’s
+own conditional and marginal heads and compare it against
+ˆp(a|x;D A
+−B).
+Classification.For categorical targets, the integral is a fi-
+nite sum, so we evaluate the conditionalˆp(a|b,x;D A)
+at every class ofb, weight each by the model’s predicted
+ˆp(b|x;D B
+−A), and compare the resulting mixture to the di-
+rectmarginal.Figure1alreadyillustratedsuchaviolationon
+a singleWineinstance.
+Observations.Table 1 shows that the violations are sys-
+tematic.Everymodelviolatestheconditiononeverydataset.
+Sincethemixtureisevaluatedinclosedform,thesegapscan-
+not be sampling noise. The computational detour throughb
+truly alters the model’s estimate ofa, even though the es-
+timate ofbis obtained from the TFM itself and provides
+no additional information. No single model has the smallest
+violations on every dataset, so there is no uniformlymost
+consistentclassifierformarginalization:TabFMhasthelow-
+est average TV on five of the ten datasets, TabDPT on four,
+andTabPFNv3ontheremainingone.TabICLv1turnsoutto
+be the most inconsistent model.
+Regression.We cannot enumerateY B, so we discretize it
+deterministically: we replaceˆp(b|x;D B
+−A)byK= 1,000
+equal-mass atomsb k = ( ˆF B)
+−1 k−1/2
+K
+
+taken from the
+quantile head. We compute a midpoint quadrature of the
+marginalization integral and average the conditionalCDFs,
+ˆFmix = 1
+K
+P
+k ˆF(· |b k,x;D A).TheaveragedCDFiscom-
+pared with the direct marginal’s CDF viaTVon a shared
+S= 20-cell grid.
+The resolutionsK= 1,000andS= 20are deliberately
+set to opposite ends. A largeKmakes the quadrature of the
+
+TabPFNv2 TabICLv1 TabDPT TabICLv2 TabPFNv3 TabFM
+Classification
+Anneal* 0.0022 ±.0003 (0.28) 0.0089±.0025 (0.31) 0.0037±.0011 (0.24) 0.0029±.0012 (0.29) 0.0060±.0018 (0.42)0.0010 ±.0008 (0.18)
+Credit* 0.0237 ±.0023 (0.12)0.0282 ±.0015 (0.16)0.0218 ±.0029 (0.16) 0.0234±.0023 (0.13) 0.0273±.0024 (0.15) 0.0248±.0038 (0.19)
+Phishing* 0.0338 ±.0019 (0.43) 0.0339±.0015 (0.43)0.0261 ±.0024 (0.24)0.0293 ±.0021 (0.35) 0.0278±.0026 (0.32) 0.0285±.0023 (0.33)
+MIC* 0.0133 ±.0018 (0.16) 0.0129±.0008 (0.14) 0.0091±.0011 (0.06)0.0096 ±.0009 (0.08) 0.0091±.0020 (0.16)0.0090 ±.0013 (0.20)
+Customer* 0.0060 ±.0002 (0.04)0.0077 ±.0004 (0.06) 0.0062±.0011 (0.05) 0.0060±.0009 (0.09)0.0057 ±.0005 (0.04)0.0061 ±.0010 (0.07)
+Car0.0513 ±.0046 (0.45) 0.0621±.0038 (0.39) 0.0527±.0021 (0.55) 0.0506±.0049 (0.50) 0.0506±.0055 (0.54)0.0171 ±.0024 (0.18)
+Marketing* 0.0131±.0013 (0.19) 0.0129±.0009 (0.24)0.0087 ±.0006 (0.09)0.0121 ±.0011 (0.23) 0.0090±.0016 (0.34) 0.0104±.0009 (0.22)
+Wine* 0.0478 ±.0019 (0.52) 0.0344±.0008 (0.44) 0.0157±.0002 (0.39)0.0191 ±.0007 (0.72) 0.0212±.0006 (0.66)0.0092 ±.0008 (0.43)
+Nursery0.0536 ±.0053 (0.42) 0.0588±.0030 (0.27) 0.0546±.0019 (0.43) 0.0332±.0010 (0.44) 0.0231±.0009 (0.41)0.0137 ±.0007 (0.25)
+Diamonds0.0228 ±.0007 (0.35)0.0339 ±.0004 (0.37)0.0169 ±.0003 (0.41) 0.0250±.0003 (0.47) 0.0282±.0006 (0.37) 0.0312±.0007 (0.76)
+Regression
+Boston0.0742 ±.0082 (0.34) —0.0597 ±.0076 (0.29)0.2850 ±.0419 (0.79) 0.0623±.0098 (0.33) —
+QSAR* 0.0754 ±.0054 (0.39) —0.0584 ±.0050 (0.33) 0.0710±.0039 (0.29) 0.0651±.0069 (0.28)—
+Stock0.0775 ±.0063 (0.31) —0.0313 ±.0051 (0.25)0.0745 ±.0056 (0.32) 0.0777±.0075 (0.40) —
+Concrete0.1398 ±.0078 (0.76) —0.0911 ±.0078 (0.60) 0.1237±.0060 (0.66) 0.1030±.0084 (0.50)—
+Insurance* 0.0570 ±.0016 (0.34) — 0.0681 ±.0030 (0.37) 0.0559±.0046 (0.50)0.0163 ±.0029 (0.26)—
+Fiat* 0.0566 ±.0107 (0.34)—0.0524 ±.0029 (0.36) 0.0723±.0039 (0.48) 0.0529±.0054 (0.48) —
+Kin8nm0.0815 ±.0021 (0.32) —0.0748 ±.0016 (0.31)0.0864 ±.0021 (0.33) 0.0848±.0026 (0.37) —
+Table 1: Marginalization-consistency violations, one column per model: total-variation distanceTV∈[0,1]between the direct
+marginalˆp(a|x;D A
+−B)and the marginalized mixture, averaged over the test set, with the standard deviation over the five
+cross-testing folds as a subscript and the worst single test instance in parentheses. Larger is worse; a consistent model would
+score0. Per row,green (bold)and blue mark the smallest and second-smallest mean gap, red the largest; the parenthesized
+worst-instance values are ranked and colored the same way. TabICLv1 ships no regressor and TabFM’s regression head emits
+only point predictions; both are evaluated on classification only. An asterisk (*) marks datasets included in the TabArena
+benchmark.
+marginalizationintegralaspreciseasneeded,sothemixture
+is not distorted by a coarse approximation ofˆp(b|x). The
+comparison grid is coarsened for the opposite reason: be-
+causeTVis non-increasing under coarsening (Csiszár and
+Shields 2004), merging cells can only hide discrepancies
+that fall within a cell but never create them. AnS= 20-cell
+gridiscoarseenoughforthecomparisontobeinsensitiveto
+the quadrature discretization. The resulting value forTVis
+thereforealowerboundforanyevaluationonafinergrid,and
+in particular for theTVbetween the underlying continuous
+distributions (Nielsen and Sun 2018).
+Observations.Intheregressionsettingthereisnotasingle
+TFMthatscoresanaverageTVclosetozeroonanydataset.
+Again,TabDPTappearstobethemodelthatcomesclosestto
+marginalization consistency, as it has the smallest TV on all
+datasets butInsurance. There, however, it has the highest
+TV among tested models.
+4.3 Factorization Consistency
+Condition (C2) is the stronger requirement. It asks whether
+thejointdistributionbuiltbythechainruleisindependentof
+theorderinwhichthetwotargetsaresampled.Weconstruct
+both joints and measure how far apart they are.
+Classification.We build each joint exactly, enumerating
+over all possiblea, bfor each of the two orders (ˆp(a|
+b,x;D A),ˆp(b|a,x;D B)). The resulting joint distributions
+are therefore tables of size|YA| × |Y B|, where each cell
+representsaprobabilityforthecombinationofsomeaandb.
+The two tables resulting from each order are then compared
+based on TV.
+Observations.Table 2 shows that the two orders disagree
+everywhere, and by a wider margin than the marginalization
+check.ThistranslatestotheintuitionthatfollowsfromPropo-
+sition 1: factorization consistency isharderto achieve than
+marginalization consistency. TabFM sticks out as the TFM
+thatcomesclosesttofulfillingfactorizationconsistency,asit
+hasthelowestaverageTVon8outof10datasetsandcomes
+in second on the remaining two. Similar to the marginaliza-
+tion consistency experiment, TabICLv1 is the classifier with
+the highest violations on average.
+Regression.The joint cannot be enumerated, so we dis-
+cretize each order onto the same128×128grid of(a, b)
+cellswhoseaxesspantherangebetweentheoutermostquan-
+tiles. For ordera→b, theb-axis cell masses and each cell’s
+probability-mass midpointb ∗
+l come from the quantile head
+ofˆp(b|x;D B
+−A). Then, the conditionalˆp(a|b ∗
+l ,x;D A)
+distributes each cell’s mass over thea-axis through its CDF.
+Thisisagainevaluatedfromthequantilehead.Theconverse
+orderb→ais constructed analogously.
+Observations.The order-dependence carries over to the
+continuous setting. The two chain-rule orders thus disagree
+not only on the marginals but on the dependence structure
+of the constructed joint, so thejoint distributionproduced
+by the autoregressive workaround depends on the order in
+which the targets happen to be sampled.
+Incontrasttothemarginalizationconsistencyexperiment,
+TabDPT belongs to themore inconsistentmodels in this
+setting. TabPFNv3 is the regressor that comes closest to
+factorization consistency among the evaluated TFMs as it
+has the lowest average TV on the majority of datasets.
+
+TabPFNv2 TabICLv1 TabDPT TabICLv2 TabPFNv3 TabFM
+Classification
+Anneal* 0.0148 ±.0015 (0.29) 0.0261±.0015 (0.36) 0.0123±.0020 (0.27) 0.0129±.0021 (0.29) 0.0173±.0023 (0.42)0.0042 ±.0014 (0.19)
+Credit*0.0470 ±.0037 (0.14)0.0632 ±.0046 (0.22) 0.0510±.0020 (0.24) 0.0517±.0048 (0.26) 0.0506±.0045 (0.16) 0.0484±.0044 (0.18)
+Phishing* 0.0522 ±.0030 (0.43) 0.0536±.0014 (0.43) 0.0436±.0024 (0.29)0.0448 ±.0031 (0.36) 0.0422±.0022 (0.32)0.0409 ±.0032 (0.34)
+MIC* 0.0277 ±.0026 (0.16) 0.0297±.0018 (0.24)0.0162 ±.0015 (0.13)0.0254 ±.0006 (0.16) 0.0209±.0017 (0.15) 0.0166±.0014 (0.20)
+Customer* 0.0231 ±.0016 (0.12) 0.0252±.0007 (0.11) 0.0180±.0032 (0.09) 0.0184±.0016 (0.09) 0.0185±.0025 (0.08) 0.0144±.0019 (0.10)
+Car0.0893 ±.0085 (0.45) 0.0939±.0060 (0.39) 0.1658±.0374 (0.55) 0.0644±.0058 (0.50) 0.0616±.0048 (0.54)0.0216 ±.0038 (0.18)
+Marketing* 0.0434±.0038 (0.20)0.0467 ±.0025 (0.42) 0.0312±.0059 (0.39) 0.0344±.0040 (0.39) 0.0258±.0059 (0.36)0.0219 ±.0013 (0.22)
+Wine* 0.0487 ±.0018 (0.59) 0.0350±.0007 (0.48) 0.0165±.0001 (0.41)0.0193 ±.0007 (0.72) 0.0214±.0006 (0.66)0.0093 ±.0008 (0.43)
+Nursery0.0745 ±.0053 (0.45) 0.0746±.0025 (0.28) 0.1120±.0043 (0.43) 0.0452±.0019 (0.44) 0.0378±.0020 (0.41)0.0138 ±.0007 (0.25)
+Diamonds0.0655 ±.0005 (0.38)0.0916 ±.0006 (0.46) 0.0724±.0006 (0.72) 0.0744±.0010 (0.61) 0.0632±.0010 (0.54)0.0593 ±.0004 (0.76)
+Regression
+Boston0.1335 ±.0099 (0.36)— 0.1426 ±.0091 (0.37) 0.4762±.0257 (0.90) 0.1379±.0061 (0.39) —
+QSAR*0.2068 ±.0166 (0.62)— 0.2116 ±.0110 (0.90) 0.2181±.0058 (0.74) 0.2284±.0055 (0.73) —
+Stock0.1307 ±.0053 (0.46) — 0.1448 ±.0081 (0.40) 0.1626±.0054 (0.38)0.1484 ±.0043 (0.44) —
+Concrete0.2206 ±.0115 (0.77) — 0.1815 ±.0085 (0.74) 0.2578±.0118 (0.80)0.1813 ±.0067 (0.68)—
+Insurance* 0.1634 ±.0044 (0.53)— 0.2576 ±.0115 (0.73) 0.2366±.0093 (0.78)0.1620 ±.0100 (0.74) —
+Fiat* 0.1617 ±.0042 (0.44)— 0.1973 ±.0040 (0.87) 0.1883±.0069 (0.60)0.1464 ±.0044 (0.62) —
+Kin8nm0.2007 ±.0068 (0.53) — 0.1845 ±.0027 (0.53) 0.2011±.0028 (0.50)0.1570 ±.0028 (0.43)—
+Table2:Factorization-consistencyviolations,onecolumnpermodel:total-variationdistancebetweenthetwochain-rulejoints,
+averaged over the test set, with the standard deviation over the five cross-testing folds as a subscript and the worst single test
+instance in parentheses. Larger is worse; a consistent model would score0. Per row,green (bold)and blue mark the smallest
+and second-smallest mean gap, red the largest; the parenthesized worst-instance values are ranked and colored the same way.
+TabICLv1 ships no regressor and TabFM’s regression head emits only point predictions; both are evaluated on classification
+only. An asterisk (*) marks datasets included in the TabArena benchmark.
+4.4 Discussion
+Every model violates both conditions on every dataset, so
+the observed inconsistency is a structural property of cur-
+rent TFMs. TabFM, the newest and top-ranked model on
+TabArena (Erickson et al. 2026), comes closest to being
+consistent among all tested classifiers. Based on that, one
+could assume that a model’s consistency automatically im-
+proves with its predictive performance. However, relating
+each model’s dataset-level accuracy or RMSE to its consis-
+tencygap(AppendixD)revealsnostrongcorrelation.There-
+fore, consistency is a distinct axis that benchmarks such as
+TabArena do not capture so far.
+We find a strong association between the two consistency
+types (see Figure 3). Additionally, for the classification task
+wefindthattheTVmeasuresforthetwoconsistencyrequire-
+ments are higher for datasets with fewer features. However,
+we do not observe this for regression (see Appendix E).
+TabDPT is a revealing case in two aspects. First, it is
+trained with a self-supervised objective that predicts each
+column from the others (Ma et al. 2025; Hosseinzadeh et al.
+2026).Astheroleoftargetandfeatureisrepeatedlyswapped
+during training, one would intuitively expect it to align the
+two conditional directions and thus improve factorization
+consistency.Thisexpectationisnotmet:TabDPTisoneofthe
+moreinconsistentmodelsunderfactorization,whileitisrel-
+atively consistent under marginalization. Second, unlike the
+othermodels,TabDPTistrainednotonsyntheticbutonreal
+data, a corpus that includes those standard OpenML tables
+inoursuitethatarenotdrawnfromthecuratedTabArenare-
+uploads.Yetitisnotmeasurablymoreconsistentondatasets
+seenduringtrainingthanonthecuratedonesithasnotseen.
+TabArena datasets are marked with an∗in Tables 1 and 2.
+5 Related Work
+Coherenceofpredictivesystems.Thatasequenceofone-
+step-ahead predictions defines a valid joint is the defining
+propertyofacoherent(martingale)predictivesystem.Thisis
+the foundation of the martingale-posterior view of Bayesian
+inference(Berti,Pratelli,andRigo2004;Fong,Holmes,and
+Walker 2023). Falck, Wang, and Holmes (2024) use exactly
+thismartingalepropertytotestwhetherin-contextlearningin
+large language models (LLMs) is Bayesian. TabMGP builds
+martingaleposteriorsontopofTabPFN,implicitlyassuming
+the requisite coherence (Ng et al. 2025).
+Our marginalization-consistency condition is the finite,
+tabular instance of the martingale property these works rely
+on. The results of our experiments show that the condition
+is violated by TFMs. This disproves the coherence that such
+constructions already assume.
+Incoherence of any-order models.The tension between
+univariatetrainingandjointdeploymentiswelldocumented
+outside the tabular setting. Order-agnostic autoregressive
+models train a single network to model every conditional
+ordering (Uria, Murray, and Larochelle 2014; Hoogeboom
+etal.2022),buttheorderingsdonotnecessarilyagree.Shih,
+Sadigh, and Ermon (2022) show these models are internally
+redundant, defining the same distribution in several incon-
+sistent ways.
+LLMs likewise return probability judgments that violate
+the basic properties of probability (Zhu and Griffiths 2024;
+Luo et al. 2025). We bring this lens to tabular foundation
+models, and unlike these qualitative diagnoses, we derive
+label-free metrics that quantify the extent of inconsistency.
+
+10□3 10□2 10□1
+Factorization TV
+10□3
+10□2
+10□1
+Marginalization TV
+/u1D45F= 0.89, /u1D70C= 0.90
+Tab-DPT
+TabFM
+TabICL-v1
+TabICL-v2
+TabPFN-v2
+TabPFN-v3
+Tab-DPT
+TabFM
+TabICL-v1
+TabICL-v2
+TabPFN-v2
+TabPFN-v3
+Classiﬁcation Regression
+Figure 3: Factorization- versus marginalization-consistency
+TV,onemarkerper(model,dataset)pair,filledforclassifica-
+tion and open for regression; the dashed line marksequality.
+The two gaps are strongly associated (Pearsonr= 0.89,
+Spearmanρ= 0.90).
+Kolmogorov consistency in neural processes.Neural
+processes are meta-learned predictors that, like TFMs, map
+a context set to a predictive distribution. It is known that
+they generally fail the Kolmogorov consistency conditions
+that are required of stochastic processes (Øksendal 2003).
+Young (2026) precisely defines this for conditional neural
+processes (Garnelo et al. 2018), establishing aconditioning
+consistency gapbetween adding a point to the context and
+conditioning on it. Our marginalization-consistency condi-
+tion is the tabular counterpart of this gap. The difference is
+thatTFMsaredeployedwiththefinite,andoftensmall,con-
+textsizesatwhichsuchgapsarelargest,andwemeasurethe
+violationempiricallyratherthanboundingitasymptotically.
+Yalavarthietal.(2026)definemarginalizationconsistency
+inthecontextofprobabilisticforecastingforirregularlysam-
+pledmultivariatetimeseries.Theyshowexperimentallythat
+apreviousmodelfailstofulfillthatcondition,andintroduce
+a consistent alternative.
+Compatibility of conditionals.Deciding whether a fam-
+ilyofconditionalandmarginaldistributionscanarisefroma
+common joint is a fundamental problem in statistics (Besag
+1974; Arnold and Press 1989; Arnold, Castillo, and Sarabia
+2001). The same problem underlies dependency networks,
+where independently fitted conditionals are combined with-
+out any guarantee of coherence (Heckerman et al. 2000).
+Copulas offer the complementary, coherent-by-construction
+route to a joint (Nelsen 2006) by separating the marginals
+and their dependence structure. Our consistency conditions
+reflectthecompatibilityrequirementsfromtheliterature,and
+are turned into tests on a TFM’s predictions.
+6 Conclusion and Future Work
+WebeganfromtheobservationthattheBayesianpromiseun-
+derlying TFMs cannot be measured directly. Without access
+tothepretrainingprior,thereisnoreferenceposteriorpredic-
+tivedistributiontoscoreamodelagainst.Wethereforeasked
+theweakerbutcheckablequestionofwhetheramodel’spre-
+dictions could have been induced byanyjoint distribution
+at all, and formalized it as two requirements: marginaliza-
+tion and factorization consistency. Both are testable from a
+model’sownoutputsalone.EveryTFMweevaluateviolates
+bothofthem,oneverydatasetandforclassificationaswellas
+probabilisticregression.Theanswertoourquestionisthere-
+fore negative: the univariate predictions of current TFMs do
+not arise from any joint distribution over the columns of a
+table, any of which may be the target of a different query.
+Mixedcategoricalandcontinuoustargetpairs.Thecon-
+ditionsofSection3arestatedoverageneraltargetspaceand
+applyverbatimtoamixedpair(acategorical,bcontinuous),
+which would exercise the marginalizing mixture across the
+categorical/continuous boundary. That check is uninforma-
+tive for the models we studied, as today’s tabular foundation
+modelsuseseparateweightsforclassificationandregression,
+soamixedpairwouldcomparetwoeffectivelydifferentmod-
+elsratherthanprobethecoherenceofone.Itbecomesauseful
+experimentonceunifiedarchitecturesemitclassificationand
+regression from shared weights.
+Toward consistency-aware tabular foundation models.
+The conditions we formalize are, at present, purely diagnos-
+tic.Nocurrentmodelistrainedorconstrainedtosatisfythem.
+Weseetwocomplementarylinesofwork.Thefirstisevalua-
+tion: marginalization consistency is cheap to measure, since
+itcompares onlyunivariate heads,and byourcontrapositive
+it already certifies factorization violations. We therefore ar-
+guethatitbelongsinthestandardevaluationsuite,alongside
+accuracy and calibration, for any tabular foundation model
+that is used, or might be used, as a joint density estimator.
+The second line ismodel design, and centers on how
+to build in-context predictors whose univariate predictions
+provably cohere. Possible directions include training objec-
+tives that penalize marginalization or factorization gaps, ar-
+chitectures that share a common latent joint from which the
+univariate heads are derived by construction, and post-hoc
+reconciliation that projects a set of incompatible condition-
+als onto the nearest compatible family. Whether consistency
+canbeachievedwithoutsacrificingexpressivityisthecentral
+open question.
+Native joint prediction.Future generations of TFMsmay
+be able to predict multivariate densities or copulas directly.
+Thesemodelsmayneedtobeconsistentinanewway.When
+queried one target at a time, the model still induces a joint
+distributionthroughfactorization.Thisjointdistributionmay
+need to align with the distribution predicted directly by the
+multivariatehead.Ourtwoconditionsthenextendfromapair
+oftargetstoarbitrarysubsetsofthem.Regardlessofwhether
+columns are part of the features or targets, the induced joint
+distribution should be consistent.
+
+References
+Arnold, B. C.; Castillo, E.; and Sarabia, J. M. 2001. Condi-
+tionallySpecified Distributions:An Introduction.Statistical
+Science, 16(3): 249–274.
+Arnold,B.C.;andPress,S.J.1989. CompatibleConditional
+Distributions.Journal of the American Statistical Associa-
+tion, 84(405): 152–156.
+Berti,P.;Pratelli,L.;andRigo,P.2004. LimitTheoremsfor
+a Class of Identically Distributed Random Variables.The
+Annals of Probability, 32(3).
+Besag, J. 1974. Spatial Interaction and the Statistical Anal-
+ysis of Lattice Systems.Journal of the Royal Statistical
+Society: Series B (Methodological), 36(2): 192–236.
+Csiszár, I.; and Shields, P. C. 2004. Information Theory and
+Statistics: A Tutorial.Foundations and Trends in Communi-
+cations and Information Theory, 1(4): 417–528.
+Erickson, N.; Purucker, L.; Tschalzev, A.; Holzmüller, D.;
+Desai, P.; Salinas, D.; and Hutter, F. 2026. TabArena: A
+Living Benchmark for Machine Learning on Tabular Data.
+Advances in Neural Information Processing Systems, 38.
+Falck, F.; Wang, Z.; and Holmes, C. 2024. Is In-Context
+Learning in Large Language Models Bayesian? A Martin-
+gale Perspective. InProceedings of the 41st International
+Conference on Machine Learning, volume 235 ofProceed-
+ings of Machine Learning Research. PMLR.
+Feurer, M.; van Rijn, J. N.; Kadra, A.; Gijsbers, P.; Mallik,
+N.;Ravi,S.;Müller,A.;Vanschoren,J.;andHutter,F.2021.
+OpenML-Python: An Extensible Python API for OpenML.
+Journal of Machine Learning Research, 22(100): 1–5.
+Fong, E.; Holmes, C.; and Walker, S. G. 2023. Martingale
+posteriordistributions.JournaloftheRoyalStatisticalSoci-
+ety Series B: Statistical Methodology, 85(5): 1357–1391.
+Garnelo, M.; Rosenbaum, D.; Maddison, C.; Ramalho, T.;
+Saxton, D.; Shanahan, M.; Teh, Y. W.; Rezende, D.; and
+Eslami, S. M. A. 2018. Conditional Neural Processes. In
+Proceedings of the 35th International Conference on Ma-
+chine Learning, 1704–1713. PMLR.
+Grinsztajn, L.; Flöge, K.; Key, O.; Birkel, F.; Jund, P.; Roof,
+B.; Manium, M.; Hoo, S. B.; Bühler, M.; Garg, A.; Safaric,
+D.;Robertson,J.;Jäger,B.;Alessi,S.;Hayler,A.;Moroshan,
+V.; Purucker, L.; Singer, P.; Arazi, A.; Siems, J.; Metzen,
+J. H.; Grab, G.; Erickson, N.; Guo, S.; Kalfon, E.; Bing, S.;
+Salinas, D.; Cornu, C.; Wehrhahn, L. C.; Kriuchkova, D.;
+Kaya,K.;Sidhoum,L.;Salmon,M.;Chen,J.;Hulsebos,M.;
+LeCun, Y.; Müller, S.; Schölkopf, B.; Gambhir, S.; Holl-
+mann,N.;andHutter,F.2026. TabPFN-3:TechnicalReport.
+arXiv:2605.13986.
+Heckerman, D.; Chickering, D. M.; Meek, C.; Rounthwaite,
+R.;andKadie,C.2000. DependencyNetworksforInference,
+Collaborative Filtering, and Data Visualization.Journal of
+Machine Learning Research, 1: 49–75.
+Hollmann, N.; Müller, S.; Purucker, L.; Krishnakumar, A.;
+Körfer, M.; Hoo, S. B.; Schirrmeister, R. T.; and Hutter, F.
+2025. Accurate Predictions on Small Data with a Tabular
+Foundation Model.Nature, 637(8045): 319–326.
+Hoogeboom, E.; Gritsenko, A. A.; Bastings, J.; Poole, B.;
+van den Berg, R.; and Salimans, T. 2022. Autoregressive
+Diffusion Models. InInternational Conference on Learning
+Representations.
+Hosseinzadeh, R.; Labach, A.; Xue, Z.; Han, S.; Thomas,
+V.; and Caterini, A. L. 2026. TabDPT-Turbo: Efficient In-
+ContextLearningforTabularPrediction. In2ndICMLWork-
+shop on Foundation Models for Structured Data.
+Kong, W.; and Das, A. 2026. Introducing TabFM:
+A Zero-Shot Foundation Model for Tabular Data.
+https://research.google/blog/introducing-tabfm-a-zero-
+shot-foundation-model-for-tabular-data/. Accessed:
+2026-07-20.
+Luo, X.; Xu, X.; Ramscar, M.; and Love, B. C.
+2025. Probability Consistency in Large Language Mod-
+els: Theoretical Foundations Meet Empirical Discrepancies.
+arXiv:2505.08739.
+Ma,J.;Thomas,V.;Hosseinzadeh,R.;Labach,A.;Cresswell,
+J.; Golestan, K.; Yu, G.; Caterini, A. L.; and Volkovs, M.
+2025. TabDPT:ScalingTabularFoundationModelsonReal
+Data.InAdvancesinNeuralInformationProcessingSystems,
+volume 38, 172692–172722. Curran Associates, Inc.
+Müller, S.; Hollmann, N.; Pineda-Arango, S.; Grabocka, J.;
+and Hutter, F. 2022. Transformers Can Do Bayesian In-
+ference. InThe Tenth International Conference on Learn-
+ingRepresentations,ICLR2022,VirtualEvent,April25-29,
+2022. OpenReview.net.
+Nelsen, R. B. 2006.An Introduction to Copulas. Springer
+Series in Statistics. New York: Springer, 2 edition. ISBN
+978-0-387-28659-4.
+Ng, K.; Fong, E.; Frazier, D. T.; Knoblauch, J.; and Wei,
+S. 2025. TabMGP: Martingale Posterior with TabPFN.
+arXiv:2510.25154.
+Nielsen, F.; and Sun, K. 2018. Guaranteed Deterministic
+Bounds on the Total Variation Distance between Univariate
+Mixtures. In2018 IEEE 28th International Workshop on
+Machine Learning for Signal Processing (MLSP), 1–6.
+Øksendal, B. 2003.Stochastic Differential Equations. Uni-
+versitext. Berlin, Heidelberg: Springer. ISBN 978-3-540-
+04758-2 978-3-642-14394-6.
+Qu, J.; Holzmüller, D.; Varoquaux, G.; and Morvan, M. L.
+2025. TabICL: A Tabular Foundation Model for In-Context
+Learning on Large Data. InProceedings of the 42nd Inter-
+national Conference on Machine Learning, 50817–50847.
+PMLR.
+Qu, J.; Holzmüller, D.; Varoquaux, G.; and Morvan, M. L.
+2026. TabICLv2: A Better, Faster, Scalable, and Open Tab-
+ular Foundation Model. arXiv:2602.11139.
+Shih, A.; Sadigh, D.; and Ermon, S. 2022. Training and
+Inference on Any-Order Autoregressive Models the Right
+Way.InAdvancesinNeuralInformationProcessingSystems,
+volume 35, 2762–2775. Curran Associates, Inc.
+Uria, B.; Murray, I.; and Larochelle, H. 2014. A Deep and
+Tractable Density Estimator. InProceedings of the 31st
+International Conference on Machine Learning, 467–475.
+PMLR.
+
+Vetter, J.; Gloeckler, M.; Gedon, D.; and Macke, J. H. 2025.
+Effortless, Simulation-Efficient Bayesian Inference Using
+TabularFoundationModels. InAdvancesinNeuralInforma-
+tion Processing Systems, volume 38, 82685–82724. Curran
+Associates, Inc.
+Yalavarthi, V. K.; Scholz, R.; Klötergens, C.; Madhusud-
+hanan,K.;Born,S.;andSchmidt-Thieme,L.2026. Reliable
+Probabilistic Forecasting of Irregular Time Series through
+Marginalization-ConsistentFlows.InternationalConference
+on Learning Representations, 2026: 85403–85427.
+Young, R. 2026. On the Conditioning Consistency Gap
+in Conditional Neural Processes.Transactions on Machine
+Learning Research.
+Zhu, J.; and Griffiths, T. 2024. Incoherent Probability Judg-
+ments in Large Language Models. In Samuelson, L. K.;
+Frank, S.; Toneva, M.; Mackey, A.; and Hazeltine, E., eds.,
+Proceedings of the 46th Annual Meeting of the Cognitive
+Science Society, CogSci 2024, Rotterdam, The Netherlands,
+July 24-27, 2024. cognitivesciencesociety.org.
+
+A Deferred Proof
+We give the construction behind Proposition 2, which sepa-
+rates the two consistency properties by exhibiting predictive
+densitiesthatsatisfymarginalizationconsistencyinbothtar-
+gets yet violate factorization consistency.
+Proposition 2(Marginalization consistency does not imply
+factorization consistency, restated).There exist predictive
+densitiesthatsatisfymarginalizationconsistencyinbothtar-
+gets yet violate factorization consistency.
+Construction.Fixxand take both targets binary,a, b∈
+{0,1}. Let the marginals be uniform,ˆp(a|x) = ˆp(b|
+x) = ( 1
+2 , 1
+2 ), and set the conditionals (rows indexed by the
+free target, columns by the conditioning target)
+ˆp(a|b,x) =
+ 3
+4
+1
+41
+4
+3
+4
+
+,ˆp(b|a,x) =
+ 1
+2
+1
+21
+2
+1
+2
+
+,
+so thatbis independent ofawhileadepends onb. Both
+conditionals are properly normalized. Marginalizingˆp(a|
+b,x)againsttheuniformˆp(b|x)gives 1
+2 ( 3
+4 , 1
+4 ) + 1
+2 ( 1
+4 , 3
+4 ) =
+( 1
+2 , 1
+2 ) = ˆp(a|x), and marginalizingˆp(b|a,x)against
+ˆp(a|x)trivially returns( 1
+2 , 1
+2 ) = ˆp(b|x); marginalization
+consistency holds in both targets. But at(a, b) = (0,0),
+ˆp(a=0|b=0,x) ˆp(b=0|x) = 3
+4 · 1
+2 = 3
+8 ,
+ˆp(b=0|a=0,x) ˆp(a=0|x) = 1
+2 · 1
+2 = 1
+4 ,
+so the two sides of (C2) differ and factorization consistency
+fails. The two orders build joints with identical uniform
+marginals but different dependence: correlated one way, in-
+dependent the other. Binary targets serve only to keep the
+arithmeticexplicit;thesameconstructioncarriesovertocon-
+tinuous target spaces, with the two-point densities replaced
+by mixtures of two disjointly supported components.
+B Dataset Details
+All datasets are public tables from OpenML (Feurer et al.
+2021),fetchedthroughfetch_openmlwitheitherthever-
+sion or the numeric dataset ID pinned so that the exact table
+canbereproduced.Table3lists,foreachdataset,itssize,the
+split of its feature columns into numerical and categorical,
+the two targetsaandbused in the consistency checks, and
+its OpenML dataset ID.
+Preprocessing is identical for every dataset and deliber-
+ately minimal: rows with missing entries are dropped, the
+twotargetcolumnsareremovedfromthefeatureset,andev-
+eryremainingcolumn,numericalorcategorical,ispassedto
+the model as a featurex. Apart from the categorical encod-
+ing described below, which one of the model APIs requires,
+no scaling, imputation or feature selection is applied beyond
+what each model performs internally, so the numbers in Ta-
+ble 3 are the tables the models actually see. Two tables need
+anexception.MIC’s112columnsaremissingsopervasively
+thatnorowiscompleteanddroppingincompleterowsalone
+would empty the table; there we first drop every column
+missing more than2%of its entries (mostly laboratory val-
+ues and pre-admission blood-pressure readings, which are
+missing by design rather than at random), and then drop the
+remaining incomplete rows, which leaves53columns and
+1,596ofthe1,699rows.Marketingstoresthecustomeren-
+rollmentdateasfreetext,whichnomodelinourcomparison
+reads as a date; we parse it to the number of days since the
+earliestenrollment,turning663opaquestringlevelsintoone
+ordered numerical feature. The train/test protocol is the one
+described in Section 4.
+Categorical features.The models differ in the input for-
+mat their public interfaces accept, so a categorical column
+does not reach all of them by the same route. TabPFN and
+TabICL take a data frame and infer which columns are cat-
+egorical from the column types, so we hand them the table
+unchanged and leave the encoding to whatever each model
+doesinternally.TabDPTacceptsonlyanumericalmatrix(its
+fitrejects anything else, and it applies mean imputation
+and standardization to every column it is given), and it of-
+fers no way to declare a column categorical, so for TabDPT
+we integer-encode the categorical columns ourselves, as the
+TabDPT evaluation does (Ma et al. 2025). The level order
+is fixed on the training split and reused on the test split,
+so both encode identically; levels unseen in training map
+to−1. Columns whose levels are numbers stored as strings
+(Boston’sRADandCHASare nominal in the OpenML ta-
+ble,buttheirlevelsaretheintegers1–8,24and0/1)areread
+as numbers, so their order and spacing survive; only levels
+that are genuinely non-numeric, such asFiat’s trim level
+pop/lounge/sport, receive codes. Two remarks. First,
+integer encoding imposes an arbitrary order on levels that
+have none, which costs TabDPT some accuracy on the af-
+fected tables (the ones with a nonzero categorical count in
+Table3),butthesameencodingisusedineverytermofboth
+consistencychecks,soitcannotbyitselfopenagapbetween
+two factorization orders or between a mixture and its com-
+ponents. Second, the second targetbenters the conditional
+models as an appended feature and is never encoded: in the
+regression checks it is continuous, and in the classification
+checks it is a categorical column encoded exactly like any
+other, with the conditioning levels drawn from the training
+levels.
+Targetpairs.Thetwotargetsarechosensothattheyplau-
+sibly depend on each other given the remaining features,
+which is what makes the consistency checks non-trivial: if
+aandbwere conditionally independent givenx, the condi-
+tionalandthemarginalheadwouldcoincideandbothcondi-
+tionswouldholdfortrivialreasons.Forclassification,Wine
+pairs the quality grade with the wine color,Diamondsthe
+cut grade with the color grade,Carthe acceptability rating
+with the safety rating,Nurserythe admission recommen-
+dation with the child’s health status,Annealthe anneal-
+ing grade of a steel coil with the steel grade it was rolled
+from,Phishingthe verdict on a website with the behavior
+of its server form handler,MICthe outcome of a myocar-
+dial infarction with whether aspirin was administered in the
+ICU,Customerwhether a consumer loan defaulted with
+the borrower’s education level,Creditthe good/bad risk
+verdictwiththebalancebandoftheapplicant’scheckingac-
+count,andMarketingwhetheracustomeracceptedthelast
+campaign withthatcustomer’s maritalstatus. Whereseveral
+
+† Winemerges the red-wine table (ID 40691, 1,599 rows) with the white-wine table (ID 40498, 4,898 rows); the color of the source table is
+the second target.
+‡ MICis the one table in which no row is complete, so columns missing more than2%of their entries are dropped before incomplete rows
+are;53of its112columns and1,596of its1,699rows survive.
+§ Marketingstores the customer enrollment date as free text; it is counted as a numerical feature because it is parsed to days since the
+earliest enrollment.
+Dataset Rows Feat. num./cat. Targeta(main) Targetb(second) OpenML ID
+Class.
+Anneal898 37 6 / 31classes(anneal grade), 5 cl.steel, 8 cl. 46906
+Credit1,000 19 7 / 12good_or_bad_customer, 2 cl.checking_status, 4 cl. 46918
+Phishing1,353 8 0 / 8WebsiteType, 3 cl.SFH, 3 cl. 46963
+MIC1,596 51 2 / 49LET_IS(outcome), 8 cl.ASP_S_n, 2 cl. 46980 ‡
+Customer1,723 12 5 / 7bad_client_target, 2 cl.education, 6 cl. 46938
+Car1,728 5 0 / 5class(acceptability), 4 cl.safety, 3 cl. 40975
+Marketing2,216 24 17 / 7Response(uptake), 2 cl.Marital_Status, 8 cl. 46940 §
+Wine6,497 11 11 / 0class(quality), 8 cl.color, 2 cl. 40691 †
+Nursery12,960 7 0 / 7class(recommendation), 5 cl.health, 3 cl. 26
+Diamonds53,940 8 7 / 1cut, 5 cl.color, 7 cl. 42225
+Regr.
+Boston506 12 10 / 2MEDV RM,ρ= 0.70531
+QSAR907 5 5 / 0LC50 MLOGP,ρ= 0.6546954
+Stock950 8 8 / 0company10 company1,ρ= 0.71223
+Concrete1,030 7 7 / 0strength water,ρ=−0.2944959
+Insurance1,338 5 2 / 3charges bmi,ρ= 0.2046931
+Fiat1,538 6 5 / 1price km,ρ=−0.8646907
+Kin8nm8,192 7 7 / 0y theta1,ρ=−0.14189
+Table 3: The OpenML datasets used in the consistency checks.Rowsis the number of rows after dropping incomplete records,
+Feat.the number of feature columns (all columns except the two targets), split into numerical and categorical. Targetais the
+maintargetwhosepredictivedistributionthecheckscompare;targetbisthesecondtargetthatismarginalizedover,conditioned
+on, or sampled first. For classification targets we give the number of classes, for regression targets the Pearson correlationρ
+between the two targets.
+candidate columns existed we took the one most strongly
+associated with the main target, measured by Cramér’sV
+on the full table, subject to its class distribution not being
+so skewed thatˆp(b|x)collapses onto a single class, which
+would make the mixture in (C1) trivially equal to one of
+its components. For regression the pairs are chosen by cor-
+relation:Concretepairs compressive strength with water
+content (ρ=−0.29),Bostonthe median home value with
+the average number of rooms (ρ= 0.70),Stocktwo corre-
+lated company prices (ρ= 0.71),Kin8nmthe end-effector
+distance with the first joint angle (ρ=−0.14),QSARthe
+acute fish toxicity of a molecule with its octanol-water par-
+tition coefficient (ρ= 0.65),Fiatthe asking price of a used
+car with its odometer reading (ρ=−0.86), andInsurance
+the annual billed medical expenses with the patient’s body-
+massindex(ρ= 0.20).Thecontinuouscasecarriesasecond
+requirementthathasnoanaloginthecategoricalone:bmust
+not be a deterministic function of the remaining features, or
+the atoms discretizingˆp(b|x)all collapse onto one value
+andthemixturereducestoasingleconditional.Wetherefore
+alsocheckthatbisnotperfectlypredictablefromx,whichis
+what excludes tables from designed experiments, where the
+design variables determine one another exactly.
+Curated re-uploads.Anneal,Phishing,MIC,Cus-
+tomer,CreditandMarketing, together with the regres-
+sion tablesQSAR,FiatandInsurance, are the versions
+of these tables curated for the TabArena tabular-ML bench-
+mark,whichiswhytheyareaddressedbynumericOpenML
+IDratherthanbynameandversion:thecurationfixescolumn
+types and level names that the older uploads leave ambigu-
+ous,andtheIDspinthecuratedsnapshot.Theyalsobroaden
+theclassificationsuitealongthetwoaxesonwhichtheorigi-
+nalfourarenarrow:Anneal,MICandMarketingarewide
+(37,51and24features) and mix numerical with categorical
+columns,andMICcarriesaneight-classtargetwhoseclasses
+are heavily imbalanced (86%of its rows fall in the majority
+class), so the consistency gaps are measured over sharper
+as well as flatter predictive distributions.Marketingis also
+the one table whose second target has levels too rare to be
+learned:threeoftheeightvaluesofMarital_Statusoc-
+curinfewerthanfourrows.Wekeepthemratherthanmerge
+them, since the model simply assigns them negligible mass
+inˆp(b|x)and they contribute correspondingly little to the
+mixture.
+Wine.ThisistheonlydatasetthatisnotasingleOpenML
+table: the red-wine and white-wine quality tables are con-
+catenated and an additional binary columncolorrecords
+which table a row came from, which supplies the second
+target. The two tables share their eleven physicochemical
+features but label their quality column differently: the red
+
+table stores the raw quality scores3–8, whereas the white
+tablestoresthemindex-encodedas1–7,sothemergedtarget
+has eight levels rather than the seven distinct quality scores
+of the underlying data.
+C Discretization of the Regression Checks
+Section4statesthattheregressioncheckscomparedistribu-
+tionsonashared20-cellgrid(marginalization)andashared
+128×128grid(factorization).Thisappendixgivestheexact
+constructionofthosecellsand,sincethemodelsexposetheir
+predictive distributions in three different parameterizations,
+how each head is reduced to the single interface the checks
+consume.Everystepbelowisadeterministicfunctionofthe
+fittedmodels:thereisnosamplinganywhereinthepipeline,
+so repeating a run reproduces the reported numbers exactly.
+Commoninterface:thequantilecurve.Thechecksnever
+touchamodel’sinternals.Eachheadisreducedtoaquantile
+curve: its inverse CDFˆF −1 evaluated on one fixed ladder
+ofL= 2,000equally spaced levels running fromα 1 =
+2.5×10 −4 toα L = 0.99975. Consecutive levels therefore
+bracket5×10 −4 ofpredictedmass,andatmost2.5×10 −4
+is left beyond the ladder in each tail. A head may return a
+slightlynon-monotonelevelsequence(quantilecrossing);we
+take a running maximum along the ladder, which restores a
+validinverseCDFandactsastheidentitywheneverthehead
+is already monotone. Everything downstream is a function
+of the pairs(αℓ, qℓ)alone, so all models enter through the
+same interface and no model-specific tolerance or tuning is
+involved.
+Per-modelaccessto ˆF −1.Theheadsparameterizethepre-
+dictivedistributiondifferently,andeachisinvertedintheway
+its own parameterization prescribes.
+•TabPFNv2 and v3emit a full-support bar distribution:
+a softmax over5,000bars, piecewise-constant within a
+bar, with half-normal tails attached to the outermost two.
+Quantiles come from the model’s own inversion of that
+CDF. Because the density is available in closed form,
+it is also what the reported NLL uses directly, with no
+finite-difference approximation.
+•TabICLv2emits a quantile distribution:999predicted
+knots at levelsk/1,000fork= 1, . . . ,999, joined
+by a monotone spline in the interior and extended by
+generalized-Pareto tails beyond the outermost knots. Its
+quantilefunctionisthehead’snativeoutput,soevaluating
+theladderisadirectcall;itsdensityisrecoveredfromthe
+reciprocal slope of the quantile curve.
+•TabDPTemits a softmax over2,048equal-width bins
+spanningafixedintervalofthestandardizedtargetspace.
+Its public predictor returns only the bin-center expecta-
+tion,whichisapointpredictionandcannotsupportadis-
+tributionalcheck;wethereforereadthebinweightsoffthe
+regression head itself and invert the resulting piecewise-
+linear CDF, mapping the bin edges back to raw target
+unitswiththesamestandardizationtheheadappliestoits
+training targets. Its density, like TabPFN’s, is exact.
+A head’s native resolution never binds the comparison:
+the coarsest of the three, TabICLv2’s999knots, is already
+somefiftytimesfinerthanthe20cellsonwhichTVisfinally
+evaluated.
+The20cells (marginalization).The grid is constructed
+per test instanceand per model, from that model’s own pre-
+dictions on that instance, rather than from any fixed global
+range. Fix an instancexi, writeq dir for the quantile curve
+of the direct marginalˆp(a|xi;D A
+−B), and writeq(k) for the
+curve of the conditionalˆp(a|bk,x i;D A)at thek-th of the
+K= 1,000equal-mass atoms. The grid spans the union of
+allK+ 1supports,
+loi = min
+
+qdir
+1 ,min k q(k)
+1
+	
+,
+hii = max
+
+qdir
+L ,max k q(k)
+L
+	
+,
+that is, the smallestα1-quantile and the largestαL-quantile
+among every distribution entering the comparison. It is cut
+intoG= 20cells of equal width by the edgese g = lo i +
+(g−1)(hi i −lo i)/Gforg= 1, . . . , G+ 1, with a10 −9
+widening guarding the degenerate casehii ≤lo i of a head
+that predicts a single point.
+Each CDF is evaluated at these edges by linear interpo-
+lation of its own(qℓ, αℓ)pairs, clamped to0belowq 1 and
+to1aboveq L. WritingF(e g)for those edge values, the cell
+masses are
+m1 =F(e 2),
+mg =F(e g+1)−F(e g),1< g < G,
+mG = 1−F(e G).
+The boundary cells thus absorb the mass lying outside
+the grid, including the≤2.5×10 −4 per side left be-
+yond the ladder, so both discretized distributions sum to
+exactly1and no mass is discarded. The reported gap is
+TV = 1
+2
+PG
+g=1|mmix
+g −m dir
+g |.
+Two properties of this construction matter for reading the
+numbers.Thegridisshared:bothsidesarediscretizedonthe
+sameedgeswiththesamefoldingrule,sotheboundarytreat-
+mentiscommontothetwosidesandcannotbyitselfopena
+gap.Andthegridismodel-specific:becauseitsendpointsare
+read off the model’s own predicted support, a cell has a dif-
+ferentwidthfordifferentmodels,datasetsandinstances.This
+doesnotimpaircomparability,becauseTValwayscompares
+two distributions produced by the same model on the same
+grid and is unit-free.
+The128×128cells(factorization).Herethetwoaxesare
+discretized separately, and each axis is spanned by its own
+marginal head alone: the129a-edges are equally spaced
+across[q a
+1 , qa
+L], theα1- andαL-quantiles ofˆp(a|xi;D A
+−B),
+and theb-edges are built the same way fromˆp(b|xi;D B
+−A).
+The conditionals do not widen the grid, since each is evalu-
+ated only to fill one line of the joint table.
+Eachaxisthenyieldsbothcellmasses,foldedatthebound-
+aries exactly as above, and one representative value per cell.
+Therepresentativeisplacedbymidpointquadratureinprob-
+ability spacerather than at the geometric cell center: if a
+cell’s edges carry cumulative levelsLg andL g+1, its repre-
+sentativeis ˆF −1 1
+2 (Lg +L g+1)
+
+,readoffthesamequantile
+
+curve. A cell straddling a peak of the density is thus repre-
+sented by a point near that peak instead of by its geometric
+middle.
+Ordera→bbuilds the joint one line at a time: for
+eachb-cell, with massw l and representativeb ∗
+l, the con-
+ditionalˆp(a|b ∗
+l ,x i;D A)is evaluated, converted toa-axis
+cell masses on thea-edges by the same folding rule, and
+scaled byw l; the assembled table sums to1. Orderb→a
+is built symmetrically over thea-axis and transposed onto
+the same grid, so that the two tables are indexed by identi-
+cal(a, b)cells. The reported gap is the half-sum of absolute
+differences over all1282 of them.
+D Predictive Quality versus Consistency
+Figures 5 and 6 plot each model’s classification accuracy
+against its factorization and marginalization TV gap, one
+panelperdataset;Figures7and8dothesameforregression,
+plotting RMSE in place of accuracy. Across all four figures,
+more accurate (or lower-RMSE) models are not systemati-
+cally more consistent within a dataset: the two quantities do
+not trade off, but neither does either one predict the other
+from a single panel.
+The dataset-level view above averages over instances,
+which leaves open how the inconsistency is distributed over
+rows. Figure 4 resolves this at the level of single test rows.
+Foreachinstancewepairthenegativelog-likelihoodthatthe
+directpredictiveˆp(a|x;D A
+−B)assignstothetruelabelwith
+theTVdistancebetweenthatpredictiveandthemarginalized
+mixture on the right-hand side of (C1).
+Instances whose NLL is near zero are those on which the
+direct head is already close to a point mass on one class.
+Mixing overbcannot move a saturated predictive far, so the
+TV on such rows is bounded near zero for arithmetic rea-
+sons alone, independently of whether the model is coherent.
+Keeping them would draw a diagonal band into the bottom-
+leftcornerofeverypanelandmanufacturetheappearanceof
+TV growing steadily with the loss, an artifact of saturation
+rather than evidence that hard instances are the inconsistent
+ones. We therefore drop every instance with an NLL below
+0.05,i.e.,everyinstanceonwhichthemodelalreadyassigns
+roughly95%or more to the correct class, and plot only the
+remainder.
+Figure 4 shows that there is no correlation between the
+likelihood assigned to the correct label and marginalization
+consistency at the per-row level.
+10□1 100
+10□3
+10□2
+10□1
+/c.pc/a.pc/r.pc
+10□1 100
+10□4
+10□3
+10□2
+10□1
+/c.pc/r.pc/e.pc/d.pc/i.pc/t.pc
+10□1 100
+10□5
+10□4
+10□3
+10□2
+/c.pc/u.pc/s.pc/t.pc/o.pc/m.pc/e.pc/r.pc
+10□1 100
+10□3
+10□2
+10□1
+100
+ /w.pc/i.pc/n.pc/e.pc
+NLL (direct)
+TV
+Tab-DPT
+TabFM
+TabICL-v1
+TabICL-v2
+TabPFN-v2
+TabPFN-v3
+Figure4:Per-instancepredictivelossversusmarginalization-
+consistencygap.ThehorizontalaxisistheNLLthatthedirect
+predictive assigns to the true label, the vertical axis the TV
+distancebetweenthatpredictiveandthemixtureobtainedby
+marginalizing over the intermediate targetb; both axes are
+logarithmic. Instances with an NLL below0.05(about95%
+probability on the correct class) are omitted.
+
+0.985 0.990 0.995
+0.01
+0.02
+/a.pc/n.pc/n.pc/e.pc/a.pc/l.pc
+0.75 0.80
+0.00
+0.05
+0.10
+0.15
+/c.pc/a.pc/r.pc
+0.73 0.74 0.75
+0.05
+0.06
+/c.pc/r.pc/e.pc/d.pc/i.pc/t.pc
+0.880 0.885 0.890
+0.015
+0.020
+0.025
+/c.pc/u.pc/s.pc/t.pc/o.pc/m.pc/e.pc/r.pc
+0.80 0.82
+0.06
+0.08
+/d.pc/i.pc/a.pc/m.pc/o.pc/n.pc/d.pc/s.pc
+0.885 0.890 0.895
+0.02
+0.03
+0.04
+0.05
+/m.pc/a.pc/r.pc/k.pc/e.pc/t.pc/i.pc/n.pc/g.pc
+0.870 0.875
+0.015
+0.020
+0.025
+0.030
+/m.pc/i.pc/c.pc
+0.55 0.60 0.65
+0.00
+0.05
+0.10
+/n.pc/u.pc/r.pc/s.pc/e.pc/r.pc/y.pc
+0.84 0.85
+0.040
+0.045
+0.050
+0.055
+/p.pc/h.pc/i.pc/s.pc/h.pc/i.pc/n.pc/g.pc
+0.69 0.70
+0.02
+0.04
+/w.pc/i.pc/n.pc/e.pc
+ACCURACY
+TV
+Tab-DPT TabFM TabICL-v1 TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure5:Predictiveaccuracyversusfactorization-consistencyTV(Table2),onepanelperclassificationdatasetandonemarker
+per model.
+0.985 0.990 0.995
+0.000
+0.005
+0.010
+/a.pc/n.pc/n.pc/e.pc/a.pc/l.pc
+0.75 0.80
+0.02
+0.04
+0.06
+/c.pc/a.pc/r.pc
+0.73 0.74 0.75
+0.0225
+0.0250
+0.0275
+/c.pc/r.pc/e.pc/d.pc/i.pc/t.pc
+0.880 0.885 0.890
+0.006
+0.007
+0.008
+/c.pc/u.pc/s.pc/t.pc/o.pc/m.pc/e.pc/r.pc
+0.80 0.82
+0.02
+0.03
+/d.pc/i.pc/a.pc/m.pc/o.pc/n.pc/d.pc/s.pc
+0.885 0.890 0.895
+0.010
+0.012
+/m.pc/a.pc/r.pc/k.pc/e.pc/t.pc/i.pc/n.pc/g.pc
+0.870 0.875
+0.010
+0.012
+/m.pc/i.pc/c.pc
+0.55 0.60 0.65
+0.02
+0.04
+0.06
+/n.pc/u.pc/r.pc/s.pc/e.pc/r.pc/y.pc
+0.84 0.85
+0.025
+0.030
+0.035 /p.pc/h.pc/i.pc/s.pc/h.pc/i.pc/n.pc/g.pc
+0.69 0.70
+0.02
+0.04
+/w.pc/i.pc/n.pc/e.pc
+ACCURACY
+TV
+Tab-DPT TabFM TabICL-v1 TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure 6: Predictive accuracy versus marginalization-consistency TV (Table 1), one panel per classification dataset and one
+marker per model.
+
+10 20
+0.2
+0.4
+/b.pc/o.pc/s.pc/t.pc/o.pc/n.pc
+3.8 4.0
+0.175
+0.200
+0.225
+0.250
+/c.pc/o.pc/n.pc/c.pc/r.pc/e.pc/t.pc/e.pc
+795 800 805
+0.14
+0.16
+0.18
+0.20
+/f.pc/i.pc/a.pc/t.pc
+6800 7000
+0.15
+0.20
+0.25
+/i.pc/n.pc/s.pc/u.pc/r.pc/a.pc/n.pc/c.pc/e.pc
+0.088 0.090 0.092
+0.16
+0.18
+0.20
+/k.pc/i.pc/n.pc8/n.pc/m.pc
+0.90 0.91
+0.21
+0.22
+0.23
+/q.pc/s.pc/a.pc/r.pc
+0.645 0.650 0.655
+0.14
+0.16
+/s.pc/t.pc/o.pc/c.pc/k.pc
+RMSE
+TV
+Tab-DPT TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure 7: Predictive RMSE versus factorization-consistency TV (Table 2), one panel per regression dataset and one marker per
+model.
+10 20
+0.1
+0.2
+0.3
+/b.pc/o.pc/s.pc/t.pc/o.pc/n.pc
+3.8 4.0
+0.10
+0.12
+0.14
+/c.pc/o.pc/n.pc/c.pc/r.pc/e.pc/t.pc/e.pc
+795 800 805
+0.05
+0.06
+0.07
+/f.pc/i.pc/a.pc/t.pc
+6800 7000
+0.02
+0.04
+0.06
+/i.pc/n.pc/s.pc/u.pc/r.pc/a.pc/n.pc/c.pc/e.pc
+0.088 0.090 0.092
+0.075
+0.080
+0.085
+/k.pc/i.pc/n.pc8/n.pc/m.pc
+0.90 0.91
+0.06
+0.07
+/q.pc/s.pc/a.pc/r.pc
+0.645 0.650 0.655
+0.04
+0.06
+0.08
+/s.pc/t.pc/o.pc/c.pc/k.pc
+RMSE
+TV
+Tab-DPT TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure 8: Predictive RMSE versus marginalization-consistency TV (Table 1), one panel per regression dataset and one marker
+per model.
+
+E Consistency versus Number of Features
+Figures 9 to 12 plot each run’s consistency gap against the
+number of featuresDof its dataset, and show no evidence
+that wider tables are harder to stay consistent on: the pooled
+SpearmancorrelationbetweenDandTVisnegativeinthree
+ofthefoursettings(classificationρ=−0.59forfactorization
+andρ=−0.75for marginalization, regressionρ=−0.50
+for factorization) and positive only for marginalization on
+regression (ρ= +0.40).
+5 7 10 20 30 50
+NUMBER OF FEATURES /u1D437
+0.00
+0.05
+0.10
+0.15
+MEAN TV
+/u1D70C= □0.59
+/c.pc/a.pc/r.pc
+/n.pc/u.pc/r.pc/s.pc/e.pc/r.pc/y.pc
+/d.pc/i.pc/a.pc/m.pc/o.pc/n.pc/d.pc/s.pc//p.pc/h.pc/i.pc/s.pc/h.pc/i.pc/n.pc/g.pc
+/w.pc/i.pc/n.pc/e.pc
+/c.pc/u.pc/s.pc/t.pc/o.pc/m.pc/e.pc/r.pc
+/c.pc/r.pc/e.pc/d.pc/i.pc/t.pc
+/m.pc/a.pc/r.pc/k.pc/e.pc/t.pc/i.pc/n.pc/g.pc
+/a.pc/n.pc/n.pc/e.pc/a.pc/l.pc
+/m.pc/i.pc/c.pc
+Tab-DPT
+TabFM
+TabICL-v1
+TabICL-v2
+TabPFN-v2
+TabPFN-v3
+Figure 9: Factorization-consistency TV versus the number
+of featuresDon the classification datasets, one marker per
+(dataset, model).
+5 7 10 20 30 50
+NUMBER OF FEATURES /u1D437
+0.00
+0.02
+0.04
+0.06
+MEAN TV
+/u1D70C= □0.74
+/c.pc/a.pc/r.pc
+/n.pc/u.pc/r.pc/s.pc/e.pc/r.pc/y.pc
+/d.pc/i.pc/a.pc/m.pc/o.pc/n.pc/d.pc/s.pc//p.pc/h.pc/i.pc/s.pc/h.pc/i.pc/n.pc/g.pc
+/w.pc/i.pc/n.pc/e.pc
+/c.pc/u.pc/s.pc/t.pc/o.pc/m.pc/e.pc/r.pc
+/c.pc/r.pc/e.pc/d.pc/i.pc/t.pc
+/m.pc/a.pc/r.pc/k.pc/e.pc/t.pc/i.pc/n.pc/g.pc
+/a.pc/n.pc/n.pc/e.pc/a.pc/l.pc
+/m.pc/i.pc/c.pc
+Tab-DPT
+TabFM
+TabICL-v1
+TabICL-v2
+TabPFN-v2
+TabPFN-v3
+Figure 10: Marginalization-consistency TV versus the num-
+ber of featuresDon the classification datasets, one marker
+per (dataset, model) run.
+5 7 10
+NUMBER OF FEATURES /u1D437
+0.2
+0.3
+0.4
+MEAN TV
+/u1D70C= □0.50
+/i.pc/n.pc/s.pc/u.pc/r.pc/a.pc/n.pc/c.pc/e.pc//q.pc/s.pc/a.pc/r.pc
+/f.pc/i.pc/a.pc/t.pc
+/c.pc/o.pc/n.pc/c.pc/r.pc/e.pc/t.pc/e.pc//k.pc/i.pc/n.pc8/n.pc/m.pc
+/s.pc/t.pc/o.pc/c.pc/k.pc
+/b.pc/o.pc/s.pc/t.pc/o.pc/n.pc
+Tab-DPT TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure 11: Factorization-consistency TV versus the number
+of featuresDon the regression datasets, one marker per
+(dataset, model) run.
+5 7 10
+NUMBER OF FEATURES /u1D437
+0.1
+0.2
+MEAN TV
+/u1D70C= +0.40
+/i.pc/n.pc/s.pc/u.pc/r.pc/a.pc/n.pc/c.pc/e.pc//q.pc/s.pc/a.pc/r.pc
+/f.pc/i.pc/a.pc/t.pc
+/c.pc/o.pc/n.pc/c.pc/r.pc/e.pc/t.pc/e.pc//k.pc/i.pc/n.pc8/n.pc/m.pc
+/s.pc/t.pc/o.pc/c.pc/k.pc
+/b.pc/o.pc/s.pc/t.pc/o.pc/n.pc
+Tab-DPT TabICL-v2 TabPFN-v2 TabPFN-v3
+Figure 12: Marginalization-consistency TV versus the num-
+ber of featuresDon the regression datasets, one marker per
+(dataset, model) run.

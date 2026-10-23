@@ -4,6 +4,13 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-23
+
+- Reconciled the live 67-paper Tabular Foundation Models collection: added CARTE, the original LimiX report, LimiX-2M, TFM self-consistency and insurance-pricing studies with attached PDF versions, generated text, curated citation keys and substantive summaries.
+- Integrated knowledge-graph transfer, conditional modelling, scalar/attention architecture, probability consistency and insurance-specific evaluation into the synthesis. Preserved initial publication dates separately from the filed October insurance and November LimiX revisions.
+- Registered CARTE, LimiX and TabPFNInsurance source snapshots. New source entries reuse the bounded, immutable-revision downloader and embed provenance; model weights, datasets and generated artifacts are excluded. No Zotero records or downstream pins changed.
+- Validation: 22 offline tests and all maintenance check-only stages passed, including live Zotero membership and filed-version checks. Existing PDF and text files were preserved byte-for-byte.
+
 ## 2026-10-20
 
 - **Audited all 62 summaries against the generated paper text and corrected verified errors.** Notable corrections: Müller 2021 proves loss = expected KL to the PPD and uses GP/BNN priors (no SCM experiment); TabPFNv2 never uses TabArena; FairPFN's real data are Law School and Adult only; Luo 2026's 7.6× is compressed checkpoint size, not inference memory; TabDPT-Turbo's 2.9–12.9× are corpus-size ratios; CausalFM handles identification before estimation; Mitra-v2 changed everything at once; TabPFN-Wide is synthetic-only; TabPFN-3.5 weights are downloadable under a restrictive licence; Effectively Shallow covers regression. Added omitted headline results and venues; labelled code-dump/model-card material as such.

@@ -16,10 +16,13 @@ fresh dump of a public GitHub repo, the upstream URL is linked.
 
 Line counts are as of the 2026-08-04 refresh, except
 Test-Time Compute for Tabular Foundation Models (2026-10-13).
-They drift on every refresh; treat them as rough sizes.
+The CARTE, LimiX and insurance source counts were recorded on 2026-10-23. They drift on every refresh; treat them as rough sizes.
 
 | File | Lines | GitHub | Paper | What it gives us |
 |------|-------|--------|-------|------------------|
+| `CARTE.txt` | 10,946 | [soda-inria/carte](https://github.com/soda-inria/carte) | [paper](papers/2024/07_Kim_et_al._CARTE_Pretraining_and_Transfer_for_Tabular_Learning.pdf) | Knowledge-pretrained row graphs, estimators and preprocessing |
+| `LimiX.txt` | 26,833 | [limix-ldm-ai/LimiX](https://github.com/limix-ldm-ai/LimiX) | [paper](papers/2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf) | Versioned LimiX family inference, encoders and configuration |
+| `TabPFNInsurance.txt` | 7,107 | [B-Deprez/tabpfn-insurance](https://github.com/B-Deprez/tabpfn-insurance) | [paper](papers/2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf) | Insurance experiment source and actuarial comparison methods |
 | `CausalPFN.txt` | 7,208 | [vdblm/CausalPFN](https://github.com/vdblm/CausalPFN) | [Balazadeh Meresht 2025](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) | Amortised causal-effect ICL: the `CausalEstimator` API and the transformer head. Inference/estimation only — no prior generator. Filtered to code (upstream carries ~175 MB of benchmark data). |
 | `Huggingface TabPFN.txt` | 256 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
 | `LoCalPFN.txt` | 1,714 | [layer6ai-labs/LoCalPFN](https://github.com/layer6ai-labs/LoCalPFN) | [Thomas 2024](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) | The retrieval + fine-tuning recipe in ~8 files: `methods/ftknn.py` (LoCalPFN) and `methods/pfknn.py` (TabPFN-kNN). The only k-NN-context implementation in this folder. **No LICENSE upstream** — read, don't redistribute. |
@@ -1242,3 +1245,17 @@ compared. Filtered to code: upstream carries ~175 MB of benchmark data
 **When to grep this file:** wiring a CATE/ATE estimator into an evaluation
 pipeline, or comparing the causal-PFN head against classical estimators.
 
+
+## `CARTE.txt`
+
+Knowledge-pretrained row graphs, estimators and preprocessing. Registered in the normal refresher, using the bounded source-only downloader. Exact revision: `f54690da4cddbedd1e1a9113a312f85783d2c125`; 48 selected text files. Original notices are retained (BSD-3-Clause). Start with `carte_ai/src/carte_model.py` and `carte_ai/src/carte_table_to_graph.py`. Weights, datasets and generated results are excluded; no upstream code was executed.
+
+## `LimiX.txt`
+
+Versioned LimiX family inference, encoders and configuration. Registered in the normal refresher, using the bounded source-only downloader. Exact revision: `516bf396333feb3198cf7aff8a6c10421f218e24`; 77 selected text files. Original notices are retained (See retained version-specific LICENSE.txt). Start with `model/v1_0/encoders.py` and `model/v2_0/transformer.py`. Weights, datasets and generated results are excluded; no upstream code was executed.
+
+## `TabPFNInsurance.txt`
+
+Insurance experiment source and actuarial comparison methods. Registered in the normal refresher, using the bounded source-only downloader. Exact revision: `7005920f956fdb8626250613a5344fee509ae159`; 35 selected text files. Original notices are retained (MIT). Start with `src/methods/glm_model.py` and `src/methods/tabpfn_model.py`. Weights, datasets and generated results are excluded; no upstream code was executed.
+
+The original limix-ldm/LimiX URL redirects to limix-ldm-ai/LimiX, so the original report and later family releases share one snapshot. It contains multiple source versions, not a separately verified archive of every paper configuration. The filed consistency paper supplies no author-linked code repository. These observations were checked on 2026-10-23 and do not establish permanent unavailability.

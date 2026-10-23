@@ -37,7 +37,7 @@ A **Tabular Foundation Model (TFM)** is a neural network — in practice, almost
 
 ## Timeline & lineage
 
-The field is a single trunk with three branches. **Trunk**: PFN theory (2021) → TabPFN v1 (2023) → TabPFN v2 (2025) → TabPFN-2.5 / TabPFN-3 (2026). **Branch A — scaling** attacks context length and prior quality (TabICL, Mitra, Ye 2025 (*A Closer Look at TabPFN v2*), Qu 2026 (*TabICLv2*), Kolberg 2026). **Branch B — adaptation** attacks the frozen-model assumption (Real-TabPFN, Rubachev, BETA, TabTune, TabDPT). **Branch C — extension** re-targets the PFN trick at new problem classes (time series, drift, causal, fairness, interpretability, BO). Position papers frame and critique throughout.
+The PFN lineage has a trunk and three main branches; knowledge-pretrained transfer models such as CARTE form a parallel route. **Trunk**: PFN theory (2021) → TabPFN v1 (2023) → TabPFN v2 (2025) → TabPFN-2.5 / TabPFN-3 (2026). **Branch A — scaling** attacks context length and prior quality (TabICL, Mitra, Ye 2025 (*A Closer Look at TabPFN v2*), Qu 2026 (*TabICLv2*), Kolberg 2026). **Branch B — adaptation** attacks the frozen-model assumption (Real-TabPFN, Rubachev, BETA, TabTune, TabDPT). **Branch C — extension** re-targets the PFN trick at new problem classes (time series, drift, causal, fairness, interpretability, BO). Position papers frame and critique throughout.
 
 | Date | Paper | What it added | Builds on |
 |---|---|---|---|
@@ -47,6 +47,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2023-09 | Hollmann 2023 (TabPFN v1) | First practical TFM: one-forward-pass classification on small tables via an SCM/BNN synthetic prior | Müller 2021 |
 | 2024-03 | Rundel 2024 (*Interpretable ML for TabPFN*) | IML suite (SHAP, LOCO, PD/ICE/ALE, Data Shapley) adapted to TabPFN, using one-pass ICL as exact retraining | TabPFN v1 |
 | 2024-06 | van Breugel & van der Schaar 2024 | Position: "Large Tabular Models" are underexplored and within compute reach; design desiderata for the field | TabPFN v1 as proof of concept; LLM-scaling analogy |
+| 2024-07 | Kim et al. 2024 — [CARTE: Pretraining and Transfer for Tabular Learning](SUMMARIES.md#carte-pretraining-and) | Knowledge-graph pretraining transfers row representations across unmatched schemas and entities. | Open-vocabulary graphlets, contrastive pretraining and supervised transfer |
 | 2024-10 | den Breejen 2024 (TabForestPFN) | Forest/tree dataset generator as the prior; fine-tuned ICL transformers form complex decision boundaries — unrealistic priors can beat realistic ones after FT | TabPFN v1; prior design |
 | 2024-11 | Helli 2024 (Drift-Resilient TabPFN) | Time-driven 2nd-order SCM prior so ICL detects and extrapolates temporal distribution shift | TabPFN v1 prior design |
 | 2024-12 | Hoo 2024 (TabPFN-TS) | Frozen TabPFN regressor + calendar features matches/beats Chronos-Large at 1/65th size for forecasting | TabPFN regression head |
@@ -67,6 +68,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2025-11 | Zhang et al. 2025 | Statistics-audience analysis of TabPFNv2 as approximate Bayesian inference; out-of-the-box wins in SSL estimation, HTE, covariate shift | TabPFN v2; Müller 2021 PPD framing |
 | 2025-11 | Bouadi 2025 (Orion-MSP) | Multi-scale features + block-sparse attention + Perceiver memory for bidirectional flow between the column/row/ICL stages | TabICL/TabPFN three-stage design |
 | 2025-11 | Zheng 2025 (*From Tables to Signals*) | First frequency-domain account of TFM inductive bias: effective bandwidth widens with **context size**, not training time (*spectral adaptivity*); positional encoding is a frequency dial | Context kernel (ICL analogue of the NTK); Nagler 2023 localisation; training-free denoising |
+| 2025-11 | Zhang et al. 2025 — [LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence](SUMMARIES.md#limix-unleashing-structured) | Masked context-conditional pretraining unifies prediction, imputation and generation in LimiX-16M/2M. | Synthetic SCM priors, masked-variable prediction and retrieval-based ensembles |
 | 2025-12 | Tanna 2025 (TabTune) | Unified tooling for zero-shot/meta/SFT/LoRA across seven TFMs; adaptation gains are model-dependent (SFT helps TabPFN, collapses TabICL/OrionBiX) | TabPFN v2, TabICL, and peers |
 | 2025-12 | Spinaci 2025 (ConTextTab) | Per-modality semantic embeddings + training on real tables: table-native efficiency with LLM-style world knowledge; SOTA on CARTE | TabPFN/TabICL vs TabuLa-8B trade-off |
 | 2025-12 | Arazi 2025 (TabSTAR) | Unfrozen text encoder + target tokens for target-aware representations; scaling laws in *number of datasets* | LLM-tabular line; TabPFN transfer |
@@ -92,6 +94,7 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-07 | Baesens 2026 (*Foundation Models for Credit Risk Prediction: A Game Changer?*) | Competitive untuned TFMs on 14 PD and 7 LGD datasets; small-data advantage, different discrimination/probability-score winners, no Holm-significant LGD pair | TabPFN v1/v2; TabICL; Real-TabPFN; Mitra; credit-domain evaluation |
 | 2026-08 | Shaheen 2026 (*Understanding the Surprising Generalization Properties of TFMs*) | Pretraining on a *single* real table transfers across domains; feature count (not row count) predicts transfer; argues TFMs are learned retrieval-and-aggregation, not prior-fitted Bayesian inference | Nagler 2023 localisation; TabDPT procedure; challenges Müller 2021 |
 | 2026-08 | Eo 2026 (*EXAONE Tabular 1.0*) | Removes the row-compression boundary entirely — feature- and item-axis attention interleave at every layer; 20.8M params rank 1st on TabArena classification untuned, and tie 1.64B TabFM | CAST; synthetic-only SCM prior; TabPFN v2 vs TabICL/TabPFN-3 architectures |
+| 2026-08 | Klötergens et al. 2026 — [Do Tabular Foundation Models Agree with Themselves?](SUMMARIES.md#do-tabular-foundation) | Label-free probability identities expose marginalization and factorization inconsistency in evaluated TFMs. | Bayesian PPD interpretation, total probability and chain-rule consistency |
 | 2026-09 | Qu 2026 (*TabICLv2*, v2; first released February) | Fully open TFM: new SCM prior + QASSMax attention + Muon pretraining; beats Real-TabPFN-2.5 untuned; native million-row scale, ~10x faster | TabICL; TabPFN-2.5 |
 | 2026-09 | Jäger 2026 (*TabPFN-3.5*) | Answers *Beyond IID* on its own benchmark: 1st on **all seven** suites, incl. grouped/temporal/wide/high-cardinality, where TFMs had trailed tuned GBDTs. Fourier cell encodings, doubled width at constant KV cache, prior retuned for those regimes | TabPFN-3; Purucker 2026; TabFM encodings; TabICLv2 prior |
 | 2026-09 | Tao 2026 (*Mitra-v2*) | Same 12-layer Tab2D backbone, but context length, feature range, prior mixture (new Hybrid SCM), optimizer and recipe all changed together: 77M params reach 1.64B TabFM's level; 1st on >10-class tasks via hierarchical ≤10-class decomposition. Declares its own non-attribution | Mitra-v1; Hybrid SCM; Muon; Apache-2.0 |
@@ -99,10 +102,12 @@ The field is a single trunk with three branches. **Trunk**: PFN theory (2021) �
 | 2026-09 | Zhang 2026 (*LimiX-2*) | Persistent cell representations with target prediction plus masked-feature reconstruction; controlled capacity scaling and attention-based causal-skeleton probes | LimiX/CCMM; synthetic SCMs; dual-axis cell attention |
 | 2026-09 | Cho 2026 (*Causilo*) | Refines cells across features and context before row compression; linear feature-side attention and an explicit accuracy/latency trade-off | TabICLv2; inducing/summary tokens; bounded QASSMax |
 | 2026-09 | Arazi 2026 (*MulTaBench*) | 40 text/image-tabular datasets require joint signal and gains from target-aware representations; 40 extra candidates test the broader boundary | TabSTAR; ConTextTab; benchmark scope |
+| 2026-09 | Wang et al. 2026 — [LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models](SUMMARIES.md#limix-2m-mitigating) | Localized scalar embeddings and sample-first attention improve a 2M-parameter TFM's accuracy–efficiency trade-off. | Radial-basis tokenization and readout-aligned sample/feature attention |
 | 2026-10 | Ning 2026 (*Test-Time Compute for Tabular Foundation Models*) | DiagScale recovers much of full-FT gains; selective aggregation helps at high cost; matched retrieval controls expose gains and failures | Rubachev's finetuning; LoCalPFN/LimiX retrieval; TabPFN-3 |
 | 2026-10 | Zhao 2026 (*TabReliBench*) | First dedicated reliability benchmark (11 TFMs, 241 datasets): marginal coverage near-nominal, **subgroup coverage not**; ensembling and conformal don't reliably fix it; rankings change across benchmarks and metrics | Müller 2021's calibration claim; ScoringBench; Beyond IID |
 | 2026-10 | Cannistraci 2026 (*Tabular Foundation Models Are Effectively Shallow*) | Label-free affine map replaces half the blocks of eight TFMs for ≤0.002 median AUROC (half-depth also near-lossless on 41 regression sets); one-block TabPFN-3 serves cached queries 2.4× faster in 6× less memory | Luo 2026 quantization; Nagler/Zheng/Shaheen localisation-retrieval account |
 | 2026-10 | Alberge 2026 (*SurvICL*) | Censored context with latent event-time quantile supervision; proportional-odds prior leads overall IBS on 63 held-out survival datasets, with small/large-cohort qualifications | TabICLv2; simulator-supervised task transformation; distributional evaluation |
+| 2026-10 | Deprez et al. 2026 — [Is TabPFN the Silver Bullet for Insurance Pricing?](SUMMARIES.md#is-tabpfn-the) | Insurance frequency/severity experiments expose limits of transferring generic TFM benchmark success to pricing. | TabPFN v2.6/v3, actuarial losses and exposure-aware baselines |
 
 
 ## Foundations — Prior-Fitted Networks & Bayesian in-context learning
@@ -197,6 +202,10 @@ Why does this map so naturally onto tabular data? Because tabular learning is, i
 
 Honesty about the 2021 paper's limits sharpens the picture of what came after. The tabular results are proof-of-concept scale: ~100-row datasets with 30 labeled examples, at most 60 features, balanced binary classification only; no real-data regression, no categorical handling, no missing values, no distribution shift. Attention is quadratic in dataset size, capping context. And the GP/BNN priors with median-binarized targets are simplistic — plainly not matched to the conditional structures of real tables. Each of these gaps defines a branch of the subsequent literature: Hollmann (2023, 2025) replaces the prior with SCM-sampled tables and scales the recipe into TabPFN; Qu (2025) and Grinsztajn (2026) attack the quadratic-context ceiling; Helli (2024) extends the prior to model distribution shift; and the synthetic-vs-real-prior tension — the deepest open question the 2021 paper leaves behind — becomes the axis along which Real-TabPFN-style continued pretraining (Garg 2025), and domain specialisation generally, position themselves. The bedrock claim, however, is untouched by any of this: a transformer trained on samples from a prior over datasets *is* an approximate Bayesian inference engine, and everything else in the field is an argument about which prior, at what scale, and with how much real data mixed in.
 
+
+### Does a finite predictor behave like one joint distribution?
+
+Klötergens et al. 2026 (*Do Tabular Foundation Models Agree with Themselves?*) distinguish the asymptotic PFN loss argument from a property of a trained predictor. Their label-free marginalization and factorization tests find violations in every evaluated model/dataset. Factorization consistency implies marginalization consistency, but not conversely. This qualifies multivariate generation and imputation built by chaining univariate conditionals; it does not negate predictive usefulness, equate consistency with calibration, or refute Müller et al. 2021 (*Transformers Can Do Bayesian Inference*). LimiX's masked-joint objective motivates related diagnostics, but LimiX is not one of the models tested in this consistency paper.
 
 ## The TabPFN model line — architecture & its evolution (v1 → v2 → 2.5 → 3)
 
@@ -384,6 +393,12 @@ MulTaBench's encoder is tuned on training labels without structured features. It
 supports task adaptation, while joint cross-modal conditioning with the speed of frozen
 ICL remains an architectural goal rather than an achieved result.
 
+### LimiX: conditional modelling and efficient scalar representations
+
+Zhang et al. 2025 (*LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence*) use masked context-conditional pretraining to make prediction, imputation and generation queries of one model. Their 16M/2M report and eleven benchmark collections precede the later LimiX-2 release; a parameter-count suffix is not a generation number.
+
+Wang et al. 2026 (*LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models*) add a complementary architecture argument: localized radial-basis scalar embeddings and sample-first attention improve the measured accuracy/efficiency trade-off of a small model. The restricted variation of an affine scalar channel is not a statement that a whole transformer has rank one. Together with TabICL's row compression, these results show that representation, attention routing and context construction are distinct levers; parameter counts alone do not determine end-to-end cost.
+
 ## Adapting a pretrained TFM — finetuning, continued pretraining, LoRA, tooling
 
 Scaling asks how good a *general* model can be made. The moment anyone wants one for a particular domain, a different question opens: given a pretrained TFM, what should you change — the weights, the prior, or nothing at all? This is where the corpus is least settled, and where the disagreements are sharpest, because the answers were reached on different architectures under different budgets.
@@ -449,6 +464,10 @@ and preserve calibrated probabilities or predictive distributions in a specific 
 MulTaBench (Arazi 2026, *Benchmarking Multimodal Tabular Learning with Text and Image*)
 adds a separate adaptation site: the text/image encoder. Its supervised preprocessing
 must be fitted within each evaluation fold, even if the final tabular model stays frozen.
+
+### Cross-schema transfer from external knowledge
+
+Kim et al. 2024 (*CARTE: Pretraining and Transfer for Tabular Learning*) form a separate branch from frozen PFN inference. Graphlets, pretrained string embeddings and YAGO contrastive pretraining make target fine-tuning and joint learning possible across unmatched columns and entities. This supplies semantic information that anonymous numerical-table benchmarks often remove, and anticipates the information-budget questions raised by TabSTAR and other text-aware models. Its advantages on string-rich tables should not be described as a pure architectural win over synthetic-only priors: external knowledge, representations and supervised adaptation all differ.
 
 ## Extending TFMs to new problems — time series, survival, causal inference, fairness, interpretability, drift
 
@@ -533,6 +552,10 @@ Stepping back, several honest weaknesses recur across the whole corpus and deser
 
 The open problems, then, are concrete: characterizing prior support and when specialization helps versus overfits the prior; adaptation methods that survive temporal shift and preserve calibration; leakage-audited evaluation on genuinely held-out, non-academic data; and — furthest out — grounding statistical priors in the rule systems that generate operational data. Domain-specific adaptation studies sit squarely on the first three, and their value depends precisely on measuring what the position papers assume.
 
+
+### Domain losses can overturn a generic benchmark conclusion
+
+Deprez et al. 2026 (*Is TabPFN the Silver Bullet for Insurance Pricing?*) compare evaluated TabPFN v2.6/v3 releases with GLMs and XGBoost on two motor-insurance datasets. Frequency and severity produce different conclusions: GLMs lead frequency deviance, whereas TabPFN is competitive on smaller severity samples. Exposure, offsets/weights, context availability and inference time help explain why generic average regression rankings are insufficient. Because tree/GLM baselines use full training data while large TabPFN contexts are bounded, the experiment compares available information as well as model families. It supports domain-appropriate evaluation, not a universal rejection of TFMs.
 
 ## Cross-cutting design axes
 

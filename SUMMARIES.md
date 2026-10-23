@@ -13,6 +13,8 @@ modelling, and Causilo's refinement-before-compression design. MulTaBench tests 
 multimodal representation gap; the October test-time-compute study separates the gains
 from adapting weights, selecting ensemble members, and constructing the context.
 
+CARTE adds a knowledge-graph transfer branch; the original LimiX report and its 2M architecture paper connect conditional modelling with efficient tokenization. Consistency tests and insurance pricing expose distinct limits of interpreting and applying pretrained TFMs.
+
 For every paper:
 
 * **Where it fits** in the picture above — what it answers, extends or contradicts.
@@ -36,6 +38,7 @@ this folder and write them there.
 | 2023-09 | Hollmann et al. | TabPFN — A Transformer That Solves Small Tabular Classification Problems in a Second | First TabPFN: PFN trained on an SCM+BNN tabular prior; on par with tuned AutoML on small numerical classification tasks in about a second. | [pdf](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf) |
 | 2024-03 | Rundel et al. | Interpretable Machine Learning for TabPFN | Adapts IML methods (SHAP, LOCO, PD/ICE/ALE, Data Shapley) to TabPFN, using in-context refits as exact, cheap retraining. | [pdf](papers/2024/03_Rundel_et_al._Interpretable_Machine_Learning_for_TabPFN.pdf) |
 | 2024-06 | Breugel and Schaar | Why Tabular Foundation Models Should Be a Research Priority | Position paper (ICML 2024): "Large Tabular Models" are an under-invested priority, with three reasons and four desiderata (D1–D4). | [pdf](papers/2024/06_Breugel_and_Schaar_Why_Tabular_Foundation_Models_Should_Be_a_Research_Priority.pdf) |
+| 2024-07 | Kim et al. | CARTE: Pretraining and Transfer for Tabular Learning | Knowledge-graph pretraining transfers row representations across unmatched schemas and entities. | [pdf](papers/2024/07_Kim_et_al._CARTE_Pretraining_and_Transfer_for_Tabular_Learning.pdf) |
 | 2024-10 | den Breejen et al. | **TabForestPFN** — Fine-tuned In-Context Learning Transformers are Excellent Tabular Data Classifiers | Swaps TabPFN's SCM prior for a *forest* generator producing complex decision boundaries; after fine-tuning, TabForestPFN ties tuned GBDTs on TabZilla (0.840 vs 0.842). Tree-prior ancestor of Mitra. | [pdf](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf) |
 | 2024-11 | Helli et al. | Drift-Resilient TabPFN | Adds a secondary SCM that shifts the base SCM over a domain index, so ICL extrapolates temporal drift; accuracy 0.688→0.744 on 18 shifted datasets. | [pdf](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) |
 | 2024-12 | Hoo et al. | The Tabular Foundation Model TabPFN Outperforms Specialized Time Series Forecasting Models | TabPFN-TS: forecasting framed as tabular regression on timestamp-derived features (no lags); an 11M-param frozen TabPFN beats Chronos-Mini and matches Chronos-Large. | [pdf](papers/2024/12_Hoo_et_al._The_Tabular_Foundation_Model_TabPFN_Outperforms_Specialized_Time_Series_Forecasting_Models_Based_on.pdf) |
@@ -56,6 +59,7 @@ this folder and write them there.
 | 2025-11 | Zhang et al. | TabPFN — One Model to Rule Them All | Explains TabPFNv2 as approximate Bayesian inference for statisticians, then shows strong out-of-the-box results in semi-supervised estimation, treatment effects and covariate shift. | [pdf](papers/2025/11_Zhang_et_al._TabPFN_One_Model_to_Rule_Them_All.pdf) |
 | 2025-11 | Bouadi et al. | **Orion-MSP** — Multi-Scale Sparse Attention for Tabular In-Context Learning | Extends TabICL with multi-scale features, block-sparse attention and optional Perceiver memory; overall rank 3.58, but weaker on wide tables (5.69). | [pdf](papers/2025/11_Bouadi_et_al._Orion_MSP_Multi_Scale_Sparse_Attention_for_Tabular_In_Context_Learning.pdf) |
 | 2025-11 | Zheng et al. | **From Tables to Signals** — Revealing Spectral Adaptivity in TabPFN | First frequency-domain account of TFM inductive bias. TabPFN's effective bandwidth widens with the *number of context rows*, where an MLP's is fixed once the architecture is. | [pdf](papers/2025/11_Zheng_et_al._From_Tables_to_Signals_Revealing_Spectral_Adaptivity_in_TabPFN.pdf) |
+| 2025-11 | Zhang et al. | LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence | Masked context-conditional pretraining unifies prediction, imputation and generation in LimiX-16M/2M. | [pdf](papers/2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf) |
 | 2025-12 | Pfefferle et al. | nanoTabPFN — A Lightweight and Educational Reimplementation of TabPFN | Under-500-line educational reimplementation of v2's architecture and training loop, trained on TabICL prior data; beats TabPFN without ensembling in its small regime. | [pdf](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) |
 | 2025-12 | Tanna et al. | TabTune — A Unified Library for Inference and Fine-Tuning Tabular Foundation Models | Unified library for zero-shot, meta-learning, SFT and LoRA across seven TFMs; adaptation outcomes are strongly model-dependent. | [pdf](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) |
 | 2025-12 | Spinaci et al. | **ConTextTab** — A Semantics-Aware Tabular In-Context Learner | Table-native ICL with per-modality (text/date/number) embeddings trained on large-scale *real* tables; new standard on the semantically rich CARTE benchmark. | [pdf](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf) |
@@ -81,6 +85,7 @@ this folder and write them there.
 | 2026-07 | Baesens et al. | **Foundation Models for Credit Risk Prediction: A Game Changer?** | Untuned TFMs compete strongly on 14 PD and 7 LGD datasets against 29/22 methods (TFMs included), especially with little data; discrimination and probability quality select different winners. | [pdf](papers/2026/07_Baesens_et_al._Foundation_Models_for_Credit_Risk_Prediction_A_Game_Changer.pdf) |
 | 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Pretraining on a *single* real table transfers broadly; feature count drives transfer and ≥30-feature filtering hurts; argues TFMs learn **retrieval-and-aggregation** rather than prior-fitted Bayesian inference. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Eo et al. | **EXAONE Tabular 1.0** — Technical Report | CAST interleaves feature- and item-axis attention at every layer without row compression; a 20.8M model ranks first on TabArena classification untuned; 999-quantile regression head. | [pdf](papers/2026/08_Eo_et_al._EXAONE_Tabular_1.0_Technical_Report.pdf) |
+| 2026-08 | Klötergens et al. | Do Tabular Foundation Models Agree with Themselves? | Label-free probability identities expose marginalization and factorization inconsistency in evaluated TFMs. | [pdf](papers/2026/08_Klotergens_et_al._Do_Tabular_Foundation_Models_Agree_with_Themselves.pdf) |
 | 2026-09 | Qu et al. | TabICLv2 — A better, faster, scalable, and open tabular foundation model | Open TabICL successor: new SCM prior, QASSMax attention scaling and Muon pretraining; beats RealTabPFN-2.5 untuned on TabArena and TALENT, scales to million-row tables. | [pdf](papers/2026/09_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) |
 | 2026-09 | Jäger et al. | **TabPFN-3.5** — Technical Report | TabPFN-3 with Fourier cell encodings, doubled width and a prior retuned for grouped/wide/high-cardinality data; the family ranks 1st on seven benchmarks incl. BeyondArena. Weights downloadable under a restrictive licence. | [pdf](papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf) |
 | 2026-09 | Tao et al. | **Mitra-v2** — Technical Report | Same Tab2D backbone with ~10× wider pretraining tasks and a Hybrid SCM; 77M parameters tie the 1.64B TabFM on TabArena; >10 classes via a hierarchical wrapper; all changes made at once. | [pdf](papers/2026/09_Tao_et_al._Mitra_v2_Technical_Report.pdf) |
@@ -88,10 +93,12 @@ this folder and write them there.
 | 2026-09 | Zhang et al. | **LimiX-2** — A Contextual Mechanism Network Towards General Structured-Data Intelligence | Retains cells and jointly trains target prediction and masked-feature reconstruction; the 406M model ranks 1st on TabArena, TALENT and BCCO; attention probes recover causal skeletons, not effects. | [pdf](papers/2026/09_Zhang_et_al._LimiX_2_A_Contextual_Mechanism_Network_Towards_General_Structured_Data_Intelligence.pdf) |
 | 2026-09 | Cho et al. | **Causilo** — Technical Report | Refines cells across both axes before row compression with linear feature-side attention; 1785 TabArena Elo at 0.10 s per 1K queries; beats TabPFN-3.5-Fast with 31.6% less inference time. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
 | 2026-09 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | 40 text/image-tabular datasets where both modalities add signal and target-aware encoders beat frozen embeddings (37/40 when pooling all learners); 40 further candidates test the selection boundary. | [pdf](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
+| 2026-09 | Wang et al. | LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models | Localized scalar embeddings and sample-first attention improve a 2M-parameter TFM's accuracy–efficiency trade-off. | [pdf](papers/2026/09_Wang_et_al._LimiX_2M_Mitigating_Low_Rank_Collapse_and_Attention_Bottlenecks_in_Tabular_Foundation_Models.pdf) |
 | 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | DiagScale matches much of full finetuning's gain; selective aggregation helps at substantial cost, while retrieval can help or fail and context expansion gives no consistent gain. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
 | 2026-10 | Zhao et al. | **TabReliBench** — Evaluating Tabular Foundation Models Beyond Predictive Accuracy | Reliability benchmark (241 datasets, 11 TFMs): near-nominal marginal coverage but heterogeneous **subgroup coverage**; ensembling and conformal post-processing do not reliably fix it. | [pdf](papers/2026/10_Zhao_et_al._TabReliBench_Evaluating_Tabular_Foundation_Models_Beyond_Predictive_Accuracy.pdf) |
 | 2026-10 | Cannistraci and Vogt | **Tabular Foundation Models Are Effectively Shallow** | Label-free affine translators replace up to 96% of TFM blocks; half-depth is near-lossless for classification and regression; one-block TabPFN-3 is 2.4× faster in 6× less memory, but single blocks hurt regression. | [pdf](papers/2026/10_Cannistraci_and_Vogt_Tabular_Foundation_Models_Are_Effectively_Shallow.pdf) |
 | 2026-10 | Alberge et al. | **SurvICL**: a Foundation Model for in-context Survival Analysis | TabICLv2-based survival ICL trained on latent event-time quantiles from a proportional-odds prior; best held-out IBS on 63 datasets, with size-dependent limits. | [pdf](papers/2026/10_Alberge_et_al._SurvICL_a_Foundation_Model_for_in_context_Survival_Analysis.pdf) |
+| 2026-10 | Deprez et al. | Is TabPFN the Silver Bullet for Insurance Pricing? | Insurance frequency/severity experiments expose limits of transferring generic TFM benchmark success to pricing. | [pdf](papers/2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf) |
 
 ---
 
@@ -294,6 +301,24 @@ taxonomies) that effectively framed the TFM research agenda.
 
 **Limitations.** Purely argumentative — no numbers — and confined to single independent tables,
 with diversity of web corpora and coverage of sensitive/proprietary domains left unproven.
+
+---
+
+<a id="carte-pretraining-and"></a>
+
+## 2024-07 — Kim et al. — CARTE: Pretraining and Transfer for Tabular Learning
+
+**Venue/provenance.** ICML 2024, PMLR 235, pp. 23843–23866. Filed proceedings PDF; July 2024 follows the curated conference record, not an inferred arXiv revision. [Primary record](https://proceedings.mlr.press/v235/kim24d.html).
+
+**Zotero citation key:** `2024.KIM.cartepretrainingtransfertabularlearning`. **PDF:** [open](papers/2024/07_Kim_et_al._CARTE_Pretraining_and_Transfer_for_Tabular_Learning.pdf).
+
+**Where it fits.** A separate transfer branch alongside PFNs: CARTE pretrains semantic representations on external knowledge and fine-tunes for a target table, rather than approximating a synthetic-prior posterior through frozen ICL. It anticipates semantic transfer issues later addressed by TabSTAR.
+
+**What it contains.** Sections 3–4 represent rows as graphlets, encode column names and string entries with open-vocabulary embeddings, and contextualize entries with relation-conditioned graph attention. Contrastive pretraining uses YAGO3, described as about 18.1 million triples and 6.3 million entities. Target fine-tuning supports single tables and joint learning with weakly related sources without exact schema/entity matching. Forty-two baselines include tree ensembles and alternative string representations. Reported gains are particularly strong on string-rich tables and small-data transfer tasks.
+
+**Strengths.** The method makes names and string semantics transferable across mismatched schemas. Architecture, pretraining and transfer are studied with ablations; [official code](https://github.com/soda-inria/carte) and benchmark resources are public.
+
+**Limitations.** External knowledge and pretrained string embeddings change the information budget relative to anonymous-column PFNs. This requires supervised fine-tuning, not training-free ICL. Useful string semantics and benchmark composition limit generalization to arbitrary numerical tables, and embedding/adaptation costs must be counted.
 
 ---
 
@@ -1178,6 +1203,24 @@ experiments are bounded by TabPFN's context window and input dimensionality, and
 needed to work around that introduces blending artefacts a globally trained INR does not have.
 Most importantly for this library, 1D and 2D signal reconstruction are a long way from real
 tabular data: the bridge is suggestive, not yet established where it would matter.
+
+---
+
+<a id="limix-unleashing-structured"></a>
+
+## 2025-11 — Zhang et al. — LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence
+
+**Venue/provenance.** arXiv technical report 2509.03505v2, 7 November 2025. Initial Zotero publication: 3 September 2025; an internal 10 November header differs from the arXiv banner. Filing uses the banner month. [Primary record](https://arxiv.org/abs/2509.03505).
+
+**Zotero citation key:** `2025.ZHANG.limixunleashingstructureddatamodelingcapabilitygeneralistintelligence`. **PDF:** [open](papers/2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf).
+
+**Where it fits.** Extends PFN-style prediction to queries over different variables and missingness patterns. This original report precedes the separate LimiX-2 generation already discussed here; LimiX-2M denotes parameter scale and must not be confused with LimiX-2.
+
+**What it contains.** Sections 2–6 describe 16M- and 2M-parameter models with episodic, context-conditional masked modelling on synthetic hierarchical-SCM data. Varying mask patterns changes conditioning and prediction roles; retrieval-based ensembling constructs useful inference contexts. Section 7 evaluates prediction, imputation, generation, embeddings, adaptation and shifts across eleven benchmark collections. Figures 1–2 report favorable aggregate classification/regression ranks for LimiX-16M against neural, tree and AutoGluon baselines. Section 8 fits scaling relationships for pretraining data and model size.
+
+**Strengths.** One conditional interface supports several tasks. Broad regimes and scaling experiments complement predictive benchmarks. The paper links model releases and [official inference/configuration code](https://github.com/limix-ldm-ai/LimiX); the old limix-ldm URL redirects there.
+
+**Limitations.** The tested priors and scaling fits do not establish general intelligence. A joint-modelling objective alone does not prove exact compatibility of finite learned conditionals; compare Klötergens et al. 2026 (*Do Tabular Foundation Models Agree with Themselves?*), which tests other TFMs. The evolving repository contains multiple generations, so code and checkpoint identities must be pinned.
 
 ---
 
@@ -2466,6 +2509,24 @@ again. And the synthetic-only prior plants it firmly on one side of the question
 
 ---
 
+<a id="do-tabular-foundation"></a>
+
+## 2026-08 — Klötergens et al. — Do Tabular Foundation Models Agree with Themselves?
+
+**Venue/provenance.** arXiv preprint 2608.06004v1, 6 August 2026. No peer-reviewed venue is recorded. [Primary record](https://arxiv.org/abs/2608.06004).
+
+**Zotero citation key:** `2026.KLOTERGENS.tabularfoundationmodelsagreethemselves`. **PDF:** [open](papers/2026/08_Klotergens_et_al._Do_Tabular_Foundation_Models_Agree_with_Themselves.pdf).
+
+**Where it fits.** Tests a necessary implication of Müller et al. 2021 (*Transformers Can Do Bayesian Inference*) without requiring an unknown real-world posterior. It matters when univariate predictors are reused for multivariate generation or imputation.
+
+**What it contains.** Section 3 defines marginalization consistency: averaging a conditional over a predicted intermediate variable must recover the direct marginal. Factorization consistency requires different chain-rule orders to yield the same joint. The paper proves the latter implies the former, but not conversely. Sections 4–5 test TabPFN v2/v3, TabICL v1/v2, TabDPT and TabFM where their output interfaces permit, using distributional discrepancies including total variation. Every tested model violates both requirements on every tested dataset. TabFM is the most consistent classifier in the comparison but lacks the probabilistic regression interface required there.
+
+**Strengths.** Diagnostics require neither outcome labels nor knowledge of the pretraining prior. Formal definitions and implication results distinguish the two consistency notions; empirical analyses separate coherence from predictive accuracy.
+
+**Limitations.** Findings concern selected finite models/datasets and regression integration/discretization. They do not refute the asymptotic PFN loss argument, prove universal inconsistency or establish poor single-target prediction. Consistency is neither calibration nor correctness. No author-linked code repository is identified in the filed PDF.
+
+---
+
 <a id="tabiclv2"></a>
 
 ## 2026-09 — Qu et al. — TabICLv2
@@ -2883,6 +2944,24 @@ representation method reproduces the supervised TAR gains.
 
 ---
 
+<a id="limix-2m-mitigating"></a>
+
+## 2026-09 — Wang et al. — LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models
+
+**Venue/provenance.** ICML 2026, PMLR 306, pp. 132541–132570. Filed proceedings PDF; September follows the curated venue record. Zotero also records the earlier arXiv identifier 2606.04485. [Primary record](https://proceedings.mlr.press/v306/wang26kw.html).
+
+**Zotero citation key:** `2026.WANG.limix2mmitigatinglowrankcollapseattentionbottleneckstabularfoundationmodels`. **PDF:** [open](papers/2026/09_Wang_et_al._LimiX_2M_Mitigating_Low_Rank_Collapse_and_Attention_Bottlenecks_in_Tabular_Foundation_Models.pdf).
+
+**Where it fits.** An architectural contribution complementary to TabICL's row compression and Zhang et al. 2025 (*LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence*). Its 2M parameter count is distinct from the later LimiX-2 generation.
+
+**What it contains.** Sections 3–5 diagnose restricted within-feature variation from affine scalar tokenization: adding feature IDs does not enlarge that scalar-value channel. RaBEL expands scalars into localized radial-basis features, optionally exponent-gated. S→N→F aggregates cross-sample context before nonlinear processing and feature mixing, with readout-aligned pooling. A 2M-parameter model is compared with the paper's 7M TabPFN-v2 and 27M TabICL baselines. Reported benchmarks and ablations show favorable accuracy with reduced training/inference costs, supported by effective-rank analyses.
+
+**Strengths.** The paper connects a precise embedding limitation, measured ranks, a concrete nonlinear map and architecture ablations. The attention-order argument tracks whether computed representations actually reach the readout. Official family code/checkpoints are linked.
+
+**Limitations.** A rank-one scalar variation channel is not a rank-one full transformer; later nonlinear operations can enrich representations. Results concern stated baselines, not all later checkpoints. Parameter savings alone do not establish arbitrary hardware/context speedups. The shared repository evolves, so exact configuration availability needs separate checking.
+
+---
+
 <a id="test-time-compute"></a>
 
 ## 2026-10 — Ning et al. — Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits
@@ -3172,5 +3251,23 @@ an average curve: neither establishes individual or subgroup calibration. Finall
 latent event times are unavailable for censored real observations, so plain pinball
 training here does not by itself supply a valid real-data finetuning or continued-
 pretraining objective.
+
+---
+
+<a id="is-tabpfn-the"></a>
+
+## 2026-10 — Deprez et al. — Is TabPFN the Silver Bullet for Insurance Pricing?
+
+**Venue/provenance.** arXiv preprint 2605.22892v3, 9 October 2026; initial Zotero publication 21 May 2026. Filing follows the attached October revision. [Primary record](https://arxiv.org/abs/2605.22892).
+
+**Zotero citation key:** `2026.DEPREZ.tabpfnsilverbulletinsurancepricing`. **PDF:** [open](papers/2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf).
+
+**Where it fits.** A selected domain evaluation complementing broad benchmarks and adaptation studies. It tests whether default pretrained predictors address insurance pricing's statistical and computational requirements rather than treating generic regression accuracy as sufficient.
+
+**What it contains.** Sections 2–4 compare TabPFN v2.6/v3, Poisson/gamma GLMs and fixed-setting XGBoost on French freMTPL2 and Belgian beMTPL97 motor-liability data. Frequency contexts range from 2,000 to 100,000 policies where supported; severity uses the available training fold. Tables 1–2 distinguish RMSE from actuarial deviance: GLMs lead frequency deviance on both datasets, whereas TabPFN is competitive on smaller severity samples, with substantial fold variation and substantially longer inference. Exposure, sparse counts and heteroskedasticity make likelihood/weighting choices material.
+
+**Strengths.** Separate frequency/severity tests, context-size analysis and runtime measurements address applicability beyond a single score. [Official evaluation code](https://github.com/B-Deprez/tabpfn-insurance) is linked from the PDF.
+
+**Limitations.** Two datasets and specific default model versions cannot support a universal verdict. Baselines use full training data while large-table TabPFN contexts are bounded. Offset/observation-weight and licence limitations describe the evaluated interfaces and releases, not every future version.
 
 ---

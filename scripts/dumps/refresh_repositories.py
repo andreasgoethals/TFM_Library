@@ -151,6 +151,30 @@ def _install_quiet_async_shutdown() -> None:
 _PY_DOCS = {"*.py", "*.md", "*.toml", "*.txt", "*.yaml", "*.yml", "*.cfg", "*.ipynb"}
 
 REPOSITORIES: dict[str, str | dict] = {
+    "CARTE.txt": {
+        "url": "https://github.com/soda-inria/carte",
+        "source_only": True,
+        "identity": "https://proceedings.mlr.press/v235/kim24d.html",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*", "MANIFEST.in", "Makefile"},
+        "exclude": {"data/*", "results/*", "outputs/*", "checkpoints/*"},
+        "note": "official CARTE source; excludes datasets, weights and generated results",
+    },
+    "LimiX.txt": {
+        "url": "https://github.com/limix-ldm-ai/LimiX",
+        "source_only": True,
+        "identity": "https://arxiv.org/abs/2509.03505",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*", "Dockerfile", "MANIFEST.in"},
+        "exclude": {"data/*", "datasets/*", "weights/*", "checkpoints/*", "results/*", "outputs/*"},
+        "note": "official LimiX family inference/configuration; old limix-ldm URL redirects here",
+    },
+    "TabPFNInsurance.txt": {
+        "url": "https://github.com/B-Deprez/tabpfn-insurance",
+        "source_only": True,
+        "identity": "https://arxiv.org/abs/2605.22892",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*"},
+        "exclude": {"data/*", "output/*", "outputs/*", "results/*", "checkpoints/*", "models/*"},
+        "note": "official insurance evaluation; excludes policy data and generated artifacts",
+    },
     "CausalPFN.txt": {
         # Inference + estimation only (no prior generator / pretraining).
         # ~175 MB of the repo is benchmark data: 201 realcause CSVs and
@@ -332,6 +356,8 @@ def entry_patterns(entry: str | dict) -> dict[str, object]:
         kw["exclude_patterns"] = set(entry["exclude"])
     if entry.get("include_gitignored"):
         kw["include_gitignored"] = True
+    if entry.get("source_only"):
+        kw["source_only"] = True
     return kw
 
 
@@ -367,6 +393,17 @@ def refresh_one(
         bump is then a no-op rather than a crash. ``None`` falls back to
         whatever default gitingest applies.
     """
+    if patterns and patterns.get("source_only"):
+        # Reuse the bounded, revision-pinned downloader for new sources that
+        # contain weights or data. Only selected text blobs are downloaded.
+        import source_snapshot
+        entry = REPOSITORIES[filename]
+        source_snapshot.REPOSITORIES[filename] = entry
+        return source_snapshot.refresh_one(
+            filename, url, repositories_dir=repositories_dir,
+            force_shrink=force_shrink, timeout=timeout,
+            patterns=source_snapshot.entry_patterns(entry),
+        )
     target = repositories_dir / filename
     tmp    = repositories_dir / f"{filename}.refresh.tmp"
 

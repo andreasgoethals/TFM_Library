@@ -255,7 +255,7 @@ def _write_snapshot(url: str, output: Path, *, timeout: int, patterns: dict,
         if skipped:
             provenance["skipped_files"] = skipped
         provenance["file_sha256"] = manifest
-        header = "TFM Library source snapshot\nDo not edit: regenerate with scripts/dumps/refresh_external_sources.py\n"
+        header = "TFM Library source snapshot\nDo not edit: regenerate with the registered source refresh command.\n"
         output.write_text(header + json.dumps(provenance, indent=2, ensure_ascii=False) + "\n\n" + content,
                           encoding="utf-8", newline="\n")
 
