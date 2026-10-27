@@ -4,8 +4,14 @@
   "sources": {
     "2024/07_Kim_et_al._CARTE_Pretraining_and_Transfer_for_Tabular_Learning.pdf": "8fb7e0927d6f8f27f3d0b743fc94ee094cf1a7aa80a1011c610b017b68c1e6d7",
     "2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf": "268e1cb80b6aaa6344b2eba9c0ef793f74652bb101a4fc06e1cae857a8b7350e",
+    "2026/04_Hudovernik_et_al._KumoRFM_2_Scaling_Foundation_Models_for_Relational_Learning.pdf": "029496f53d6bc3b5a3cf26cb1746dd617501b66d513d4469a126ad2fa5c77440",
     "2026/08_Klotergens_et_al._Do_Tabular_Foundation_Models_Agree_with_Themselves.pdf": "69e27826e6f3797a0e65c87520e82f2142b266f337ad081f0f601f6fdd1dd6a5",
+    "2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf": "b858963cde6d6779ad05d1e50ae93234cbd4e84b97c68bcd97c03acca6ebe855",
+    "2026/09_Kong_et_al._TabFM_A_Zero_Shot_Foundation_Model_for_Tabular_Data.pdf": "73fc755e0a6ce468b023cee6c2e88bbfbf07e69122dfb0abb03cc5154d2a3698",
     "2026/09_Wang_et_al._LimiX_2M_Mitigating_Low_Rank_Collapse_and_Attention_Bottlenecks_in_Tabular_Foundation_Models.pdf": "25dc58af764b0dfaca43b86616de6b7d675876038bf55927f47695522718f70a",
-    "2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf": "175391ba03f32029503319e3390b178ea4da9433ddcea0cfcca4e60c2a50b941"
+    "2026/10_Baesens_et_al._Tabular_Foundation_Models_for_Credit_Risk_Prediction_A_Dedicated_Review_and_Empirical_Comparison.pdf": "60d9f9044cbe5f5afd49153b646c47184d11c1eef9a9e5a65f1f3697ff773191",
+    "2026/10_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf": "b0863a80cf5afce0ce8e82b117cecaf4a16b3dd6e4915b64d2e97dd45271a37d",
+    "2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf": "175391ba03f32029503319e3390b178ea4da9433ddcea0cfcca4e60c2a50b941",
+    "2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf": "6a26d5fd208685af68634ad32a1356e9630caee2d1e04cce80cfed5964d2c1c6"
   }
 }

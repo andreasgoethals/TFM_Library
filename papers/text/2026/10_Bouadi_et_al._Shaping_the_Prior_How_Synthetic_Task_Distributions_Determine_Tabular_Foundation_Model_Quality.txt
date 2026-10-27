@@ -17,8 +17,7 @@ yields consistent and substantial improvements in downstream accuracy and robust
 benchmarks, with gains concentrated in regimes characterized by distributional irregularities. Ablations
 confirm that mechanism diversity, realism composition, and shift-aware stress each contribute independently,
 their effects are not interchangeable. These results establish synthetic prior construction as a first-order and
-largely overlooked determinant of tabular foundation model quality. Code and implementation details are
-publicly availablehttps://github.com/o-prior/O-prior.git.
+largely overlooked determinant of tabular foundation model quality.
 Keywords:Tabular Foundation Models, Synthetic Prior Design, In-Context Learning, Structural Causal
 Models
 1 Introduction
@@ -32,7 +31,7 @@ pretraining on a large collection of supervised tasks, the model receives a labe
 predicts query labels in a single forward pass without any dataset-specific training nor hyperparameter tuning. While
 this paradigm matches or exceeds strong GBTs baselines [12] on standard benchmarks, these results raise a foundational
 question: what determines the quality of a pretrained tabular model?
-arXiv:2605.18971v1  [cs.LG]  18 May 2026
+arXiv:2605.18971v2  [cs.LG]  23 Oct 2026
 
 Shaping the Prior: How Synthetic Task Distributions Determine Tabular Foundation Model Quality
 Unlike language or vision foundation models, TFMs are not pretrained on naturally occurring data. Their inductive
@@ -76,15 +75,15 @@ components are independent, O’PRIORsupports controlled attribution of downstre
 choices.
 Leakage-safe contract.A TFM is evaluated as an in-context learner: it observes a labeled support set {(xt, yt)}n
 t=1
-and predicts labels for query rows t > n , which are unseen at inference time. Any preprocessing statistic computed over
+and predicts labels for query rows t > n, which are unseen at inference time. Any preprocessing statistic computed over
 query rows would therefore constitute information leakage - it would give the generator knowledge the model cannot
 have at test time. Throughout O’PRIOR, we enforce the following contract:all fitted statistics are Fn-measurable,
 computed exclusively from support rows. Query rows are transformed only by functions of the support:
-˜xtj =h j({xsj}s≤n, x tj), t > n.(1)
+˜xtj =h j({xsj}s≤n, xtj), t > n.(1)
 We state this contract once here. All subsequent components respect it without re-statement.
-Task format.Each synthetic task is a supervised tuple D= (X∈R T×d ,y∈R T , n) , where rows t≤n form
-thesupport(labeled context) and rows t > n form thequeryset whose labels are predicted. The target y is either a
-continuous regression or a discrete classification target in{0, . . . , K−1} T . The generator produces complete in-context
+Task format.Each synthetic task is a supervised tuple D= (X∈R T×d ,y∈R T , n), where rows t≤n form
+thesupport(labeled context) and rows t > nform thequeryset whose labels are predicted. The target y is either a
+continuous regression or a discrete classification target in{0, . . . , K−1}T . The generator produces complete in-context
 episodes rather than isolated examples.
 2
 
@@ -135,7 +134,7 @@ polynomial interactions among other covariates, while a clinical dataset might c
 with GP-like biological variation. To capture this, we introduce theHybrid SCM, a composition of multiple base classes
 within a single task.
 A Hybrid SCM is defined as an ordered tuple (θ(1), . . . , θ(ℓ)) of base mechanisms, where the output variables of θ(i)
-may serve as inputs to θ(j) for j > i . This defines a random directed acyclic graph whose edges correspond to different
+may serve as inputs to θ(j) for j > i. This defines a random directed acyclic graph whose edges correspond to different
 structural families. Node values are aggregated from their parents using one of five operators: mean, weighted softmax,
 MLP, product, or max, sampled per node. Features and targets are then selected from the full set of nodes using
 one of four diversity-aware strategies:k-meansclustering of node representations,farthest-pointgreedy selection,
@@ -151,8 +150,8 @@ systematically affect which predictive signals a model can extract. The realism 
 into an observational table that better reflects these properties. Conceptually, this separates thelatent structural signal
 produced by the SCM from theobservational layerintroduced by data collection, measurement, and preprocessing.
 We write the realism map as
-(X(0),y (0))7− →(eX,ey,M,τ),(3)
-where M∈ {0,1} T×d ′
+(X(0),y (0))7− →(eX, ey,M,τ),(3)
+where M∈ {0,1}T×d ′
 is a missingness mask and τ stores per-column semantic type and imputation identity. All
 statistics are computed from support rows in accordance with the leakage-safe contract stated above.
 Support-only preprocessing.Real tabular pipelines almost never consume raw generative latents directly.
@@ -181,7 +180,7 @@ j =µ j +κσ j.
 We treat τ ±
 j as anoperational rangelearned from the context: support rows may be winsorized or cleaned for extreme
 values, while query rows are clipped to thesame [τ −
-j , τ +
+j , τ+
 j ] bounds. Next, optional monotone quantile maps and
 marginal transformations maybe be fitted on support rows and applied to both support and query rows. These include
 standardization, power transforms, skew correction, log-type shifts, and rank-based Gaussianization. This design
@@ -199,7 +198,7 @@ deployment, rather than the smooth distributions that SCMs naturally produce.
 ˜xtj =x tj +σ j exp(α|ztj|)ϵ tj, ϵ tj ∼ N(0,1),(4)
 Structured missingness.Missing values are ubiquitous in real tabular data and arise through distinct
 mechanisms that interact differently with predictive models. For each column j, O’PRIORsamples a mechanism
-Rj ∈ {MCAR,MAR,MNAR} with mixture weights from ω. Under MCAR, entries are missing independently with
+Rj ∈ {MCAR,MAR,MNAR}with mixture weights from ω. Under MCAR, entries are missing independently with
 rateπ j. Under MAR, missingness depends on a driver columnk(j)̸=j:
 P(mtj = 1|x t) =σ
 
@@ -208,7 +207,7 @@ P(mtj = 1|x t) =σ
 ,(5)
 withb j calibrated from a target support rate. Under MNAR, missingness depends on the feature’s own value:
 P(mtj = 1|x tj) =σ(β MNAR sj ztj +b j),(6)
-where sj ∈ {−1,+1} is derived from support skewness. Missing entries are imputed using support-only statistics
+where sj ∈ {−1,+1}is derived from support skewness. Missing entries are imputed using support-only statistics
 - mean, median, constant fills, sampled support values, or Gaussian noise around the support mean - with the imputation
 strategy stored as column metadata so the model can condition on it when metadata is provided.
 Target transformations.The raw target y(0) is transformed to diversify the shape of the prediction problem. For
@@ -243,14 +242,14 @@ that is not a direct causal effect, requiring the model to distinguish genuine p
 association.
 Spurious support predictors.To stress-test shortcut reliance, selected columns are made highly predictive on
 support rows but unreliable on query rows. Using support-normalized labels ˇyt = (yt −¯y)/sy, support entries for
-j∈ J sp are set as:
+j∈ Jsp are set as:
 ˜xtj =λˇyt +ϵ tj, t≤n,(9)
 while query entries obey:
 ˜xtj =s j ρ λˇyt +ϵ tj, t > n,(10)
-where sj ∈ {−1,+1} may flip the association and ρ∈(0,1] weakens it. These columns are strong shortcuts in-support
+where sj ∈ {−1,+1}may flip the association and ρ∈(0,1] weakens it. These columns are strong shortcuts in-support
 but degraded or inverted out-of-support, a direct stress test for models that over-rely on spurious in-context correlations.
 Covariate shift.For a subsetJ cs, query rows undergo affine perturbation:
-˜xtj ←a j ˜xtj +b j, t > n, j∈ J cs,(11)
+˜xtj ←a j ˜xtj +b j, t > n, j∈ Jcs,(11)
 with (aj, bj) scaled relative to support dispersion. This shifts the marginal distribution of query features away from the
 support without altering the causal task structure.
 Temporal and seasonal drift.For sequence-structured tasks, the generator introduces non-stationarity via two
@@ -267,7 +266,7 @@ or prevent the acquisition of fundamental in-context learning behavior. This mot
 difficulty over pretraining so that the model builds competence progressively. Critically, the curriculum operates entirely
 on the prior, the model architecture, optimizer, and compute budget remain fixed throughout, making curriculum
 schedule an independently ablatable experimental axis.
-Realism profiles.O’PRIORdefines three realism presets P ∈ {LOW,MILD,HARD} . Each induces a distinct
+Realism profiles.O’PRIORdefines three realism presets P ∈ {LOW,MILD,HARD}. Each induces a distinct
 hyperprior GP over the same parameterization by restricting the support of key coordinates of ω - missingness rates,
 tail severity, confounding strength, spurious feature fraction, and shift magnitude become progressively less constrained
 fromLOWtoHARD. Because the parameterization is shared, profiles can be directly compared or continuously

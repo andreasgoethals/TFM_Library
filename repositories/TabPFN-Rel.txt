@@ -1,0 +1,4169 @@
+TFM Library source snapshot
+Do not edit: regenerate with the registered source refresh command.
+{
+  "upstream": "https://github.com/PriorLabs/tabpfn-rel",
+  "revision": "86315dd164a0153bf1b0d49015a226785c06a6eb",
+  "revision_date": "2026-10-21T18:31:10+02:00",
+  "slug": "PriorLabs/tabpfn-rel",
+  "retrieved_utc": "2026-10-26T10:45:44+00:00",
+  "identity_source": "https://arxiv.org/abs/2608.16319",
+  "included_files": 29,
+  "excluded_files": 14,
+  "file_sha256": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1562,
+      "sha256": "817fae337ecccc68d4a3b731488a91c907219508dba0932c5ec0add8bf2e19e1"
+    },
+    {
+      "path": ".github/workflows/reapprove-internal-prs.yml",
+      "bytes": 6407,
+      "sha256": "456e668b356c53eea9bea9ec51e94fca6060a64d540f81ba193e3ddfa750a927"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "bytes": 467,
+      "sha256": "1e6b4764b9915b333ffc63b3d8bf96f6dcc2e6157520613d47fed100b31f987c"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11310,
+      "sha256": "33af73f56e919933d520330c30c80c373ab8b9720d991b204d951af423f67754"
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 188,
+      "sha256": "ea1e4870f2e366eaa37a40946a475f1a4eed0e5b6984c8f7c449817a3244b0c0"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6984,
+      "sha256": "bca5f2c523bb6f361f1b66279eef1a6672e1372d0f5e63e7f2d2f797dc12a601"
+    },
+    {
+      "path": "examples/__init__.py",
+      "bytes": 36,
+      "sha256": "78bfc56f32a4f4a2a9cd5fa4a65a634fbbbdb18d97287ee10e059859a5538c35"
+    },
+    {
+      "path": "examples/olist_database.yaml",
+      "bytes": 1623,
+      "sha256": "ff5c96a60eb1ad867855a35bebf63a57875ac7a6124b172e8b48885ce1dcde08"
+    },
+    {
+      "path": "examples/olist_seller_churn.py",
+      "bytes": 3318,
+      "sha256": "3f80970e013990d14bd6c3f042e808e885f5db600c949ba661943da58fe816e0"
+    },
+    {
+      "path": "examples/olist_seller_churn.yaml",
+      "bytes": 1237,
+      "sha256": "60988e88086d601667d2c8918dcae4919a32ef18bab18c367b455e00db38dfe4"
+    },
+    {
+      "path": "pyproject.toml",
+      "bytes": 2413,
+      "sha256": "3bb061b6bbce8399976642060db9b05342ea371009f13e2d672495008a9bf8fa"
+    },
+    {
+      "path": "src/tabpfn_rel/__init__.py",
+      "bytes": 693,
+      "sha256": "605e9854ab3eaf1ea36581ba030f3170d559e1d75b4629e066815ad460bb601b"
+    },
+    {
+      "path": "src/tabpfn_rel/context.py",
+      "bytes": 11039,
+      "sha256": "3bf6e51c4e9cd9c3ea46df3769b3a03bf79862e5e325dc21ea77f180a6d96da6"
+    },
+    {
+      "path": "src/tabpfn_rel/estimator.py",
+      "bytes": 3443,
+      "sha256": "19ec40e361aa87b5d5d27515434a42177111e74213ab02f21b34e85fd44f6de0"
+    },
+    {
+      "path": "src/tabpfn_rel/features.py",
+      "bytes": 12582,
+      "sha256": "1965dde6045b821fa9442cd27c59e9bba5dc0c2c9e5e9f0af9477dd723b9abf4"
+    },
+    {
+      "path": "src/tabpfn_rel/hurdle.py",
+      "bytes": 2854,
+      "sha256": "d358889d173110428691b760a32e67fb102c17900fba06a26af19a8fca8526be"
+    },
+    {
+      "path": "src/tabpfn_rel/model.py",
+      "bytes": 11078,
+      "sha256": "dc889e6f3a62f7c6f16e7fd922db241f6a0851b7849bdcf99bf295677b20114b"
+    },
+    {
+      "path": "src/tabpfn_rel/tfm.py",
+      "bytes": 5048,
+      "sha256": "95593475d09686f05cd186967481720e1140bf2af7ffed538839188aa81cd7a7"
+    },
+    {
+      "path": "tests/__init__.py",
+      "bytes": 40,
+      "sha256": "b361e9920daa01e488dcbd625cfa385e8a09e43f1ce43f395644e0bf29b71f91"
+    },
+    {
+      "path": "tests/_data.py",
+      "bytes": 2030,
+      "sha256": "f4b4fdafbde4ac8114594517846f9738c9eec943e5e70d6df92a4b91a0c34b3e"
+    },
+    {
+      "path": "tests/api_payload_smoke.py",
+      "bytes": 2499,
+      "sha256": "bbcc6fe0499170e98b65739a01edd5201386e67ec9a035e28101d2819eb8b120"
+    },
+    {
+      "path": "tests/test_context.py",
+      "bytes": 7692,
+      "sha256": "e736e7926c765c44dd71f02a33361d90d0b63ea74a8b7ecd9df6a04eb5588d51"
+    },
+    {
+      "path": "tests/test_features.py",
+      "bytes": 10693,
+      "sha256": "7c2a18315b0df63b49abeea9c23f11570047a908007a336f0404dbae3b7c3142"
+    },
+    {
+      "path": "tests/test_hurdle.py",
+      "bytes": 4312,
+      "sha256": "6b2365479824c07d4d03db27587e4405290ec0c835c06216795d302ec9bb1cd7"
+    },
+    {
+      "path": "tests/test_integration.py",
+      "bytes": 6961,
+      "sha256": "53c77bafb2403eaa7825b3399dd6ed36760831b1e59d99fdd36acee3af5d69dd"
+    },
+    {
+      "path": "tests/test_model.py",
+      "bytes": 13646,
+      "sha256": "8435110b6e18c04f73bd83870cef2c43236d547befa13b656b329a73fcc3b3bd"
+    },
+    {
+      "path": "tests/test_package.py",
+      "bytes": 3103,
+      "sha256": "0e059123a9a36b9562b3329901007db60b571dd755f46ea03a1b70d4961875bc"
+    },
+    {
+      "path": "tests/test_rpi_local.py",
+      "bytes": 3672,
+      "sha256": "7ea63cbd8370932e9590488a80787d35289269bb2553159ddeb8497babe6cb04"
+    },
+    {
+      "path": "tests/test_tfm.py",
+      "bytes": 2736,
+      "sha256": "0ad79b095c6bb4bf36fa55ca7d2b13d23fbb2a5966076a97f53e1410f3802437"
+    }
+  ]
+}
+
+================================================
+FILE: README.md
+================================================
+# TabPFN-Rel
+
+[![PyPI version](https://badge.fury.io/py/tabpfn-rel.svg)](https://pypi.org/project/tabpfn-rel/)
+[![Python versions](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://pypi.org/project/tabpfn-rel/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-priorlabs.ai-blue)](https://docs.priorlabs.ai/capabilities/relational)
+[![Discord](https://img.shields.io/discord/1285598202732482621?color=7289da&label=Discord&logo=discord&logoColor=ffffff)](https://discord.gg/BHnX2Ptf4j)
+
+TabPFN-Rel applies TabPFN to prediction tasks over relational databases. It follows
+relationships between tables, builds features with Deep Feature Synthesis, and
+uses TabPFN to predict outcomes for entities such as customers or sellers.
+
+[Documentation](https://docs.priorlabs.ai/capabilities/relational) ·
+[Olist cookbook](https://docs.priorlabs.ai/cookbook/relational_predictions_tabpfn_rel) ·
+[Technical report](https://arxiv.org/abs/2608.16319)
+
+## Try the Olist notebook
+
+> [!TIP]
+> Start with the [Olist seller-churn notebook](https://github.com/PriorLabs/tabpfn-cookbook/blob/main/notebooks/relational_predictions_tabpfn_rel.ipynb).
+> It walks through a seven-table e-commerce database, task definitions, fitting,
+> prediction, caching and baseline comparisons.
+>
+> [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PriorLabs/tabpfn-cookbook/blob/main/notebooks/relational_predictions_tabpfn_rel.ipynb)
+
+The task predicts whether a seller active in the past 30 days will receive no
+orders in the next 30 days. You can also [read the walkthrough in the docs](https://docs.priorlabs.ai/cookbook/relational_predictions_tabpfn_rel)
+or run the [local script](#run-the-example-as-a-local-script).
+
+## Installation
+
+Requires Python 3.11 or 3.12. Choose a backend:
+
+```bash
+pip install "tabpfn-rel[api]"    # Hosted inference
+# Or: pip install "tabpfn-rel[local]"  # Local inference; GPU recommended
+```
+
+For hosted inference, authenticate before fitting:
+
+```python
+from tabpfn_client import init
+
+init()
+```
+
+For local inference, follow the [model access guide](https://docs.priorlabs.ai/models/accessing-model-weights).
+
+## Run the example as a local script
+
+Prefer a Python script to a notebook? [The Olist example](examples/olist_seller_churn.py)
+includes the same database schema and prediction task as YAML files, and reports
+held-out ROC-AUC. It runs on your machine with either hosted or local inference.
+
+<details>
+<summary>Download the data and run the script</summary>
+
+Clone the repository, then download the data with the Kaggle CLI (requires a
+Kaggle account and configured credentials):
+
+```bash
+git clone https://github.com/PriorLabs/tabpfn-rel.git
+cd tabpfn-rel
+uvx kaggle datasets download -d olistbr/brazilian-ecommerce -p data/olist --unzip
+uv sync --extra api --group cpu
+uv run --no-sync python -c "from tabpfn_client import init; init()"
+OMP_NUM_THREADS=1 uv run --no-sync python examples/olist_seller_churn.py
+```
+
+The default fits one configuration through the hosted API. Add `--n-trials 3` to
+try temporal tuning, or `--data-dir /path/to/olist` to use an existing download.
+Hosted fitting and prediction consume API quota.
+
+For local inference, install with `uv sync --extra local` and run the script with
+`--backend local`.
+
+</details>
+
+## Predict on your own database
+
+The Relational Predictive Interface (RPI) makes TabPFN-Rel easier to use on your
+own database: define a prediction task, then call `fit` and `predict`. RPI is
+provided by `relarena-core`, which is installed automatically with TabPFN-Rel.
+
+Define your tables, keys and timestamps in a database YAML file, then define the
+target and temporal splits in a task YAML file. The
+[task-definition guide](https://github.com/PriorLabs/relarena/blob/main/docs/predictive-task.md)
+describes these formats; the Olist example provides complete files to adapt.
+
+```python
+from tabpfn_rel import PredictiveContext, PredictiveQuery, TabPFNRel
+
+context = PredictiveContext.from_yaml("task.yaml", data_dir="data/")
+model = TabPFNRel(model="client")
+model.fit(context, n_trials=0)
+query = PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+predictions = model.predict(query)
+```
+
+Use `model="local"` for local inference. `n_trials=0` (the default) fits the
+default configuration; a positive budget enables temporal tuning. Pass `seed`
+and `cache_dir` to `fit` to control tuning randomness and feature caching.
+`predict` reuses that cache unless given another `cache_dir`.
+
+`model="client"` uses TabPFN 3.5 with simple text processing; `model="local"`
+uses TabPFN 3.5 with native TF-IDF. Their explicit recipe selectors are:
+
+| Backend | Selector |
+| --- | --- |
+| Hosted API, simple text | `client-2026-09-28` |
+| Local, native TF-IDF text | `local-2026-09-28` |
+
+Prefix the selector with `tabpfn-rel-` to use it
+as a RelArena model ID. `tabpfn-rel-client-latest` and
+`tabpfn-rel-local-latest` are RelArena aliases for the current versions;
+results record the dated ID. To use the previous defaults, explicitly select
+`model="client-2026-08-15"` or `model="local-2026-08-15"`.
+
+Both query fields are required. Use `at_timestamp="test_timestamp"` for the
+context cutoff or an explicit date for another prediction anchor. The database
+remains frozen at the context cutoff, including for later anchors, to follow
+RelArena's fixed-snapshot evaluation protocol and prevent post-cutoff data from
+entering predictions. See
+[RelArena's temporal-validation protocol](https://github.com/PriorLabs/relarena/blob/main/docs/temporal-validation.md#why-the-database-cutoff-matters).
+
+To benchmark TabPFN-Rel against other methods, see
+[RelArena](https://github.com/PriorLabs/relarena).
+
+## Let a coding agent set it up
+
+The `relational-prediction` agent skill guides Claude Code or Codex from raw
+tables and a plain-language question to a scored TabPFN-Rel task. The agent
+inspects the tables, prepares them without leaking future information, writes
+both YAML files, checks the labels and compares TabPFN-Rel with simple
+baselines. It asks you before it changes data or picks the task.
+
+Claude Code:
+
+```
+/plugin marketplace add PriorLabs/tabpfn-rel
+/plugin install tabpfn-rel@prior-labs
+```
+
+Codex:
+
+```bash
+codex plugin marketplace add PriorLabs/tabpfn-rel
+codex plugin add tabpfn-rel@prior-labs
+```
+
+Then ask the agent a question about your data, for example "Which of these
+customers will stop ordering next month?". The skill runs in your Python
+environment and installs `tabpfn-rel[api]` and the
+[RelArena](https://github.com/PriorLabs/relarena) baselines there.
+
+## Development
+
+```bash
+uv sync --locked --group cpu
+OMP_NUM_THREADS=1 uv run --no-sync pytest
+uv run --no-sync pre-commit run --all-files
+uv build
+```
+
+Tests cover feature generation, context selection, temporal tuning and prediction
+without model downloads or hosted API calls.
+
+
+
+================================================
+FILE: LICENSE
+================================================
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright 2026 PriorLabs GmbH
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+
+
+
+================================================
+FILE: NOTICE
+================================================
+TabPFN-Rel
+Copyright 2026 PriorLabs GmbH
+
+The DFS plus tabular foundation model recipe builds on the RDBLearn method.
+Shared DFS and estimator infrastructure is provided by RelArena Core.
+
+
+
+================================================
+FILE: pyproject.toml
+================================================
+[build-system]
+requires = ["uv_build>=0.11.15"]
+build-backend = "uv_build"
+
+[project]
+name = "tabpfn-rel"
+version = "0.0.6"
+description = "TabPFN for relational prediction with deep feature synthesis and recency-aware contexts."
+readme = "README.md"
+authors = [{ name = "Prior Labs" }]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11,<3.13"
+keywords = ["tabpfn", "relational-learning", "machine-learning", "tabular-data"]
+dependencies = [
+    "relarena-core>=0.0.6,<0.1",
+    "numpy>=1.24",
+    "pandas>=2.3.3,<3.0",
+    "relbench==2.1.2",
+]
+
+[project.urls]
+Repository = "https://github.com/PriorLabs/tabpfn-rel"
+Issues = "https://github.com/PriorLabs/tabpfn-rel/issues"
+
+[project.optional-dependencies]
+local = ["tabpfn>=9.0.0", "tabpfn-extensions>=0.6.3", "relarena-core[dfs]>=0.0.6,<0.1"]
+api = ["tabpfn-client>=0.6.1", "tabpfn-extensions>=0.6.3", "relarena-core[dfs]>=0.0.6,<0.1"]
+
+[project.entry-points."relarena.models"]
+tabpfn_rel = "tabpfn_rel.model"
+
+[dependency-groups]
+dev = ["pytest>=9.1.1", "ruff==0.15.13", "pre-commit>=4.0", "relarena-core[dfs]>=0.0.6,<0.1"]
+
+cpu = ["torch"]
+# Constant and LightGBM baselines for comparing against TabPFN-Rel.
+baselines = ["relarena[lightgbm]>=0.1.4,<0.2"]
+
+[tool.uv]
+exclude-newer = "3 days"
+# fastdfs has a fixed cutoff that admits 1.2, the core DFS floor, before the 3-day
+# window ends; remove it after 2026-10-01 to restore the rolling cutoff.
+exclude-newer-package = { relarena-core = false, tabpfn-client = false, fastdfs = "2026-09-29T00:00:00Z", certifi = "0 days" }
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", group = "cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+required-version = "==0.15.13"
+force-exclude = true
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "ANN",
+    "D",
+    "E",
+    "F",
+    "I",
+    "W",
+]
+ignore = [
+    "ANN002",
+    "ANN003",
+    "ANN204",
+    "ANN401",
+    "S101",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-decorators = ["typing.override", "typing_extensions.override"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/workflows/**/*.py" = [
+    "E501",
+]
+"**/tests/**/*.py" = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D105",
+    "D106",
+    "D107",
+    "S101",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
+
+
+
+================================================
+FILE: .pre-commit-config.yaml
+================================================
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.13
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: no-commit-to-branch
+        args: [--branch, main]
+
+
+
+================================================
+FILE: examples/__init__.py
+================================================
+"""Runnable TabPFN-Rel examples."""
+
+
+
+================================================
+FILE: examples/olist_database.yaml
+================================================
+# The Olist Brazilian E-Commerce database, pointing straight at the raw Kaggle CSVs.
+# `columns` curates which fields become features (and drops post-purchase leak
+# columns, e.g. orders' order_status / delivery timestamps). order_items is the one
+# table pre-processed in code, to add a trustworthy `purchase_ts` (see
+# examples/olist_seller_churn.py). Referenced by olist_seller_churn.yaml.
+sellers:
+  pkey: seller_id
+  path: olist_sellers_dataset.csv
+  columns: [seller_id, seller_city, seller_state]
+customers:
+  pkey: customer_id
+  path: olist_customers_dataset.csv
+  columns: [customer_id, customer_state, customer_city]
+product_category:
+  pkey: product_category_name
+  path: product_category_name_translation.csv
+products:
+  pkey: product_id
+  path: olist_products_dataset.csv
+  fkeys:
+    product_category_name: product_category
+  columns: [product_id, product_category_name, product_weight_g,
+            product_length_cm, product_height_cm, product_width_cm,
+            product_photos_qty]
+orders:
+  pkey: order_id
+  time_col: order_purchase_timestamp
+  path: olist_orders_dataset.csv
+  fkeys:
+    customer_id: customers
+  columns: [order_id, customer_id, order_purchase_timestamp]
+order_items:
+  time_col: purchase_ts
+  path: order_items.csv
+  fkeys:
+    order_id: orders
+    product_id: products
+    seller_id: sellers
+  columns: [order_id, order_item_id, product_id, seller_id,
+            price, freight_value, purchase_ts]
+order_reviews:
+  time_col: review_answer_timestamp
+  path: olist_order_reviews_dataset.csv
+  fkeys:
+    order_id: orders
+  columns: [order_id, review_score, review_answer_timestamp]
+
+
+
+================================================
+FILE: examples/olist_seller_churn.py
+================================================
+"""Predict seller churn from the Olist tables and evaluate held-out ROC-AUC.
+
+Download the data and configure a backend using the repository README.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import pandas as pd
+from sklearn.metrics import roc_auc_score
+
+from tabpfn_rel import (
+    PredictiveContext,
+    PredictiveQuery,
+    PredictiveQuerySpec,
+    TabPFNRel,
+)
+
+
+def prepare_olist_data(csv_dir: str) -> Path:
+    """Add purchase timestamps to order items for temporal feature filtering."""
+    csv = Path(csv_dir)
+    orders = pd.read_csv(
+        csv / "olist_orders_dataset.csv",
+        usecols=["order_id", "order_purchase_timestamp"],
+    )
+    items = pd.read_csv(csv / "olist_order_items_dataset.csv").merge(
+        orders, on="order_id", how="left"
+    )
+    items.rename(columns={"order_purchase_timestamp": "purchase_ts"}).to_csv(
+        csv / "order_items.csv", index=False
+    )
+    return csv
+
+
+def fit_predict_and_evaluate(
+    spec: PredictiveQuerySpec,
+    model: TabPFNRel,
+    *,
+    n_trials: int,
+) -> None:
+    """Fit the model and score sellers with observed test-window outcomes."""
+    pq = PredictiveContext(spec)
+    model.fit(pq, n_trials=n_trials, seed=0)
+    labels = pq.compute_test_labels()
+    # For multiple test timestamps, see:
+    # https://github.com/PriorLabs/relarena/blob/adrian/context-query/examples/relbench_test_rows.py
+    preds = model.predict(
+        PredictiveQuery(
+            entities=labels[pq.task.entity_col].tolist(),
+            at_timestamp="test_timestamp",
+        )
+    )
+    scored = labels.merge(
+        preds,
+        on=[pq.task.time_col, pq.task.entity_col],
+        how="outer",
+        validate="one_to_one",
+        indicator=True,
+    )
+    if not scored["_merge"].eq("both").all():
+        raise ValueError("Prediction rows must exactly match test label rows.")
+    scored = scored.drop(columns="_merge")
+    if scored[f"{pq.task.target_col}_pred"].isna().any():
+        raise RuntimeError("Predictions are missing rows from the test cohort.")
+    roc_auc = roc_auc_score(
+        scored[pq.task.target_col], scored[f"{pq.task.target_col}_pred"]
+    )
+    print(preds.head())
+    print(f"Test ROC-AUC: {roc_auc:.3f}")
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse the example's local-versus-hosted inference choice."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--backend",
+        choices=("local", "client"),
+        default="client",
+        help="Hosted TabPFN API (default), or local TabPFN without text features.",
+    )
+    parser.add_argument(
+        "--n-trials",
+        type=int,
+        default=0,
+        help="Temporal tuning trials; 0 fits the default configuration.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        default="data/olist",
+        help="Directory containing the downloaded Olist CSV files.",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    here = Path(__file__).parent
+    data_dir = prepare_olist_data(args.data_dir)
+    spec = PredictiveQuerySpec.from_yaml(
+        str(here / "olist_seller_churn.yaml"), data_dir=str(data_dir)
+    )
+    model = TabPFNRel(model=args.backend)
+    fit_predict_and_evaluate(spec, model=model, n_trials=args.n_trials)
+
+
+
+================================================
+FILE: examples/olist_seller_churn.yaml
+================================================
+# Predict seller churn over the Olist Brazilian E-Commerce DB: among sellers active
+# in the past 30 days, will they have NO order in the next 30 days? (binary)
+# Mirrors relbench's user-churn pattern (seed on backward window, label on forward).
+# The database schema lives in a separate file, referenced below.
+database: olist_database.yaml
+entity_table: sellers
+entity_col: seller_id
+time_col: timestamp
+target_col: churn
+task_type: binary_classification
+timedelta: 30 days
+num_eval_timestamps: 1
+val_timestamp: '2018-05-15 00:00:00'
+test_timestamp: '2018-06-15 00:00:00'
+# Seed: sellers with >=1 order in the backward window (timestamp - td, timestamp].
+# Label churn=1 if they have NO order in the forward window (timestamp, timestamp + td].
+query: |
+  SELECT timestamp, seller_id,
+    CAST(NOT EXISTS (
+      SELECT 1 FROM order_items
+      WHERE order_items.seller_id = sellers.seller_id
+        AND purchase_ts > timestamp AND purchase_ts <= timestamp + INTERVAL '{timedelta}'
+    ) AS INTEGER) AS churn
+  FROM timestamp_df, sellers
+  WHERE EXISTS (
+      SELECT 1 FROM order_items
+      WHERE order_items.seller_id = sellers.seller_id
+        AND purchase_ts > timestamp - INTERVAL '{timedelta}' AND purchase_ts <= timestamp
+  )
+
+
+
+================================================
+FILE: src/tabpfn_rel/__init__.py
+================================================
+"""TabPFN models and a predictive interface for relational tables."""
+
+from relarena_core.userdb import (
+    FittedPredictor,
+    PredictiveContext,
+    PredictiveQuery,
+    PredictiveQuerySpec,
+)
+
+from tabpfn_rel.estimator import TabPFNRel
+from tabpfn_rel.model import (
+    TABPFN_REL_CLIENT_SPACE,
+    TABPFN_REL_LOCAL_SPACE,
+    TabPFNRelClientModel,
+    TabPFNRelLocalModel,
+    TabPFNRelModel,
+)
+
+__all__ = [
+    "TABPFN_REL_CLIENT_SPACE",
+    "TABPFN_REL_LOCAL_SPACE",
+    "FittedPredictor",
+    "PredictiveContext",
+    "PredictiveQuery",
+    "PredictiveQuerySpec",
+    "TabPFNRel",
+    "TabPFNRelClientModel",
+    "TabPFNRelLocalModel",
+    "TabPFNRelModel",
+]
+__version__ = "0.0.6"
+
+
+
+================================================
+FILE: src/tabpfn_rel/context.py
+================================================
+"""Context-selection strategies for the `tabpfn-rel` TFM fit.
+
+The TFM learns in-context from the train rows; *which* rows it sees per ensemble
+estimator is the **context strategy**. `tabpfn-rel` supports exactly one of:
+
+  * `random`    — a uniform seeded downsample to the TFM's context cap (the base
+    `rdblearn` behavior; no extra parameters);
+  * `hard_pool` — each estimator draws `K` rows from the `M` most-recent rows;
+  * `soft_pool` — each estimator draws `K` rows from an `M`-row pool sampled
+    with recency-decaying weights (half-weight at the `tau_half_frac` percentile).
+
+`ContextStrategy.from_config` turns the single `context_strategy` config
+value (plus that mode's own knobs) into one strategy object — there is no way to
+combine modes, and a missing required knob (e.g. the pool `K`) raises here.
+`ContextStrategy.fit` then builds and fits the TFM; the pool strategies fit on
+the **union** of the per-estimator contexts (bounding the frame the TFM stores) and
+pass each estimator's rows as `inference_config={"SUBSAMPLE_SAMPLES": [...]}`.
+Categoricals are auto-inferred by the TFM throughout.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Callable
+
+import numpy as np
+import pandas as pd
+from relarena_core.tfm import FittedTFM, fit_tfm
+from relbench.base import TaskType
+
+from tabpfn_rel.tfm import TFM_REGISTRY
+
+#: Default ensemble size for the pool strategies when the config pins none.
+DEFAULT_POOL_N_ESTIMATORS = 8
+
+
+def _to_int64_ns(t: np.ndarray) -> np.ndarray:
+    """Coerce a per-row cutoff-timestamp array to int64 nanoseconds (sortable)."""
+    t = np.asarray(t)
+    if np.issubdtype(t.dtype, np.datetime64):
+        return t.astype("datetime64[ns]").view("int64")
+    if t.dtype == object:
+        return pd.to_datetime(t).astype("int64").to_numpy()
+    return t.astype("int64")
+
+
+def soft_pool_subsample_indices(
+    t: np.ndarray,
+    *,
+    K: int,
+    M: int,
+    n_estimators: int,
+    tau_half_frac: float,
+    seed: int,
+) -> list[np.ndarray] | None:
+    """Recency-weighted per-estimator context subsample (`soft_pool`).
+
+    Stage 1 (shared across estimators): draw an `M`-row pool from the `N` context
+    rows via Efraimidis-Spirakis weighted sampling, with weight
+    `exp(-ln(2)/tau_half_frac · rank_frac)` where `rank_frac` is in `[0, 1]`
+    (0 = most recent by `t`). `tau_half_frac=0.1` halves the weight at the 10th
+    recency percentile. Stage 2 (per estimator): draw `K` rows uniformly without
+    replacement from the pool (pairwise overlap ≈ `K²/M`).
+
+    Returns `None` when `N <= M` (the pool would be everything, so recency
+    weighting is inert) — the caller then falls back to TabPFN's uniform path.
+    """
+    n = len(t)
+    if n <= M:
+        return None
+    rng = np.random.default_rng(seed)
+    ti = _to_int64_ns(t)
+    order = np.argsort(-ti, kind="stable")  # order[0] = most-recent row index
+    ranks = np.empty(n, dtype=np.int64)
+    ranks[order] = np.arange(n)  # ranks[row] = recency rank (0 = most recent)
+    r_frac = ranks / max(n - 1, 1)
+    lam = np.log(2.0) / max(tau_half_frac, 1e-12)
+    weights = np.exp(-lam * r_frac)  # strictly positive for every row
+    log_u = np.log(rng.random(n))  # strictly negative
+    keys = log_u / weights  # Efraimidis-Spirakis key; larger = more likely
+    pool = np.argpartition(keys, -M)[-M:]
+    return [rng.choice(pool, size=K, replace=False) for _ in range(n_estimators)]
+
+
+def hard_pool_subsample_indices(
+    t: np.ndarray, *, K: int, M: int, n_estimators: int, seed: int
+) -> list[np.ndarray] | None:
+    """Most-recent-`M` per-estimator context subsample (`hard_pool`).
+
+    Stage 1: the pool is the `M` most-recent rows by `t` (deterministic; ties
+    broken by a stable sort). Stage 2: each estimator draws `K` rows uniformly
+    without replacement from the pool. Returns `None` when `N <= M` (caller falls
+    back to TabPFN's uniform path).
+    """
+    n = len(t)
+    if n <= M:
+        return None
+    ti = _to_int64_ns(t)
+    order = np.argsort(-ti, kind="stable")  # order[0] = most recent
+    pool = order[:M]
+    rng = np.random.default_rng(seed)
+    return [rng.choice(pool, size=K, replace=False) for _ in range(n_estimators)]
+
+
+class ContextStrategy(ABC):
+    """How `tabpfn-rel` picks the TFM's in-context training rows (see module doc)."""
+
+    @abstractmethod
+    def fit(
+        self,
+        df: pd.DataFrame,
+        y: pd.Series,
+        task_type: TaskType,
+        *,
+        tfm: str,
+        seed: int,
+        context_time: np.ndarray | None,
+    ) -> FittedTFM:
+        """Fit `tfm` on the featurized frame under this strategy.
+
+        `context_time` is the per-row cutoff timestamp (row-aligned with `df` /
+        `y`), i.e. each candidate context row's prediction time — what the pool
+        strategies rank rows by to over-weight recent ones. `None` (or unused) for
+        `random`, which is recency-agnostic; the pools require it.
+        """
+
+    @staticmethod
+    def from_config(config: dict[str, Any]) -> "ContextStrategy":
+        """Build the single strategy the config selects (default `random`).
+
+        Raises on an unknown name, and (for the pools) on a missing
+        `subsample_samples` — so a run commits to exactly one valid mode up front.
+        """
+        builders: dict[str, Callable[[dict[str, Any]], ContextStrategy]] = {
+            "random": RandomContext.from_config,
+            "hard_pool": HardPoolContext.from_config,
+            "soft_pool": SoftPoolContext.from_config,
+        }
+        name = config.get("context_strategy", "random")
+        if name not in builders:
+            raise ValueError(
+                f"unknown context_strategy {name!r}; choose one of {sorted(builders)}"
+            )
+        return builders[name](config)
+
+
+@dataclass(frozen=True)
+class RandomContext(ContextStrategy):
+    """Uniform seeded downsample to the TFM's context cap (the `rdblearn` default)."""
+
+    def fit(
+        self,
+        df: pd.DataFrame,
+        y: pd.Series,
+        task_type: TaskType,
+        *,
+        tfm: str,
+        seed: int,
+        context_time: np.ndarray | None = None,
+    ) -> FittedTFM:
+        """Defer to the base `fit_tfm` (it caps rows itself); recency unused."""
+        return fit_tfm(df, y, task_type, spec=TFM_REGISTRY[tfm], seed=seed)
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> "RandomContext":
+        """Random context takes no parameters."""
+        return cls()
+
+
+@dataclass(frozen=True)
+class _PoolContext(ContextStrategy):
+    """Shared recency-pool fit; subclasses only differ in how the pool is drawn.
+
+    With `K = subsample_samples` and `M = round(K·pool_inflation)`: optionally cap
+    the frame to `subsample_rows` random rows, draw per-estimator contexts from the
+    recency pool, then fit on their **union** (bounding the frame the TFM stores) with
+    each estimator's rows remapped in and passed as `SUBSAMPLE_SAMPLES`. A degenerate
+    pool (`N <= M`) has no union — the TFM fits the whole frame and subsamples `K`.
+    """
+
+    subsample_samples: int
+    n_estimators: int
+    pool_inflation: float
+    subsample_rows: int | None
+
+    def fit(
+        self,
+        df: pd.DataFrame,
+        y: pd.Series,
+        task_type: TaskType,
+        *,
+        tfm: str,
+        seed: int,
+        context_time: np.ndarray | None,
+    ) -> FittedTFM:
+        """Cap, draw the pool, fit the union (see class doc)."""
+        df = df.reset_index(drop=True)
+        y = y.reset_index(drop=True)
+        t = np.asarray(context_time)
+
+        if self.subsample_rows is not None and len(df) > self.subsample_rows:
+            keep = np.random.default_rng(seed).permutation(len(df))[
+                : self.subsample_rows
+            ]
+            df = df.iloc[keep].reset_index(drop=True)
+            y = y.iloc[keep].reset_index(drop=True)
+            t = t[keep]
+
+        m = int(round(self.subsample_samples * self.pool_inflation))
+        idx = self._draw_pool(t, m=m, seed=seed)
+        if idx is None:
+            subsample_value: Any = self.subsample_samples
+        else:
+            union = np.unique(np.concatenate(idx))
+            df = df.iloc[union].reset_index(drop=True)
+            y = y.iloc[union].reset_index(drop=True)
+            subsample_value = [np.searchsorted(union, e) for e in idx]
+
+        overrides = {
+            "n_estimators": self.n_estimators,
+            "inference_config": {"SUBSAMPLE_SAMPLES": subsample_value},
+        }
+        return fit_tfm(
+            df,
+            y,
+            task_type,
+            spec=TFM_REGISTRY[tfm],
+            seed=seed,
+            max_train_samples=len(df),
+            overrides=overrides,
+        )
+
+    @abstractmethod
+    def _draw_pool(
+        self, t: np.ndarray, *, m: int, seed: int
+    ) -> list[np.ndarray] | None:
+        """Per-estimator context indices into `t` (`None` if pool = all rows)."""
+
+    @staticmethod
+    def _shared(config: dict[str, Any]) -> dict[str, Any]:
+        """Parse the knobs every pool shares; require the pool size `K`."""
+        if config.get("subsample_samples") is None:
+            raise ValueError(
+                f"context_strategy={config.get('context_strategy')!r} requires "
+                f"subsample_samples (K)"
+            )
+        rows = config.get("subsample_rows")
+        return dict(
+            subsample_samples=int(config["subsample_samples"]),
+            n_estimators=int(config.get("n_estimators") or DEFAULT_POOL_N_ESTIMATORS),
+            pool_inflation=float(config.get("pool_inflation", 4.0)),
+            subsample_rows=None if rows is None else int(rows),
+        )
+
+
+@dataclass(frozen=True)
+class HardPoolContext(_PoolContext):
+    """Each estimator draws `K` rows from the `M` most-recent rows."""
+
+    def _draw_pool(
+        self, t: np.ndarray, *, m: int, seed: int
+    ) -> list[np.ndarray] | None:
+        return hard_pool_subsample_indices(
+            t, K=self.subsample_samples, M=m, n_estimators=self.n_estimators, seed=seed
+        )
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> "HardPoolContext":
+        """Build from the shared pool knobs."""
+        return cls(**cls._shared(config))
+
+
+@dataclass(frozen=True)
+class SoftPoolContext(_PoolContext):
+    """Each estimator draws `K` rows from a recency-weighted `M`-row pool."""
+
+    tau_half_frac: float = 0.1
+
+    def _draw_pool(
+        self, t: np.ndarray, *, m: int, seed: int
+    ) -> list[np.ndarray] | None:
+        return soft_pool_subsample_indices(
+            t,
+            K=self.subsample_samples,
+            M=m,
+            n_estimators=self.n_estimators,
+            tau_half_frac=self.tau_half_frac,
+            seed=seed,
+        )
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> "SoftPoolContext":
+        """Build from the shared pool knobs plus `tau_half_frac`."""
+        return cls(
+            tau_half_frac=float(config.get("tau_half_frac", 0.1)), **cls._shared(config)
+        )
+
+
+
+================================================
+FILE: src/tabpfn_rel/estimator.py
+================================================
+"""Model-facing interface to relational fitting and prediction."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Literal
+
+import pandas as pd
+from relarena_core.results import TrialResult
+from relarena_core.userdb import FittedPredictor, PredictiveContext, PredictiveQuery
+
+
+class TabPFNRel:
+    """Fit a relational context with local or hosted TabPFN inference."""
+
+    def __init__(
+        self,
+        *,
+        model: Literal[
+            "client",
+            "local",
+            "local-2026-08-15",
+            "client-2026-08-15",
+            "client-2026-09-18",
+            "client-2026-09-28",
+            "local-2026-09-28",
+        ],
+    ) -> None:
+        """Select the inference backend.
+
+        Args:
+            model: `"client"` (hosted API) or `"local"` for the latest recipe; a
+                dated selector such as `"client-2026-09-28"` pins one.
+        """
+        if model not in (
+            "client",
+            "local",
+            "local-2026-08-15",
+            "client-2026-08-15",
+            "client-2026-09-18",
+            "client-2026-09-28",
+            "local-2026-09-28",
+        ):
+            raise ValueError(
+                "model must be 'client', 'local', 'local-2026-08-15', "
+                "'client-2026-08-15', "
+                "'client-2026-09-18', 'client-2026-09-28', "
+                "or 'local-2026-09-28'."
+            )
+        self._model = {
+            "client": "tabpfn-rel-client-latest",
+            "local": "tabpfn-rel-local-latest",
+        }.get(model, f"tabpfn-rel-{model}")
+        self._fitted: FittedPredictor | None = None
+
+    @property
+    def trials(self) -> list[TrialResult] | None:
+        """Return tuning results, or None when no tuning has completed."""
+        return None if self._fitted is None else self._fitted.trials
+
+    @property
+    def config(self) -> dict[str, Any] | None:
+        """Return the fitted configuration, or None before a successful fit."""
+        return None if self._fitted is None else self._fitted.config
+
+    def fit(
+        self,
+        context: PredictiveContext,
+        *,
+        n_trials: int = 0,
+        seed: int = 0,
+        cache_dir: str | Path | None = None,
+    ) -> TabPFNRel:
+        """Fit a model on the context and return self.
+
+        Args:
+            context: The database and training task.
+            n_trials: Tuning trials; `0` fits the default configuration. Hosted
+                trials use API quota.
+            seed: Random seed for tuning and fitting.
+            cache_dir: Directory for cached DFS features, reused by `predict`.
+        """
+        self._fitted = None
+        self._fitted = context.fit(
+            self._model, n_trials=n_trials, seed=seed, cache_dir=cache_dir
+        )
+        return self
+
+    def predict(
+        self, query: PredictiveQuery, *, cache_dir: str | Path | None = None
+    ) -> pd.DataFrame:
+        """Predict the query's entities and timestamp using the fitted context.
+
+        Args:
+            query: The entities and anchor timestamp to predict.
+            cache_dir: Feature cache; `None` reuses the one passed to `fit`.
+
+        Returns:
+            One row per entity: the time and entity columns and `<target_col>_pred`.
+        """
+        if self._fitted is None:
+            raise RuntimeError("Call fit(...) before predict().")
+        return self._fitted.predict(query, cache_dir=cache_dir)
+
+
+
+================================================
+FILE: src/tabpfn_rel/features.py
+================================================
+"""Opt-in feature additions `tabpfn-rel` layers onto the DFS feature frame.
+
+Each addition recovers signal that flat-DFS-into-one-TFM-call leaves behind, and is
+appended *after* `build_dfs_features` (keyed off the label table's per-row cutoff
+timestamp / entity key — information DFS drops):
+
+  1. **Calendar** — cyclic sin/cos of the cutoff timestamp (stateless).
+  2. **History lags** — per-entity lags of the target's own past values, read from a
+     look-back pool built on the train labels (state: the pool).
+  3. **Raw text** — the anchor table's free-text columns, passed through as raw
+     strings for the TFM's estimator to embed (state: the column list).
+
+`FeaturePipeline` assembles the additions a model config enables: `fit`
+(on the full train labels) learns any state and returns the augmented train frame;
+`transform` applies that state to a val/test frame. With every knob off it returns
+the DFS frame unchanged, so the base `rdblearn` behavior is recovered exactly.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from relbench.base import Database, EntityTask, Table
+
+# -- calendar ----------------------------------------------------------------
+
+#: Calendar fields appended by `attach_calendar`, with their cyclic period.
+_CALENDAR_FIELDS: tuple[tuple[str, str, int], ...] = (
+    ("month", "month", 12),
+    ("dow", "dayofweek", 7),
+    ("doy", "dayofyear", 365),
+)
+
+
+def attach_calendar(
+    df: pd.DataFrame, raw_df: pd.DataFrame, time_col: str | None
+) -> pd.DataFrame:
+    """Append sin/cos calendar features of the cutoff timestamp to `df`.
+
+    Adds `cutoff_{month,dow,doy}_{sin,cos}` from `raw_df[time_col]` (row-aligned
+    with `df`) — the wraparound-safe cyclic complement to the raw integer
+    year/month/day columns DFS already surfaces. A no-op when `time_col` is absent.
+    """
+    if time_col is None or time_col not in raw_df.columns:
+        return df
+    if len(df) != len(raw_df):
+        raise ValueError(
+            f"attach_calendar: row mismatch df={len(df)} raw={len(raw_df)}"
+        )
+    ts = pd.to_datetime(raw_df[time_col].to_numpy())
+    out = df.copy()
+    for name, attr, period in _CALENDAR_FIELDS:
+        val = np.asarray(getattr(ts, attr), dtype="float64")
+        out[f"cutoff_{name}_sin"] = np.sin(2 * np.pi * val / period)
+        out[f"cutoff_{name}_cos"] = np.cos(2 * np.pi * val / period)
+    return out
+
+
+# -- history lags ------------------------------------------------------------
+
+
+def build_history_pool(
+    label_df: pd.DataFrame, *, entity_col: str, time_col: str, target_col: str
+) -> pd.DataFrame:
+    """The `[entity, cutoff, target]` rows used as the lag look-back pool.
+
+    Built once at `fit` from the train label table and reused unchanged at
+    `predict`, so a val/test anchor looks back into the same history the model was
+    fit on.
+    """
+    return label_df[[entity_col, time_col, target_col]].copy()
+
+
+def attach_history_lags(
+    df: pd.DataFrame,
+    raw_df: pd.DataFrame,
+    history_df: pd.DataFrame | None,
+    *,
+    time_col: str,
+    entity_col: str,
+    target_col: str,
+    n_lags: int,
+) -> pd.DataFrame:
+    """Append `target_lag{1..k}` and `target_lag{1..k}_age_days` per anchor.
+
+    For each anchor row (from `raw_df`, row-aligned with `df`), looks back
+    strictly *before* its cutoff within that entity's history (`history_df`) and
+    attaches the `k` most recent `(target value, age in days)` pairs; `NaN` when
+    the entity has fewer than `k` prior rows. The strict-less-than `merge_asof`
+    matches fastdfs' cutoff join, so no post-cutoff label leaks in (an anchor never
+    sees its own row). A no-op when `history_df` is `None` or `n_lags <= 0`.
+    """
+    if history_df is None or n_lags <= 0:
+        return df
+    if len(df) != len(raw_df):
+        raise ValueError(
+            f"attach_history_lags: row mismatch df={len(df)} raw={len(raw_df)}"
+        )
+
+    # Per-entity history sorted by time; shift(k-1) yields the k-th most recent
+    # earlier row (the strict-LT snap below lands on a strictly-earlier row).
+    hist = history_df[[entity_col, time_col, target_col]].copy()
+    hist[time_col] = pd.to_datetime(hist[time_col])
+    hist[entity_col] = hist[entity_col].astype(str)
+    hist = hist.sort_values([entity_col, time_col], kind="mergesort").reset_index(
+        drop=True
+    )
+    grouped = hist.groupby(entity_col, sort=False)
+    for k in range(1, n_lags + 1):
+        hist[f"_lag{k}_val"] = grouped[target_col].shift(k - 1)
+        hist[f"_lag{k}_t"] = grouped[time_col].shift(k - 1)
+
+    lag_cols = [f"_lag{k}_val" for k in range(1, n_lags + 1)] + [
+        f"_lag{k}_t" for k in range(1, n_lags + 1)
+    ]
+    hist_for_merge = (
+        hist[[entity_col, time_col, *lag_cols]]
+        .sort_values(time_col, kind="mergesort")
+        .reset_index(drop=True)
+    )
+
+    # Sentinel name avoids clobbering a task column literally called "index".
+    orig_idx_col = "__rdbl_orig_idx__"
+    anchors = raw_df[[entity_col, time_col]].reset_index(drop=True).copy()
+    anchors[orig_idx_col] = np.arange(len(anchors), dtype=np.int64)
+    anchors[time_col] = pd.to_datetime(anchors[time_col])
+    anchors[entity_col] = anchors[entity_col].astype(str)
+    anchors_sorted = anchors.sort_values(time_col, kind="mergesort")
+
+    merged = pd.merge_asof(
+        anchors_sorted,
+        hist_for_merge,
+        on=time_col,
+        by=entity_col,
+        allow_exact_matches=False,  # strict-LT: never snap to the anchor's own row
+        direction="backward",
+    )
+
+    # Undo the time-sort to restore the original (df-aligned) row order.
+    order = merged[orig_idx_col].to_numpy()
+    inv = np.empty_like(order)
+    inv[order] = np.arange(len(order))
+    out = df.reset_index(drop=True).copy()
+    for k in range(1, n_lags + 1):
+        out[f"target_lag{k}"] = merged[f"_lag{k}_val"].to_numpy()[inv]
+        age_days = (merged[time_col] - merged[f"_lag{k}_t"]) / pd.Timedelta("1D")
+        out[f"target_lag{k}_age_days"] = age_days.to_numpy()[inv]
+    return out
+
+
+# -- text --------------------------------------------------------------------
+
+
+def anchor_text_columns(db: Database, task: EntityTask) -> list[str]:
+    """The free-text columns on the task's entity (anchor) table.
+
+    Object/string columns minus the anchor's keys and time column. We select by
+    pandas dtype (relarena has no semantic-type metadata) and leave it to the
+    estimator to treat genuine low-cardinality columns as categoricals rather
+    than text.
+    """
+    anchor = db.table_dict[task.entity_table]
+    adf = anchor.df
+    exclude = {anchor.pkey_col, anchor.time_col, *anchor.fkey_col_to_pkey_table}
+    return [
+        c
+        for c in adf.columns
+        if c not in exclude
+        and (adf[c].dtype == object or pd.api.types.is_string_dtype(adf[c]))
+    ]
+
+
+def _lookup_anchor_text(
+    db: Database, task: EntityTask, split_df: pd.DataFrame, text_cols: list[str]
+) -> pd.DataFrame:
+    """Fetch the anchor table's `text_cols` for each row of `split_df` by key.
+
+    Most RelBench task tables hold only `(entity_key, timestamp, label)`; the text
+    lives on the anchor table, looked up by the entity key. Returns a frame
+    row-aligned with `split_df` (left join, so missing keys give NaN).
+    """
+    anchor = db.table_dict[task.entity_table]
+    adf = anchor.df
+    pk = anchor.pkey_col
+    available = [c for c in text_cols if c in adf.columns]
+    if not available:
+        return pd.DataFrame(index=range(len(split_df)))
+
+    lookup = adf[[pk, *available]].drop_duplicates(subset=[pk]).copy()
+    # Coerce to plain str — some anchor tables store list/ndarray cells that break
+    # numeric coercion downstream; str() still embeds meaningfully.
+    for c in available:
+        lookup[c] = lookup[c].astype(str)
+    lookup[pk] = lookup[pk].astype(str)
+
+    ent = task.entity_col
+    raw = split_df.reset_index(drop=True)[[ent]].copy()
+    raw[ent] = raw[ent].astype(str)
+    joined = raw.merge(lookup, left_on=ent, right_on=pk, how="left")
+    return joined[available]
+
+
+def attach_text(df: pd.DataFrame, text: pd.DataFrame | None) -> pd.DataFrame:
+    """Concatenate the (row-aligned) text columns onto `df`."""
+    if text is None or text.empty:
+        return df
+    if len(df) != len(text):
+        raise ValueError(f"attach_text: row mismatch df={len(df)} text={len(text)}")
+    return pd.concat([df.reset_index(drop=True), text.reset_index(drop=True)], axis=1)
+
+
+class RawTextFeaturizer:
+    """Anchor-text columns passed through as raw strings.
+
+    The TFM's estimator handles them (see
+    `tabpfn_rel.tfm`). Columns are
+    suffixed `__raw_text` so a low-cardinality anchor column DFS kept as a
+    categorical cannot collide. Stateless beyond the column list and uncached
+    (the lookup is a cheap merge).
+    """
+
+    def __init__(self) -> None:
+        """Start unfitted; the column list is detected at fit."""
+        self._cols: list[str] | None = None
+
+    def fit(
+        self, db: Database, task: EntityTask, train_table: Table
+    ) -> pd.DataFrame | None:
+        """Detect the anchor text columns and return the train text frame."""
+        self._cols = anchor_text_columns(db, task)
+        return self.transform(db, task, train_table)
+
+    def transform(
+        self, db: Database, task: EntityTask, table: Table
+    ) -> pd.DataFrame | None:
+        """Return the split's raw text frame (no-op without text columns)."""
+        if not self._cols:
+            return None
+        raw = _lookup_anchor_text(db, task, table.df, self._cols)
+        return raw.rename(columns={c: f"{c}__raw_text" for c in raw.columns})
+
+
+# -- the assembled pipeline --------------------------------------------------
+
+
+class FeaturePipeline:
+    """The opt-in feature additions a `tabpfn-rel` config enables (see module doc).
+
+    Additions are applied in a fixed order — calendar, history lags, text — so the
+    train and val/test frames carry an identical column schema. Stateless with every
+    knob off.
+    """
+
+    def __init__(self, config: dict[str, Any]) -> None:
+        """Read which feature additions the model `config` enables."""
+        self.calendar = bool(config.get("with_calendar_features"))
+        self.n_lags = (
+            int(config.get("n_lags", 5)) if config.get("with_history_features") else 0
+        )
+        self._string_text = config.get("tfm") == "tabpfn-v3.5-tfidf"
+        self.text = RawTextFeaturizer() if config.get("with_text") else None
+        self._history_pool: pd.DataFrame | None = None
+
+    @property
+    def enabled(self) -> bool:
+        """Whether any addition is active."""
+        return self.calendar or self.n_lags > 0 or self.text is not None
+
+    def fit_transform(
+        self, df: pd.DataFrame, task: EntityTask, train_table: Table, db: Database
+    ) -> pd.DataFrame:
+        """Learn state on the train labels and return the augmented train frame."""
+        if self.calendar:
+            df = attach_calendar(df, train_table.df, task.time_col)
+        if self.n_lags > 0:
+            self._history_pool = build_history_pool(
+                train_table.df,
+                entity_col=task.entity_col,
+                time_col=task.time_col,
+                target_col=task.target_col,
+            )
+            df = self._attach_lags(df, train_table.df, task)
+        if self.text is not None:
+            raw = self.text.fit(db, task, train_table)
+            df = attach_text(
+                df,
+                raw.astype("string") if self._string_text and raw is not None else raw,
+            )
+        return df
+
+    def transform(
+        self, df: pd.DataFrame, task: EntityTask, table: Table, db: Database
+    ) -> pd.DataFrame:
+        """Apply the learned state to a val/test frame."""
+        if self.calendar:
+            df = attach_calendar(df, table.df, task.time_col)
+        if self.n_lags > 0:
+            df = self._attach_lags(df, table.df, task)
+        if self.text is not None:
+            raw = self.text.transform(db, task, table)
+            df = attach_text(
+                df,
+                raw.astype("string") if self._string_text and raw is not None else raw,
+            )
+        return df
+
+    def _attach_lags(
+        self, df: pd.DataFrame, raw_df: pd.DataFrame, task: EntityTask
+    ) -> pd.DataFrame:
+        return attach_history_lags(
+            df,
+            raw_df,
+            self._history_pool,
+            time_col=task.time_col,
+            entity_col=task.entity_col,
+            target_col=task.target_col,
+            n_lags=self.n_lags,
+        )
+
+
+
+================================================
+FILE: src/tabpfn_rel/hurdle.py
+================================================
+"""Automatic hurdle regression with stage-specific recency contexts."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from relarena_core.tfm import FittedTFM
+from relbench.base import TaskType
+from sklearn.base import BaseEstimator
+from tabpfn_extensions.hurdle import AutoHurdleRegressor
+
+from tabpfn_rel.context import ContextStrategy
+
+
+class ContextEstimator(BaseEstimator):
+    """Adapt context fitting to the cloneable hurdle estimator interface."""
+
+    def __init__(
+        self,
+        context: ContextStrategy,
+        tfm: str,
+        seed: int,
+        task_type: TaskType,
+        context_time: np.ndarray | None,
+    ) -> None:
+        """Store the context recipe and row-aligned training timestamps."""
+        self.context = context
+        self.tfm = tfm
+        self.seed = seed
+        self.task_type = task_type
+        self.context_time = context_time
+
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> ContextEstimator:
+        """Select contexts after the hurdle has filtered positive rows."""
+        cutoff = (
+            None if self.context_time is None else self.context_time[X.index.to_numpy()]
+        )
+        self.fitted_ = self.context.fit(
+            X.reset_index(drop=True),
+            pd.Series(y),
+            self.task_type,
+            tfm=self.tfm,
+            seed=self.seed,
+            context_time=cutoff,
+        )
+        if self.task_type == TaskType.BINARY_CLASSIFICATION:
+            self.classes_ = self.fitted_.estimator.classes_
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        """Return classifier probabilities in fitted class order."""
+        return self.fitted_.estimator.predict_proba(
+            X.reindex(columns=self.fitted_.feature_cols)
+        )
+
+    def predict(self, X: pd.DataFrame, **kwargs: Any) -> Any:
+        """Forward distribution requests to the fitted positive-stage estimator."""
+        return self.fitted_.estimator.predict(
+            X.reindex(columns=self.fitted_.feature_cols), **kwargs
+        )
+
+
+def fit_auto_hurdle(
+    df: pd.DataFrame,
+    y: pd.Series,
+    context: ContextStrategy,
+    *,
+    tfm: str,
+    seed: int,
+    context_time: np.ndarray | None,
+    zero_threshold: float,
+) -> FittedTFM:
+    """Fit the extension on all targets, preserving row identity during splitting."""
+    estimator = AutoHurdleRegressor(
+        classifier=ContextEstimator(
+            context, tfm, seed, TaskType.BINARY_CLASSIFICATION, context_time
+        ),
+        regressor=ContextEstimator(
+            context, tfm, seed, TaskType.REGRESSION, context_time
+        ),
+        hurdle="auto",
+        zero_threshold=zero_threshold,
+    )
+    estimator.fit(df.reset_index(drop=True), y.to_numpy())
+    return FittedTFM(estimator, list(df.columns), TaskType.REGRESSION)
+
+
+
+================================================
+FILE: src/tabpfn_rel/model.py
+================================================
+"""`tabpfn-rel` — DFS + a TabPFN foundation model, with opt-in feature/context extras.
+
+Like the open `rdblearn` model, it solves a RelBench entity task by deep feature
+synthesis (DFS) — aggregating the linked tables into one flat row per (entity, cutoff)
+— and feeding that table to a TabPFN foundation model that predicts the test rows by
+in-context learning over the train rows. On top of that it adds four opt-in knobs,
+each recovering signal flat-DFS-into-one-TFM-call leaves behind (see
+`tabpfn_rel.features` and
+`tabpfn_rel.context`):
+
+  1. **Calendar features** — cyclic sin/cos of the cutoff timestamp.
+  2. **History lags** — per-entity lags of the target's own past values.
+  3. **Text features** — anchor-table free text passed through raw, for a TFM whose
+     estimator consumes text columns itself (the hosted-API backend).
+  4. **Recency-aware contexts** — `soft_pool` / `hard_pool` build the TFM's
+     in-context examples from a recency-weighted pool instead of a uniform sample.
+
+`fit` is the whole story top to bottom: build DFS features for the full train labels
+(cached on a warm run; see `relarena_core.featurization.cache`), apply the
+enabled feature extras, then fit the TFM — a seeded downsample for the default
+`random` context, or the recency pool for `soft_pool` / `hard_pool`. The expensive
+DFS matrix is content-cached, so the downsample / pool selection happens cheaply
+afterward (rather than being fused into a pre-DFS slice); text is handled inside
+the estimator at fit time.
+
+The 2026-08-15 local and API variants share the configuration —
+TabPFN v3 with hard-pool recency contexts (`K=100k`, `M=4·K`), tuned over DFS depth
+only: `tabpfn-rel-local-2026-08-15` runs the local TabPFN v3, and
+`tabpfn-rel-client-2026-08-15` runs
+through the hosted TabPFN API with anchor-table text passed through raw.
+The 2026-09-18 API variant uses TabPFN 3.5, fixed DFS depth 4, and K=200k.
+`tabpfn-rel-client-latest` and `tabpfn-rel-local-latest` name the current
+client and local versions.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from relarena_core.featurization import DFS_MAX_DEPTH, build_dfs_features
+from relarena_core.model import RelArenaModel
+from relarena_core.registry import register_model, registry
+from relarena_core.search_space import SearchSpace
+from relarena_core.tfm import FittedTFM, predict_tfm
+from relbench.base import Database, EntityTask, Table, TaskType
+
+from tabpfn_rel.context import ContextStrategy
+from tabpfn_rel.features import FeaturePipeline
+from tabpfn_rel.tfm import TFM_REGISTRY
+
+#: Depth grid lower bound. Shallower depths yield no DFS features for entity tasks.
+_MIN_DEPTH = 2
+
+#: The config validated in the reference sweeps: TabPFN v3 with hard-pool recency
+#: contexts (K=100k per estimator, pool M=4·K). Only the DFS depth is tuned.
+_DEFAULT_KNOBS: dict[str, Any] = {
+    "tfm": "tabpfn-v3",
+    "context_strategy": "hard_pool",
+    "subsample_samples": 100_000,
+    "pool_inflation": 4.0,
+    "with_text": False,
+}
+
+#: Depth ascending so the default (depth 2) comes first and survives budget truncation.
+TABPFN_REL_LOCAL_SPACE = SearchSpace(
+    default_overrides={**_DEFAULT_KNOBS, "max_depth": _MIN_DEPTH},
+    fixed_grid=[
+        {**_DEFAULT_KNOBS, "max_depth": d} for d in range(_MIN_DEPTH, DFS_MAX_DEPTH + 1)
+    ],
+)
+
+#: Hosted-API variant; the API handles anchor-table text server-side, so text is on.
+#: API fits consume service quota, so callers should use `n_trials=0` unless they
+#: explicitly want to spend quota on tuning.
+_CLIENT_DEFAULT_KNOBS = {
+    **_DEFAULT_KNOBS,
+    "tfm": "tabpfn-v3-api",
+    "with_text": True,
+}
+TABPFN_REL_CLIENT_SPACE = SearchSpace(
+    default_overrides={**_CLIENT_DEFAULT_KNOBS, "max_depth": _MIN_DEPTH},
+    fixed_grid=[
+        {**_CLIENT_DEFAULT_KNOBS, "max_depth": d}
+        for d in range(_MIN_DEPTH, DFS_MAX_DEPTH + 1)
+    ],
+)
+
+
+class TabPFNRelModel(RelArenaModel):
+    """Shared `tabpfn-rel` implementation; the registered variants pin the backend."""
+
+    #: Depth at which the cached DFS matrix is computed (shallower configs slice it).
+    MAX_DEPTH = DFS_MAX_DEPTH
+
+    def fit(
+        self,
+        task: EntityTask,
+        db: Database,
+        train_table: Table,
+        val_table: Table | None,
+        *,
+        seed: int,
+        time_limit: float | None = None,
+    ) -> None:
+        """Build DFS features, apply the enabled extras, then fit the TFM.
+
+        The explicitly constructed `CacheConfig` determines whether DFS reads,
+        fills, or computes privately; this model does not override that policy.
+        """
+        self._tfm = self.config.get("tfm", "tabpfn-v3")
+        self._depth = int(self.config.get("max_depth", _MIN_DEPTH))
+        self._check_text_support()
+        self._features = FeaturePipeline(self.config)
+        context = ContextStrategy.from_config(self.config)
+        # The history pool and the recency contexts use the full train table; only the
+        # TFM's context is capped, downstream by the context strategy.
+        self._history_table = train_table if task.time_col else None
+
+        df = self._dfs(task, db, train_table)
+        if df.shape[1] == 0:
+            raise ValueError(f"DFS produced no features at depth {self._depth}.")
+        df = self._features.fit_transform(df, task, train_table, db)
+        cutoff = train_table.df[task.time_col].to_numpy() if task.time_col else None
+        self._fitted = self._fit_backend(
+            df,
+            train_table.df[task.target_col],
+            task.task_type,
+            context,
+            seed=seed,
+            context_time=cutoff,
+        )
+
+    def _fit_backend(
+        self,
+        df: pd.DataFrame,
+        y: pd.Series,
+        task_type: TaskType,
+        context: ContextStrategy,
+        *,
+        seed: int,
+        context_time: np.ndarray | None,
+    ) -> FittedTFM:
+        return context.fit(
+            df, y, task_type, tfm=self._tfm, seed=seed, context_time=context_time
+        )
+
+    def predict(self, task: EntityTask, db: Database, table: Table) -> np.ndarray:
+        """Build + extend DFS features for `table` and return TFM predictions."""
+        df = self._dfs(task, db, table)
+        df = self._features.transform(df, task, table, db)
+        return predict_tfm(self._fitted, df)
+
+    def warm_cache(
+        self, task: EntityTask, db: Database, train_table: Table, eval_table: Table
+    ) -> None:
+        """Populate the feature cache for this config's fit + predict, without the TFM.
+
+        Runs exactly the `build_dfs_features` + feature-pipeline calls `fit` and
+        `predict` make (same cache keys), so a later eval reads them instead of
+        recomputing. Construct the model with an explicit fill config; needs only CPU.
+        The shared public command is `relarena_core.featurization.warm_cache`.
+        """
+        self._tfm = self.config.get("tfm", "tabpfn-v3")
+        self._depth = int(self.config.get("max_depth", _MIN_DEPTH))
+        self._check_text_support()
+        self._features = FeaturePipeline(self.config)
+        self._history_table = train_table if task.time_col else None
+        train_feats = self._dfs(task, db, train_table)
+        self._features.fit_transform(train_feats, task, train_table, db)
+        eval_feats = self._dfs(task, db, eval_table)
+        self._features.transform(eval_feats, task, eval_table, db)
+
+    def _check_text_support(self) -> None:
+        """Raise if `with_text` is set on a TFM that does not support text."""
+        if self.config.get("with_text") and not TFM_REGISTRY[self._tfm].supports_text:
+            raise ValueError(
+                f"with_text is set but TFM {self._tfm!r} does not support text "
+                f"features; pick a text-capable TFM or unset with_text."
+            )
+
+    def _dfs(self, task: EntityTask, db: Database, table: Table) -> Any:
+        features, _ = build_dfs_features(
+            task,
+            db,
+            table,
+            depth=self._depth,
+            max_depth=self.MAX_DEPTH,
+            history_table=self._history_table,
+            keep_anchor_columns=True,
+            cache=self.cache,
+            run_identity=self.run_identity,
+        )
+        return features
+
+
+@register_model(search_space=TABPFN_REL_LOCAL_SPACE)
+class TabPFNRelLocalModel(TabPFNRelModel):
+    """`tabpfn-rel` on the local TabPFN v3, without text features."""
+
+    name = "tabpfn-rel-local-2026-08-15"
+
+
+@register_model(search_space=TABPFN_REL_CLIENT_SPACE)
+class TabPFNRelClientModel(TabPFNRelModel):
+    """`tabpfn-rel` through the hosted TabPFN API, with raw anchor-table text."""
+
+    name = "tabpfn-rel-client-2026-08-15"
+
+
+TABPFN_REL_CLIENT_20260918_SPACE = SearchSpace(
+    default_overrides={
+        "tfm": "tabpfn-v3.5-api",
+        "context_strategy": "hard_pool",
+        "subsample_samples": 200_000,
+        "pool_inflation": 4.0,
+        "with_text": True,
+        "max_depth": 4,
+    },
+)
+
+
+@register_model(search_space=TABPFN_REL_CLIENT_20260918_SPACE)
+class TabPFNRelClient20260918Model(TabPFNRelModel):
+    """Hosted TabPFN 3.5 with depth-four DFS and 200k recency contexts."""
+
+    name = "tabpfn-rel-client-2026-09-18"
+
+
+class TabPFNRelV35Model(TabPFNRelModel):
+    """Shared fitting behavior for TabPFN 3.5 recipes."""
+
+    def _fit_backend(
+        self,
+        df: pd.DataFrame,
+        y: pd.Series,
+        task_type: TaskType,
+        context: ContextStrategy,
+        *,
+        seed: int,
+        context_time: np.ndarray | None,
+    ) -> FittedTFM:
+        if task_type != TaskType.REGRESSION:
+            return super()._fit_backend(
+                df, y, task_type, context, seed=seed, context_time=context_time
+            )
+        # Keep the optional inference dependencies out of model discovery.
+        from tabpfn_rel.hurdle import fit_auto_hurdle
+
+        return fit_auto_hurdle(
+            df,
+            y,
+            context,
+            tfm=self._tfm,
+            seed=seed,
+            context_time=context_time,
+            zero_threshold=float(self.config["hurdle_zero_threshold"]),
+        )
+
+
+_RELEASE_KNOBS = {
+    "context_strategy": "hard_pool",
+    "subsample_samples": 200_000,
+    "pool_inflation": 4.0,
+    "n_estimators": 8,
+    "with_text": True,
+    "max_depth": 4,
+    "hurdle": "auto",
+    "hurdle_zero_threshold": 0.05,
+}
+
+
+@register_model(
+    search_space=SearchSpace(
+        default_overrides={**_RELEASE_KNOBS, "tfm": "tabpfn-v3.5-api-simple"}
+    )
+)
+class TabPFNRelClient20260928Model(TabPFNRelV35Model):
+    """Hosted TabPFN 3.5 with simple text."""
+
+    name = "tabpfn-rel-client-2026-09-28"
+
+
+@register_model(
+    search_space=SearchSpace(
+        default_overrides={**_RELEASE_KNOBS, "tfm": "tabpfn-v3.5-tfidf"}
+    )
+)
+class TabPFNRelLocal20260928Model(TabPFNRelV35Model):
+    """Local TabPFN 3.5 with native TF-IDF."""
+
+    name = "tabpfn-rel-local-2026-09-28"
+
+
+registry.register_alias("tabpfn-rel-client-latest", TabPFNRelClient20260928Model.name)
+registry.register_alias("tabpfn-rel-local-latest", TabPFNRelLocal20260928Model.name)
+
+
+
+================================================
+FILE: src/tabpfn_rel/tfm.py
+================================================
+"""TabPFN backend recipes."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+from relarena_core.tfm import TFMSpec
+
+
+def _make_tabpfn(
+    version: str,
+    *,
+    regression: bool,
+    device: Any,
+    seed: int,
+    **overrides: Any,
+) -> Any:
+    """Build a TabPFN estimator pinned to a version via `create_default_for_version`.
+
+    The bare TabPFN constructor now defaults to v3; `create_default_for_version`
+    selects the right checkpoint + version-appropriate defaults for v2 / v2.5, and
+    `**overrides` (device, random_state, ignore_pretraining_limits, ...) pass through
+    to the constructor.
+
+    The local extra supplies TabPFN; importing model definitions does not load it.
+    """
+    from tabpfn import TabPFNClassifier, TabPFNRegressor
+    from tabpfn.constants import ModelVersion
+
+    model_version = {
+        "v2": ModelVersion.V2,
+        "v2.5": ModelVersion.V2_5,
+        "v3": ModelVersion.V3,
+        "v3.5": ModelVersion.V3_5,
+    }[version]
+    if version == "v3.5":
+        overrides["inference_config"] = {
+            **overrides.get("inference_config", {}),
+            "TRANSFORM_TEXT": True,
+        }
+    estimator_cls = TabPFNRegressor if regression else TabPFNClassifier
+    return estimator_cls.create_default_for_version(
+        model_version,
+        device=device,
+        random_state=seed,
+        ignore_pretraining_limits=True,
+        **overrides,
+    )
+
+
+def _sanitize_api_overrides(overrides: dict[str, Any]) -> dict[str, Any]:
+    """Convert numpy index arrays in `SUBSAMPLE_SAMPLES` to plain int lists.
+
+    tabpfn_client pydantic-serializes the estimator config into the request body,
+    which rejects numpy arrays — the pool contexts pass per-estimator context
+    indices as arrays. The local TabPFN consumes arrays natively, so the
+    conversion is scoped to the API path.
+    """
+    inference_config = overrides.get("inference_config")
+    if inference_config is None:
+        return overrides
+    subsample = inference_config.get("SUBSAMPLE_SAMPLES")
+    if not isinstance(subsample, list):
+        return overrides
+    return {
+        **overrides,
+        "inference_config": {
+            **inference_config,
+            "SUBSAMPLE_SAMPLES": [
+                e.tolist() if isinstance(e, np.ndarray) else e for e in subsample
+            ],
+        },
+    }
+
+
+def _make_tabpfn_api(
+    *,
+    model_path: str,
+    regression: bool,
+    device: Any,
+    seed: int,
+    **overrides: Any,
+) -> Any:
+    """Build a TabPFN API-client estimator for an explicit model selector.
+
+    The api extra supplies tabpfn_client; it is imported when constructed.
+    Fit and predict
+    run server-side, so device is ignored and raw text columns are handled by the
+    API.
+    """
+    from tabpfn_client import TabPFNClassifier as ApiClassifier
+    from tabpfn_client import TabPFNRegressor as ApiRegressor
+
+    del device
+    overrides = _sanitize_api_overrides(overrides)
+    estimator_cls = ApiRegressor if regression else ApiClassifier
+    return estimator_cls(
+        model_path=model_path,
+        random_state=seed,
+        ignore_pretraining_limits=True,
+        **overrides,
+    )
+
+
+TFM_REGISTRY: dict[str, TFMSpec] = {
+    "tabpfn-v3": TFMSpec(
+        make_classifier=lambda **kw: _make_tabpfn(
+            "v3", regression=False, n_preprocessing_jobs=-1, **kw
+        ),
+        make_regressor=lambda **kw: _make_tabpfn(
+            "v3", regression=True, n_preprocessing_jobs=-1, **kw
+        ),
+        max_train_samples=100_000,
+    ),
+    "tabpfn-v3-api": TFMSpec(
+        make_classifier=lambda **kw: _make_tabpfn_api(
+            model_path="v3_default", regression=False, **kw
+        ),
+        make_regressor=lambda **kw: _make_tabpfn_api(
+            model_path="v3_default", regression=True, **kw
+        ),
+        max_train_samples=100_000,
+        supports_text=True,
+    ),
+    "tabpfn-v3.5-api": TFMSpec(
+        make_classifier=lambda **kw: _make_tabpfn_api(
+            model_path="v3.5_default", regression=False, **kw
+        ),
+        make_regressor=lambda **kw: _make_tabpfn_api(
+            model_path="v3.5_default", regression=True, **kw
+        ),
+        max_train_samples=200_000,
+        supports_text=True,
+    ),
+    "tabpfn-v3.5-tfidf": TFMSpec(
+        make_classifier=lambda **kw: _make_tabpfn(
+            "v3.5", regression=False, n_preprocessing_jobs=-1, **kw
+        ),
+        make_regressor=lambda **kw: _make_tabpfn(
+            "v3.5", regression=True, n_preprocessing_jobs=-1, **kw
+        ),
+        max_train_samples=200_000,
+        supports_text=True,
+    ),
+    "tabpfn-v3.5-api-simple": TFMSpec(
+        make_classifier=lambda **kw: _make_tabpfn_api(
+            model_path="v3.5_default", text_handling="simple", regression=False, **kw
+        ),
+        make_regressor=lambda **kw: _make_tabpfn_api(
+            model_path="v3.5_default", text_handling="simple", regression=True, **kw
+        ),
+        max_train_samples=200_000,
+        supports_text=True,
+    ),
+}
+
+
+__all__ = ["TFM_REGISTRY"]
+
+
+
+================================================
+FILE: tests/__init__.py
+================================================
+"""Tests for the `tabpfn_rel` model."""
+
+
+
+================================================
+FILE: tests/_data.py
+================================================
+"""Small relational data for integration tests."""
+
+from pathlib import Path
+
+import pandas as pd
+
+
+def write_database(directory: Path, task_type: str = "binary_classification") -> Path:
+    """Write a small relational dataset and a forward-looking prediction task."""
+    directory.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        {
+            "customer_id": ["a", "b", "c", "d"],
+            "age": [22, 34, 46, 58],
+            "description": ["first customer", "second customer", "third", "fourth"],
+        }
+    ).to_parquet(directory / "customers.parquet")
+    dates = pd.date_range("2004-01-15", "2005-06-15", freq="30D")
+    events = [
+        {"customer_id": customer, "date": date, "amount": float(10 + i)}
+        for i, date in enumerate(dates)
+        for j, customer in enumerate(["a", "b", "c", "d"])
+        if (i + j) % 2 == 0
+    ]
+    pd.DataFrame(events).assign(event_id=range(len(events))).to_parquet(
+        directory / "events.parquet"
+    )
+    (directory / "database.yaml").write_text(
+        "customers:\n  pkey: customer_id\n"
+        "events:\n  pkey: event_id\n  time_col: date\n"
+        "  fkeys:\n    customer_id: customers\n"
+    )
+    aggregate = "CAST(COUNT(e.event_id) > 0 AS INTEGER)"
+    if task_type == "regression":
+        aggregate = "COALESCE(SUM(e.amount), 0)"
+    task = directory / "task.yaml"
+    task.write_text(
+        "database: database.yaml\nentity_table: customers\n"
+        "entity_col: customer_id\ntime_col: date\ntarget_col: y\n"
+        f"task_type: {task_type}\ntimedelta: 30 days\n"
+        "val_timestamp: '2004-10-01'\ntest_timestamp: '2004-12-01'\n"
+        "query: |\n"
+        f"  SELECT t.timestamp AS date, c.customer_id, {aggregate} AS y\n"
+        "  FROM timestamp_df t CROSS JOIN customers c\n"
+        "  LEFT JOIN events e ON e.customer_id = c.customer_id\n"
+        "    AND e.date > t.timestamp\n"
+        "    AND e.date <= t.timestamp + INTERVAL '{timedelta}'\n"
+        "  GROUP BY t.timestamp, c.customer_id\n"
+    )
+    return task
+
+
+
+================================================
+FILE: tests/api_payload_smoke.py
+================================================
+"""Exercise oversized fit and prediction requests against the configured API."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from importlib.metadata import version
+from time import monotonic
+
+import numpy as np
+import pandas as pd
+from relarena_core.registry import registry
+from tabpfn_client.client import ServiceClient
+
+from tabpfn_rel.tfm import TFM_REGISTRY
+
+
+def main() -> None:
+    """Fit eight 200k-row contexts and predict one synthetic row."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--task", choices=("classification", "regression"), required=True
+    )
+    args = parser.parse_args()
+    recipe = registry.search_space("tabpfn-rel-client-2026-09-18").configs(
+        n_trials=1, seed=0
+    )[0]
+    n_rows = recipe["subsample_samples"]
+    indices = [np.arange(n_rows) for _ in range(8)]
+    payload_bytes = len(
+        json.dumps(
+            {"SUBSAMPLE_SAMPLES": [rows.tolist() for rows in indices]},
+            separators=(",", ":"),
+        ).encode()
+    )
+    assert payload_bytes > 10_000_000
+    rng = np.random.default_rng(0)
+    data = pd.DataFrame(rng.normal(size=(n_rows, 4)), columns=list("abcd"))
+    target = data["a"] + rng.normal(scale=0.1, size=n_rows)
+    if args.task == "classification":
+        target = (target > 0).astype(int)
+    spec = TFM_REGISTRY[recipe["tfm"]]
+    factory = (
+        spec.make_classifier if args.task == "classification" else spec.make_regressor
+    )
+    estimator = factory(
+        device="cpu",
+        seed=0,
+        n_estimators=len(indices),
+        inference_config={"SUBSAMPLE_SAMPLES": indices},
+    )
+    print(
+        json.dumps(
+            {
+                "task": args.task,
+                "endpoint": ServiceClient.base_url,
+                "client_version": version("tabpfn-client"),
+                "model_path": estimator.model_path,
+                "index_config_bytes": payload_bytes,
+                "rows": n_rows,
+                "estimators": len(indices),
+            }
+        ),
+        flush=True,
+    )
+    started = monotonic()
+    estimator.fit(data, target)
+    print(f"Fit passed after {monotonic() - started:.2f}s", flush=True)
+    prediction = np.asarray(estimator.predict(data.iloc[:1]))
+    assert prediction.shape == (1,), prediction.shape
+    assert np.isfinite(prediction).all(), prediction
+    print(f"Fit and prediction passed after {monotonic() - started:.2f}s", flush=True)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: tests/test_context.py
+================================================
+"""Unit tests for the recency-pool index math + the context strategies (stub TFM)."""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import numpy as np
+import pandas as pd
+import pytest
+from relarena_core.tfm import TFMSpec
+from relbench.base import TaskType
+
+from tabpfn_rel import tfm
+from tabpfn_rel.context import (
+    ContextStrategy,
+    HardPoolContext,
+    RandomContext,
+    SoftPoolContext,
+    hard_pool_subsample_indices,
+    soft_pool_subsample_indices,
+)
+
+# -- pool index math ---------------------------------------------------------
+
+
+def test_pool_indices_shape_and_within_pool() -> None:
+    t = np.arange(100)  # ascending time -> higher index = more recent
+    for fn in (
+        lambda: soft_pool_subsample_indices(
+            t, K=8, M=40, n_estimators=4, tau_half_frac=0.1, seed=0
+        ),
+        lambda: hard_pool_subsample_indices(t, K=8, M=40, n_estimators=4, seed=0),
+    ):
+        idx_list = fn()
+        assert idx_list is not None and len(idx_list) == 4  # one array per estimator
+        for arr in idx_list:
+            assert len(arr) == 8  # K rows each
+            assert len(set(arr.tolist())) == 8  # without replacement
+            assert arr.min() >= 0 and arr.max() < 100
+
+
+def test_hard_pool_draws_only_from_most_recent_M() -> None:
+    t = np.arange(100)
+    idx_list = hard_pool_subsample_indices(t, K=5, M=20, n_estimators=3, seed=1)
+    assert idx_list is not None
+    for arr in idx_list:  # pool = the 20 most-recent rows = indices 80..99
+        assert arr.min() >= 80
+
+
+def test_soft_pool_concentrates_on_recent_rows_with_small_tau() -> None:
+    t = np.arange(1000)
+    idx_list = soft_pool_subsample_indices(
+        t, K=20, M=100, n_estimators=5, tau_half_frac=0.02, seed=0
+    )
+    assert idx_list is not None
+    # With a very small tau the pool is dominated by recent rows.
+    assert np.concatenate(idx_list).mean() > 700
+
+
+def test_pool_indices_none_when_n_le_m() -> None:
+    t = np.arange(30)
+    assert (
+        soft_pool_subsample_indices(
+            t, K=8, M=40, n_estimators=4, tau_half_frac=0.1, seed=0
+        )
+        is None
+    )
+    assert hard_pool_subsample_indices(t, K=8, M=40, n_estimators=4, seed=0) is None
+
+
+def test_pool_indices_are_seeded_deterministic() -> None:
+    t = np.arange(100)
+    a = soft_pool_subsample_indices(
+        t, K=8, M=40, n_estimators=4, tau_half_frac=0.1, seed=7
+    )
+    b = soft_pool_subsample_indices(
+        t, K=8, M=40, n_estimators=4, tau_half_frac=0.1, seed=7
+    )
+    assert a is not None and b is not None
+    assert all(np.array_equal(x, y) for x, y in zip(a, b))
+
+
+def test_hard_and_soft_pool_handle_datetime_input() -> None:
+    # Real cutoff timestamps arrive as datetime64; _to_int64_ns must sort them.
+    t = np.array(
+        [np.datetime64("2020-01-01") + np.timedelta64(i, "D") for i in range(60)]
+    )
+    idx = hard_pool_subsample_indices(t, K=5, M=20, n_estimators=2, seed=0)
+    assert idx is not None
+    for arr in idx:
+        assert arr.min() >= 40  # most-recent 20 of 60
+
+
+# -- context strategies (stub TFM, no real TabPFN) ---------------------------
+
+
+class _StubClassifier:
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> "_StubClassifier":
+        self.classes_ = np.unique(y)
+        self.n_train_ = len(X)
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        cols = np.arange(1, len(self.classes_) + 1, dtype=float)
+        return np.tile(cols / cols.sum(), (len(X), 1))
+
+
+@pytest.fixture
+def capture() -> Iterator[dict[str, object]]:
+    """Register a kwargs-recording stub TFM (3-field TFMSpec); yield the ctor kwargs."""
+    captured: dict[str, object] = {}
+
+    def _make(**kw: object) -> _StubClassifier:
+        captured.update(kw)
+        return _StubClassifier()
+
+    tfm.TFM_REGISTRY["capture"] = TFMSpec(
+        make_classifier=_make, make_regressor=_make, max_train_samples=10
+    )
+    try:
+        yield captured
+    finally:
+        del tfm.TFM_REGISTRY["capture"]
+
+
+def _df_y(n: int) -> tuple[pd.DataFrame, pd.Series]:
+    return pd.DataFrame({"f": np.arange(float(n))}), pd.Series([0, 1] * (n // 2))
+
+
+def test__hard_pool_context__fit__fits_union_with_remapped_indices(
+    capture: dict[str, object],
+) -> None:
+    df, y = _df_y(100)
+    t = np.arange(100)
+    strategy = HardPoolContext(
+        subsample_samples=8, n_estimators=4, pool_inflation=4.0, subsample_rows=None
+    )
+    fitted = strategy.fit(
+        df, y, TaskType.BINARY_CLASSIFICATION, tfm="capture", seed=0, context_time=t
+    )
+    ss = capture["inference_config"]["SUBSAMPLE_SAMPLES"]  # type: ignore[index]
+    assert isinstance(ss, list) and len(ss) == 4 and all(len(a) == 8 for a in ss)
+    assert capture["n_estimators"] == 4
+
+    # The TFM fits only the union of the per-estimator contexts (bounds the frame),
+    # and each estimator's SUBSAMPLE_SAMPLES index back into the original rows.
+    idx = hard_pool_subsample_indices(t, K=8, M=32, n_estimators=4, seed=0)
+    union = np.unique(np.concatenate(idx))
+    assert fitted.estimator.n_train_ == len(union)
+    for got, want in zip(ss, idx):
+        assert np.array_equal(union[np.asarray(got)], want)
+
+
+def test__pool_context__subsample_rows__caps_before_pooling(
+    capture: dict[str, object],
+) -> None:
+    df, y = _df_y(100)
+    strategy = HardPoolContext(
+        subsample_samples=4, n_estimators=2, pool_inflation=4.0, subsample_rows=30
+    )
+    fitted = strategy.fit(
+        df,
+        y,
+        TaskType.BINARY_CLASSIFICATION,
+        tfm="capture",
+        seed=0,
+        context_time=np.arange(100),
+    )
+    # Cap to 30 rows, then pool: the fitted frame is the union of the 2 estimators'
+    # K=4 draws from the M=16 pool — at most 8 unique rows, never more than the cap.
+    assert fitted.estimator.n_train_ <= 8
+
+
+def test__pool_context__degenerate_pool__falls_back_to_int(
+    capture: dict[str, object],
+) -> None:
+    df, y = _df_y(20)  # N=20 <= M = 8*4 = 32 -> degenerate
+    strategy = SoftPoolContext(
+        subsample_samples=8, n_estimators=4, pool_inflation=4.0, subsample_rows=None
+    )
+    strategy.fit(
+        df,
+        y,
+        TaskType.BINARY_CLASSIFICATION,
+        tfm="capture",
+        seed=0,
+        context_time=np.arange(20),
+    )
+    assert capture["inference_config"] == {"SUBSAMPLE_SAMPLES": 8}  # int fallback
+
+
+def test__random_context__fit__defers_to_base_fit_tfm(
+    capture: dict[str, object],
+) -> None:
+    df, y = _df_y(100)
+    RandomContext().fit(
+        df, y, TaskType.BINARY_CLASSIFICATION, tfm="capture", seed=0, context_time=None
+    )
+    assert "inference_config" not in capture  # no pool overrides; plain downsample fit
+
+
+# -- from_config: exactly one valid mode -------------------------------------
+
+
+def test__from_config__per_name__selects_one_strategy() -> None:
+    assert isinstance(ContextStrategy.from_config({}), RandomContext)  # default
+    hard = ContextStrategy.from_config(
+        {"context_strategy": "hard_pool", "subsample_samples": 8}
+    )
+    assert isinstance(hard, HardPoolContext) and hard.subsample_samples == 8
+    soft = ContextStrategy.from_config(
+        {"context_strategy": "soft_pool", "subsample_samples": 8, "tau_half_frac": 0.2}
+    )
+    assert isinstance(soft, SoftPoolContext) and soft.tau_half_frac == 0.2
+
+
+def test__from_config__pool_without_k__raises() -> None:
+    with pytest.raises(ValueError, match="subsample_samples"):
+        ContextStrategy.from_config({"context_strategy": "hard_pool"})
+
+
+def test__from_config__unknown_strategy__raises() -> None:
+    with pytest.raises(ValueError, match="unknown context_strategy"):
+        ContextStrategy.from_config({"context_strategy": "bogus"})
+
+
+
+================================================
+FILE: tests/test_features.py
+================================================
+"""Unit tests for the tabpfn-rel feature additions (`tabpfn_rel/features`).
+
+Calendar / history-lag are pure-pandas and tested directly. The text path passes
+raw anchor strings through (the estimator handles them; see
+`tabpfn_rel.tfm`), so the text tests exercise column detection, anchor
+lookup, the raw pass-through, and the estimator overrides the pipeline emits.
+"""
+
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import numpy as np
+import pandas as pd
+import pytest
+from relbench.base import Table
+
+from tabpfn_rel.features import (
+    FeaturePipeline,
+    RawTextFeaturizer,
+    anchor_text_columns,
+    attach_calendar,
+    attach_history_lags,
+    attach_text,
+    build_history_pool,
+)
+
+TIME_COL = "timestamp"
+ENTITY_COL = "user_id"
+TARGET_COL = "label"
+
+
+def _features(n: int) -> pd.DataFrame:
+    return pd.DataFrame({"f0": np.arange(n, dtype=float), "f1": np.ones(n)})
+
+
+def _task() -> SimpleNamespace:
+    return SimpleNamespace(
+        entity_table="users",
+        entity_col=ENTITY_COL,
+        time_col=TIME_COL,
+        target_col=TARGET_COL,
+    )
+
+
+# -- calendar ----------------------------------------------------------------
+
+
+def test__attach_calendar__appends_sin_cos_pairs() -> None:
+    raw = pd.DataFrame({TIME_COL: pd.to_datetime(["2020-01-15", "2020-07-01"])})
+    out = attach_calendar(_features(2), raw, TIME_COL)
+    expected_new = {
+        "cutoff_month_sin",
+        "cutoff_month_cos",
+        "cutoff_dow_sin",
+        "cutoff_dow_cos",
+        "cutoff_doy_sin",
+        "cutoff_doy_cos",
+    }
+    assert expected_new.issubset(out.columns)
+    assert {"f0", "f1"}.issubset(out.columns)
+    assert np.isclose(out["cutoff_month_sin"].iloc[0], np.sin(2 * np.pi * 1 / 12))
+    assert (out[list(expected_new)].abs() <= 1.0 + 1e-9).all().all()
+
+
+def test__attach_calendar__is_cyclic_wraparound_safe() -> None:
+    raw = pd.DataFrame(
+        {TIME_COL: pd.to_datetime(["2020-12-31", "2021-01-01", "2020-06-15"])}
+    )
+    out = attach_calendar(_features(3), raw, TIME_COL)
+    pts = out[["cutoff_month_sin", "cutoff_month_cos"]].to_numpy()
+    assert np.linalg.norm(pts[0] - pts[1]) < np.linalg.norm(pts[0] - pts[2])
+
+
+def test__attach_calendar__noop_when_time_col_absent() -> None:
+    feats = _features(3)
+    raw = pd.DataFrame({"other": [1, 2, 3]})
+    assert attach_calendar(feats, raw, None).equals(feats)
+    assert attach_calendar(feats, raw, TIME_COL).equals(feats)
+
+
+# -- history lags ------------------------------------------------------------
+
+
+def _lags(
+    df: pd.DataFrame, raw: pd.DataFrame, pool: pd.DataFrame | None, n_lags: int = 2
+) -> pd.DataFrame:
+    return attach_history_lags(
+        df,
+        raw,
+        pool,
+        time_col=TIME_COL,
+        entity_col=ENTITY_COL,
+        target_col=TARGET_COL,
+        n_lags=n_lags,
+    )
+
+
+def test__attach_history_lags__most_recent_first_with_ages() -> None:
+    pool = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1", "u1", "u1"],
+            TIME_COL: pd.to_datetime(["2020-01-01", "2020-01-03", "2020-01-06"]),
+            TARGET_COL: [10.0, 20.0, 30.0],
+        }
+    )
+    raw = pd.DataFrame({ENTITY_COL: ["u1"], TIME_COL: pd.to_datetime(["2020-01-08"])})
+    out = _lags(_features(1), raw, pool, n_lags=2)
+    assert out["target_lag1"].iloc[0] == 30.0
+    assert out["target_lag2"].iloc[0] == 20.0
+    assert np.isclose(out["target_lag1_age_days"].iloc[0], 2.0)
+    assert np.isclose(out["target_lag2_age_days"].iloc[0], 5.0)
+
+
+def test__attach_history_lags__strict_lt_excludes_equal_timestamp() -> None:
+    pool = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1", "u1"],
+            TIME_COL: pd.to_datetime(["2020-01-01", "2020-01-05"]),
+            TARGET_COL: [10.0, 50.0],
+        }
+    )
+    raw = pd.DataFrame({ENTITY_COL: ["u1"], TIME_COL: pd.to_datetime(["2020-01-05"])})
+    out = _lags(_features(1), raw, pool, n_lags=1)
+    assert out["target_lag1"].iloc[0] == 10.0  # not the equal-timestamp row
+
+
+def test__attach_history_lags__nan_when_insufficient_history() -> None:
+    pool = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1"],
+            TIME_COL: pd.to_datetime(["2020-01-01"]),
+            TARGET_COL: [10.0],
+        }
+    )
+    raw = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1", "u2"],
+            TIME_COL: pd.to_datetime(["2020-02-01", "2020-02-01"]),
+        }
+    )
+    out = _lags(_features(2), raw, pool, n_lags=2)
+    assert out["target_lag1"].iloc[0] == 10.0
+    assert np.isnan(out["target_lag2"].iloc[0])
+    assert np.isnan(out["target_lag1"].iloc[1])
+
+
+def test__attach_history_lags__preserves_row_order_after_time_sort() -> None:
+    pool = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1", "u2"],
+            TIME_COL: pd.to_datetime(["2019-01-01", "2019-06-01"]),
+            TARGET_COL: [1.0, 2.0],
+        }
+    )
+    raw = pd.DataFrame(
+        {
+            ENTITY_COL: ["u2", "u1"],
+            TIME_COL: pd.to_datetime(["2020-01-01", "2020-01-01"]),
+        }
+    )
+    df = _features(2)
+    df["marker"] = [100.0, 200.0]
+    out = _lags(df, raw, pool, n_lags=1)
+    assert out["marker"].tolist() == [100.0, 200.0]
+    assert out["target_lag1"].iloc[0] == 2.0  # u2
+    assert out["target_lag1"].iloc[1] == 1.0  # u1
+
+
+def test__attach_history_lags__noop_when_disabled() -> None:
+    feats = _features(2)
+    raw = pd.DataFrame(
+        {ENTITY_COL: ["u1", "u2"], TIME_COL: pd.to_datetime(["2020-01-01"] * 2)}
+    )
+    assert _lags(feats, raw, None, n_lags=2).equals(feats)
+    assert _lags(feats, raw, _features(0), n_lags=0).equals(feats)
+
+
+def test__build_history_pool__selects_three_columns() -> None:
+    label_df = pd.DataFrame(
+        {
+            ENTITY_COL: ["u1"],
+            TIME_COL: pd.to_datetime(["2020-01-01"]),
+            TARGET_COL: [1.0],
+            "extra": ["ignored"],
+        }
+    )
+    pool = build_history_pool(
+        label_df, entity_col=ENTITY_COL, time_col=TIME_COL, target_col=TARGET_COL
+    )
+    assert list(pool.columns) == [ENTITY_COL, TIME_COL, TARGET_COL]
+
+
+def test__attach_text__concat_and_alignment() -> None:
+    feats = pd.DataFrame({"f0": [1.0, 2.0]})
+    out = attach_text(feats, pd.DataFrame({"e0": [9, 8]}))
+    assert list(out.columns) == ["f0", "e0"] and out["e0"].tolist() == [9, 8]
+    assert attach_text(feats, None).equals(feats)
+    with pytest.raises(ValueError, match="row mismatch"):
+        attach_text(feats, pd.DataFrame({"e0": [1, 2, 3]}))
+
+
+# -- text features -----------------------------------------------------------
+
+
+def _db() -> SimpleNamespace:
+    users = SimpleNamespace(
+        df=pd.DataFrame(
+            {
+                "user_id": [1, 2, 3],
+                "bio": ["hello world", "hi", "a longer biography here"],
+                "city": ["NYC", "LA", "SF"],
+                "age": [30, 40, 50],
+                "signup": pd.to_datetime(["2019-01-01"] * 3),
+            }
+        ),
+        pkey_col="user_id",
+        time_col="signup",
+        fkey_col_to_pkey_table={},
+    )
+    return SimpleNamespace(table_dict={"users": users})
+
+
+def _split_table(user_ids: list[int]) -> Table:
+    return Table(
+        df=pd.DataFrame(
+            {
+                ENTITY_COL: user_ids,
+                TIME_COL: pd.to_datetime(["2020-01-01"] * len(user_ids)),
+                TARGET_COL: [0.0] * len(user_ids),
+            }
+        ),
+        fkey_col_to_pkey_table={ENTITY_COL: "users"},
+        pkey_col=None,
+        time_col=TIME_COL,
+    )
+
+
+def test__anchor_text_columns__picks_object_cols_excluding_keys_time() -> None:
+    assert set(anchor_text_columns(_db(), _task())) == {"bio", "city"}
+
+
+def test__RawTextFeaturizer__fit_returns_raw_text_aligned_by_key() -> None:
+    db, task = _db(), _task()
+    train = _split_table([3, 1])  # row0=user3, row1=user1
+    raw = RawTextFeaturizer().fit(db, task, train)
+    assert raw is not None and len(raw) == 2
+    assert raw["bio__raw_text"].tolist() == ["a longer biography here", "hello world"]
+    assert raw["city__raw_text"].tolist() == ["SF", "NYC"]
+
+
+def test__RawTextFeaturizer__none_when_no_text_columns() -> None:
+    db, task = _db(), _task()
+    db.table_dict["users"].df = db.table_dict["users"].df[["user_id", "age", "signup"]]
+    feat = RawTextFeaturizer()
+    assert feat.fit(db, task, _split_table([1, 2, 3])) is None
+    assert feat.transform(db, task, _split_table([1])) is None
+
+
+def test__RawTextFeaturizer__transform_uses_columns_detected_at_fit() -> None:
+    db, task = _db(), _task()
+    feat = RawTextFeaturizer()
+    feat.fit(db, task, _split_table([1, 2, 3]))
+    out = feat.transform(db, task, _split_table([2, 3]))
+    assert out is not None and out["bio__raw_text"].tolist() == [
+        "hi",
+        "a longer biography here",
+    ]
+
+
+def test__FeaturePipeline__no_text_columns_when_anchor_has_no_text() -> None:
+    # with_text on, but the anchor table carries no text columns: the fit stays
+    # text-free.
+    db, task = _db(), _task()
+    db.table_dict["users"].df = db.table_dict["users"].df.drop(columns=["bio", "city"])
+    pipe = FeaturePipeline({"with_text": True})
+    df = pd.DataFrame({"f": [0.0, 1.0, 2.0]})
+    out = pipe.fit_transform(df, task, _split_table([1, 2, 3]), db)
+    assert list(out.columns) == ["f"]
+
+
+# -- FeaturePipeline ---------------------------------------------------------
+
+
+def test__FeaturePipeline__no_knobs__returns_frame_unchanged() -> None:
+    pipe = FeaturePipeline({})
+    assert not pipe.enabled
+    feats = _features(3)
+    train = _split_table([1, 2, 3])
+    assert pipe.fit_transform(feats, _task(), train, _db()).equals(feats)
+
+
+def test__FeaturePipeline__applies_calendar_history_text_in_order() -> None:
+    pipe = FeaturePipeline(
+        {
+            "with_calendar_features": True,
+            "with_history_features": True,
+            "n_lags": 2,
+            "with_text": True,
+        }
+    )
+    train = _split_table([1, 2, 3])
+    out = pipe.fit_transform(_features(3), _task(), train, _db())
+    assert "cutoff_month_sin" in out.columns  # calendar
+    assert "target_lag1" in out.columns  # history lags
+    assert "bio__raw_text" in out.columns  # text
+
+
+def test__FeaturePipeline__transform_reuses_fit_state() -> None:
+    pipe = FeaturePipeline({"with_history_features": True, "n_lags": 1})
+    train = _split_table([1, 1, 2])
+    train.df[TIME_COL] = pd.to_datetime(["2020-01-01", "2020-01-03", "2020-01-01"])
+    train.df[TARGET_COL] = [10.0, 20.0, 5.0]
+    pipe.fit_transform(_features(3), _task(), train, _db())
+    val = _split_table([1])
+    val.df[TIME_COL] = pd.to_datetime(["2020-01-10"])
+    out = pipe.transform(_features(1), _task(), val, _db())
+    assert out["target_lag1"].iloc[0] == 20.0  # most recent prior train label for u1
+
+
+
+================================================
+FILE: tests/test_hurdle.py
+================================================
+from __future__ import annotations
+
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import pytest
+from relarena_core.tfm import TFMSpec, predict_tfm
+from relbench.base import TaskType
+
+from tabpfn_rel.context import HardPoolContext, hard_pool_subsample_indices
+from tabpfn_rel.model import (
+    TabPFNRelClient20260928Model,
+    TabPFNRelLocal20260928Model,
+)
+from tabpfn_rel.tfm import TFM_REGISTRY
+
+fit_auto_hurdle = pytest.importorskip("tabpfn_rel.hurdle").fit_auto_hurdle
+
+
+class RecordingEstimator:
+    def __init__(self, **kwargs: Any) -> None:
+        self.kwargs = kwargs
+
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> RecordingEstimator:
+        self.X = X.copy()
+        self.y = np.asarray(y)
+        self.classes_ = np.unique(y)
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        return np.tile([0.25, 0.75], (len(X), 1))
+
+    def predict(
+        self, X: pd.DataFrame, *, output_type: str, quantiles: list[float]
+    ) -> Any:
+        if output_type == "quantiles":
+            return [np.full(len(X), q * 12) for q in quantiles]
+        return np.full(len(X), 6.0)
+
+
+@pytest.fixture
+def backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(
+        TFM_REGISTRY,
+        "hurdle-test",
+        TFMSpec(RecordingEstimator, RecordingEstimator, 200_000, supports_text=True),
+    )
+
+
+@pytest.mark.parametrize(
+    "zeros,active", [(0, False), (1, False), (2, True), (20, True)]
+)
+@pytest.mark.parametrize("text_dtype", ["string", "object"])
+def test_extension_gate_and_median(
+    backend: None, zeros: int, active: bool, text_dtype: str
+) -> None:
+    X = pd.DataFrame({"id": range(20), "text": pd.Series(["a"] * 20, dtype=text_dtype)})
+    y = pd.Series([0.0] * zeros + [2.0] * (20 - zeros))
+    fitted = fit_auto_hurdle(
+        X,
+        y,
+        HardPoolContext(32, 2, 2.0, None),
+        tfm="hurdle-test",
+        seed=0,
+        context_time=np.arange(20),
+        zero_threshold=0.05,
+    )
+    hurdle = fitted.estimator
+    assert hurdle.hurdle_ == active
+    expected = 0.0 if zeros == 20 else 4.0 if active else 6.0
+    np.testing.assert_allclose(hurdle.predict(X), expected)
+    if zeros == 20:
+        assert hurdle.regressor_ is None and hurdle.classifier_ is None
+
+
+def test_positive_stage_contexts_keep_row_times_and_text(backend: None) -> None:
+    X = pd.DataFrame({"id": range(16), "text": pd.Series(["a"] * 16, dtype="string")})
+    y = pd.Series([0, 2] * 8)
+    times = np.array([7, 2, 15, 1, 10, 8, 5, 3, 9, 0, 6, 12, 4, 11, 14, 13])
+    fitted = fit_auto_hurdle(
+        X,
+        y,
+        HardPoolContext(2, 2, 2.0, None),
+        tfm="hurdle-test",
+        seed=3,
+        context_time=times,
+        zero_threshold=0.25,
+    )
+    for stage, rows in [
+        (fitted.estimator.classifier_, np.arange(16)),
+        (fitted.estimator.regressor_, np.flatnonzero(y > 0)),
+    ]:
+        indices = hard_pool_subsample_indices(
+            times[rows], K=2, M=4, n_estimators=2, seed=3
+        )
+        union = np.unique(np.concatenate(indices))
+        estimator = stage.fitted_.estimator
+        np.testing.assert_array_equal(estimator.X.id, rows[union])
+        assert isinstance(estimator.X.text.dtype, pd.StringDtype)
+        for actual, original in zip(
+            estimator.kwargs["inference_config"]["SUBSAMPLE_SAMPLES"],
+            indices,
+            strict=True,
+        ):
+            np.testing.assert_array_equal(
+                estimator.X.id.to_numpy()[actual], rows[original]
+            )
+
+
+@pytest.mark.parametrize(
+    "model_class",
+    [TabPFNRelClient20260928Model, TabPFNRelLocal20260928Model],
+)
+@pytest.mark.parametrize(
+    "task_type", [TaskType.REGRESSION, TaskType.BINARY_CLASSIFICATION]
+)
+def test_recipe_backend_dispatch(
+    backend: None, model_class: type, task_type: TaskType
+) -> None:
+    model = model_class({"hurdle_zero_threshold": 0.05})
+    model._tfm = "hurdle-test"
+    X = pd.DataFrame({"id": range(16)})
+    y = pd.Series([0, 1] * 8)
+    fitted = model._fit_backend(
+        X,
+        y,
+        task_type,
+        HardPoolContext(32, 2, 2.0, None),
+        seed=0,
+        context_time=np.arange(16),
+    )
+    expected = 4.0 if task_type == TaskType.REGRESSION else 0.75
+    np.testing.assert_allclose(predict_tfm(fitted, X), expected)
+
+
+
+================================================
+FILE: tests/test_integration.py
+================================================
+"""Real DFS, temporal tuning and prediction with an in-memory estimator backend."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+from relarena_core.featurization import dfs
+from relarena_core.tfm import TFMSpec
+
+from tabpfn_rel import (
+    PredictiveContext,
+    PredictiveQuery,
+    PredictiveQuerySpec,
+    TabPFNRel,
+    tfm,
+)
+
+from ._data import write_database
+
+
+class _Estimator:
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> _Estimator:
+        assert len(X) == len(y) > 0
+        assert X.shape[1] > 0
+        self.classes_ = np.unique(y)
+        self.mean_ = float(np.mean(y))
+        self.columns_ = list(X.columns)
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        return np.full((len(X), len(self.classes_)), 1 / len(self.classes_))
+
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        return np.full(len(X), self.mean_)
+
+
+def _make_estimator(**kwargs: object) -> _Estimator:
+    return _Estimator()
+
+
+@pytest.fixture
+def query(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> PredictiveContext:
+    for variable in (
+        "RELARENA_CACHE_DIR",
+        "RELARENA_DISABLE_CACHE",
+        "RELARENA_DISABLE_FEATURE_CACHE",
+    ):
+        monkeypatch.delenv(variable, raising=False)
+    for name in (
+        "tabpfn-v3",
+        "tabpfn-v3-api",
+        "tabpfn-v3.5-api",
+        "tabpfn-v3.5-tfidf",
+        "tabpfn-v3.5-api-simple",
+    ):
+        monkeypatch.setitem(
+            tfm.TFM_REGISTRY,
+            name,
+            TFMSpec(_make_estimator, _make_estimator, 100_000, supports_text=True),
+        )
+    task_path = write_database(
+        tmp_path, getattr(request, "param", "binary_classification")
+    )
+    spec = PredictiveQuerySpec.from_yaml(str(task_path), data_dir=str(tmp_path))
+    return PredictiveContext(spec, data_version="test-v1")
+
+
+@pytest.mark.parametrize(
+    "query", ["binary_classification", "regression"], indirect=True
+)
+@pytest.mark.parametrize(
+    "backend", ["local-2026-08-15", "client-2026-08-15", "client-2026-09-18"]
+)
+@pytest.mark.parametrize("n_trials", [0, 2])
+def test_rpi_fits_tunes_and_reuses_prediction_cache(
+    query: PredictiveContext, backend: str, n_trials: int, tmp_path: Path
+) -> None:
+    model = TabPFNRel(model=backend)
+    assert (
+        model.fit(query, n_trials=n_trials, seed=7, cache_dir=tmp_path / "cache")
+        is model
+    )
+    predictions = model.predict(
+        PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+    )
+    pd.testing.assert_frame_equal(
+        predictions,
+        model._fitted.predict(
+            PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+        ),
+    )
+    pd.testing.assert_frame_equal(
+        predictions,
+        model.predict(
+            PredictiveQuery(entities="all", at_timestamp="test_timestamp"),
+            cache_dir=tmp_path / "prediction-cache",
+        ),
+    )
+    assert list((tmp_path / "prediction-cache").rglob("*.parquet"))
+    assert sorted(predictions["customer_id"]) == ["a", "b", "c", "d"]
+    assert predictions["y_pred"].notna().all()
+    assert len(query.compute_test_labels()) == 4
+    assert model.config["max_depth"] in (
+        (4,) if backend == "client-2026-09-18" else (2, 3)
+    )
+    if n_trials and backend != "client-2026-09-18":
+        assert len(model.trials) == 2
+        assert all(trial.val_score is not None for trial in model.trials)
+    else:
+        assert model.trials is None
+    if backend.startswith("client"):
+        assert (
+            "description__raw_text" in model._fitted._model._fitted.estimator.columns_
+        )
+    assert list((tmp_path / "cache").rglob("*.parquet"))
+
+
+@pytest.mark.parametrize("backend", ["local", "client"])
+def test_wrapper_default_fit_and_failed_refit(
+    query: PredictiveContext, monkeypatch: pytest.MonkeyPatch, backend: str
+) -> None:
+    model = TabPFNRel(model=backend).fit(query)
+    assert model.config["max_depth"] == 4
+    assert model.trials is None
+    assert (
+        len(
+            model.predict(
+                PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+            )
+        )
+        == 4
+    )
+
+    def fail_fit(*args: object, **kwargs: object) -> None:
+        raise ValueError("Fit failed")
+
+    monkeypatch.setattr(query, "fit", fail_fit)
+    with pytest.raises(ValueError, match="Fit failed"):
+        model.fit(query)
+    with pytest.raises(RuntimeError, match="Call fit"):
+        model.predict(PredictiveQuery(entities="all", at_timestamp="test_timestamp"))
+
+
+def test_context_cache_reused_across_queries_and_fits(
+    query: PredictiveContext, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cache_dir = tmp_path / "shared-cache"
+    query.precompute_cache(cache_dir)
+    training_files = {
+        path: (path.stat().st_mtime_ns, path.read_bytes())
+        for path in cache_dir.rglob("*.parquet")
+    }
+    assert training_files
+    build_rdb = dfs._build_rdb
+
+    def forbid_build(*args: object, **kwargs: object) -> None:
+        pytest.fail("Cache hit rebuilt DFS features")
+
+    monkeypatch.setattr(dfs, "_CACHE", dfs._DepthCache())
+    monkeypatch.setattr(dfs, "_build_rdb", forbid_build)
+    fitted = query.fit("tabpfn-rel-local-2026-08-15", n_trials=2, cache_dir=cache_dir)
+    first_model = fitted._model
+    monkeypatch.setattr(dfs, "_build_rdb", build_rdb)
+    first = PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+    second = PredictiveQuery(entities=["b"], at_timestamp="2004-11-15")
+    first_predictions = fitted.predict(first)
+    second_predictions = fitted.predict(second)
+    assert second_predictions.customer_id.tolist() == ["b"]
+    assert second_predictions.date.tolist() == [pd.Timestamp("2004-11-15")]
+    assert fitted._model is first_model
+    assert all(
+        (path.stat().st_mtime_ns, path.read_bytes()) == original
+        for path, original in training_files.items()
+    )
+    all_files = {path: path.stat().st_mtime_ns for path in cache_dir.rglob("*.parquet")}
+    monkeypatch.setattr(dfs, "_CACHE", dfs._DepthCache())
+    monkeypatch.setattr(dfs, "_build_rdb", forbid_build)
+    pd.testing.assert_frame_equal(first_predictions, fitted.predict(first))
+    pd.testing.assert_frame_equal(second_predictions, fitted.predict(second))
+    explicit = PredictiveQuery(entities="all", at_timestamp="2004-12-01")
+    pd.testing.assert_frame_equal(first_predictions, fitted.predict(explicit))
+    fresh = PredictiveContext.from_yaml(
+        tmp_path / "task.yaml", data_dir=tmp_path, data_version="test-v1"
+    )
+    other = fresh.fit("tabpfn-rel-client-2026-08-15", n_trials=0, cache_dir=cache_dir)
+    assert other._model is not first_model
+    pd.testing.assert_frame_equal(first_predictions, fitted.predict(first))
+    assert {
+        path: path.stat().st_mtime_ns for path in cache_dir.rglob("*.parquet")
+    } == all_files
+
+
+
+================================================
+FILE: tests/test_model.py
+================================================
+"""Wiring tests for `TabPFNRelModel`.
+
+End-to-end `fit` with `build_dfs_features` and the TFM stubbed, so the knobs'
+effect on the fitted estimator (extra feature columns, context size, the recency-pool
+SUBSAMPLE_SAMPLES) is observable without a real TabPFN or a DFS engine.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+from collections.abc import Iterator
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+import pandas as pd
+import pytest
+from relarena_core import discover_models
+from relarena_core.cache import CacheConfig
+from relarena_core.registry import registry
+from relarena_core.tfm import TFMSpec
+from relbench.base import Table, TaskType
+
+from tabpfn_rel import model as model_mod
+from tabpfn_rel import tfm
+from tabpfn_rel.context import hard_pool_subsample_indices
+from tabpfn_rel.model import (
+    TABPFN_REL_CLIENT_20260918_SPACE,
+    TABPFN_REL_CLIENT_SPACE,
+    TABPFN_REL_LOCAL_SPACE,
+    TabPFNRelClient20260918Model,
+    TabPFNRelClientModel,
+    TabPFNRelLocalModel,
+    TabPFNRelModel,
+)
+
+_N = 100
+
+
+# -- search space / v3 backend ------------------------------------------------
+
+
+def test__local_space__default_is_the_validated_config() -> None:
+    discover_models()
+    assert registry.get("tabpfn-rel-local-2026-08-15") is TabPFNRelLocalModel
+    assert (
+        registry.search_space("tabpfn-rel-local-2026-08-15") is TABPFN_REL_LOCAL_SPACE
+    )
+    default = TABPFN_REL_LOCAL_SPACE.default_overrides
+    assert default == {
+        "tfm": "tabpfn-v3",
+        "context_strategy": "hard_pool",
+        "subsample_samples": 100_000,
+        "pool_inflation": 4.0,
+        "with_text": False,
+        "max_depth": 2,
+    }
+    grid = TABPFN_REL_LOCAL_SPACE.fixed_grid
+    assert grid[0] == default  # default first, survives budget truncation
+    assert [c["max_depth"] for c in grid] == [2, 3, 4]
+    assert all(
+        {k: c[k] for k in default if k != "max_depth"}
+        == {k: default[k] for k in default if k != "max_depth"}
+        for c in grid
+    )  # only the depth varies
+
+
+def test__client_model__registered_with_client_tfm_and_text() -> None:
+    discover_models()
+    assert registry.get("tabpfn-rel-client-2026-08-15") is TabPFNRelClientModel
+    assert (
+        registry.search_space("tabpfn-rel-client-2026-08-15") is TABPFN_REL_CLIENT_SPACE
+    )
+    default = TABPFN_REL_CLIENT_SPACE.default_overrides
+    assert default["tfm"] == "tabpfn-v3-api"
+    assert default["with_text"] is True
+
+
+def test__tfm_registry__has_v3_with_100k_cap() -> None:
+    assert "tabpfn-v3" in tfm.TFM_REGISTRY
+    assert tfm.TFM_REGISTRY["tabpfn-v3"].max_train_samples == 100_000
+
+
+# -- config -> feature pipeline ----------------------------------------------
+
+
+def test__no_knobs__feature_pipeline_disabled() -> None:
+    model = TabPFNRelModel({"tfm": "tabpfn-v2"})
+    model._features = model_mod.FeaturePipeline(model.config)
+    assert not model._features.enabled
+
+
+def test__knobs__assemble_calendar_history_text() -> None:
+    pipe = model_mod.FeaturePipeline(
+        {
+            "with_calendar_features": True,
+            "with_history_features": True,
+            "n_lags": 3,
+            "with_text": True,
+        }
+    )
+    assert pipe.calendar and pipe.n_lags == 3 and pipe.text is not None
+
+
+# -- end-to-end fit (DFS + TFM stubbed) --------------------------------------
+
+
+class _StubClassifier:
+    def fit(self, X: pd.DataFrame, y: np.ndarray) -> "_StubClassifier":
+        self.classes_ = np.unique(y)
+        self.y_ = y.copy()
+        self.n_train_ = len(X)
+        self.cols_ = list(X.columns)
+        self.X_ = X.reset_index(drop=True)
+        return self
+
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+        cols = np.arange(1, len(self.classes_) + 1, dtype=float)
+        return np.tile(cols / cols.sum(), (len(X), 1))
+
+
+@pytest.fixture
+def capture(monkeypatch: pytest.MonkeyPatch) -> Iterator[dict[str, object]]:
+    """Stub the TFM (recording ctor kwargs) and DFS (fixed frame); yield the kwargs."""
+    captured: dict[str, object] = {}
+
+    def _make(**kw: object) -> _StubClassifier:
+        captured.update(kw)
+        return _StubClassifier()
+
+    tfm.TFM_REGISTRY["capture"] = TFMSpec(
+        make_classifier=_make,
+        make_regressor=_make,
+        max_train_samples=10,
+        supports_text=True,
+    )
+    monkeypatch.setattr(model_mod, "build_dfs_features", _dfs_stub)
+    try:
+        yield captured
+    finally:
+        del tfm.TFM_REGISTRY["capture"]
+
+
+def _dfs_stub(
+    task: object, db: object, table: Table, **kwargs: object
+) -> tuple[pd.DataFrame, list[str]]:
+    # One deterministic feature per row of the passed table, so tests can compare
+    # which rows the TFM was fit on by value.
+    eid = table.df["eid"].to_numpy(dtype=float)
+    feat = pd.DataFrame({"num": eid * 2.0, "cat": np.where(eid % 2, "a", "b")})
+    return feat, ["cat"]
+
+
+def _task() -> SimpleNamespace:
+    return SimpleNamespace(
+        task_type=TaskType.BINARY_CLASSIFICATION,
+        target_col="label",
+        time_col="ts",
+        entity_col="eid",
+    )
+
+
+def _train_table() -> Table:
+    df = pd.DataFrame(
+        {
+            "eid": np.arange(_N),
+            "ts": pd.to_datetime("2020-01-01") + pd.to_timedelta(np.arange(_N), "D"),
+            "label": [0, 1] * (_N // 2),
+        }
+    )
+    return Table(df=df, fkey_col_to_pkey_table={}, pkey_col=None, time_col="ts")
+
+
+def test__cache_config__is_passed_explicitly_during_fit(
+    capture: dict[str, object], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The model's explicit immutable cache config reaches DFS unchanged."""
+    seen: dict[str, CacheConfig] = {}
+
+    def _recording_dfs(
+        task: object, db: object, table: Table, **kwargs: object
+    ) -> tuple[pd.DataFrame, list[str]]:
+        seen["cache"] = kwargs["cache"]  # type: ignore[assignment]
+        return _dfs_stub(task, db, table, **kwargs)
+
+    monkeypatch.setattr(model_mod, "build_dfs_features", _recording_dfs)
+
+    TabPFNRelModel({"tfm": "capture"}, cache=CacheConfig(tmp_path, "raise")).fit(
+        _task(), db=None, train_table=_train_table(), val_table=None, seed=0
+    )
+    assert seen["cache"] == CacheConfig(tmp_path, "raise")
+
+    seen.clear()
+    TabPFNRelModel({"tfm": "capture"}).fit(
+        _task(), db=None, train_table=_train_table(), val_table=None, seed=0
+    )
+    assert seen["cache"] == CacheConfig(None, "compute")
+
+
+def test__random_strategy__caps_via_base_fit_tfm(capture: dict[str, object]) -> None:
+    model = TabPFNRelModel({"tfm": "capture"})  # default context = random
+    model.fit(_task(), db=None, train_table=_train_table(), val_table=None, seed=0)
+    assert model._fitted.estimator.n_train_ == 10  # base fit_tfm cap (stub)
+    assert "inference_config" not in capture  # no pool overrides
+
+
+def test__random_strategy__fits_aligned_features_and_labels(
+    capture: dict[str, object],
+) -> None:
+    table = _train_table()
+    model = TabPFNRelModel({"tfm": "capture"})
+    model.fit(_task(), db=None, train_table=table, val_table=None, seed=7)
+
+    full_feat, _ = _dfs_stub(None, None, table)
+    estimator = model._fitted.estimator
+    idx = (estimator.X_["num"].to_numpy() / 2).astype(int)
+    assert len(idx) == 10 and len(set(idx)) == 10
+    pd.testing.assert_frame_equal(
+        estimator.X_, full_feat.iloc[idx].reset_index(drop=True)
+    )
+    np.testing.assert_array_equal(estimator.y_, table.df.iloc[idx]["label"])
+
+
+def test__hard_pool__forwards_indices_and_fits_the_context_union(
+    capture: dict[str, object],
+) -> None:
+    table = _train_table()
+    model = TabPFNRelModel(
+        {
+            "tfm": "capture",
+            "context_strategy": "hard_pool",
+            "subsample_samples": 8,
+            "n_estimators": 4,
+            "pool_inflation": 4.0,
+        }
+    )
+    model.fit(_task(), db=None, train_table=table, val_table=None, seed=0)
+
+    ss = capture["inference_config"]["SUBSAMPLE_SAMPLES"]  # type: ignore[index]
+    assert isinstance(ss, list) and len(ss) == 4 and all(len(a) == 8 for a in ss)
+    assert capture["n_estimators"] == 4
+
+    idx = hard_pool_subsample_indices(
+        table.df["ts"].to_numpy(), K=8, M=32, n_estimators=4, seed=0
+    )
+    union = np.unique(np.concatenate(idx))
+    assert model._fitted.estimator.n_train_ == len(union)
+    # The fitted frame is the union of contexts; each estimator's SUBSAMPLE_SAMPLES
+    # decode back to the right original rows.
+    full_feat, _ = _dfs_stub(None, None, table)
+    X = model._fitted.estimator.X_
+    for got, want in zip(ss, idx):
+        pd.testing.assert_frame_equal(
+            X.iloc[got].reset_index(drop=True),
+            full_feat.iloc[want].reset_index(drop=True),
+        )
+
+
+def test__pool_strategy__requires_subsample_samples(capture: dict[str, object]) -> None:
+    model = TabPFNRelModel({"tfm": "capture", "context_strategy": "hard_pool"})
+    with pytest.raises(ValueError, match="subsample_samples"):
+        model.fit(_task(), db=None, train_table=_train_table(), val_table=None, seed=0)
+
+
+def test__calendar_knob__adds_columns_to_the_fitted_frame(
+    capture: dict[str, object],
+) -> None:
+    model = TabPFNRelModel({"tfm": "capture", "with_calendar_features": True})
+    model.fit(_task(), db=None, train_table=_train_table(), val_table=None, seed=0)
+    cols = model._fitted.estimator.cols_
+    assert "cutoff_month_sin" in cols and "cutoff_dow_cos" in cols
+
+
+def test__warm_cache__runs_featurization_without_fitting_a_tfm(
+    capture: dict[str, object],
+) -> None:
+    model = TabPFNRelModel({"tfm": "capture", "with_calendar_features": True})
+    table = _train_table()
+    eval_tbl = Table(
+        df=table.df.iloc[:5].reset_index(drop=True),
+        fkey_col_to_pkey_table={},
+        pkey_col=None,
+        time_col="ts",
+    )
+    model.warm_cache(_task(), db=None, train_table=table, eval_table=eval_tbl)
+    assert not hasattr(model, "_fitted")  # featurization only, no TFM fit
+    assert model._features.calendar
+
+
+def test__predict__returns_one_score_per_row(capture: dict[str, object]) -> None:
+    model = TabPFNRelModel({"tfm": "capture", "with_calendar_features": True})
+    table = _train_table()
+    model.fit(_task(), db=None, train_table=table, val_table=None, seed=0)
+    pred = model.predict(
+        _task(),
+        db=None,
+        table=Table(
+            df=table.df.iloc[:5].reset_index(drop=True),
+            fkey_col_to_pkey_table={},
+            pkey_col=None,
+            time_col="ts",
+        ),
+    )
+    assert pred.shape == (5,)
+
+
+# -- text knob wiring ----------------------------------------------------------
+
+
+def _task_with_text() -> SimpleNamespace:
+    task = _task()
+    task.entity_table = "users"
+    return task
+
+
+def _db_with_text() -> SimpleNamespace:
+    users = SimpleNamespace(
+        df=pd.DataFrame(
+            {"eid": np.arange(_N), "bio": [f"user number {i}" for i in range(_N)]}
+        ),
+        pkey_col="eid",
+        time_col=None,
+        fkey_col_to_pkey_table={},
+    )
+    return SimpleNamespace(table_dict={"users": users})
+
+
+def test__with_text__passes_raw_text_columns_to_the_estimator(
+    capture: dict[str, object],
+) -> None:
+    model = TabPFNRelModel({"tfm": "capture", "with_text": True})
+    model.fit(
+        _task_with_text(),
+        db=_db_with_text(),
+        train_table=_train_table(),
+        val_table=None,
+        seed=0,
+    )
+
+    assert "bio__raw_text" in model._fitted.estimator.cols_
+
+
+def test__fit__with_text_on_a_textless_tfm__raises(
+    capture: dict[str, object],
+) -> None:
+    # Raise rather than silently running without text: the recorded config would
+    # otherwise claim with_text for a run that did not use it.
+    # The `capture` fixture owns the registry key and deletes it on teardown.
+    tfm.TFM_REGISTRY["capture"] = dataclasses.replace(
+        tfm.TFM_REGISTRY["capture"], supports_text=False
+    )
+    model = TabPFNRelModel({"tfm": "capture", "with_text": True})
+    with pytest.raises(ValueError, match="does not support text"):
+        model.fit(
+            _task_with_text(),
+            db=_db_with_text(),
+            train_table=_train_table(),
+            val_table=None,
+            seed=0,
+        )
+
+
+def test_dated_client_has_one_fixed_depth_four_configuration() -> None:
+    discover_models()
+    name = "tabpfn-rel-client-2026-09-18"
+    assert registry.get(name) is TabPFNRelClient20260918Model
+    space = registry.search_space(name)
+    assert space is TABPFN_REL_CLIENT_20260918_SPACE
+    assert not space.is_tunable
+    assert space.configs(n_trials=10, seed=0) == [
+        {
+            "tfm": "tabpfn-v3.5-api",
+            "context_strategy": "hard_pool",
+            "subsample_samples": 200_000,
+            "pool_inflation": 4.0,
+            "with_text": True,
+            "max_depth": 4,
+        }
+    ]
+    assert TabPFNRelClient20260918Model.fit is TabPFNRelModel.fit
+    assert TabPFNRelClient20260918Model.predict is TabPFNRelModel.predict
+
+
+@pytest.mark.parametrize(
+    "name,backend",
+    [
+        ("tabpfn-rel-client-2026-09-28", "tabpfn-v3.5-api-simple"),
+        ("tabpfn-rel-local-2026-09-28", "tabpfn-v3.5-tfidf"),
+    ],
+)
+def test_release_recipes_have_one_default(name: str, backend: str) -> None:
+    space = registry.search_space(name)
+    assert space.configs(n_trials=10, seed=0) == [
+        {
+            "tfm": backend,
+            "context_strategy": "hard_pool",
+            "max_depth": 4,
+            "subsample_samples": 200_000,
+            "pool_inflation": 4.0,
+            "n_estimators": 8,
+            "with_text": True,
+            "hurdle": "auto",
+            "hurdle_zero_threshold": 0.05,
+        }
+    ]
+
+
+
+================================================
+FILE: tests/test_package.py
+================================================
+"""Package imports and installed entry-point registration."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+
+import pytest
+from relarena_core.registry import registry
+from relarena_core.userdb import PredictiveQuery as ArenaQuery
+
+from tabpfn_rel import PredictiveQuery, TabPFNRel, TabPFNRelLocalModel
+
+
+@pytest.mark.parametrize("first", ["relarena_core", "tabpfn_rel"])
+def test_import_orders_and_repeated_discovery(first: str) -> None:
+    code = f"""
+import sys
+import {first}
+import relarena_core
+import tabpfn_rel
+assert set(relarena_core.registry.names()) == {{
+    'tabpfn-rel-local-2026-08-15', 'tabpfn-rel-client-2026-08-15',
+    'tabpfn-rel-client-2026-09-18',
+    'tabpfn-rel-client-2026-09-28',
+    'tabpfn-rel-local-2026-09-28'
+}}
+assert 'relarena.models' not in sys.modules
+for name in ('tabpfn', 'tabpfn_client', 'fastdfs'):
+    assert name not in sys.modules, name
+relarena_core.discover_models()
+relarena_core.discover_models()
+local = relarena_core.registry.get('tabpfn-rel-local-2026-08-15')
+assert local is tabpfn_rel.TabPFNRelLocalModel
+client = relarena_core.registry.get('tabpfn-rel-client-2026-08-15')
+assert client is tabpfn_rel.TabPFNRelClientModel
+assert 'tabpfn' not in sys.modules
+assert 'tabpfn_client' not in sys.modules
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_decorator_registration_and_shared_rpi() -> None:
+    assert registry.get("tabpfn-rel-local-2026-08-15") is TabPFNRelLocalModel
+    assert PredictiveQuery is ArenaQuery
+
+
+def test_wrapper_rejects_unknown_backend() -> None:
+    with pytest.raises(ValueError, match="model must be"):
+        TabPFNRel(model="unknown")
+
+
+def test_wrapper_requires_fit_before_prediction() -> None:
+    with pytest.raises(RuntimeError, match="Call fit"):
+        TabPFNRel(model="client").predict(
+            PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+        )
+
+
+@pytest.mark.parametrize(
+    "selector,registered",
+    [
+        ("client", "tabpfn-rel-client-latest"),
+        ("local", "tabpfn-rel-local-latest"),
+        ("local-2026-08-15", "tabpfn-rel-local-2026-08-15"),
+        ("client-2026-08-15", "tabpfn-rel-client-2026-08-15"),
+        ("client-2026-09-18", "tabpfn-rel-client-2026-09-18"),
+        (
+            "client-2026-09-28",
+            "tabpfn-rel-client-2026-09-28",
+        ),
+        ("local-2026-09-28", "tabpfn-rel-local-2026-09-28"),
+    ],
+)
+def test_wrapper_selects_registered_model(selector: str, registered: str) -> None:
+    model = TabPFNRel(model=selector)
+    assert model._model == registered
+    assert registry.get(model._model) is registry.get(registered)
+
+
+@pytest.mark.parametrize(
+    "alias,dated",
+    [
+        ("tabpfn-rel-client-latest", "tabpfn-rel-client-2026-09-28"),
+        ("tabpfn-rel-local-latest", "tabpfn-rel-local-2026-09-28"),
+    ],
+)
+def test_latest_alias_resolves_to_the_dated_model(alias: str, dated: str) -> None:
+    assert registry.resolve(alias) == dated
+    assert registry.alias_for(dated) == alias
+    assert registry.get(alias).name == dated
+    assert alias not in registry.names()
+
+
+
+================================================
+FILE: tests/test_rpi_local.py
+================================================
+"""Opt-in RPI tests using the local TabPFN v3 checkpoint.
+
+Install the local extra and set TABPFN_RUN_LOCAL_TESTS=1 to run these tests.
+TabPFN downloads the checkpoint if it is not cached.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+from relarena_core.userdb import (
+    DatabaseSpec,
+    PredictiveContext,
+    PredictiveQuery,
+    PredictiveQuerySpec,
+    PredictiveTaskSpec,
+)
+from relarena_core.userdb.ingest import TableSource
+
+from ._data import write_database
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("TABPFN_RUN_LOCAL_TESTS") != "1",
+    reason="Set TABPFN_RUN_LOCAL_TESTS=1 to run local checkpoint tests.",
+)
+
+
+@pytest.fixture(autouse=True)
+def disable_persistent_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    for variable in (
+        "RELARENA_CACHE_DIR",
+        "RELARENA_DISABLE_CACHE",
+        "RELARENA_DISABLE_FEATURE_CACHE",
+    ):
+        monkeypatch.delenv(variable, raising=False)
+
+
+@pytest.mark.parametrize("offset", [0, 1], ids=["at-signup", "after-signup"])
+def test_sparse_training_columns_predict_with_local_tabpfn(
+    tmp_path: Path, offset: int
+) -> None:
+    """Temporal censoring produces missing fit values and populated query values."""
+    training_dates = pd.date_range(end="2020-10-01", periods=10, freq="30D")
+    training_dates -= pd.Timedelta(days=offset)
+    customers = pd.DataFrame(
+        {
+            "customer_id": range(24),
+            "created_at": pd.to_datetime(
+                list(training_dates.repeat(2)) + ["2020-11-15"] * 2 + ["2021-01-15"] * 2
+            ),
+            "age": list(range(20, 40)) + [25, 35, 25, 35],
+            "user_type": [None] * 20 + ["general", "business"] * 2,
+        }
+    )
+    path = tmp_path / "customers.parquet"
+    customers.to_parquet(path, index=False)
+    spec = PredictiveQuerySpec(
+        database=DatabaseSpec(
+            tables={
+                "customers": TableSource(
+                    path=str(path), pkey="customer_id", time_col="created_at"
+                )
+            }
+        ),
+        task=PredictiveTaskSpec(
+            entity_table="customers",
+            entity_col="customer_id",
+            time_col="timestamp",
+            target_col="label",
+            task_type="binary_classification",
+            timedelta="30 days",
+            val_timestamp="2020-10-01",
+            test_timestamp="2020-12-01",
+            query=f"""
+                SELECT t.timestamp, c.customer_id,
+                       CAST(c.customer_id % 2 AS INTEGER) AS label
+                FROM timestamp_df t CROSS JOIN customers c
+                WHERE c.created_at + INTERVAL '{offset} days' = t.timestamp
+            """,
+        ),
+    )
+    context = PredictiveContext(spec)
+    fitted = context.fit("tabpfn-rel-local-2026-08-15", n_trials=0)
+    predictions = fitted.predict(
+        PredictiveQuery(entities=[20, 21], at_timestamp="test_timestamp")
+    )
+    assert predictions["customer_id"].tolist() == [20, 21]
+    assert np.isfinite(predictions["label_pred"]).all()
+    assert predictions["label_pred"].between(0, 1).all()
+
+
+def test_tiny_database_predicts_with_local_tabpfn(tmp_path: Path) -> None:
+    task = write_database(tmp_path)
+    context = PredictiveContext.from_yaml(task, data_dir=tmp_path)
+    fitted = context.fit("tabpfn-rel-local-2026-08-15", n_trials=0)
+    predictions = fitted.predict(
+        PredictiveQuery(entities="all", at_timestamp="test_timestamp")
+    )
+    assert sorted(predictions["customer_id"]) == ["a", "b", "c", "d"]
+    assert np.isfinite(predictions["y_pred"]).all()
+    assert predictions["y_pred"].between(0, 1).all()
+
+
+
+================================================
+FILE: tests/test_tfm.py
+================================================
+"""TabPFN-Rel TFM recipes and hosted backend construction."""
+
+from __future__ import annotations
+
+import json
+import sys
+from types import ModuleType
+
+import numpy as np
+import pytest
+
+from tabpfn_rel import tfm
+
+
+def test_tabpfn_v3_spec_has_no_text_support() -> None:
+    # The local backend receives typed numeric and categorical features only.
+    assert not tfm.TFM_REGISTRY["tabpfn-v3"].supports_text
+
+
+@pytest.mark.parametrize("version", ["v3", "v3.5", "v3.5-simple"])
+def test_tabpfn_api_spec_builds_the_client_estimator(
+    monkeypatch: pytest.MonkeyPatch,
+    version: str,
+) -> None:
+
+    captured: dict[str, object] = {}
+
+    class _ApiEstimator:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+    module = ModuleType("tabpfn_client")
+    module.TabPFNClassifier = _ApiEstimator  # type: ignore[attr-defined]
+    module.TabPFNRegressor = _ApiEstimator  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "tabpfn_client", module)
+
+    spec = tfm.TFM_REGISTRY[
+        "tabpfn-v3.5-api-simple"
+        if version.endswith("simple")
+        else f"tabpfn-{version}-api"
+    ]
+    estimator = spec.make_classifier(device="cuda", seed=7)
+
+    assert isinstance(estimator, _ApiEstimator)
+    # device is server-side and never forwarded to the client constructor.
+    expected = {
+        "model_path": f"{version.removesuffix('-simple')}_default",
+        "random_state": 7,
+        "ignore_pretraining_limits": True,
+    }
+    if version.endswith("simple"):
+        expected["text_handling"] = "simple"
+    assert captured == expected
+    assert isinstance(spec.make_regressor(device="cpu", seed=7), _ApiEstimator)
+    assert captured["model_path"] == expected["model_path"]
+    # The API handles raw text natively.
+    assert spec.supports_text
+
+
+def test__make_tabpfn_api__ndarray_subsample_indices__converted_to_int_lists(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+
+    captured: dict[str, object] = {}
+
+    class _ApiEstimator:
+        def __init__(self, **kwargs: object) -> None:
+            captured.update(kwargs)
+
+    module = ModuleType("tabpfn_client")
+    module.TabPFNClassifier = _ApiEstimator  # type: ignore[attr-defined]
+    module.TabPFNRegressor = _ApiEstimator  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "tabpfn_client", module)
+
+    tfm.TFM_REGISTRY["tabpfn-v3-api"].make_classifier(
+        device="cpu",
+        seed=0,
+        n_estimators=2,
+        inference_config={"SUBSAMPLE_SAMPLES": [np.array([0, 2]), np.array([1, 3])]},
+    )
+
+    config = captured["inference_config"]
+    assert config["SUBSAMPLE_SAMPLES"] == [[0, 2], [1, 3]]
+    json.dumps(config)  # what tabpfn_client serializes into the request body
+
+
+
+================================================
+FILE: .github/workflows/ci.yml
+================================================
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Ruff, tests, and build (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Install test dependencies
+        run: uv sync --locked --group cpu
+      - name: Verify test interpreter
+        env:
+          EXPECTED_PYTHON: ${{ matrix.python-version }}
+        run: |
+          uv run --no-sync python -c 'import os, sys; actual = f"{sys.version_info.major}.{sys.version_info.minor}"; expected = os.environ["EXPECTED_PYTHON"]; assert actual == expected, f"Expected Python {expected}, got {actual}"'
+      - name: Check formatting and lint
+        run: |
+          uv run --no-sync ruff format --check .
+          uv run --no-sync ruff check .
+      - name: Build distributions
+        run: uv build
+      - name: Test installed wheel
+        run: |
+          uv pip install --no-deps --reinstall dist/*.whl
+          OMP_NUM_THREADS=1 uv run --no-sync pytest
+
+
+
+================================================
+FILE: .github/workflows/reapprove-internal-prs.yml
+================================================
+# Automatically reapprove PRs from PriorLabs org members after new code is pushed.
+#
+# The branch protection rules dismiss all approvals when new code is pushed to a PR, to
+# ensure the most recent push is reviewed and approved. This is important for external
+# collaborators, but is extra overhead for internal PRs where we trust the authors. In
+# this case, the workflow automatically approves the current version of the PR if a
+# previous version was already approved.
+name: Reapprove internal PRs
+
+on:
+  pull_request_review:
+    types: [dismissed]
+
+permissions:
+  pull-requests: write
+
+# One push can dismiss several approvals, and each dismissal starts its own run. Run
+# them one at a time per PR, so that a later run sees the approval an earlier one
+# created instead of adding a duplicate.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+  # We need to check every review that was dismissed, in case it was an approval.
+  queue: max
+
+jobs:
+  reapprove:
+    name: Restore dismissed approval
+    # The PR does not come from a fork. This also means the author has write access to
+    # the repository, as otherwise they could not have pushed the branch. The next step
+    # checks the author's org membership as well, for defence in depth.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-slim
+    steps:
+      - name: Check the author and the reviewer are org members
+        id: membership
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          # We cannot read the memberships with GITHUB_TOKEN.
+          github-token: ${{ secrets.PRIORLABS_ORG_MEMBERSHIP_READ_PAT }}
+          script: |
+            const org = context.repo.owner;
+
+            async function isOrgMember(username) {
+              try {
+                await github.rest.orgs.checkMembershipForUser({ org, username });
+                return true;
+              } catch (error) {
+                if (error.status === 404) {
+                  return false;
+                }
+                throw error;
+              }
+            }
+
+            const author = context.payload.pull_request.user.login;
+            if (!(await isOrgMember(author))) {
+              core.info(`The author ${author} is not an org member, not approving.`);
+              return;
+            }
+
+            // Without this check, an external user can trigger this bot to approve a PR
+            // by submitting an approval themselves. Not a big risk, as the PR's author
+            // must still be an internal user. We include 'github-actions[bot]' so that
+            // the workflow can reapprove again after a second push from the user.
+            const reviewer = context.payload.review.user.login;
+            if (reviewer !== "github-actions[bot]" && !(await isOrgMember(reviewer))) {
+              core.info(`The reviewer ${reviewer} is not an org member, not approving.`);
+              return;
+            }
+
+            core.setOutput("trusted", "true");
+
+      - name: Restore the dismissed approval
+        if: steps.membership.outputs.trusted == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pullNumber = context.payload.pull_request.number;
+            const headSha = context.payload.pull_request.head.sha;
+            const dismissedReview = context.payload.review;
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number: pullNumber,
+              per_page: 100,
+            });
+
+            // Check if any of the reviews of this PR already approved the head commit.
+            // They might come from a human or an earlier run of the workflow.
+            // In this case, exit early to avoid approving again.
+            if (reviews.some((r) => r.commit_id === headSha && r.state === "APPROVED")) {
+              core.info("The current head is already approved, not approving again.");
+              return;
+            }
+
+            // The payload to this workflow doesn't tell us if the dismissed review was
+            // previously an approval, or why it was dismissed. To find this out, we
+            // find the review_dismissed event in the PR timeline.
+            const timeline = await github.paginate(
+              github.rest.issues.listEventsForTimeline,
+              { owner, repo, issue_number: pullNumber, per_page: 100 },
+            );
+            const dismissal = timeline
+              .filter((e) => e.event === "review_dismissed")
+              .map((e) => e.dismissed_review)
+              .find((d) => d?.review_id === dismissedReview.id);
+            if (!dismissal) {
+              core.info(`Found no dismissal of review ${dismissedReview.id}.`);
+              return;
+            }
+
+            // The dismissed review may not have been an approval (e.g. if it requested
+            // changes), in which case we don't want to approve.
+            if (dismissal.state !== "approved") {
+              core.info("The dismissed review was not an approval, not approving.");
+              return;
+            }
+            // We only want to reapprove when the dismissal was due to new code being
+            // pushed, not if the reviewer manually dismissed the review.
+            if (!dismissal.dismissal_commit_id) {
+              core.info("The approval was dismissed by hand, not restoring it.");
+              return;
+            }
+
+            core.info("Approving to restore the dismissed approval.");
+            // This approves the current HEAD, not the commit "headSha" that triggered
+            // this workflow. This avoids a race condition when someone makes two pushes
+            // in quick succession, as the workflow would only be triggered for the
+            // first one. It's safe, because the push can only come from an org member.
+            await github.rest.pulls.createReview({
+              owner,
+              repo,
+              pull_number: pullNumber,
+              event: "APPROVE",
+              body:
+                "Reapproving after a push, as this is a PR from an internal author " +
+                "and was already approved."
+            });
+
+

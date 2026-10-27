@@ -36,6 +36,45 @@
       "previous_sha256": "fc2e1b4d6d08ade01855fc3b8f713684e235861a2d65db2c98cd9ec0a42dbb0c",
       "retrieved": "2026-10-20",
       "zotero_attachment": "preserved unchanged"
+    },
+    {
+      "arxiv": "2605.18971",
+      "version": 2,
+      "filed_version_date": "2026-10-23",
+      "source_url": "https://arxiv.org/pdf/2605.18971v2",
+      "path": "papers/2026/10_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf",
+      "sha256": "b0863a80cf5afce0ce8e82b117cecaf4a16b3dd6e4915b64d2e97dd45271a37d",
+      "previous_path": "papers/2026/05_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf",
+      "previous_sha256": "c12c522883aa90d7d8439508b3cbf087fff9e002a5d9544e81fca09bb9bee11a",
+      "retrieved": "2026-10-26",
+      "zotero_attachment": "copied byte-for-byte from the owner's attachment on item DPF8PLVS; Zotero record unchanged"
+    },
+    {
+      "arxiv": "2605.18147",
+      "version": 3,
+      "filed_version_date": "2026-10-23",
+      "source_url": "https://arxiv.org/pdf/2605.18147v3",
+      "path": "papers/2026/10_Baesens_et_al._Tabular_Foundation_Models_for_Credit_Risk_Prediction_A_Dedicated_Review_and_Empirical_Comparison.pdf",
+      "sha256": "60d9f9044cbe5f5afd49153b646c47184d11c1eef9a9e5a65f1f3697ff773191",
+      "previous_path": "papers/2026/07_Baesens_et_al._Foundation_Models_for_Credit_Risk_Prediction_A_Game_Changer.pdf",
+      "previous_sha256": "3575c332ba11c969e220f7d7e86e1b948fd33aeb38e8e8f0aaf521a749428491",
+      "retrieved": "2026-10-26",
+      "zotero_attachment": "copied byte-for-byte from the owner's attachment on item G87B2HLF; Zotero record retitled to the v3 title on 2026-10-26 at the owner's request (citation key regenerated)",
+      "filed_title": "Tabular Foundation Models for Credit Risk Prediction: A Dedicated Review and Empirical Comparison"
+    },
+    {
+      "arxiv": "2609.37959",
+      "version": 1,
+      "filed_version_date": "2026-09-29",
+      "source_url": "https://arxiv.org/pdf/2609.37959v1",
+      "path": "papers/2026/09_Kong_et_al._TabFM_A_Zero_Shot_Foundation_Model_for_Tabular_Data.pdf",
+      "sha256": "73fc755e0a6ce468b023cee6c2e88bbfbf07e69122dfb0abb03cc5154d2a3698",
+      "previous_path": "papers/2026/06_Kong_and_Das_Introducing_TabFM_A_zero_shot_foundation_model_for_tabular_data.pdf",
+      "previous_sha256": "2d79ac6d464a7b34e1a27f912bcf2c0f5bf1856f01688a143c94f300b9cdfc7b",
+      "retrieved": "2026-10-27",
+      "zotero_attachment": "copied byte-for-byte from the owner's attachment on item N7HRDZFC (arXiv v1 banner; v1 confirmed latest via the arXiv API on 2026-10-27); Zotero record unchanged",
+      "filed_title": "TabFM: A Zero-Shot Foundation Model for Tabular Data",
+      "replaces": "Google Research blog post \"Introducing TabFM: A zero-shot foundation model for tabular data\" (Kong and Das, 30 June 2026), replaced by the arXiv paper at the owner's request"
     }
   ]
 }

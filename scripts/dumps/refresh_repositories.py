@@ -175,6 +175,26 @@ REPOSITORIES: dict[str, str | dict] = {
         "exclude": {"data/*", "output/*", "outputs/*", "results/*", "checkpoints/*", "models/*"},
         "note": "official insurance evaluation; excludes policy data and generated artifacts",
     },
+    "RelArena.txt": {
+        "url": "https://github.com/PriorLabs/relarena",
+        "source_only": True,
+        "identity": "https://arxiv.org/abs/2608.16319",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*", "VENDORED-LICENSES"},
+        "exclude": {"AGENTS.md", "CLAUDE.md", ".claude/*", ".claude-plugin/*",
+                    ".codex-plugin/*", ".agents/*", "docs/*.png", "docs/*.svg"},
+        "note": "official RelArena-alpha benchmark and RPI source; excludes result CSVs, "
+                "lockfiles, images and upstream agent-instruction files",
+    },
+    "TabPFN-Rel.txt": {
+        "url": "https://github.com/PriorLabs/tabpfn-rel",
+        "source_only": True,
+        "identity": "https://arxiv.org/abs/2608.16319",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*"},
+        "exclude": {"AGENTS.md", "CLAUDE.md", ".claude/*", ".claude-plugin/*",
+                    ".codex-plugin/*", ".agents/*"},
+        "note": "official TabPFN-Rel harness (split out of RelArena); excludes the "
+                "lockfile and upstream agent-instruction/plugin files",
+    },
     "CausalPFN.txt": {
         # Inference + estimation only (no prior generator / pretraining).
         # ~175 MB of the repo is benchmark data: 201 realcause CSVs and

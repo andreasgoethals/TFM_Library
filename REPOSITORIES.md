@@ -16,13 +16,15 @@ fresh dump of a public GitHub repo, the upstream URL is linked.
 
 Line counts are as of the 2026-08-04 refresh, except
 Test-Time Compute for Tabular Foundation Models (2026-10-13).
-The CARTE, LimiX and insurance source counts were recorded on 2026-10-23. They drift on every refresh; treat them as rough sizes.
+The CARTE, LimiX and insurance source counts were recorded on 2026-10-23, and the RelArena and TabPFN-Rel counts on 2026-10-26. They drift on every refresh; treat them as rough sizes.
 
 | File | Lines | GitHub | Paper | What it gives us |
 |------|-------|--------|-------|------------------|
 | `CARTE.txt` | 11,088 | [soda-inria/carte](https://github.com/soda-inria/carte) | [paper](papers/2024/07_Kim_et_al._CARTE_Pretraining_and_Transfer_for_Tabular_Learning.pdf) | Knowledge-pretrained row graphs, estimators and preprocessing |
 | `LimiX.txt` | 32,176 | [limix-ldm-ai/LimiX](https://github.com/limix-ldm-ai/LimiX) | [paper](papers/2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf) | Versioned LimiX family inference, encoders and configuration |
 | `TabPFNInsurance.txt` | 7,527 | [B-Deprez/tabpfn-insurance](https://github.com/B-Deprez/tabpfn-insurance) | [paper](papers/2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf) | Insurance experiment source and actuarial comparison methods |
+| `RelArena.txt` | 33,669 | [PriorLabs/relarena](https://github.com/PriorLabs/relarena) | [Hayler 2026](papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf) | RelArena-α relational benchmark harness: one data state, nested temporal splits, model/system tuning contracts, re-implemented RelBench v1 baselines (GraphSAGE, RelGNN, RelGT, RDBLearn, RT-PluRel) and the RPI task interface. |
+| `TabPFN-Rel.txt` | 4,169 | [PriorLabs/tabpfn-rel](https://github.com/PriorLabs/tabpfn-rel) | [Hayler 2026](papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf) | TabPFN-Rel: deep feature synthesis into one table, then TabPFN-3/3.5 in context, with recency-pool context selection, calendar/history-lag/text extras and depth-only tuning. |
 | `CausalPFN.txt` | 7,400 | [vdblm/CausalPFN](https://github.com/vdblm/CausalPFN) | [Balazadeh Meresht 2025](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) | Amortised causal-effect ICL: the `CausalEstimator` API and the transformer head. Inference/estimation only — no prior generator. Filtered to code (upstream carries ~175 MB of benchmark data). |
 | `Huggingface TabPFN.txt` | 256 | [tabpfn_2_5](https://huggingface.co/Prior-Labs/tabpfn_2_5), [tabpfn_2_6](https://huggingface.co/Prior-Labs/tabpfn_2_6) | [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Primary citation source for checkpoint provenance (synthetic vs. real-finetuned, layer counts, intended limits, licence). |
 | `LoCalPFN.txt` | 1,714 | [layer6ai-labs/LoCalPFN](https://github.com/layer6ai-labs/LoCalPFN) | [Thomas 2024](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) | The retrieval + fine-tuning recipe in ~8 files: `methods/ftknn.py` (LoCalPFN) and `methods/pfknn.py` (TabPFN-kNN). The only k-NN-context implementation in this folder. **No LICENSE upstream** — read, don't redistribute. |
@@ -34,8 +36,8 @@ The CARTE, LimiX and insurance source counts were recorded on 2026-10-23. They d
 | `TabForestPFN.txt` | 35,420 | [FelixdenBreejen/TabForestPFN](https://github.com/FelixdenBreejen/TabForestPFN) | [den Breejen 2024](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf) | The **forest/tree prior generators** (`synthetic_generator_forest.py`, `_tabpfn.py`, `_cuts.py`, `_mix.py`) plus pretrain/finetune trainers. Dead upstream since 2024-05; filtered to code from a 1.36 GB repo. |
 | `TabICL.txt` | 35,947 | [soda-inria/tabicl](https://github.com/soda-inria/tabicl) | [Qu 2025](papers/2025/05_Qu_et_al._TabICL_A_Tabular_Foundation_Model_for_In_Context_Learning_on_Large_Data.pdf), [Qu 2026](papers/2026/09_Qu_et_al._TabICLv2_A_better_faster_scalable_and_open_tabular_foundation_model.pdf) | **The most valuable dump here after `TabPFN .txt`.** The only *fully open* competitive TFM: complete synthetic prior generator (`prior/`, `prior/graph_lib/`), pretraining loop with the **Muon optimiser** (`train/_muon.py`), the 3-stage curriculum scripts for v1 **and** v2, finetuning, forecasting and SHAP extensions. |
 | `TabDPT.txt` | 4,251 | [layer6ai-labs/TabDPT-inference](https://github.com/layer6ai-labs/TabDPT-inference) | [Ma 2026](papers/2026/01_Ma_et_al._TabDPT_Scaling_Tabular_Foundation_Models_on_Real_Data.pdf) | Inference code for the real-data-only competitor to TabPFN. Comparison baseline. |
-| `TabPFN .txt` | 112,907 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for training/finetuning work. |
-| `TabPFN Client.txt` | 21,736 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Irrelevant to self-hosted training; only for benchmarking the hosted API. |
+| `TabPFN .txt` | 112,992 | [PriorLabs/tabPFN](https://github.com/PriorLabs/tabPFN) | [Hollmann 2023](papers/2023/09_Hollmann_et_al._TabPFN_A_Transformer_That_Solves_Small_Tabular_Classification_Problems_in_a_Second.pdf), [Hollmann 2025](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf), [Grinsztajn 2026](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) | Canonical sklearn-style API, all checkpoint metadata, the multi-table finetuning machinery (`get_preprocessed_dataset_chunks`, `DatasetCollectionWithPreprocessing`, `FinetunedTabPFN*`). Primary code reference for training/finetuning work. |
+| `TabPFN Client.txt` | 22,634 | [PriorLabs/tabpfn-client](https://github.com/PriorLabs/tabpfn-client) | — | Hosted-API HTTP client. Irrelevant to self-hosted training; only for benchmarking the hosted API. |
 | `TabPFN Docs.txt` | 27,944 | [official Markdown export](https://docs.priorlabs.ai/llms-full.txt) | — | The docs.priorlabs.ai source. Documents *intent* of every config knob; faster to grep than the implementation in `TabPFN .txt`. |
 | `TabPFN Drift-Resilient.txt` | 138,752 | [automl/Drift-Resilient_TabPFN](https://github.com/automl/Drift-Resilient_TabPFN) | [Helli 2024](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) | The reference implementation for drift-aware training-time augmentation. |
 | `TabPFN Extensions.txt` | 26,617 | [PriorLabs/tabpfn-extensions](https://github.com/PriorLabs/tabpfn-extensions) | — | `AutoTabPFN` post-hoc ensembling, RF-PFN, embeddings, HPO. Source of evaluation baselines. |
@@ -83,7 +85,7 @@ paper is dead as a literal string.
 ## Layout
 
 This file lives at the repo root; the dumps live in
-[`repositories/`](repositories/) — 22 flat `.txt` files, one per
+[`repositories/`](repositories/) — 27 flat `.txt` files, one per
 upstream source, named exactly as in the table above (`TabPFN .txt`
 keeps its intentional trailing space). Line counts are in the table;
 the only file not tracked by git is `TabPFN Wide.txt` (~366 MB,
@@ -878,7 +880,7 @@ Mechanisms, Gains, and Limits* ([summary](SUMMARIES.md#test-time-compute),
 [PDF](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf)).
 
 **What it is.** The paper's implementation of adaptation, aggregation and context
-construction on TabPFN-3, TabICLv2 and TabFM. The full text snapshot keeps Python,
+construction on TabPFN-3, TabICLv2 and TabFM (its June 1.0.0 checkpoint). The full text snapshot keeps Python,
 YAML/JSON configs, shell scripts, patch series and licence notices. It contains the
 methods and evaluation machinery; pretrained backbones are installed separately from
 pinned upstream commits by the included installer.
@@ -1259,3 +1261,86 @@ Versioned LimiX family inference, encoders and configuration. Registered in the 
 Insurance experiment source and actuarial comparison methods. Registered in the normal refresher, using the bounded source-only downloader. Exact revision: `7005920f956fdb8626250613a5344fee509ae159`; 35 selected text files. Original notices are retained (MIT). Start with `src/methods/glm_model.py` and `src/methods/tabpfn_model.py`. Weights, datasets and generated results are excluded; no upstream code was executed.
 
 The original limix-ldm/LimiX URL redirects to limix-ldm-ai/LimiX, so the original report and later family releases share one snapshot. It contains multiple source versions, not a separately verified archive of every paper configuration. The filed consistency paper supplies no author-linked code repository. These observations were checked on 2026-10-23 and do not establish permanent unavailability.
+
+<a id="relarena-code"></a>
+
+## `RelArena.txt`
+
+**Upstream:** [PriorLabs/relarena](https://github.com/PriorLabs/relarena), the repository
+linked from the paper. **Related paper:** Hayler et al. 2026, *Advancing Open and
+Reproducible Relational Learning: RelArena-α, TabPFN-Rel and RPI*
+([summary](SUMMARIES.md#advancing-open-and), [PDF](papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf)).
+
+**What it is.** The RelArena-α benchmark framework and the RPI interface, as two
+packages: `relarena-core` (data states, splits, tuning, featurisation, RPI) and
+`relarena` (runner, baselines, leaderboard). Registered in the normal refresher with the
+bounded source-only downloader. Exact revision `87ce6e749dcd48ab829855bb0c17437e6f1a803f`
+(2026-10-21); 260 selected text files under Apache-2.0, with vendored-code notices
+retained. Result CSVs, the lockfile, images and the upstream agent-instruction files are
+excluded; no upstream code was executed.
+
+**Where to grep:**
+
+- **Data states and temporal splits:** `InnerSplit` and `OuterSplit` freeze the database
+  at the validation and test cut-offs respectively; `docs/temporal-validation.md` explains
+  why the cut-off matters, using the rel-f1 example behind the paper's regime argument.
+- **Tuning contract:** `SearchSpace`, `plan_configs` and `tune` implement model
+  submissions (search space declared, sampling and selection controlled by the framework);
+  `RelArenaModel` versus `RelArenaSystem`, registered with `register_model` and
+  `register_system`, is the model/system split. `docs/tuning-regime.md` and
+  `docs/adding-a-model.md` give the runtime policy and submission rules.
+- **Experiments and aggregation:** `run_model_experiment`, `run_system_experiment` and
+  `refit_and_evaluate` drive a run; `to_bencheval_frame` and `compute_leaderboard` produce
+  the Elo leaderboard through TabArena's evaluation library.
+- **Featurisation and baselines:** `build_dfs_features` is the shared deep-feature-synthesis
+  step; `RDBLearnModel`, `RTPluRelSystem`, `RTJSystem` and the constant
+  `DummyPerEntityBaseline` are the re-implemented baselines. Later additions not in the
+  paper (`NoriRel`, `KurveRSCSystem`) are also present.
+- **RPI:** `PredictiveTaskSpec` and `PredictiveQuerySpec` define YAML-declared tasks;
+  `docs/predictive-task.md` is the user guide.
+
+**Scope.** The live leaderboard in the upstream README has moved past the paper (newer
+TabPFN-Rel versions and baselines); cite the paper for its reported numbers and this dump
+for implementation details. TabPFN-Rel itself was split into its own repository (below).
+
+**Refresh:**
+
+```bash
+python scripts/dumps/refresh_repositories.py --only "RelArena.txt"
+```
+
+## `TabPFN-Rel.txt`
+
+**Upstream:** [PriorLabs/tabpfn-rel](https://github.com/PriorLabs/tabpfn-rel), the
+official TabPFN-Rel package that the RelArena README now points to. **Related paper:** as
+for `RelArena.txt` above.
+
+**What it is.** The TabPFN-Rel harness built on `relarena-core`. Registered in the normal
+refresher with the bounded source-only downloader. Exact revision
+`86315dd164a0153bf1b0d49015a226785c06a6eb` (2026-10-21); 29 selected text files under
+Apache-2.0. The lockfile and upstream agent-instruction/plugin files are excluded; no
+upstream code was executed.
+
+**Where to grep:**
+
+- **Model and search spaces:** `src/tabpfn_rel/model.py` holds `TabPFNRelModel` with the
+  `TabPFNRelLocalModel` (open TabPFN-3, no text) and `TabPFNRelClientModel` (hosted API,
+  raw entity-table text) variants. `TABPFN_REL_LOCAL_SPACE` shows that only DFS depth is
+  tuned. TabPFN-3.5 variants added after the paper fit regression tasks with automatic
+  hurdle regression (`fit_auto_hurdle`).
+- **Context selection:** `src/tabpfn_rel/context.py` defines `RandomContext` (RDBLearn's
+  uniform subsample), `HardPoolContext` and `SoftPoolContext` — the recency/diversity
+  pools that replace it.
+- **Feature extras:** `src/tabpfn_rel/features.py` — `FeaturePipeline`,
+  `attach_calendar`, `attach_history_lags` and `anchor_text_columns`.
+- **Backends:** `TFM_REGISTRY` maps local and API TabPFN backends.
+
+**Scope.** The package version is newer than the paper; history lags, calendar features
+and TabPFN-3.5 recipes postdate or extend the paper's description, so check the
+registered model name before comparing with reported results.
+
+**Refresh:**
+
+```bash
+python scripts/dumps/refresh_repositories.py --only "TabPFN-Rel.txt"
+```
