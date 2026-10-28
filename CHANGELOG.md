@@ -4,6 +4,11 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-10-28
+
+- Added **Regenwetter et al. 2026-03 — Engineering Regression Without Real-Data Training: Domain Adaptation for Tabular Foundation Models Using Multi-Dataset Embeddings** (arXiv 2603.04692v1), copying the owner's Zotero PDF and generating text. Its real-dataset-embedding-guided synthetic selection adds an engineering regression continued-pretraining example; the summary and synthesis distinguish real-data-guided selection from synthetic-only weight updates and note the missing selection control.
+- Live Zotero audit: 71 papers match; one additional collection item, **Strava Maps** (`3WXPCT3G`), has no author or PDF and is not filed here. The discrepancy is reported for the owner, not repaired in Zotero.
+
 ## 2026-10-27
 
 - Resolved both Zotero discrepancies reported on 2026-10-26: TabFM now files the arXiv paper (below), and the Zotero record for van Breugel & van der Schaar was converted from preprint to an ICML 2024 conference paper (PMLR 235, pp. 48976–48993) at the owner's request; its citation key is unchanged. The summary's venue line now gives the pages and the published "Position:" title.

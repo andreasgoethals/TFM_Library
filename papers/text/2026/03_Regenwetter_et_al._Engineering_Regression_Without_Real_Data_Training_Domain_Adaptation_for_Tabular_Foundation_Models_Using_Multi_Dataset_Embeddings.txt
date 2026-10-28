@@ -1,0 +1,1036 @@
+Engineering Regression Without Real-Data Training:
+Domain Adaptation for Tabular Foundation Models Using
+Multi-Dataset Embeddings
+Lyle Regenwetter1, Rosen Yu 1, Cyril Picard 1, and Faez Ahmed 1
+1Massachusetts Institute of Technology
+Abstract
+Predictive modeling in engineering applications has
+long been dominated by bespoke models and small,
+siloed tabular datasets, limiting the applicability
+of large-scale learning approaches. Despite recent
+progress in tabular foundation models, the result-
+ing synthetic training distributions used for pre-
+training may not reflect the statistical structure
+of engineering data, limiting transfer to engineer-
+ing regression. We introduce TREDBench, a cu-
+rated collection of 83 real-world tabular regression
+datasets with expert engineering/non-engineering
+labels, and use TabPFN 2.5’s dataset-level em-
+bedding to study domain structure in a common
+representation space. We find that engineering
+datasets are partially distinguishable from non-
+engineering datasets, while standard procedurally
+generated datasets are highly distinguishable from
+engineering datasets, revealing a substantial syn-
+thetic–real domain gap. To bridge this gap with-
+out training on real engineering samples, we pro-
+pose an embedding-guided synthetic data curation
+method: we generate and identify “engineering-
+like” synthetic datasets, and perform continued
+pre-training of TabPFN 2.5 using only the selected
+synthetic tasks. Across 35 engineering regression
+datasets, this synthetic-only adaptation improves
+predictive accuracy and data efficiency, outper-
+forming TabPFN 2.5 on 29/35 datasets and Au-
+toGluon on 27/35, with mean multiplicative data-
+efficiency gains of 1.75x and 4.44x, respectively.
+More broadly, our results indicate that principled
+synthetic data curation can convert procedural gen-
+erators into domain-relevant “data engines,” en-
+abling foundation models to improve in data-sparse
+scientific and industrial domains where real data
+collection is the primary bottleneck.
+1 Introduction
+Predictive modeling plays an increasingly impor-
+tant role in engineering design and decision-making.
+In many engineering workflows, evaluating candi-
+date designs requires expensive simulations or phys-
+ical experiments. Predictive surrogate models offer
+a practical alternative by approximating the rela-
+tionship between design variables and performance
+metrics, enabling faster exploration of design spaces
+and more efficient optimization. However, building
+reliable predictive models in engineering remains
+challenging because datasets are often small, het-
+erogeneous, and expensive to obtain.
+As a result, data-driven predictive modeling in
+engineering has historically relied on bespoke mod-
+els trained separately for each dataset or task. Clas-
+sical machine learning methods such as Gaussian
+Processes, gradient boosting, and neural networks
+are commonly used, but each new dataset typi-
+cally requires retraining, hyperparameter tuning,
+and careful model selection. This paradigm con-
+trasts sharply with recent developments in other
+areas of applied AI. In fields such as natural lan-
+guage processing and computer vision, foundation
+models trained on large and diverse datasets—such
+as GPT-style large language models for text and
+vision foundation models like CLIP and diffusion
+models—have consolidated many previously dis-
+tinct tasks into unified systems capable of gener-
+alizing across domains.
+Many engineering predictive modeling tasks are
+naturally represented in tabular form, where rows
+correspond to candidate designs or experiments
+and columns represent design variables and perfor-
+mance metrics. A major barrier to foundation mod-
+els in engineering is the scarcity and fragmentation
+of available datasets. Collecting large-scale training
+corpora comparable to those used for language or
+vision models is difficult because engineering data is
+often expensive to generate. For example, a dataset
+of a dozen vehicle crash tests can cost$1 million to
+generate.
+Recent work in tabular machine learning has pro-
+posed an alternative approach: training models
+on large collections of procedurally generated syn-
+thetic datasets that approximate a broad distribu-
+1
+arXiv:2603.04692v1  [cs.LG]  5 Mar 2026
+
+tion of prediction problems. Prior-data fitted net-
+works (PFNs), such as TabPFN, learn predictive
+inference procedures by pretraining on millions of
+synthetic datasets and can subsequently perform
+predictions on new tasks using in-context learning.
+These developments raise a fundamental ques-
+tion for engineering applications:Can a founda-
+tion model trained entirely on synthetic datasets
+achieve strong predictive performance on real en-
+gineering data?Because machine learning models
+generally perform best on data drawn from distri-
+butions similar to their training data, this leads to
+a second question:how closely do procedurally gen-
+erated datasets resemble real engineering datasets?
+If synthetic data can approximate the statistical
+structure of engineering problems, then procedu-
+rally generated training pipelines may offer a scal-
+able solution to the long-standing data scarcity in
+engineering machine learning.
+In this work, we investigate this hypothesis
+through a systematic study of engineering tabu-
+lar regression problems. We introduceTRED-
+Bench, a benchmark for Tabular Regression on
+Engineering Datasets. TREDBench is a curated
+collection of 35 engineering-related and 48 non-
+engineering tabular regression datasets. Using this
+benchmark, we analyze the distributional structure
+of engineering datasets and compare them to both
+non-engineering datasets and procedurally gener-
+ated synthetic data used by tabular foundation
+models.
+Our analysis reveals that engineering datasets oc-
+cupy a partially distinct region of dataset space, but
+that a subset of procedurally generated datasets
+closely resembles real engineering data, as illus-
+trated in Figure 1. Leveraging this insight, we
+propose a method for selecting synthetic datasets
+that are most similar to engineering datasets and
+use them to fine-tune a tabular foundation model,
+TabPFN 2.5, without access to real engineering
+data. The resulting model achieves substantial im-
+provements in predictive performance and data effi-
+ciency, outperforming strong tabular learning base-
+lines—including both the original TabPFN 2.5 and
+the AutoGluon AutoML system—across the major-
+ity of the evaluated engineering problems.
+Together, these results suggest that synthetic
+data may offer a viable path toward founda-
+tion models for engineering predictive modeling.
+By demonstrating that carefully selected procedu-
+rally generated datasets can substantially improve
+performance on real engineering problems, this
+work provides evidence that the longstanding data
+scarcity in engineering can be mitigated through
+principled synthetic data generation and selection.
+More broadly, our findings suggest that procedural
+generators can be transformed into domain-relevant
+“data engines” through principled synthetic data
+curation, enabling foundation models to improve in
+data-sparse scientific and industrial domains where
+real data collection is the primary bottleneck. Key
+contributions are summarized as follows:
+•Engineering Tabular Benchmark: We cu-
+rate TREDBench, a collection of 83 tabular
+regression datasets, manually labeled as en-
+gineering vs. non-engineering by domain ex-
+perts, and standardized for consistent small-
+data evaluation.
+•Quantifying the engineering–synthetic
+domain gap: Using dataset-level embeddings
+and a dataset classifier in embedding space, we
+show (i) engineering vs. non-engineering real
+datasets are distinguishable (65.8% accuracy)
+and (ii) procedurally generated synthetic vs.
+engineering datasets are highly distinguishable
+(96.8%), indicating a substantial mismatch be-
+tween standard procedural generators and real
+engineering data.
+•Embedding-guided synthetic data cu-
+ration for synthetic-only adaptation:
+We propose an adaptation pipeline that
+generates 10,000 procedural synthetic re-
+gression datasets, embeds them, trains an
+embedding-space classifier, and selects the top
+200 “engineering-like” synthetic datasets by
+predicted engineering probability—reducing
+synthetic-vs-engineering distinguishability to
+88.9%.
+•Synthetic-only adaptation of a tabular
+foundation model: We propose an algo-
+rithm that performs continued pre-training of
+TabPFN 2.5 using only the selected synthetic
+datasets (no real engineering samples are used
+to update model weights), yielding consistent
+improvements on engineering regression tasks.
+By evaluating performance across training-
+set-size sweeps and reporting data-efficiency
+improvements, we show significant wins of
+our method over both the base TabPFN 2.5
+and AutoGluon across 35 engineering datasets,
+along with 1.75x average data-efficiency.
+2 Background
+2.1 Predictive Modeling in Engi-
+neering
+Engineering design increasingly relies on predictive
+models to guide decision-making. Evaluating can-
+didate designs often requires expensive physics sim-
+ulations or experiments, making it impractical to
+2
+
+Figure 1: 2D T-SNE embedding of TabPFN 2.5’s 192-dimensional dataset embedding. Distributional
+differences between engineering and non-engineering data are apparent. A small proportion of the pro-
+cedurally generated data overlaps with the engineering data. The procedurally generated data appears
+to splay off toward random noise, indicating that a significant amount of the procedurally generated
+training data may be too random to be realistic.
+explore large design spaces directly. These pre-
+dictive models (surrogates) provide an efficient al-
+ternative to resource-intensive simulations by ap-
+proximating the mapping between design variables
+and system performance [21, 29]. Common exam-
+ples include Gaussian Processes, tree-based ensem-
+bles like XGBoost, and neural network architec-
+tures [25, 33, 38]. These models can accelerate de-
+sign exploration, guide optimization, and identify
+feasible solutions before expensive evaluations are
+performed.
+However, developing reliable predictive mod-
+els remains challenging in engineering contexts.
+Datasets are often small, heterogeneous, and expen-
+sive to collect. Many engineering problems there-
+fore operate in a low-data regime, where conven-
+tional machine learning models may struggle to
+generalize. Over the past decade, research has
+emphasized the need for curated datasets and im-
+proved data practices to enable data-driven engi-
+neering design [32, 28, 1]. Efforts to generate syn-
+thetic datasets and large-scale design repositories
+have also been proposed to address these limita-
+tions [19, 17, 7, 16]. In parallel, physics-guided
+learning and model-free inference methods have
+been explored to integrate physical knowledge with
+data-driven approaches [6, 13, 26].
+2.2 Tabular Foundation Models
+Engineering datasets are often represented in para-
+metric, tabular form. Typically, each row corre-
+sponds to a candidate design or experiment, while
+each column represents a design parameter or mea-
+sured performance metric. For many years, clas-
+sical machine learning algorithms such as gradient
+boosting, random forests, and AutoGluon ensem-
+bles have been the dominant methods for tabular
+prediction tasks [30, 18]. In practice, these ap-
+proaches often outperform deep neural networks on
+structured datasets [34]. However, these models
+still require training a new model for each dataset,
+which can involve extensive hyperparameter tuning
+and model selection.
+Recent work has begun exploring tabular founda-
+tion models (TFMs), which aim to learn predictive
+patterns across many datasets. Similar to large lan-
+guage models (LLMs), TFMs are trained on large
+collections of prediction tasks and can generalize
+to new datasets with minimal additional training
+[35]. At inference time, similar to LLMs that learn
+to predict text conditioned on the context (the
+prompt), TFMs learn to predict posterior distribu-
+tions conditioned on the in-context dataset. These
+developments suggest a new paradigm for predic-
+tive modeling in engineering: reusable models that
+can generalize across design problems without re-
+training.
+2.3 Prior-Data Fitted Networks
+Prior-data fitted networks (PFNs) are state-of-the-
+art (SOTA) models that have advanced the field of
+TFMs. PFNs are pre-trained offline on millions of
+synthetic datasets generated from structural causal
+priors using a data-generating pipeline [14, 22, 15].
+Through this pretraining process, the transformer
+architecture learns to approximate Bayesian infer-
+3
+
+ence across a wide range of prediction tasks. At
+inference time, PFNs perform prediction using in-
+context learning. The model receives labeled exam-
+ples and unlabeled samples simultaneously and di-
+rectly outputs predictions in a single forward pass.
+This eliminates the need to train a new model for
+each dataset.
+TabPFN is a transformer-based PFN designed
+specifically for tabular data. While earlier iter-
+ations were limited to small datasets, the latest
+TabPFN v2 [15] and v2.5 [12] variants have scaled
+this power to datasets with up to 50,000 samples
+and 2,000 features. These models consistently out-
+perform tuned gradient boosting methods and com-
+plex AutoML ensembles like AutoGluon in a frac-
+tion of the time on the leading tabular machine
+learning benchmark.
+These properties make PFNs particularly at-
+tractive for engineering design problems, where
+datasets are small and predictive models must be
+deployed quickly across different tasks. Recent
+work also suggests that TabPFN can be repurposed
+as a feature encoder for tabular data. In particu-
+lar, the transformer representations produced dur-
+ing in-context inference form a highly separable em-
+bedding space for tabular instances, enabling down-
+stream tasks such as visualization or lightweight
+predictive models built on top of these embeddings
+[15, 37].
+2.4 PFNs in Engineering
+Recent work has begun exploring PFNs for engi-
+neering problems. In particular, Picard and Ahmed
+[25] evaluated TabPFN across several canonical en-
+gineering design benchmarks and found that it of-
+ten outperforms classical surrogate modeling ap-
+proaches such as Gaussian processes and gradi-
+ent boosting. However, performance varies sub-
+stantially across problems: while TabPFN per-
+forms strongly on many engineering datasets, it
+performs poorly on others, including well-studied
+benchmarks such as the welded beam design prob-
+lem. The causes of these inconsistencies remain
+unclear. One plausible explanation is that the pro-
+cedurally generated training tasks used to pretrain
+PFNs may not fully capture the statistical structure
+of certain engineering datasets. Despite the grow-
+ing interest in tabular foundation models for scien-
+tific and engineering applications, there has been
+little systematic investigation into how closely syn-
+thetic PFN training data resembles real engineering
+datasets, or how such generators might be adapted
+to better reflect domain-specific data distributions.
+3 Datasets
+This study aims to identify systematic differences
+between real engineering data, real non-engineering
+data, and procedurally generated synthetic data.
+We therefore source large collections of real data,
+then classify this data as engineering versus non-
+engineering. We focus exclusively on tabular re-
+gression data.
+3.1 Real Data
+Sourcing Tabular Regression Datasets.To
+create a large pool of real-world tabular regres-
+sion datasets, we selected three of the most pop-
+ular tabular regression dataset collections from
+OpenML [36]: “AutoML Benchmark” (ID 269) [10],
+“Tabular Benchmark” (IDs 335, 336) [11], and
+“OpenML CTR23” (ID 353) [8]. We supplemented
+these datasets with imbalanced tabular regression
+datasets from [24]. Because these collections have
+relatively few engineering datasets, we specifically
+augmented our dataset pool with several small col-
+lections of engineering datasets from engineering
+design benchmarks [25, 20, 39]. Finally, we in-
+cluded four datasets [23, 23, 4, 31] that were volun-
+tarily contributed to the public data repository by
+the dataset creators and which we verified for rigor
+and integrity. A full list of datasets, their sources,
+and their labels is included in Appendix A.
+Processing Real Datasets.The full pool of
+datasets was then filtered according to a strict set
+of selection criteria. First, duplicate datasets were
+dropped. Next, categorical features were one-hot
+encoded. To cap computational cost and standard-
+ize the collection, a random set of 1024 datapoints
+from each dataset were selected. Datasets with
+fewer than 1024 samples underwent random dupli-
+cation for embedding generation, but not for bench-
+marking, avoiding any data-leakage issue. In addi-
+tion, datasets with more than 100 features were dis-
+carded. This decision was both to cap complexity
+and to accommodate PFN-style models with lim-
+ited context constraints. For datasets with multiple
+regression labels, one label was selected at random.
+Each dataset’s features and the selected label were
+independently scaled to mean 0 and variance 1.
+Labeling Engineering Datasets.Finally,
+datasets were manually classified as engineering-
+related or non-engineering-related by three human
+experts. Datasets classified into the engineering
+category primarily concern topics related to
+mechanical, material, chemical, and electrical
+engineering. Datasets classified into the non-
+engineering category concern a variety of topics
+4
+
+including real-estate, economics, logistics, and
+culture.
+3.2 Synthetic Data
+Procedurally generated data is created using the
+procedure proposed in TabICL [27]. To match the
+real datasets, each synthetic dataset is generated
+with 1024 datapoints and between 2 and 100 fea-
+tures. Like the real data, each synthetic dataset’s
+features and label were independently scaled to
+mean 0 and variance 1.
+3.3 Control Data
+As a control, we created a collection of fully random
+datasets with between 2 and 100 features. Each fea-
+ture and label was independently sampled from a
+standard Gaussian distribution. This dataset rep-
+resents data with no ‘signal’— where any relation-
+ship discerned between features and label are only
+attributable to spurious noise.
+3.4 An Embedding of Datasets
+We construct an embedding-of-datasets: a dense,
+continuous vector representation of datasets. In
+this embedding-of-datasets, each dataset is mapped
+to a single fixed-dimensional vector. Embed-
+dings are typically constructed to compress a high-
+dimensional vector space into a lower one. Since in-
+dividual datasets can be of arbitrary dimension, the
+space of datasets is not a vector space. Therefore,
+the compression process is nontrivial and cannot di-
+rectly leverage the numerous well-established tech-
+niques developed for standard vector-space com-
+pression.
+To obtain dataset-level representations, we lever-
+age the internal transformer representations pro-
+duced by TabPFN during in-context inference.
+When TabPFN processes a dataset, it embeds each
+datapoint into a learned feature space as part of
+its prediction pipeline. We take the mean of these
+datapoint-level embeddings to aggregate them into
+a fixed-dimensional vector that summarizes the sta-
+tistical structure of the entire dataset. We present
+a learned embedding space of datasets extracted
+from TabPFN 2.5 in Figure 1.
+3.5 Distinguishability of Datasets
+We investigate the extent to which different classes
+of datasets can be classified based on TabPFN 2.5’s
+embedding. We train an XGBoost [3] classifier us-
+ing the hyperparameter optimization process de-
+scribed in the Appendix B.1. A confusion matrix
+of the classification performance is shown in Fig-
+ure 2. In binary comparisons, engineering and non-
+engineering datasets are distinguishable with 65.8%
+accuracy. procedurally generated data and engi-
+neering data are distinguishable with 96.8% accu-
+racy.
+Figure 2: Confusion Matrix illustrating dis-
+tinguishability of dataset classes (according to
+TabPFN 2.5’s embedding). Distributional dif-
+ferences between engineering and non-engineering
+datasets can be witnessed. A small portion of the
+procedurally generated data appears to span the
+engineering data.
+4 A Foundation Model for En-
+gineering Data
+The relatively strong distinguishability between
+procedurally generated data and engineering data
+raises a natural question: Can we adapt a purely
+synthetic training pipeline to better reflect the
+statistical structure of engineering data without
+ever training directly on real engineering datasets?
+To address this question, we leverage the PFN-
+embedding space introduced in Section 3.4 as a
+dataset-level representation for distributional com-
+parison.
+4.1 Training Procedure
+Embedding Construction.We first compute
+PFN-based dataset embeddings for 10,000 proce-
+durally generated datasets and all 35 engineer-
+ing datasets. Each dataset is mapped to a 192-
+dimensional vector by averaging the transformer
+representations of its datapoints under TabPFN
+2.5.
+Selecting Engineering-Like Synthetic Data.
+To identify synthetic datasets that resemble engi-
+neering datasets, we frame the problem as binary
+classification in embedding space. We procedurally
+generate 10,000 synthetic datasets. We then ran-
+domly select 250 procedurally generated dataset
+embeddings and combine them with embeddings
+5
+
+from 70% of the engineering datasets to train an
+XGBoost classifier using the hyperparameters de-
+termined in Appendix B.1. The classifier learns
+to discriminate between embeddings from engineer-
+ing datasets and those from procedurally generated
+datasets. The classifier is then applied to the re-
+maining 9,750 procedurally generated embeddings.
+For each synthetic dataset, we compute the pre-
+dicted probability of belonging to the engineering
+class. We then select the top 200 synthetic datasets
+with the highest engineering-class probability. As
+shown in Figure 3, these subselected datasets ap-
+pear to span the space of engineering datasets much
+more thoroughly. This is corroborated through the
+confusion matrix shown in Figure 4. The subse-
+lected procedurally generated data is only distin-
+guishable from engineering data with 88.9% accu-
+racy (compared to 96.8% without subselection).
+Figure 3: Visualization of procedurally generated
+data that is subselected to maximally resemble en-
+gineering data. Embedding is a 2D t-SNE of the
+TabPFN 2.5’s 192-dimensional dataset embedding.
+The selected procedurally generated appears to bet-
+ter span the engineering data compared to the ran-
+domly generated data.
+Fine-Tuning with Selected Synthetic
+Datasets.Following the fine-tuning methodol-
+ogy proposed by [9], we fine-tune TabPFN 2.5 for
+five epochs using only the 200 selected synthetic
+datasets. Importantly, no real engineering data
+are used during fine-tuning; only procedurally
+generated datasets that most resemble engineering
+datasets are used.
+This procedure can be interpreted as do-
+main adaptation without target-domain supervi-
+sion: rather than fine-tuning on scarce engineering
+data, we instead reshape the synthetic training dis-
+tribution by selecting datasets that are nearest to
+engineering data in PFN-embedding space. This
+Figure 4: Confusion matrix illustrating that subse-
+lected procedurally generated data and engineer-
+ing data are less easily distinguished (based on
+TabPFN 2.5’s embedding).
+approach demonstrates that principled sampling
+of procedurally generated data can bridge domain
+gaps and improve performance in data-constrained
+engineering settings.
+4.2 Experimental Results
+In this section, we discuss our evaluation procedure
+and key experimental results.
+Downstream Evaluation.We evaluate the
+fine-tuned model on all 35 engineering datasets.
+For each dataset, we employ a 70%-30% train-test
+split among the datasets used to select synthetic
+data for model fine-tuning. Model performance is
+then measured at 9 increments of dataset size (10%-
+90%), calculated during 10-fold cross-validation.
+This cross-validation scheme ensures that test-time
+datasets are not utilized in the dataset selection
+for fine-tuning, nor for inference time context data.
+Results are compared against (1) the original, non-
+fine-tuned TabPFN 2.5 model to quantify gains at-
+tributable to distribution-aware synthetic data se-
+lection, and (2) the state-of-the-art tabular learn-
+ing model, AutoGluon. As shown in Table 1, our
+fine-tuned TabPFN 2.5 model outperforms both
+its non-fine-tuned counterpart and AutoGluon in
+29/35 and 27/35 problems, respectively for a 70%-
+30% train-test split. Comparisons on 12 sample
+datasets, swept over train size are illustrated in Fig-
+ure 5.
+Data-Efficiency.We measure dataset efficiency
+by comparing how much training data anewmodel
+requires to match the performance of areference
+(ref) model. For each dataset, we first record the
+reference model’s performance when trained on an
+amount of dataD ref (taken as 90% of the avail-
+able training set). We then estimate the amount
+6
+
+Figure 5: Sample comparison of model accuracy for different quantities of data over 12 example problems.
+of dataD new required for the new model to achieve
+the same mean squared error value by interpolating
+along its empirical performance curve as a function
+of training data size.
+We report two complementary measures of data
+efficiency. Theadditive data efficiencymeasures
+the absolute data savings,
+Eadd =D ref −D new,
+which represents how many fewer training samples
+the new model requires to reach the same perfor-
+mance. Themultiplicative data efficiencymeasures
+the relative improvement,
+Emult = Dref
+Dnew
+,
+which indicates how many times more data the ref-
+erence model needs to match the new model’s effi-
+ciency. WhenD new < D ref, the new model is more
+data-efficient; otherwise, the efficiency values be-
+come negative (additive) or fall below one (multi-
+plicative), indicating that the reference model re-
+quires less data.
+If the new model does not reach the reference tar-
+get performance within the observed data range, we
+7
+
+Figure 6: Comparison of the estimated data-efficiency gain as a result of fine-tuning (our fine-tuned
+TabPFN 2.5 model vs. non-fine-tuned TabPFN 2.5 model) across all tested datasets. Left: Additive
+data-efficiency (Eadd). Right: Multiplicative data-efficiency (E mult)
+Figure 7: Comparison of the estimated relative data-efficiency ofour fine-tuned TabPFN 2.5 model
+againstAutoGluonacross all tested datasets. Left: Additive data-efficiency (E add). Right: Multiplica-
+tive data-efficiency (Emult)
+Table 1: Comparison of fine-tuned TabPFN 2.5
+against baseline models across 35 engineering
+datasets using a 70/30 train/test split. Entries
+report the number and percentage of datasets on
+which the fine-tuned model achieves lower test er-
+ror.
+Baseline Datasets
+(/35)
+Fraction
+(%)
+vs. TabPFN 2.5 29 82.9
+vs. AutoGluon 27 77.1
+instead anchor the comparison on the new model’s
+performance atD ref and estimate how much data
+the reference model would require to match it by
+extrapolating along the reference model’s perfor-
+mance curve.
+Efficiency gains as a result of the fine-tuning are
+shown in Figure 6, while an efficiency comparison
+to AutoGluon is shown in Figure 7.
+4.3 Discussion
+Our experimental results support four key findings.
+Variability in Model Performance.First,
+TabPFN 2.5 is a much stronger baseline that Auto-
+Gluon on many engineering problems, despite Au-
+toGluon being the leader in broader tabular pre-
+diction benchmarks like TabArena [5]. We wit-
+ness extreme discrepancies in model performance
+on engineering datasets. This highlights the im-
+portance of engineering-focused tabular prediction
+benchmarks, as general-purpose benchmarks are
+not representative of engineering performance.
+Fine-tuning on Subselected Synthetic Data
+Improves Performance.In our experiments,
+our fine-tuning achieves superior performance in a
+clear (29/35) majority, with average data-efficiency
+of 1.75x. The advantage is clearly demonstrated for
+engineering design problems. Given this strong per-
+formance, we anticipate that our proposed method
+of fine-tuning on subselected synthetic data may
+similarly net performance improvements in other
+8
+
+application areas.
+Our Fine-Tuned TabPFN 2.5 is State-Of-
+The-Art for Tabular Engineering Prediction.
+As noted in [25], non-fine-tuned PFNs outcom-
+pete baselines in systematic testing on engineering-
+design problems. Having established the over-
+whelming improvements over the non-fine-tuned
+model, we argue that our fine-tuned TabPFN 2.5
+model sets the new state-of-the-art for tabular pre-
+diction in engineering-related problems. Its strong
+advantage over AutoGluon, winning 27/35 prob-
+lems at an average data-efficiency of 4.44x, confirms
+our model’s dominance.
+Performance Gains are Inconsistent.De-
+spite widespread advantages in amortized testing,
+our model does not consistently outperform the
+base TabPFN 2.5 nor AutoGluon in every prob-
+lem, falling short in 6 and 8 problems respectively.
+Some of these problems see major performance de-
+gredation. This highlights the further opportuni-
+ties to further improve performance and consis-
+tency across problems by enhancing not only the
+subselection of synthetic data, but potentially also
+the generation procedure itself.
+5 Conclusion
+This work demonstrates that foundation-model
+paradigms can extend to engineering predictive
+modeling despite the traditionally small and frag-
+mented nature of engineering datasets. By intro-
+ducing TREDBench and a dataset-level embedding
+framework, we provide tools to systematically ana-
+lyze the statistical structure of engineering data and
+its relationship to both non-engineering and proce-
+durally generated datasets. Our results show that
+engineering datasets occupy a partially distinct re-
+gion of dataset space, yet remain sufficiently sim-
+ilar to a subset of procedurally generated tasks to
+enable effective transfer through synthetic pretrain-
+ing.
+Leveraging this observation, we propose a princi-
+pled method for selecting engineering-like synthetic
+datasets and use them to fine-tune a tabular foun-
+dation model without access to real engineering
+data. The resulting model achieves substantial im-
+provements in predictive performance and data ef-
+ficiency, outperforming both the base TabPFN 2.5
+model and the AutoGluon AutoML system across
+a majority of the 35 engineering datasets. These
+results support the broader hypothesis that care-
+fully curated synthetic data can mitigate the data
+scarcity that has historically limited machine learn-
+ing adoption in engineering domains.
+More broadly, our findings suggest that engineer-
+ing foundation models may be attainable through
+improved modeling of the distribution of engineer-
+ing data. Future work may further refine synthetic
+data generation pipelines, expand dataset repre-
+sentations beyond tabular regression, and explore
+larger-scale foundation models specialized for engi-
+neering tasks. Such developments could help shift
+predictive modeling in engineering away from iso-
+lated task-specific models toward reusable systems
+capable of generalizing across diverse design prob-
+lems.
+References
+[1] Faez Ahmed, Cyril Picard, Wei Chen, Christo-
+pher McComb, Pingfeng Wang, Ikjin Lee, Tino
+Stankovic, Douglas Allaire, and Stefan Menzel.
+Design by data: Cultivating datasets for engi-
+neering design.Journal of Mechanical Design,
+147(4):040301, 2025.
+[2] Takuya Akiba, Shotaro Sano, Toshihiko
+Yanase, Takeru Ohta, and Masanori Koyama.
+Optuna: A next-generation hyperparameter
+optimization framework. InProceedings of
+the 25th ACM SIGKDD International Confer-
+ence on Knowledge Discovery and Data Min-
+ing, 2019.
+[3] Tianqi Chen and Carlos Guestrin. Xgboost: A
+scalable tree boosting system. InProceedings
+of the 22nd acm sigkdd international confer-
+ence on knowledge discovery and data mining,
+pages 785–794, 2016.
+[4] Mohamed Elrefaie, Angela Dai, and Faez
+Ahmed. Drivaernet: A parametric car dataset
+for data-driven aerodynamic design and graph-
+based drag prediction. InInternational Design
+Engineering Technical Conferences and Com-
+puters and Information in Engineering Con-
+ference, volume 88360, page V03AT03A019.
+American Society of Mechanical Engineers,
+2024.
+[5] Nick Erickson, Lennart Purucker, Andrej
+Tschalzev, David Holzm¨ uller, Prateek Mu-
+talik Desai, David Salinas, and Frank Hut-
+ter. Tabarena: A living benchmark for ma-
+chine learning on tabular data.arXiv preprint
+arXiv:2506.16791, 2025.
+[6] Salah A Faroughi, Nikhil M Pawar, Celio Fer-
+nandes, Maziar Raissi, Subasish Das, Nima K
+Kalantari, and Seyed Kourosh Mahjour.
+Physics-guided, physics-informed, and
+physics-encoded neural networks and op-
+erators in scientific computing: Fluid and
+9
+
+solid mechanics.Journal of Computing and
+Information Science in Engineering, 24(4):
+040802, 2024.
+[7] Florian Felten, Gabriel Apaza, Gerhard
+Br¨ aunlich, Cashen Diniz, XULIANG DONG,
+Arthur Drake, Milad Habibi, Nathaniel James
+Hoffman, Matthew Keeler, Soheyl Massoudi,
+Francis VanGessel, and Mark Fuge. En-
+gibench: A framework for data-driven engi-
+neering design research. InThe Thirty-ninth
+Annual Conference on Neural Information
+Processing Systems Datasets and Benchmarks
+Track, 2025. URLhttps://openreview.net/
+forum?id=YowD33Q89V.
+[8] Sebastian Felix Fischer, Matthias Feurer, and
+Bernd Bischl. Openml-ctr23–a curated tabu-
+lar regression benchmarking suite. InAutoML
+Conference 2023 (Workshop), 2023.
+[9] Anurag Garg, Muhammad Ali, Noah Holl-
+mann, Lennart Purucker, Samuel M¨ uller, and
+Frank Hutter. Real-tabpfn: Improving tab-
+ular foundation models via continued pre-
+training with real-world data.arXiv preprint
+arXiv:2507.03971, 2025.
+[10] Pieter Gijsbers, Marcos LP Bueno, Stefan
+Coors, Erin LeDell, S´ ebastien Poirier, Janek
+Thomas, Bernd Bischl, and Joaquin Van-
+schoren. Amlb: an automl benchmark.Jour-
+nal of Machine Learning Research, 25(101):1–
+65, 2024.
+[11] L´ eo Grinsztajn, Edouard Oyallon, and Ga¨ el
+Varoquaux. Why do tree-based models still
+outperform deep learning on tabular data?
+arxiv.arXiv preprint arXiv:2207.08815, 2022.
+[12] L´ eo Grinsztajn, Klemens Fl¨ oge, Oscar Key, Fe-
+lix Birkel, Philipp Jund, Brendan Roof, Ben-
+jamin J¨ ager, Dominik Safaric, Simone Alessi,
+Adrian Hayler, et al. Tabpfn-2.5: Advancing
+the state of the art in tabular foundation mod-
+els.arXiv preprint arXiv:2511.08667, 2025.
+[13] Ehsan Haghighat, Maziar Raissi, Adrian
+Moure, Hector Gomez, and Ruben Juanes. A
+physics-informed deep learning framework for
+inversion and surrogate modeling in solid me-
+chanics.Computer Methods in Applied Me-
+chanics and Engineering, 379:113741, 2021.
+[14] Noah Hollmann, Samuel M¨ uller, Katharina
+Eggensperger, and Frank Hutter. Tabpfn: A
+transformer that solves small tabular classifi-
+cation problems in a second. InInternational
+Conference on Learning Representations 2023,
+2023.
+[15] Noah Hollmann, Samuel M¨ uller, Lennart Pu-
+rucker, Arjun Krishnakumar, Max K¨ orfer,
+Shi Bin Hoo, Robin Tibor Schirrmeister, and
+Frank Hutter. Accurate predictions on small
+data with a tabular foundation model.Nature,
+637(8045):319–326, 2025.
+[16] Abhiram Karri, Gary Stump, Christopher Mc-
+Comb, and Binyang Song. Huver: The hyform
+uncrewed vehicle engineering repository.Jour-
+nal of Mechanical Design, 147(4):044505, 2025.
+[17] Doksoo Lee, Yu-Chin Chan, Wei Chen, Liwei
+Wang, Anton van Beek, and Wei Chen. t-
+metaset: Task-aware acquisition of metama-
+terial datasets through diversity-based active
+learning.Journal of Mechanical Design, 145
+(3):031704, 2023.
+[18] Junghun Lee, Chukwuemeka Nkama, Hadiza
+Yusuf, Joseph Maina, Jean Ikuzwe, Jean
+Byiringiro, Moise Busogi, and Conrad Tucker.
+Accessible digital reconstruction and mechan-
+ical prediction of 3d-printed prosthetics.Jour-
+nal of Mechanical Design, 147(6):062001, 2025.
+[19] Emma Lejeune. Mechanical mnist: A bench-
+mark dataset for mechanical metamodels.Ex-
+treme Mechanics Letters, 36:100659, 2020.
+[20] Qiaohao Liang, Aldair E Gongora, Zekun Ren,
+Armi Tiihonen, Zhe Liu, Shijing Sun, James R
+Deneault, Daniil Bash, Flore Mekki-Berrada,
+Saif A Khan, et al. Benchmarking the per-
+formance of bayesian optimization across mul-
+tiple experimental materials science domains.
+npj Computational Materials, 7(1):188, 2021.
+[21] Haoxuan Dylan Mu, Mingjian Tang, Wei Gao,
+Wei Chen, et al. Guide: Generative and
+uncertainty-informed inverse design for on-
+demand nonlinear functional responses.arXiv
+preprint arXiv:2509.05641, 2025.
+[22] Samuel M¨ uller, Noah Hollmann, Sebas-
+tian Pineda Arango, Josif Grabocka, and
+Frank Hutter. Transformers can do bayesian
+inference. InInternational Conference on
+Learning Representations, 2022.
+[23] Advaith Narayanan. A data-driven recommen-
+dation framework for optimal walker designs.
+arXiv preprint arXiv:2310.18772, 2023.
+[24] Ismail Nejjar, Faez Ahmed, and Olga Fink.
+Im-context: In-context learning for imbal-
+anced regression tasks.arXiv preprint
+arXiv:2405.18202, 2024.
+[25] Cyril Picard and Faez Ahmed. Untrained
+and unmatched: Fast and accurate zero-
+training classification for tabular engineering
+10
+
+data.Journal of Mechanical Design, 146(9):
+091705, 2024.
+[26] Erik Prume, Stefanie Reese, and Michael Or-
+tiz. Model-free data-driven inference in com-
+putational mechanics.Computer Methods
+in Applied Mechanics and Engineering, 403:
+115704, 2023.
+[27] Jingang Qu, David Holzm¨ uller, Ga¨ el Varo-
+quaux, and Marine Le Morvan. Tabicl:
+A tabular foundation model for in-context
+learning on large data.arXiv preprint
+arXiv:2502.05564, 2025.
+[28] Molla Hafizur Rahman, Corey Schimpf,
+Charles Xie, and Zhenghui Sha. A computer-
+aided design based research platform for de-
+sign thinking studies.Journal of Mechanical
+Design, 141(12):121102, 2019.
+[29] Sandipp Krishnan Ravi, Yigitcan Comlek, Ar-
+jun Pathak, Vipul Gupta, Rajnikant Um-
+retiya, Andrew Hoffman, Ghanshyam Pilania,
+Piyush Pandita, Sayan Ghosh, Nathaniel Mck-
+eever, et al. Interpretable multi-source data fu-
+sion through latent variable gaussian process.
+Engineering Applications of Artificial Intelli-
+gence, 145:110033, 2025.
+[30] Lyle Regenwetter, Colin Weaver, and Faez
+Ahmed. Framed: An automl approach for
+structural performance prediction of bicycle
+frames.Computer-Aided Design, 156:103446,
+2023.
+[31] Lyle Regenwetter, Yazan Abu Obaideh, Fa-
+bien Chiotti, Ioanna Lykourentzou, and Faez
+Ahmed. Bikebench: A bicycle design
+benchmark for generative models with ob-
+jectives and constraints.arXiv preprint
+arXiv:2508.00830, 2025.
+[32] Pedro Parraguez Ruiz and Anja Maier. Data-
+driven engineering design research: opportu-
+nities using open data. In21st International
+Conference on Engineering Design (ICED17),
+pages 41–50, 2017.
+[33] Pouyan Sajadi, Mostafa Rahmani Dehaghani,
+Yifan Tang, and G Gary Wang. Two-
+dimensional temperature field prediction with
+in-situ data in metal additive manufacturing
+using physics-informed neural networks.Engi-
+neering Applications of Artificial Intelligence,
+150:110636, 2025.
+[34] Ravid Shwartz-Ziv and Amitai Armon. Tab-
+ular data: Deep learning is not all you need.
+Information fusion, 81:84–90, 2022.
+[35] Boris Van Breugel and Mihaela Van
+Der Schaar. Position: Why tabular founda-
+tion models should be a research priority. In
+Proceedings of the 41st International Con-
+ference on Machine Learning, volume 235 of
+Proceedings of Machine Learning Research,
+pages 48976–48993. PMLR, 21–27 Jul 2024.
+[36] Joaquin Vanschoren, Jan N Van Rijn, Bernd
+Bischl, and Luis Torgo. Openml: networked
+science in machine learning.ACM SIGKDD
+Explorations Newsletter, 15(2):49–60, 2014.
+[37] Han-Jia Ye, Si-Yang Liu, and Wei-Lun Chao.
+A closer look at tabpfn v2: Understanding its
+strengths and extending its capabilities.arXiv
+preprint arXiv:2502.17361, 2025.
+[38] Amin Yousefpour, Shirin Hosseinmardi, Car-
+los Mora, and Ramin Bostanabad. Simultane-
+ous and meshfree topology optimization with
+physics-informed gaussian processes.Com-
+puter Methods in Applied Mechanics and En-
+gineering, 437:117698, 2025.
+[39] Rosen Yu, Cyril Picard, and Faez Ahmed. Fast
+and accurate bayesian optimization with pre-
+trained transformers for constrained engineer-
+ing problems: R. yu et al..Structural and Mul-
+tidisciplinary Optimization, 68(3):66, 2025.
+A Dataset Details
+We include a breakdown of datasets included in
+TREDBench in Table 2.
+B Implementation Details
+B.1 Hyperparameter Optimization
+for Dataset Classifiers Trained
+on TabPFN 2.5 Embedding
+We tuned a multiclass XGBoost classifier using Op-
+tuna [2] with a five-fold stratified cross-validation
+objective maximizing mean balanced accuracy. The
+search space is reported in Table 3. Optimiza-
+tion was performed for 50 trials, initialized from
+a reasonable hand-tuned configuration. The best-
+performing configuration selected by Optuna is
+also shown in Table 3. All other training set-
+tings followed standard XGBoost defaults, with the
+histogram-based tree method and a multiclass soft-
+probability objective.
+11
+
+Dataset Name Src. Type Dimensions
+a1 [24] NE 198 x 11
+a2 [24] NE 198 x 11
+a3 [24] NE 198 x 11
+a4 [24] NE 198 x 11
+a5 [24] NE 198 x 11
+a6 [24] NE 198 x 11
+a7 [24] NE 198 x 11
+AgNP [20] E 3,295 x 5
+Ailerons [11] E 13,750 x 33
+airfoils [25] E 1,108 x 100
+analcatdata supreme [11] NE 4,052 x 7
+auction verification [8] NE 2,043 x 7
+AutoAM Score [20] E 100 x 4
+Bike Sharing Demand [11] NE 17,379 x 6
+black friday [10] NE 166,821 x 9
+brazilian houses [8] NE 10,692 x 9
+CantileverBeam [39] E 1,024 x 21
+Car [39] E 1,024 x 21
+cars [8] NE 804 x 17
+class [24] NE 167 x 4
+CompressionSpring [39] E 1,024 x 7
+concrete compress... [8] E 1,030 x 8
+cps88wages [8] NE 28,155 x 6
+cpu activity [8] NE 8,192 x 21
+Crossed barrel to... [20] E 1,800 x 4
+diamonds [8] NE 53,940 x 9
+DrivAerNet [4] E 3,747 x 23
+elevators [11] E 16,599 x 16
+energy efficiency [8] E 768 x 8
+fifa [8] NE 19,178 x 28
+forest fires [8] NE 517 x 12
+FRAMED [25] E 4,800 x 37
+grid stability [8] E 10,000 x 12
+health insurance [8] NE 22,272 x 11
+HeatExchanger [39] E 1,024 x 14
+house 16H [11] NE 22,784 x 16
+house sales [11] NE 21,613 x 15
+houses [11] NE 20,640 x 8
+HousValue [24] NE 506 x 13
+Human Preference [31] E 200 x 3
+kin8nm [8] E 8,192 x 8
+medical charges [11] NE 163,065 x 3
+miami housing [8] NE 13,932 x 15
+Dataset Name Src. Type Dimensions
+Moneyball [8] NE 1,232 x 14
+naval propulsion ... [8] E 11,934 x 14
+nyc-taxi-green-de... [11] NE 581,835 x 9
+OnlineNewsPopularity [10] NE 39,644 x 59
+P3HT conductivity [20] E 233 x 5
+particulate-matte... [11] NE 394,299 x 6
+Perovskite Instab... [20] E 139 x 3
+physiochemical pr... [8] E 45,730 x 9
+pol [11] NE 15,000 x 26
+PressureVessel [39] E 1,024 x 8
+pumadyn32nh [8] E 8,192 x 32
+QSAR fish toxicity [8] NE 908 x 6
+quake [10] NE 2,178 x 3
+red wine [8] NE 1,599 x 11
+ReinforcedConcret... [39] E 1,024 x 5
+rej [24] NE 4,499 x 8
+Rings [24] NE 4,177 x 8
+sarcos [8] E 48,933 x 21
+ScaledSoundPressure [24] NE 1,503 x 5
+seattlecrime6 [11] NE 52,031 x 4
+sensory [10] NE 576 x 11
+SGEMM GPU kernel ... [11] NE 241,600 x 9
+ShipD C Set 1 [23] E 10,000 x 44
+socmob [8] NE 1,156 x 5
+Solar Heat Exchanger [25] E 500 x 2
+solar flare [8] NE 1,066 x 10
+space ga [8] NE 3,107 x 6
+SpeedReducer [39] E 1,024 x 16
+student performan... [8] NE 649 x 30
+sulfur [11] E 10,081 x 6
+superconductivity [8] E 21,263 x 81
+topo 2 1 [11] E 8,885 x 255
+Truss 6D [25] E 100,000 x 6
+video transcoding [8] NE 68,784 x 18
+visualizing soil [11] NE 8,641 x 4
+Walker [23] E 5,007 x 16
+wave energy [8] NE 72,000 x 48
+Welded Beam 2 [25] E 2,000 x 4
+WeldedBeam [39] E 1,024 x 9
+white wine [8] NE 4,898 x 11
+wine quality [11] NE 6,497 x 11
+yprop 4 1 [11] E 8,885 x 42
+Table 2: TREDBench dataset summary showing name, source, classification, and dimensionality.
+Table 3: Optuna search space and selected hyper-
+parameters for multiclass XGBoost trained on em-
+bedding features.n estimatorswas considered in
+intervals of 100
+Parameter Domain Scale Best
+n estimators[300,2000] Linear 1700
+learning rate[0.01,0.2] Log 0.0158
+max depth[3,10] Linear 7
+subsample[0.6,1.0] Linear 0.903
+colsamplebytree[0.6,1.0] Linear 0.622
+min child weight[1,20] Log 3.84
+reg lambda[10 −3,50] Log 3.12
+gamma[0,2] Linear 0.630
+reg alpha[10 −4,10] Log 0.00406
+12

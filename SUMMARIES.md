@@ -1,7 +1,7 @@
 # Literature on Tabular Foundation Models
 
-A chronological tour of the **70 papers** in this folder (1 from 2021, 3 from 2023, 8 from
-2024, 22 from 2025 and 36 from 2026, dated by the filed version), mirroring the owner's
+A chronological tour of the **71 papers** in this folder (1 from 2021, 3 from 2023, 8 from
+2024, 22 from 2025 and 37 from 2026, dated by the filed version), following the owner's
 `Tabular Foundation Models` Zotero collection. The arc: PFNs (in-context Bayesian inference for
 arbitrary priors) → TabPFN (PFNs with a tabular prior) → TabPFN v2 (the first production-grade
 release) → a wave of variants and competitors (continued pretraining, drift, fairness, causal
@@ -82,6 +82,7 @@ this folder and write them there.
 | 2026-02 | Grinsztajn et al. | **TabPFN-2.5** — Advancing the State of the Art in Tabular Foundation Models | Deeper v2 architecture (18/24 layers) on an undisclosed synthetic prior for up to 50K×2K; default model beats AutoGluon 1.4 extreme on TabArena-Lite classification and the real-data Real-TabPFN-2.5 variant leads tuned ensembles; non-commercial weights. | [pdf](papers/2026/02_Grinsztajn_et_al._TabPFN_2.5_Advancing_the_State_of_the_Art_in_Tabular_Foundation_Models.pdf) |
 | 2026-02 | Ma et al. | Foundation Models for Causal Inference via Prior-Data Fitted Networks | CausalFM: PFNs trained on identifiability-constrained SCM priors (one model per back-door, front-door or IV setting) to output CATEs in-context; best average PEHE on synthetic back-door, binary-IV and front-door tests but well behind CausalPFN on ACIC 2016. | [pdf](papers/2026/02_Ma_et_al._Foundation_Models_for_Causal_Inference_via_Prior_Data_Fitted_Networks.pdf) |
 | 2026-03 | Kolberg et al. | **TabPFN-Wide** — Continued Pre-Training for Extreme Feature Counts | TabPFN v2 classifier continued-pretrained on a synthetic feature-widening of the TabICL prior; handles 30k+ features without reduction (BRCA AUROC 0.733 → 0.971, 92% HDLSS win rate) with no forgetting on TabArena (ρ = 0.9935). | [pdf](papers/2026/03_Kolberg_et_al._TabPFN_Wide_Continued_Pre_Training_for_Extreme_Feature_Counts.pdf) |
+| 2026-03 | Regenwetter et al. | Engineering Regression Without Real-Data Training: Domain Adaptation for Tabular Foundation Models Using Multi-Dataset Embeddings | Real engineering dataset embeddings guide synthetic-task selection for continued pretraining of TabPFN 2.5; lower test error than the base on 29/35 engineering regression datasets. | [pdf](papers/2026/03_Regenwetter_et_al._Engineering_Regression_Without_Real_Data_Training_Domain_Adaptation_for_Tabular_Foundation_Models_Using_Multi_Dataset_Embeddings.pdf) |
 | 2026-04 | Tanna et al. | **Exploring Fine-Tuning for Tabular Foundation Models** | Six TFMs × four adaptation strategies (zero-shot, episodic meta-learning, full SFT, LoRA) on TALENT, CC18 and TabZilla: zero-shot is hard to beat and best calibrated; SFT degrades most models (TabICL TabZilla accuracy 0.87 → 0.57) but not TabPFN; lightly tuned recipes, classification only. | [pdf](papers/2026/04_Tanna_et_al._Exploring_Fine_Tuning_for_Tabular_Foundation_Models.pdf) |
 | 2026-04 | Bouadi et al. | **Orion-BiX** — Bi-Axial Attention for Tabular In-Context Learning | TabICL with a biaxial row encoder (standard, grouped, hierarchical and relational attention, multi-CLS pooling) and episodic meta-training; best mean rank on Medical and Finance subsets and +2–4 points at ≤32 shots; no ablations. | [pdf](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf) |
 | 2026-04 | Hudovernik et al. | **KumoRFM-2**: Scaling Foundation Models for Relational Learning | Closed relational foundation model: task-conditioned table attention plus foreign-key and cross-sample attention over temporal database subgraphs, ≤10k context examples; 79.60 AUROC on RelBenchV1 classification (RelGNN 78.06), 0.83 SALT MRR; rel-f1 regime disputed. | [pdf](papers/2026/04_Hudovernik_et_al._KumoRFM_2_Scaling_Foundation_Models_for_Relational_Learning.pdf) |
@@ -2517,6 +2518,56 @@ RealMLP; no calibration analysis is reported; and the prior is tailored to omics
 correlation structure, so transfer to other wide-data domains is untested. Not to be confused
 with the `_large-features-*` checkpoints released with TabPFN-2.5 (Hugging Face model-card
 material, see [Grinsztajn 2026, *TabPFN-2.5*](#tabpfn-25)).
+
+---
+
+<a id="engineering-regression-without"></a>
+
+## 2026-03 — Regenwetter et al. — Engineering Regression Without Real-Data Training: Domain Adaptation for Tabular Foundation Models Using Multi-Dataset Embeddings
+
+**Provenance.** arXiv preprint · [2603.04692v1](https://arxiv.org/abs/2603.04692v1),
+filed version 5 March 2026 · MIT · DOI: 10.48550/arXiv.2603.04692 ·
+**PDF:** [open](papers/2026/03_Regenwetter_et_al._Engineering_Regression_Without_Real_Data_Training_Domain_Adaptation_for_Tabular_Foundation_Models_Using_Multi_Dataset_Embeddings.pdf).
+The paper does not identify released code or adapted weights.
+
+**Citation key:** `2026.REGENWETTER.engineeringregressionrealdatatrainingdomainadaptationtabularfoundationmodelsusingmultidatasetembeddings`
+
+**Where it fits.** A domain-targeted synthetic continued-pretraining study for
+[TabPFN-2.5](#tabpfn-25). It contrasts with [Real-TabPFN](#real-tabpfn), which updates
+weights using real tables, and complements [O'Prior](#oprior), which compares synthetic
+prior families under controlled conditions. Unlike TabPFN-Wide's classification focus,
+this study targets engineering regression.
+
+**What it contains.** TREDBench collects 83 regression datasets, 35 labelled engineering
+and 48 non-engineering. TabPFN 2.5 row representations are averaged into 192-dimensional
+dataset embeddings. An XGBoost classifier trained on embeddings from real engineering
+datasets and synthetic tasks scores candidate tasks; the 200 most engineering-like of
+9,750 candidates are selected from 10,000 generated tasks. TabPFN 2.5 is then continued
+pretrained for five epochs on the selected synthetic tasks. **Real engineering data guide
+selection**, even though real samples do not directly update the model weights (§§3–4).
+The paper describes held-out engineering datasets excluded from selection and evaluates
+across 35 engineering datasets with context-size sweeps and cross-validation (§4.2).
+
+**Key results.** An embedding-space classifier distinguishes engineering from non-engineering
+datasets with 65.8% accuracy and synthetic from engineering datasets with 96.8%; the latter
+falls to 88.9% for the selected synthetic tasks (§3.5, Fig. 4). On the paper's 70/30
+train/test comparison, the adapted model has lower test error on 29/35 datasets than base
+TabPFN 2.5 and 27/35 than AutoGluon (Table 1). The reported mean multiplicative
+data-efficiency gains are 1.75× and 4.44× respectively (§4.3); these are estimated from
+learning curves and may involve extrapolation when a target is not reached (§4.2).
+
+**Strengths.** Uses a direct base-model comparator and separates synthetic weight updates
+from the real-data signal used for task selection. Dataset-level embeddings offer a concrete
+way to investigate and target a synthetic-to-real gap in regression.
+
+**Limitations.** The authors report losses on 6/35 datasets against the base and 8/35
+against AutoGluon, sometimes substantial (§4.3); improvements are not universal. Reviewer
+reading: the preprint studies one backbone, one domain and a limited baseline set, with no
+explicit equal-budget random-synthetic continued-pretraining control in the reported
+comparisons, so the added value of the selection step versus continued training alone is
+not isolated. The paper's description of dataset-level and row-level splitting is terse;
+verify its implementation and overlap controls before treating the reported gains as a
+general estimate. No calibration or predictive-distribution comparison is reported.
 
 ---
 
