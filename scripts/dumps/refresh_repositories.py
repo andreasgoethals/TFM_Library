@@ -151,6 +151,14 @@ def _install_quiet_async_shutdown() -> None:
 _PY_DOCS = {"*.py", "*.md", "*.toml", "*.txt", "*.yaml", "*.yml", "*.cfg", "*.ipynb"}
 
 REPOSITORIES: dict[str, str | dict] = {
+    "TILE.txt": {
+        "url": "https://github.com/soda-inria/tile",
+        "source_only": True,
+        "identity": "https://arxiv.org/abs/2610.17065v2",
+        "include": _PY_DOCS | {"*.json", "*.sh", "LICENSE*", "NOTICE*"},
+        "exclude": {"models/*", "data/*", "embeddings/*", "results/*", "figures/*"},
+        "note": "official TILE interface implementation; excludes weights, datasets, embeddings and generated results",
+    },
     "CARTE.txt": {
         "url": "https://github.com/soda-inria/carte",
         "source_only": True,

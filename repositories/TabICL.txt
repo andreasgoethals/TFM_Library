@@ -136,6 +136,7 @@ Directory structure:
     │   ├── __init__.py
     │   ├── _cgroup_docker_probe.py
     │   ├── conftest.py
+    │   ├── generate_data_and_predictions.py
     │   ├── test_cgroup_memory_docker.py
     │   ├── test_datetime_encoder.py
     │   ├── test_finetune_early_stopping.py
@@ -145,10 +146,27 @@ Directory structure:
     │   ├── test_inference_memory.py
     │   ├── test_numpy_inputs.py
     │   ├── test_predict_allnan_categorical.py
+    │   ├── test_prediction_consistency.py
     │   ├── test_shap_categorical.py
     │   ├── test_sklearn.py
     │   ├── test_string_input.py
-    │   └── torch_devices_helpers.py
+    │   ├── torch_devices_helpers.py
+    │   └── data/
+    │       └── prediction_consistency/
+    │           ├── binary_X_test.parquet
+    │           ├── binary_X_train.parquet
+    │           ├── binary_y_train.parquet
+    │           ├── multiclass_X_test.parquet
+    │           ├── multiclass_X_train.parquet
+    │           ├── multiclass_y_train.parquet
+    │           ├── regression_X_test.parquet
+    │           ├── regression_X_train.parquet
+    │           ├── regression_y_train.parquet
+    │           └── tabicl-v2.0.0/
+    │               ├── binary_expected_proba.npy
+    │               ├── multiclass_expected_proba.npy
+    │               ├── regression_expected_mean.npy
+    │               └── regression_expected_quantiles.npy
     ├── tutorials/
     │   ├── README.rst
     │   ├── classification_2D_proba.py
@@ -1087,6 +1105,7 @@ finetune = [
 ]
 test = [
     "pandas",
+    "pyarrow",  # parquet fixtures in prediction-consistency tests
     "pytest",
 ]
 all = [
@@ -32061,6 +32080,214 @@ def model_path(kind: str) -> dict:
 
 
 ================================================
+FILE: tests/generate_data_and_predictions.py
+================================================
+"""Regenerate parquet tables and CPU golden predictions for prediction-consistency tests.
+
+Run from the repo root after changing generation knobs or when fixtures are missing.
+Tables are written under ``tests/data/prediction_consistency/``. Prediction
+``.npy`` files go in a versioned subdir ``tabicl-vX.Y.Z`` matching the installed
+release (e.g. ``tabicl-v2.0.0``).
+
+Pin a specific PyPI release matching . Reuse an existing env's torch/sklearn
+via ``--system-site-packages`` so you only need to install ``tabicl`` (replace 
+``2.0.0`` for any other release)::
+
+    python -m venv /tmp/tabicl-golden --system-site-packages
+    /tmp/tabicl-golden/bin/pip install --force-reinstall --no-deps 'tabicl==2.0.0'
+    /tmp/tabicl-golden/bin/python tests/generate_data_and_predictions.py
+
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+from contextlib import contextmanager
+from importlib.metadata import version as pkg_version
+
+import numpy as np
+import pandas as pd
+from sklearn.datasets import make_classification, make_regression
+
+# Allow ``from conftest import model_path`` when run as a script from the repo root.
+sys.path.insert(0, os.path.dirname(__file__))
+from conftest import model_path
+
+from tabicl import TabICLClassifier, TabICLRegressor
+
+ESTIMATOR_KWARGS = dict(
+    n_estimators=2,
+    use_amp=False,
+    use_fa3=False,
+    random_state=42,
+    verbose=False,
+)
+
+N_TRAIN = 1000
+N_TEST = 50
+N_SAMPLES = N_TRAIN + N_TEST
+N_FEATURES = 10
+# Continuous columns cycle through these scales (tiny → large magnitudes).
+NUMERIC_SCALES = (0.01, 1.0, 25.0, 1e3, 1e5)
+# Categoricals cycle through these cardinalities after binning.
+CAT_CARDINALITIES = (2, 3, 5, 8)
+N_CATEGORICAL = len(CAT_CARDINALITIES)
+# Noise std relative to each column's std before binning into categoricals.
+CAT_NOISE_SCALE = 0.15
+N_NUMERIC = N_FEATURES - N_CATEGORICAL
+QUANTILE_ALPHAS = [0.1, 0.5, 0.9]
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "prediction_consistency")
+# Version whose checked-in prediction goldens the tests compare against.
+GOLDEN_TABICL_VERSION = "2.0.0"
+PRED_DIR = os.path.join(DATA_DIR, f"tabicl-v{GOLDEN_TABICL_VERSION}")
+
+
+def task_paths(kind: str) -> dict[str, str]:
+    return {
+        "X_train": os.path.join(DATA_DIR, f"{kind}_X_train.parquet"),
+        "X_test": os.path.join(DATA_DIR, f"{kind}_X_test.parquet"),
+        "y_train": os.path.join(DATA_DIR, f"{kind}_y_train.parquet"),
+    }
+
+
+def prediction_paths(kind: str) -> dict[str, str]:
+    if kind in ("binary", "multiclass"):
+        return {"proba": os.path.join(PRED_DIR, f"{kind}_expected_proba.npy")}
+    return {
+        "mean": os.path.join(PRED_DIR, "regression_expected_mean.npy"),
+        "quantiles": os.path.join(PRED_DIR, "regression_expected_quantiles.npy"),
+    }
+
+
+def _to_mixed_dataframe(X: np.ndarray, seed: int) -> pd.DataFrame:
+    """Keep the first columns numeric; bin the rest into predictive categoricals.
+    
+    Numerical features are further scaled and offset with scales on
+    different magnitudes to make the problem harder and ensure that an
+    unintended change in the internal numeric feature preprocessing has
+    a good chance to make the non-regression test fail.
+    """
+    rng = np.random.RandomState(seed)
+    assert X.shape[1] == N_FEATURES
+    data: dict[str, pd.Series | np.ndarray] = {}
+
+    for i in range(N_NUMERIC):
+        scale = NUMERIC_SCALES[i % len(NUMERIC_SCALES)]
+        col = X[:, i]
+        data[f"num_{i}"] = ((col - col.mean()) * scale + scale * 10).astype(np.float64)
+
+    for i in range(N_CATEGORICAL):
+        n_levels = CAT_CARDINALITIES[i % len(CAT_CARDINALITIES)]
+        col = X[:, N_NUMERIC + i]
+        col = col + CAT_NOISE_SCALE * col.std() * rng.randn(len(col))
+        # Quantile bins keep levels roughly balanced while preserving rank signal.
+        codes = pd.qcut(col, q=n_levels, labels=False, duplicates="drop")
+        labels = np.array([f"c{i}_{int(c)}" for c in codes], dtype=object)
+        data[f"cat_{i}"] = pd.Series(labels, dtype="category")
+
+    return pd.DataFrame(data)
+
+
+def _generate_synthetic_task(kind: str) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
+    """Build train/test tables for ``binary``, ``multiclass``, or ``regression``."""
+    if kind == "binary":
+        X, y = make_classification(
+            n_samples=N_SAMPLES,
+            n_features=N_FEATURES,
+            n_informative=N_FEATURES,
+            n_redundant=0,
+            n_repeated=0,
+            n_classes=2,
+            n_clusters_per_class=1,
+            random_state=0,
+        )
+        seed = 1000
+    elif kind == "multiclass":
+        X, y = make_classification(
+            n_samples=N_SAMPLES,
+            n_features=N_FEATURES,
+            n_informative=N_FEATURES,
+            n_redundant=0,
+            n_repeated=0,
+            n_classes=11,  # >10 to also include a case for the mixed-radix encoding
+            n_clusters_per_class=1,
+            random_state=1,
+        )
+        seed = 2000
+    elif kind == "regression":
+        X, y = make_regression(
+            n_samples=N_SAMPLES,
+            n_features=N_FEATURES,
+            n_informative=N_FEATURES,
+            noise=0.1,
+            random_state=2,
+        )
+        seed = 3000
+    else:
+        raise ValueError(f"Unknown task kind: {kind!r}")
+
+    df = _to_mixed_dataframe(X.astype(np.float64), seed=seed)
+    assert sum(c.startswith("cat_") for c in df.columns) == N_CATEGORICAL
+    assert sum(c.startswith("num_") for c in df.columns) == N_NUMERIC
+
+    X_train, X_test = df.iloc[:N_TRAIN].copy(), df.iloc[N_TRAIN:].copy()
+    y_train, y_test = y[:N_TRAIN], y[N_TRAIN:]
+    if kind != "regression":
+        assert set(np.unique(y_test)).issubset(set(np.unique(y_train)))
+        y_train = y_train.astype(np.int64)
+    else:
+        y_train = y_train.astype(np.float64)
+    return X_train, X_test, y_train
+
+
+def _save_task(kind: str, X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: np.ndarray) -> None:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    paths = task_paths(kind)
+    X_train.to_parquet(paths["X_train"], index=False)
+    X_test.to_parquet(paths["X_test"], index=False)
+    pd.DataFrame({"y": y_train}).to_parquet(paths["y_train"], index=False)
+
+
+def generate_data_and_predictions() -> None:
+    """Generate parquet tables and CPU golden predictions for all tasks."""
+
+    if GOLDEN_TABICL_VERSION != pkg_version("tabicl"): 
+        raise ValueError(
+            "Golden tabicl version mismatch, make sure you installed version "
+            f"{GOLDEN_TABICL_VERSION} or update GOLDEN_TABICL_VERSION in "
+            "tests/generate_data_and_predictions.py accordingly."
+        )
+    os.makedirs(PRED_DIR, exist_ok=True)
+    print("Generating data and predictions...")
+
+    for kind in ("binary", "multiclass"):
+        X_train, X_test, y_train = _generate_synthetic_task(kind)
+        _save_task(kind, X_train, X_test, y_train)
+        clf = TabICLClassifier(device="cpu", **ESTIMATOR_KWARGS, **model_path("classifier"))
+        clf.fit(X_train, y_train)
+        np.save(prediction_paths(kind)["proba"], clf.predict_proba(X_test))
+
+    X_train, X_test, y_train = _generate_synthetic_task("regression")
+    _save_task("regression", X_train, X_test, y_train)
+    reg = TabICLRegressor(device="cpu", **ESTIMATOR_KWARGS, **model_path("regressor"))
+    reg.fit(X_train, y_train)
+    preds = reg.predict(X_test, output_type=["mean", "quantiles"], alphas=QUANTILE_ALPHAS)
+    paths = prediction_paths("regression")
+    np.save(paths["mean"], preds["mean"])
+    np.save(paths["quantiles"], preds["quantiles"])
+
+    print(f"Wrote data to {DATA_DIR}")
+    print(f"Wrote predictions to {PRED_DIR}")
+
+
+if __name__ == "__main__":
+    generate_data_and_predictions()
+
+
+
+================================================
 FILE: tests/test_cgroup_memory_docker.py
 ================================================
 """Live Docker checks for cgroup memory detection.
@@ -33395,10 +33622,7 @@ from tabicl._torch_devices import (
     resolve_default_device,
     resolve_torch_device,
 )
-from tests.torch_devices_helpers import skip_if_device_unusable
-
-
-_DEVICES = ["cpu", "cuda", "xpu", "mps"]
+from tests.torch_devices_helpers import skip_if_device_unusable, DEVICES
 
 
 def _patch_backend_availability(
@@ -33492,7 +33716,7 @@ def test_tabicl_supports_nans(estimator):
         TabICLRegressor(random_state=0),
     ],
 )
-@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("device", DEVICES)
 def test_tabicl_supports_bool_object_and_string_inputs(estimator, X, device):
     skip_if_device_unusable(device)
 
@@ -33704,7 +33928,7 @@ def test_resolve_fa3_explicit_true_preserved_off_cuda():
     assert use_fa3 is True
 
 
-@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("device", DEVICES)
 @pytest.mark.parametrize("kv_cache", [False, True])
 @pytest.mark.parametrize("use_amp", [False, True])
 def test_tabicl_regressor_device_cpu_r2_parity(device, kv_cache, use_amp):
@@ -33917,6 +34141,112 @@ class TestPredictAllNanCategorical:
 
 
 ================================================
+FILE: tests/test_prediction_consistency.py
+================================================
+"""Golden-value checks that predict_proba / mean / quantile outputs stay stable.
+
+Fixtures under ``tests/data/prediction_consistency/`` store the train/test
+tables (parquet) and expected predictions (``.npy`` under
+``tabicl-vX.Y.Z/``). Tests always load existing fixtures (and raise if any are
+missing). To rebuild them after intentional changes, see the docstring of
+``tests/generate_data_and_predictions.py``.
+"""
+
+from __future__ import annotations
+
+import os
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from conftest import model_path
+from tabicl import TabICLClassifier, TabICLRegressor
+from tests.generate_data_and_predictions import (
+    ESTIMATOR_KWARGS,
+    N_TEST,
+    QUANTILE_ALPHAS,
+    prediction_paths,
+    task_paths,
+)
+from tests.torch_devices_helpers import skip_if_device_unusable, DEVICES
+
+# Cross-device fp32 drift. Those values are aligned with the device↔CPU
+# parity tests in test_numpy_inputs.py for the float32 case (`use_amp=False`).
+RTOL = 1e-4
+ATOL = 1e-4
+
+
+def _load_task(kind: str) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
+    paths = task_paths(kind)
+    missing = [p for p in paths.values() if not os.path.exists(p)]
+    if missing:
+        raise FileNotFoundError(
+            f"Missing prediction-consistency data: {missing}. "
+            "See tests/generate_data_and_predictions.py on how to generate them."
+        )
+    X_train = pd.read_parquet(paths["X_train"])
+    X_test = pd.read_parquet(paths["X_test"])
+    y_train = pd.read_parquet(paths["y_train"])["y"].to_numpy()
+    return X_train, X_test, y_train
+
+
+@pytest.mark.parametrize("device", DEVICES)
+@pytest.mark.parametrize("kind", ["binary", "multiclass"])
+def test_predict_proba_consistency(kind, device):
+    """Classification probabilities must match the stored golden snapshot."""
+    skip_if_device_unusable(device)
+    X_train, X_test, y_train = _load_task(kind)
+
+    clf = TabICLClassifier(device=device, **ESTIMATOR_KWARGS, **model_path("classifier"))
+    clf.fit(X_train, y_train)
+    proba = clf.predict_proba(X_test)
+
+    expected_path = prediction_paths(kind)["proba"]
+    if not os.path.exists(expected_path):
+        raise FileNotFoundError(
+            f"Missing golden predictions: {expected_path}. "
+            "See tests/generate_data_and_predictions.py on how to generate them."
+        )
+    expected = np.load(expected_path)
+    assert proba.shape == expected.shape
+    np.testing.assert_allclose(proba, expected, rtol=RTOL, atol=ATOL)
+    np.testing.assert_allclose(proba.sum(axis=1), 1.0, rtol=RTOL, atol=ATOL)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_predict_regression_consistency(device):
+    """Regression mean and quantile predictions must match the stored golden snapshots."""
+    skip_if_device_unusable(device)
+    X_train, X_test, y_train = _load_task("regression")
+
+    reg = TabICLRegressor(device=device, **ESTIMATOR_KWARGS, **model_path("regressor"))
+    reg.fit(X_train, y_train)
+    preds = reg.predict(X_test, output_type=["mean", "quantiles"], alphas=QUANTILE_ALPHAS)
+    mean_pred = preds["mean"]
+    quantiles = preds["quantiles"]
+
+    paths = prediction_paths("regression")    
+    missing = [p for p in paths.values() if not os.path.exists(p)]
+    if missing:
+        raise FileNotFoundError(
+            f"Missing golden predictions: {missing}. "
+            "See tests/generate_data_and_predictions.py on how to generate them."
+        )
+    expected_mean = np.load(paths["mean"])
+    expected_quantiles = np.load(paths["quantiles"])
+
+    assert mean_pred.shape == (N_TEST,)
+    assert mean_pred.shape == expected_mean.shape
+    np.testing.assert_allclose(mean_pred, expected_mean, rtol=RTOL, atol=ATOL)
+
+    assert quantiles.shape == (N_TEST, len(QUANTILE_ALPHAS))
+    assert quantiles.shape == expected_quantiles.shape
+    np.testing.assert_allclose(quantiles, expected_quantiles, rtol=RTOL, atol=ATOL)
+
+
+
+================================================
 FILE: tests/test_shap_categorical.py
 ================================================
 """Tests for SHAP categorical error handling."""
@@ -33968,17 +34298,17 @@ from sklearn.datasets import make_classification, make_regression
 from sklearn.utils.estimator_checks import parametrize_with_checks
 
 from tabicl import TabICLClassifier, TabICLRegressor
-from tests.torch_devices_helpers import skip_if_device_unusable
+from tests.torch_devices_helpers import skip_if_device_unusable, DEVICES
 
 
 # n_estimators=2 ensures the full preprocessing and ensembling pipeline is tested:
 # n_estimators=1 skips shuffling and uses only one norm method, while n_estimators=2
 # exercises feature/class shuffling, multiple normalization methods, and ensemble averaging.
 #
-_DEVICES = ["cpu", "cuda", "xpu", "mps"]
+
 _SKLEARN_ESTIMATORS = [
     est
-    for device in _DEVICES
+    for device in DEVICES
     for est in (
         TabICLClassifier(n_estimators=2, device=device),
         TabICLRegressor(n_estimators=2, device=device),
@@ -33992,7 +34322,7 @@ def test_sklearn_compatible_estimator(estimator, check):
     check(estimator)
 
 
-@pytest.mark.parametrize("device", _DEVICES)
+@pytest.mark.parametrize("device", DEVICES)
 def test_serialization(device):
     skip_if_device_unusable(device)
     clf = TabICLClassifier(n_estimators=2, device=device)
@@ -34023,7 +34353,7 @@ def test_all_nan_column():
 
 
 class TestClassifierKVCache:
-    @pytest.mark.parametrize("device", _DEVICES)
+    @pytest.mark.parametrize("device", DEVICES)
     @pytest.mark.parametrize("kv_cache", ["kv", "repr"])
     def test_kv_cache(self, device, kv_cache):
         """Predictions with kv cache should match predictions without cache."""
@@ -34043,7 +34373,7 @@ class TestClassifierKVCache:
 
 
 class TestRegressorKVCache:
-    @pytest.mark.parametrize("device", _DEVICES)
+    @pytest.mark.parametrize("device", DEVICES)
     @pytest.mark.parametrize("kv_cache", ["kv", "repr"])
     def test_kv_cache(self, device, kv_cache):
         """Predictions with kv cache should match predictions without cache."""
@@ -34156,6 +34486,7 @@ from tabicl._torch_devices import (
     mps_possibly_faulty,
 )
 
+DEVICES = ["cpu", "cuda", "xpu", "mps"]
 
 def device_available(device: str | torch.device | None) -> bool:
     """Return whether a torch device backend is available on this host.
@@ -34192,6 +34523,84 @@ def skip_if_device_unusable(device: str | None) -> None:
             "(https://github.com/pytorch/pytorch/issues/192934)"
         )
 
+
+
+================================================
+FILE: tests/data/prediction_consistency/binary_X_test.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/binary_X_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/binary_y_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/multiclass_X_test.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/multiclass_X_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/multiclass_y_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/regression_X_test.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/regression_X_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/regression_y_train.parquet
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/tabicl-v2.0.0/binary_expected_proba.npy
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/tabicl-v2.0.0/multiclass_expected_proba.npy
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/tabicl-v2.0.0/regression_expected_mean.npy
+================================================
+[Binary file]
+
+
+================================================
+FILE: tests/data/prediction_consistency/tabicl-v2.0.0/regression_expected_quantiles.npy
+================================================
+[Binary file]
 
 
 ================================================

@@ -11,7 +11,7 @@ tables but require strings to be encoded numerically, while large language model
 (LLMs) hold semantic knowledge but are not designed for tabular predictions.
 Most existing bridges use LLMs as plug-in encoders for cell strings, yet how to
 extract representations effectively for tabular learning remains underexplored. We
-show that theinterfacebetween LLMs and tables matter as much as the LLM itself.
+show that theinterfacebetween LLMs and tables matters as much as the LLM itself.
 Applied cell-wise, larger LLMs do not give better features. With our interface, the
 same LLMs improve steadily with size. TILE (Table-Interfaced LLM Embeddings)
 combines four ingredients:row serializationto provide cross-column context,
@@ -19,8 +19,8 @@ intermediate-layer extractionto avoid layers specialized for next-token predicti
 columnar poolingto remove mean pooling’s length bias, andby-pass featuresto
 route numbers and categories past the LLM. Paired with TFMs, TILE sets a new
 state of the art for tables with strings. Across 100 datasets, it beats the strongest
-baseline on 89% of splits, with gains across 7 LLMs and 10 tabular learners, and
-ranks first on the 108-dataset STRABLE benchmark.
+baseline on 90% of splits, with gains across 7 LLMs and 10 tabular learners, and
+ranks first on STRABLE’s 108 datasets. Code: github.com/soda-inria/tile.
 1 INTRODUCTION:STRINGS,A NEW FRONTIER FOR TABULAR LEARNING
 From businesses to hospitals, tables underpin critical decisions, making tabular learning—row-wise
 classification or regression—a cornerstone of applied machine learning (Clements et al., 2020; Pham
@@ -41,18 +41,19 @@ T abLLMT abSTARCatBoost
 800
 1000
 1200
-1400Elo rating
+1400
+1600Elo rating
 best baseline: LLM encoder + EXAONE-Tabular
-+333 Elo (89% win rate)
-TILE CASE LLM encoder TF-IDF End-to-end
++342 Elo (90% win rate)
+TILE CASE-like LLM encoder TF-IDF End-to-end
 Partially evaluated (classification only)
 Figure 1:TILE outperforms 30 baselines, with every table foundation model.Elo ratings
 (Appendix B) over 100 regression and classification tasks, at 1,024 train size. TILE uses a Llama-3.1-
 8B backbone.LLM encoderapplies the same LLM to each cell in isolation, then a PCA. TabLLM, an
-LLM fine-tuned to generate tabular predictions, is rated on the 34 datasets where it ran. CASE uses
-Gemma-3-4B, as its table-tuned backbone is not public (Appendix E).
+LLM fine-tuned to generate tabular predictions, is rated on the 34 datasets where it ran.CASE-likeis
+CASE with Gemma-3-4B replacing its unreleased table-tuned backbone (Appendix E).
 1
-arXiv:2610.17065v1  [cs.LG]  12 Oct 2026
+arXiv:2610.17065v2  [cs.LG]  30 Oct 2026
 
 Preprint.
 et al., 2026; van Breugel & van der Schaar, 2024). Yet, modeling real-world tables is challenging
@@ -94,11 +95,11 @@ serialization flattens, and removes thelength biasby which global mean pooling l
 drown out short informative ones (Section 3.1). Finally,by-pass featuresroute numbers and exact
 cell identity around the LLM, correcting its numerical imprecision and therepresentation driftthat
 gives one string different embeddings across rows (Section 3.2). Together, these choices turn LLM
-scale into predicitive gains: TILE’s advantage over the same LLM applied cell-wise grows from 4.2
-points with Qwen3-0.6B to 16.7 with Qwen3-8B (Section 5.1). Across 100 datasets, TILE beats 30
+scale into predictive gains: TILE’s advantage over the same LLM applied cell-wise grows from 5.3
+points with Qwen3-0.6B to 17.8 with Qwen3-8B (Section 5.1). Across 100 datasets, TILE beats 30
 baselines, including prior LLM-based methods and the newest TFMs (Figure 1), and ranks first on
 the external STRABLE benchmark (Blayer et al., 2026), where TILE with Causilo (Cho et al., 2026)
-even beats an oracle that selects the best of 51 baselines on each dataset.
+or TabPFN-3.5 even beats an oracle that selects the best of 63 baselines on each dataset.
 2 PRIOR WORK:EXISTING BRIDGES TRADE CONTEXT AGAINST STRUCTURE
 From tree-based models to foundation modelsLong dominated by gradient-boosted decision
 trees (GBDTs) (Chen & Guestrin, 2016; Prokhorenkova et al., 2018) and their inductive biases
@@ -124,11 +125,11 @@ relatively small language models (Wang et al., 2020; 2022; Bojanowski et al., 20
 the world knowledge of much larger models. Yet cell-wise content is short and uncontextualized,
 and we show that simply scaling the language model does not help it (Section 5.1). Row- and
 table-serialization methods like LIFT (Dinh et al., 2022), TabLLM (Hegselmann et al., 2023), TabuLa
-(Gardner et al., 2024), and others (Wen et al., 2024; Schindler et al., 2025) employ larger models but
-pay for them with per-dataset fine-tuning or the LLM context limit, and verbalize predictions rather
-than use a tabular learner. That cost buys little (Figure 1). TaRL (Kang et al., 2026) and Latte (Shi
-et al., 2025) use LLM representations for few-shot row classification, or latent knowledge transfer
-during training. The very recent CASE (Schindler et al., 2026) serializes full tables, primes the
+(Gardner et al., 2024), and others (Wen et al., 2024; Schindler et al., 2025) employ larger models
+but pay for them with per-dataset fine-tuning or the LLM context limit, and verbalize predictions
+rather than use a tabular learner. That cost buys little (Figure 1). TaRL (Kang et al., 2026) and
+Latte (Shi et al., 2025) use LLM representations for few-shot row classification, or latent knowledge
+transfer during training. The recent CASE (Schindler et al., 2026) serializes full tables, primes the
 KV cache of a Tabular Language Model (a fine-tuned Gemma 3) on a sample of training rows, and
 appends its PCA-reduced last-layer embeddings to the original features. TILE similarly combines
 LLM representations with a tabular learner, but serializes rows, uses an off-the-shelf LLM, extracts
@@ -219,15 +220,15 @@ u=
 Pj(˜cj)
 
 j∈S ∈R k·|S| .(2)
-TILE uses k= 30 components per column by default (Grinsztajn et al., 2023), moved into the window
-[a, b]of feature counts the learner handles well—[100,300] for TabPFN-2.5, [50,300] for TabICLv2
-and [50,250] for TabPFN-3 (Section F.2):k= max
+TILE uses k= 30 components per column by default (Grinsztajn et al., 2023), rescaled so
+that the input, with its p by-pass features, fits the window [a, b]the learner handles well—
+[200,400] for TabPFN-2.5, [200,800] for TabICLv2, [150,400] for TabPFN-3 (Section F.2):
+k= max
 
-1,min(⌊b/|S|⌋,max(30,⌈a/|S|⌉))
+1,min(⌊(b−p)/|S|⌋,max(30,⌈(a−p)/|S|⌉))
 
-. A narrow
-table thus gets more components per column, and a wide one fewer. Beyond accuracy improvements,
-this adaptive window also enables better memory scalability with respect to wide tables.
+. A narrow table thus gets more compo-
+nents per column, and a wide one fewer, which also bounds memory on wide tables.
 3.2 BY-PASS FEATURES ADDRESS THE BLIND SPOTS OFLLMEMBEDDINGS
 The projected representation u summarizes the row as the LLM reads it, with two blind spots:
 numbers are carried imprecisely, andrepresentation driftmakes a string’s embedding depend on its
@@ -272,52 +273,53 @@ embeds each cell independently, mean-pools its last-layer representations, and r
 to 30 PCA components (Grinsztajn et al., 2023); for a fair comparison, it uses Llama-3.1-8B,
 TILE’s default backbone. We also compare with methods that handle strings themselves: CatBoost,
 ContextTab (Spinaci et al., 2025), TabSTAR (Arazi et al., 2025), TabLLM (Hegselmann et al., 2023)
-and CASE (Schindler et al., 2026). TabPFN-3.5, EXAONE-Tabular and Causilo are not part of the
-normalization pool. Appendix E details all implementations.
+and CASE (Schindler et al., 2026). As CASE’s table-tuned backbone is not publicly released, we run
+it with Gemma-3-4B instead, and call itCASE-like. TabPFN-3.5, EXAONE-Tabular and Causilo are
+not part of the normalization pool. Appendix E details all implementations.
 4.2 TILEESTABLISHES A NEW STATE-OF-THE-ART FOR TABLES WITH STRINGS
 TILE is the best performer across all training sizesTable 1 reports results at three training-set
 sizes, and Figure 1 summarizes the comparison at ntrain = 1,024 with Elo ratings. Every TILE
-variant ranks above every baseline in all six columns, ahead of tuned gradient-boosted trees, CASE,
-and every cell-wise pipeline built on the same learners. At 1,024 training samples, the best baseline,
-LLM encoder + Causilo, scores 77.8 in regression and 81.0 in classification, against 91.6 and 90.4
-for TILE (Causilo). In Elo ratings, TILE with Causilo leads the strongest baseline by 333 points, and
-beats it on 89% of splits (Appendix B). Raw differences are smaller in classification (89.7 against
-88.6 AUC), where ROC-AUC saturates near 1 on many tasks (Appendix H). The regression gap
-shrinks with training-set size, from 13.8 points at 1,024 samples to 9.1 at 10,000 and 7.3 at 50,000
-(over fewer datasets), likely because with more data learners rely less on external knowledge.
+variant ranks above every baseline in all six columns, ahead of tuned gradient-boosted trees, CASE-
+like, and every cell-wise pipeline built on the same learners. At 1,024 training samples, the best
+baseline, LLM encoder + Causilo, scores 77.4 in regression and 80.6 in classification, against 91.8
+and 90.0 for TILE (Causilo). In Elo ratings, TILE with Causilo leads the strongest baseline by 342
+points, and beats it on 90% of splits (Appendix B). Raw differences are smaller in classification (89.8
+against 88.6 AUC), where ROC-AUC saturates near 1 on many tasks (Appendix H). The regression
+gap shrinks with training-set size, from 14.3 points at 1,024 samples to 9.2 at 10,000 and 7.0 at
+50,000 (over fewer datasets), likely because with more data learners rely less on external knowledge.
 5
 
 Preprint.
 Table 1:TILE leads at every train size, on both tasks.Normalized scores ×100, aggregated over
 the datasets large enough for each size; counts in parentheses. Because the set of datasets varies,
 compare scores within columns only. LLM enc. is Llama-3.1-8B applied to each cell independently;
-CASE uses Gemma-3-4B (Appendix E). Best result in bold, second best underlined. Table H.2 adds
-RealMLP, XGBoost, CatBoost and Ridge. Table H.1 gives raw scores.
+CASE-likeis CASE with Gemma-3-4B (Appendix E). Best result in bold, second best underlined.
+Table H.2 adds RealMLP, XGBoost, CatBoost and Ridge. Table H.1 gives raw scores.
 Regression (normalizedR 2) Classification (normalized AUC)
 Method 1,024 (65) 10k (38) 50k (7) 1,024 (35) 10k (10) 50k (2)
-TILE (TabPFN-2.5) 90.21 93.19 92.58 88.00 87.62 79.64
-TILE (TabICLv2) 88.70 92.32 92.00 88.94 85.93 80.17
-TILE (TabPFN-3) 88.66 92.32 92.14 87.72 87.67 80.68
-TILE (TabPFN-3.5) 90.67 94.11 94.66 90.35 88.31 84.58
-TILE (Causilo)91.63 95.20 96.05 90.3888.02 83.67
-CASE + TabPFN-2.5 61.97 64.96 49.11 67.50 77.13 35.14
-CASE + TabICLv2 59.43 63.19 48.94 70.45 76.86 42.45
-CASE + TabPFN-3 63.35 66.28 53.68 67.51 77.80 44.33
-CASE + TabPFN-3.5 70.74 74.16 57.43 78.45 84.90 63.31
-CASE + Causilo 71.88 77.00 68.16 76.52 80.83 59.23
-ContextTab 70.78 78.83 66.68 69.96 80.46 49.36
-TabSTAR 66.96 79.52 81.26 57.40 75.75 46.36
-CatBoost 52.33 64.40 51.89 41.02 75.67 62.07
-LLM enc. + TabPFN-2.5 72.97 83.20 85.26 79.48 83.24 52.16
-LLM enc. + TabICLv2 68.82 83.61 85.67 80.59 83.46 66.50
-LLM enc. + TabPFN-3 74.09 79.25 83.21 74.12 76.97 49.29
-LLM enc. + TabPFN-3.5 76.36 86.03 85.81 80.65 83.51 60.38
-LLM enc. + Causilo 77.84 85.10 88.73 80.99 83.34 63.75
-TF-IDF + TabPFN-2.5 72.91 80.41 79.55 72.59 78.37 50.79
-TF-IDF + TabICLv2 71.03 79.28 79.86 71.80 77.83 57.42
-TF-IDF + TabPFN-3 71.61 78.73 81.86 67.36 75.14 49.37
-TF-IDF + TabPFN-3.5 76.57 86.12 86.65 76.47 82.54 69.50
-TF-IDF + Causilo 75.11 84.13 84.50 74.00 80.05 63.16
+TILE (TabPFN-2.5) 90.42 93.29 92.57 87.03 88.18 79.14
+TILE (TabICLv2) 88.50 92.23 92.61 88.25 85.66 80.68
+TILE (TabPFN-3) 88.36 91.94 91.89 86.91 87.32 80.22
+TILE (TabPFN-3.5) 90.59 93.66 94.43 89.59 88.28 85.05
+TILE (Causilo)91.76 94.99 95.88 89.97 88.3384.37
+CASE-like + TabPFN-2.5 61.68 64.75 49.14 67.23 77.31 34.91
+CASE-like + TabICLv2 59.23 63.05 48.99 70.13 77.02 42.19
+CASE-like + TabPFN-3 63.10 66.10 53.76 67.24 77.98 44.08
+CASE-like + TabPFN-3.5 70.35 73.88 57.55 78.05 85.19 62.99
+CASE-like + Causilo 71.53 76.72 68.26 76.17 81.08 58.94
+ContextTab 70.52 78.56 66.74 69.61 80.79 49.11
+TabSTAR 66.67 79.23 81.33 57.19 75.98 46.12
+CatBoost 52.16 64.19 51.96 40.82 75.93 61.80
+LLM enc. + TabPFN-2.5 72.59 82.88 85.34 79.07 83.50 51.91
+LLM enc. + TabICLv2 68.46 83.33 85.77 80.16 83.75 66.19
+LLM enc. + TabPFN-3 73.77 78.97 83.30 73.76 77.19 49.03
+LLM enc. + TabPFN-3.5 75.99 85.72 85.93 80.24 83.79 60.10
+LLM enc. + Causilo 77.44 84.77 88.84 80.57 83.61 63.47
+TF-IDF + TabPFN-2.5 72.58 80.11 79.62 72.21 78.65 50.54
+TF-IDF + TabICLv2 70.74 79.00 79.92 71.42 78.11 57.15
+TF-IDF + TabPFN-3 71.30 78.45 81.94 67.05 75.39 49.13
+TF-IDF + TabPFN-3.5 76.22 85.80 86.79 76.08 82.83 69.18
+TF-IDF + Causilo 74.78 83.81 84.63 73.62 80.34 62.87
 Without TILE, LLMs barely improve on TF-IDFNaive string encodings like TF-IDF, which
 ignore semantics, are a surprisingly strong baseline: character n-grams roughly match the large
 Llama-3.1-8B applied cell-wise, and beat TabLLM, which fine-tunes an LLM to predict by generating
@@ -325,14 +327,14 @@ text, for 2.0 GB of memory against 17.1 (Section G.3). A TFM on plain TF-IDF lik
 end-to-end ContextTab and TabSTAR. An LLM alone is not enough: its interface matters.
 4.3 EXTERNAL VALIDATION: TILERANKS FIRST ONSTRABLE
 For a further evaluation varying datasets and protocol, we use STRABLE (Blayer et al., 2026), a
-separately assembled benchmark of 108 string-carrying tables and 445 string-tabular pipelines. Only
-15 of its tables share a source dataset with our benchmark, and those are preprocessed differently
-(Section A.6). The four TILE variants take the first four places (Figure 3; raw scores in Table H.5),
-ahead of TF-IDF with Causilo and a cell-wise Qwen3-Embedding-8B fed to TabPFN-2.5. TILE
-with Causilo even beats picking the best baseline on each dataset. The ranking reproduces what we
-observe on our own datasets: with a TFM, TF-IDF and cell-wise LLMs perform comparably, and
-end-to-end models trail both. TILE also leads string representations absent from our benchmark (E5,
-Jasper, All-MiniLM, FastText), providing largely independent evidence that its gains generalize.
+separately assembled benchmark of 108 string-carrying tables. Only 15 of its tables share a source
+dataset with our benchmark, and those are preprocessed differently (Section A.6). The five TILE
+variants take the first five places (Figure 3; raw scores in Table H.5), ahead of the best cell-wise LLM
+and TF-IDF pipelines. TILE with Causilo or TabPFN-3.5 beats even the per-dataset best baseline,
+more so with Llama-3.1-70B (Figure H.1). The ranking reproduces what we observe on our own
+datasets: with a TFM, TF-IDF and cell-wise LLMs perform comparably, and end-to-end models trail
+both. TILE also leads string representations absent from our benchmark (E5, Jasper, All-MiniLM,
+FastText), providing largely independent evidence that its gains generalize.
 5 ABLATIONS:THE INTERFACE DECIDES WHAT ANLLMCONTRIBUTES
 5.1 ROW CONTEXT UNLOCKS THE BENEFITS OF LARGERLLMS
 Scale pays off only through the right interfaceFigure 4 compares TILE with the cell-wise
@@ -342,7 +344,7 @@ Llama, and even declines across Qwen3, where the 0.6B model beats the 8B one. TI
 6
 
 Preprint.
-55 pipelines of the STRABLE benchmark, by decreasing score
+68 pipelines of the STRABLE benchmark, by decreasing score
 0.6
 0.7
 0.8
@@ -350,14 +352,15 @@ Preprint.
 1.0
 Mean normalized score (R2&AUC)
 Score of 1 = using the best baseline on each dataset
-TILE + Causilo (1.024)
-TILE + TabPFN-2.5 (0.988)
-TILE + TabICLv2 (0.962)
-TILE + TabPFN-3 (0.958)
-TF-IDF + Causilo (0.953)
-Qwen3-Embedding-8B (no PCA) + T abPFN-2.5 (0.914)
-ContextT ab (0.828)
-T argetEncoder + T abPFN-2.5 (0.784)
+TILE + Causilo (1.022)
+TILE + TabPFN-3.5 (1.006)
+TILE + TabPFN-2.5 (0.989)
+TILE + TabICLv2 (0.953)
+TILE + TabPFN-3 (0.952)
+Qwen3-Embedding-8B (no PCA) + Causilo (0.950)
+TF-IDF + T abPFN-3.5 (0.947)
+ContextT ab (0.807)
+T argetEncoder + T abPFN-2.5 (0.765)
 String handling
 TILE
 LLM encoder
@@ -367,13 +370,12 @@ End-to-end
 5 more baselines
 score below 0.6
 Tabular learner
-TFM
-non TFM
+TFM non TFM
 Figure 3:TILE ranks first on STRABLE.Mean normalized score over STRABLE’s 108 datasets,
-under its evaluation protocol. Scores are normalized per dataset over 51 STRABLE baselines, TILE
+under its evaluation protocol. Scores are normalized per dataset over 63 STRABLE baselines, TILE
 excluded, so a score of 1 amounts to picking the best baseline on each dataset. Colors indicate the
 string handling; transparent bars mark learners that are not table foundation models, trained from
-scratch. The four TILE variants take the first four places, and TILE with Causilo scores above 1.
+scratch. The five TILE variants rank first, and with Causilo or TabPFN-3.5, TILE scores above 1.
 109 1010
 0.7
 0.8
@@ -402,14 +404,14 @@ Figure 4:Read cell by cell, larger LLMs do not help; with row-level context, the
 across four Llama-3 and three Qwen3 backbones. The LLM encoder processes isolated cells,
 mean-pools last-layer representations, and applies per-column PCA. TILE extracts intermediate
 representations and thus loads fewer parameters. Table H.3 gives raw scores.
-steadily with size in both families, so its advantage grows from 4.2 points for Qwen3-0.6B to 16.7
+steadily with size in both families, so its advantage grows from 5.3 points for Qwen3-0.6B to 17.8
 for Qwen3-8B. Both pipelines use the same LLMs, pretrained on the same data, and thus the gap
 reflects only the quality of the interface. Masking inter-column attention (pink) isolates the role of
 context, leaving each cell its header but blind to the rest of the row. That ablation still gains from
 scale, but less: larger models need the full row-level context to reach their potential.
 TILE is versatile across LLMsTILE leads on all seven backbones. For Llama-3.1-70B, the
 cell-wise encoder does not fit in GPU memory, while truncated TILE does. TILE with Llama-3.1-8B
-loads about as many parameters as the full Llama-3.2-3B, yet scores 89.4 against 73.8 for the latter
+loads about as many parameters as the full Llama-3.2-3B, yet scores 89.2 against 73.4 for the latter
 applied cell-wise (Section G.2, Section G.3 give runtime and memory).
 5.2 INTERMEDIATE LAYERS AND COLUMNAR POOLING MAKE BETTER REPRESENTATIONS
 We select the extraction layer of each LLM once, on 27 probing datasets. To do so, we extract
@@ -444,8 +446,8 @@ LLM depth, on 27 datasets (Section A.5).
 Circles mark TILE’s extraction layer.
 0.6 0.8
 Mean normalized score (R2&AUC)
-EXAONE
 Causilo
+EXAONE
 T abPFN-3.5
 T abPFN-2.5
 T abPFN-3
@@ -482,18 +484,18 @@ damaging ablation, even though the LLM still reads the numbers. Conversely, omit
 values from the serialization also hurts, even though those columns reach the learner through the
 by-pass. Neither path substitutes for the other: the LLM needs the numbers to interpret the strings,
 and the learner needs them exactly for its predictions. Pooling embeddings of the numerical cells as
-well, however, does not help: within the TFM’s feature-capacity window, they come at the cost of
-compressing the string embeddings further. On the semantic path, masking inter-column attention
-causes the second-largest drop, and reading the last layer instead of layer 14 costs 0.5 points in
-classification and 3.6 in regression, confirming the probing results of Section 5.2 on the full pipeline.
-Standardization, the feature-capacity window and the target-encoding by-pass each bring less than a
-point. None of these components alone explains the gap to the cell-wise LLM encoder, which shares
-TILE’s numerical by-pass: masking inter-column attention, the largest, costs 3.0 (classification)
-and 6.5 (regression) points, against a gap of 8.5 and 17.3. Giving the LLM encoder TILE’s other
-by-passes narrows the gap only to 7.7 and 15.0, and sizing its PCA with the feature-capacity window
-leaves it at8.9and16.9(both widen it with TabPFN-3).
+well, however, does not help consistently: within the TFM’s feature-capacity window, they come at
+the cost of compressing the string embeddings further. On the semantic path, masking inter-column
+attention causes the second-largest drop, and reading the last layer instead of layer 14 costs 0.6
+points in classification and 2.9 in regression, confirming the probing results of Section 5.2 on the
+full pipeline. Standard scaling and the target-encoding by-pass each bring less than a point, and the
+feature-capacity window 1.2 points in regression. None of these components alone explains the gap to
+the cell-wise LLM encoder, which shares TILE’s numerical by-pass: masking inter-column attention,
+the largest, costs 2.8 (classification) and 9.5 (regression) points, against a gap of 8.0 and 17.8. Giving
+the LLM encoder TILE’s other by-passes narrows the gap only to 7.2 and 15.6, and sizing its PCA
+with the feature-capacity window leaves it at8.1and17.0(both widen it with TabPFN-3).
 TILE uses table-level contextReplacing informative column headers with “Col 1”, “Col 2”, etc.,
-or reversing the column order substantially degrades performance, showing that TILE exploits both
+or reversing the column order degrades performance, showing that TILE exploits both the column
 8
 
 Preprint.
@@ -507,32 +509,33 @@ result from removing the numerical by-pass or inter-column attention. Columnar p
 removed without changing the shape of the representation; Section F.4 compares pooling strategies.
 TabPFN-2.5 TabICLv2 TabPFN-3
 Model clf reg clf reg clf reg
-−numerical by-pass -11.16 -14.19 -11.67 -13.58 -11.65 -14.59
-−inter-column attention -2.99 -6.52 -3.13 -8.92 -7.17 -9.05
-−intermediate layer (last layer) -0.52 -3.55 -1.33 -3.43 -0.63 -3.07
-−numbers in the serialization -1.43 -1.23 -1.70 -1.63 -1.52 -1.76
-−feature-capacity window -0.22 -0.72 -0.10 -0.22 +0.12 -0.41
-−target-encoding by-pass -0.22 -0.41 -0.67 -0.07 -0.94 -0.04
-−standard scaling -0.20 -0.17 -0.47 -0.14 -0.30 -0.37
-−categorical by-pass +0.24 -0.12 +0.03 -0.07 -0.03 -0.12
-TILE (default) 88.00 90.21 88.94 88.70 87.72 88.66
-+numerical-cell embeddings -0.18 -0.15 -0.14 +0.01 -0.30 -0.09
-+one-hot instead of native cat. -0.43 -0.03 +0.13 -0.03 +0.13 -0.05
-+target name -1.45 -0.62 -1.42 -0.63 -1.30 -0.92
-+repeated serialization -1.26 -0.87 -1.46 -0.94 -1.57 -1.16
-+mirrored column order -1.79 -1.38 -2.18 -1.86 -2.54 -2.05
-+uninformative column names -2.05 -2.52 -2.41 -2.87 -2.55 -2.46
-LLM encoder (skrub) -8.52 -17.25 -8.35 -19.88 -13.60 -14.57
-LLM encoder+by-pass features -7.74 -14.95 -8.13 -18.22 -14.74 -16.18
-LLM encoder+feature-capacity window -8.91 -16.93 -8.44 -18.76 -16.87 -18.75
-the column names and their arrangement. The effect of ordering is likely due to the causal mask of
-decoder LLMs, under which each cell attends only to preceding columns. As real tables often put
-identifying columns first, reversing them may deprive entries of informative context.
+−numerical by-pass -11.29 -15.14 -11.22 -14.35 -11.97 -16.00
+−inter-column attention -2.76 -9.51 -2.56 -6.71 -7.34 -9.27
+−intermediate layer (last layer) -0.61 -2.87 -0.85 -2.51 -0.57 -2.33
+−feature-capacity window +0.02 -1.22 -0.33 -0.42 -0.04 -0.56
+−numbers in the serialization +0.03 -0.30 -0.70 -0.18 -0.84 -0.35
+−target-encoding by-pass +0.06 -0.30 -0.68 +0.20 -0.62 +0.22
+−standard scaling -0.07 -0.18 -0.27 +0.02 -0.11 -0.18
+−categorical by-pass +0.03 -0.06 -0.04 +0.01 -0.22 -0.06
+TILE (default) 87.03 90.42 88.25 88.50 86.91 88.36
++numerical-cell embeddings +0.23 -0.31 +0.54 +0.20 -0.21 -0.02
++one-hot instead of native cat. -0.13 -0.01 -0.14 -0.05 -0.05 +0.01
++repeated serialization -1.04 +0.16 -0.89 +0.25 -1.22 +0.05
++mirrored column order -0.22 -0.75 -0.08 -0.25 -1.13 -0.95
++target name -0.61 -0.66 -0.74 -0.59 -0.38 -0.71
++uninformative column names -2.11 -2.90 -2.69 -2.90 -2.88 -2.85
+LLM encoder (skrub) -7.96 -17.83 -8.09 -20.04 -13.15 -14.59
+LLM encoder+by-pass features -7.17 -15.56 -7.87 -18.38 -14.24 -16.23
+LLM encoder+feature-capacity window -8.06 -16.97 -7.96 -20.20 -16.34 -18.36
+names and their arrangement. The effect of ordering is likely due to the causal mask of decoder
+LLMs, under which each cell attends only to preceding columns. As real tables often put identifying
+columns first, reversing them may deprive entries of informative context.
 Richer prompts do not pay offPrepending the target column name (“What is the value of <target
 column name> given that:”) is meant to inform the model of the task, but degrades performance.
 Repeating the serialized row twice and reading the embeddings from the second copy, inspired by
 prompt repetition in LLMs (Springer et al., 2025; Leviathan et al., 2025), lets every column attend to
-the whole row despite the causal mask; it hurts as well, and doubles the input length.
+the whole row despite the causal mask. However, it hurts in classification, barely changes regression,
+and doubles the input length.
 6 DISCUSSION:UNLOCKINGLLMWORLD KNOWLEDGE FOR TABLES
 Building the right interface between LLMs and tablesPairing an LLM with a strong tabular
 learner, TILE turns strings into predictive signal, with sizable gains over the state of the art (Figure 1,
@@ -542,11 +545,11 @@ With row-level context and a well-chosen layer, TILE makes LLMs’ gains grow wi
 (Figure 6) we evaluate, and gains from advances in both, as the newest TFMs show.
 Limitations and future workTILE targets tables whose strings carry predictive signal; on purely
 numerical tables, a standalone TFM suffices. Its LLM embedding stage needs a GPU, though
-truncation nearly halves its memory (Section G.3). Row serialization is bounded by the LLM’s
-context window; this was never a constraint in our benchmark, whose longest serialized row is 3,425
-tokens against the 128k-token context of Llama-3.1-8B, but very wide tables with long texts would
-need chunking. Finally, the causal mask of decoder LLMs makes representations depend on column
-order, which bidirectional encoders (BehnamGhader et al., 2024) would avoid: a natural next step.
+truncation nearly halves its weights (Section G.3). Row serialization is bounded by the LLM’s context
+window; this was never a constraint in our benchmark, whose longest serialized row is 3,425 tokens
+against the 128k-token context of Llama-3.1-8B, but very wide tables with long texts would need
+chunking. Finally, the causal mask of decoder LLMs makes representations depend on column order,
+which bidirectional encoders (BehnamGhader et al., 2024) would avoid: a natural next step.
 9
 
 Preprint.
@@ -569,6 +572,18 @@ demographic disparities, making pre-deployment audits crucial. Conversely, by im
 performance on heterogeneous tables, TILE could positively impact critical tabular-driven domains,
 such as healthcare, where patient records frequently intermix clinical measurements with free-text
 notes or diagnoses (Johnson et al., 2016; Miotto et al., 2016).
+REPRODUCIBILITY STATEMENT
+TILE is built entirely from publicly released artifacts, and we have aimed to make every step of our
+evaluation reproducible. The code is available at https://github.com/soda-inria/tile,
+and the preprocessed datasets of the benchmark at https://huggingface.co/datasets/
+inria-soda/TILE-benchmark. Section 3 specifies the architecture, and Appendix I lists every
+language model, tabular learner and software package we use, together with its source and license.
+The benchmark is described in Appendix A, with per-dataset statistics and the preprocessing applied
+to each table; the training-set sizes, splits, metrics and aggregation procedure are given in Section 4,
+and the Elo ratings of Figure 1 are defined in Appendix B. Every baseline, with its implementation,
+version and hyperparameter search space, is documented in Appendix E, and Appendix D details the
+target encoding of categorical string columns. Raw, unaggregated scores for all methods are reported
+in Appendix H, and the compute and memory budget of each stage in Appendix G.
 ACKNOWLEDGMENTS
 This work was granted access to the HPC resources of IDRIS under the allocation 2025-AD011016808
 made by GENCI. GV acknowledges support from ANR via grant TaFoMo (ANR-25-CE23-1822).
@@ -585,6 +600,9 @@ Analyzing and Interpreting Neural Networks for NLP, pp. 250–262, 2025. doi: 10
 blackboxnlp-1.15.
 Parishad BehnamGhader, Vaibhav Adlakha, Marius Mosbach, Dzmitry Bahdanau, Nicolas Chapados,
 and Siva Reddy. LLM2Vec: Large language models are secretly powerful text encoders. InCon-
+10
+
+Preprint.
 ference on Language Modeling (COLM), 2024. URL https://openreview.net/forum?
 id=IW1PR7vEBf.
 Emily M. Bender, Timnit Gebru, Angelina McMillan-Major, and Shmargaret Shmitchell. On
@@ -597,9 +615,6 @@ Benchmarking tabular machine learning with strings.arXiv preprint arXiv:2605.122
 Piotr Bojanowski, Edouard Grave, Armand Joulin, and Tomas Mikolov. Enriching word vectors with
 subword information.Transactions of the Association for Computational Linguistics, 5:135–146,
 2017. doi: 10.1162/tacl_a_00051.
-10
-
-Preprint.
 Sebastian Bordt, Harsha Nori, Vanessa Rodrigues, Besmira Nushi, and Rich Caruana. Elephants
 never forget: Memorization and learning of tabular data in large language models. InConference
 on Language Modeling (COLM), 2024. URL https://openreview.net/forum?id=
@@ -637,6 +652,9 @@ Advances in Neural Information Processing Systems (NeurIPS), Datasets and Benchm
 Josh Gardner, Juan C Perdomo, and Ludwig Schmidt. Large scale transfer learning for tabular data
 via language modeling.Advances in Neural Information Processing Systems, 37:45155–45205,
 2024.
+11
+
+Preprint.
 Yury Gorishniy, Akim Kotelnikov, and Artem Babenko. TabM: Advancing tabular deep learning
 with parameter-efficient ensembling. InThe Thirteenth International Conference on Learning
 Representations, 2025. URLhttps://openreview.net/forum?id=Sd4wYYOhmY.
@@ -649,9 +667,6 @@ deep learning on typical tabular data? InAdvances in Neural Information Processi
 Léo Grinsztajn, Edouard Oyallon, Myung Jun Kim, and Gaël Varoquaux. Vectorizing string en-
 tries for data processing on tables: when are larger language models better?arXiv preprint
 arXiv:2312.09634, 2023.
-11
-
-Preprint.
 Léo Grinsztajn, Klemens Flöge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Benjamin
 Jäger, Dominik Safaric, Simone Alessi, Adrian Hayler, et al. TabPFN-2.5: Advancing the state of
 the art in tabular foundation models.arXiv preprint arXiv:2511.08667, 2025.
@@ -688,6 +703,9 @@ Conference 2026, pp. 4069–4080, 2026.
 Myung Jun Kim, Leo Grinsztajn, and Gael Varoquaux. CARTE: Pretraining and transfer for tabular
 learning. InProceedings of the 41st International Conference on Machine Learning, volume 235
 ofProceedings of Machine Learning Research, pp. 23843–23866. PMLR, 2024.
+12
+
+Preprint.
 Myung Jun Kim, Félix Lefebvre, Gaëtan Brison, Alexandre Perez-Lebel, and Gaël Varoquaux. Table
 foundation models: On knowledge pre-training for tabular learning.Transactions on Machine
 Learning Research, 2025. URLhttps://openreview.net/forum?id=QV4P8Csw17.
@@ -702,9 +720,6 @@ Jamnik. Llm embeddings for deep learning on tabular data.arXiv preprint arXiv:25
 Félix Lefebvre, Myung Jun Kim, and Gaël Varoquaux. Knowledge-rich embeddings for tabular
 learning. InAITD 2025-Workshop on AI for Tabular Data, 2025. URL https://openreview.
 net/forum?id=sNli26jLOy.
-12
-
-Preprint.
 Yaniv Leviathan, Matan Kalman, and Yossi Matias. Prompt repetition improves non-reasoning LLMs.
 arXiv preprint arXiv:2512.14982, 2025.
 Haokun Liu, Derek Tam, Mohammed Muqeeth, Jay Mohta, Tenghao Huang, Mohit Bansal, and Colin
@@ -739,6 +754,9 @@ Minh-Khoi Pham, Thang-Long Nguyen Ho, Thao Thi Phuong Dao, Tai Tan Mai, Minh-Tri
 Marie E. Ward, Una Geary, Rob Brennan, Nick McDonald, Martin Crane, and Marija Bezbradica.
 Retrieval-aligned tabular foundation models enable robust clinical risk prediction in electronic
 health records under real-world constraints.arXiv preprint arXiv:2604.01841, 2026.
+13
+
+Preprint.
 Liudmila Prokhorenkova, Gleb Gusev, Aleksandr V orobev, Anna Veronika Dorogush, and Andrey
 Gulin. CatBoost: unbiased boosting with categorical features.Advances in neural information
 processing systems, 31, 2018.
@@ -755,9 +773,6 @@ on Machine Learning (ICML), 2026. URLhttps://arxiv.org/abs/2602.11139.
 Adam Roberts, Colin Raffel, and Noam Shazeer. How much knowledge can you pack into the
 parameters of a language model? InProceedings of the 2020 conference on empirical methods in
 natural language processing (EMNLP), pp. 5418–5426, 2020.
-13
-
-Preprint.
 Anna Rogers, Olga Kovaleva, and Anna Rumshisky. A primer in BERTology: What we know about
 how BERT works.Transactions of the Association for Computational Linguistics, 8:842–866,
 2020. doi: 10.1162/tacl_a_00349.
@@ -791,6 +806,9 @@ Proceedings of Machine Learning Research, pp. 55854–55875. PMLR, 2025.
 Marco Spinaci, Marek Polewczyk, Maximilian Schambach, and Sam Thelin. ConTextTab: A
 semantics-aware tabular in-context learner. InAdvances in Neural Information Processing Systems
 (NeurIPS), 2025.
+14
+
+Preprint.
 Jacob Mitchell Springer, Suhas Kotha, Daniel Fried, Graham Neubig, and Aditi Raghunathan.
 Repetition improves language model embeddings. InInternational Conference on Learning
 Representations, 2025.
@@ -808,9 +826,6 @@ be a research priority. InProceedings of the 41st International Conference on Ma
 Liane V ogel, Jan-Micha Bodensohn, and Carsten Binnig. WikiDBs: A large-scale corpus of relational
 databases from Wikidata.Advances in Neural Information Processing Systems, 37:41186–41201,
 2024.
-14
-
-Preprint.
 Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang, Rangan Majumder,
 and Furu Wei. Text embeddings by weakly-supervised contrastive pre-training.arXiv preprint
 arXiv:2212.03533, 2022.
@@ -850,23 +865,23 @@ A.1 Data sources . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
 A.2 Data preprocessing . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
 A.3 Data characteristics . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
 A.4 Excluded dataset . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
-A.5 Datasets used for LLM probing . . . . . . . . . . . . . . . . . . . . . . 17
+A.5 Probing datasets used to set TILE’s hyperparameters . . . . . . . . . . . . . 17
 A.6 Overlap with STRABLE . . . . . . . . . . . . . . . . . . . . . . . . . 18
 B Elo ratings 23
-C The TILE pipeline, end to end 24
-D Target encoding of the categorical string columns 25
-E Baselines and their implementation 26
-F Additional experimental results 28
-F.1 The improvability metric . . . . . . . . . . . . . . . . . . . . . . . . . 28
-F.2 The feature-capacity window of each learner . . . . . . . . . . . . . . . . 28
-F.3 Cardinality threshold for categorical columns . . . . . . . . . . . . . . . . 28
-F.4 Choosing the pooling strategy . . . . . . . . . . . . . . . . . . . . . . . 28
-G Compute and memory costs 31
-G.1 Hardware and total compute . . . . . . . . . . . . . . . . . . . . . . . . . 31
-G.2 Runtime by task . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
-G.3 Peak GPU memory . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 31
-H Raw results 33
-I Models, software and licenses 45
+C The TILE pipeline, end to end 25
+D Target encoding of the categorical string columns 26
+E Baselines and their implementation 27
+F Additional experimental results 29
+F.1 The improvability metric . . . . . . . . . . . . . . . . . . . . . . . . . 29
+F.2 The feature-capacity window of each learner . . . . . . . . . . . . . . . . 29
+F.3 Cardinality threshold for categorical columns . . . . . . . . . . . . . . . . 29
+F.4 Choosing the pooling strategy . . . . . . . . . . . . . . . . . . . . . . . 29
+G Compute and memory costs 32
+G.1 Hardware and total compute . . . . . . . . . . . . . . . . . . . . . . . . 32
+G.2 Runtime by task . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+G.3 Peak GPU memory . . . . . . . . . . . . . . . . . . . . . . . . . . . . 32
+H Raw results 34
+I Models, software and licenses 47
 16
 
 Preprint.
@@ -910,13 +925,15 @@ so no LLM-encoder pipeline ran on this dataset, and including it would leave hol
 TILE processes it without difficulty, as do the TF-IDF pipelines.
 For completeness, Table A.6 reports the methods that do run on all 101 tables. Adding this dataset
 leaves the ranking unchanged. In absolute terms it is a hard task for every method, with raw ROC
-AUC scores ranging from 65.0 to 73.2, the best being TILE with Causilo.
-A.5 DATASETS USED FORLLMPROBING
-The layer sweeps of Figure 5 and the pooling comparison of Figure F.3 use a subset of 27 datasets.
-The datasets used are the following:
+AUC scores ranging from 65.0 to 76.0, the best being TILE with TabPFN-3.5 (75.7 with Causilo).
+A.5 PROBING DATASETS USED TO SETTILE’S HYPERPARAMETERS
+All of TILE’s hyperparameters are set on a subset of 27 datasets: the extraction layer of each LLM
+(Figure 5), the feature-capacity window of each learner (Section F.2) and the cardinality threshold
 17
 
 Preprint.
+of the categorical by-pass (Section F.3). The pooling comparison of Figure F.3 uses them too. The
+datasets used are the following:
 • CARTE datasets:NBA Draft, Prescription Drugs, Coffee Ratings, Ramen Ratings, Chocolate
 Bar Ratings, Roger Ebert, UsedCars.com, Used Cars 24, Michelin, Beer Ratings, Company
 Employees, Journal JCR, Videogame Sales, Filmtv Movies, Wine Vivino Price, Zomato, Yelp.
@@ -1083,33 +1100,35 @@ Table A.6:Adding the excluded
 dataset.Normalized scores over the
 excluded table alone, over the bench-
 mark, and over their union. Normal-
-ization is over the 15 methods that
+ization is over the 16 methods that
 ran on all 101 tables, a smaller pool
 than in the rest of the paper, so the
 ranking is what should be read.
 OkCupid Benchmark Both
 Method (1) (100) (101)
-TILE (Causilo)83.2 87.6 87.6
-TILE (TabPFN-3.5) 82.6 86.5 86.5
-TILE (TabPFN-2.5) 62.5 85.0 84.8
-TILE (TabICLv2) 82.3 84.2 84.2
-TILE (TabPFN-3) 68.7 83.6 83.5
-TF-IDF + TabPFN-3.5 77.5 69.6 69.7
-TF-IDF + EXAONE-Tabular 41.2 68.8 68.5
-TF-IDF + Causilo 67.4 67.8 67.8
-TF-IDF + TabPFN-2.5 64.5 64.7 64.7
-TF-IDF + TabICLv2 74.6 63.2 63.3
-ContextTab 75.0 61.0 61.2
-TabSTAR 25.9 54.1 53.8
-TF-IDF + XGBoost 46.3 53.3 53.2
-TF-IDF + RealMLP 33.6 51.2 51.0
-TF-IDF + Ridge 58.6 25.5 25.8
+TILE (Causilo) 88.287.6 87.6
+TILE (TabPFN-3.5)89.986.2 86.3
+TILE (EXAONE-Tabular) 59.5 85.8 85.6
+TILE (TabPFN-2.5) 55.3 84.9 84.6
+TILE (TabICLv2) 84.2 83.8 83.8
+TILE (TabPFN-3) 65.4 83.1 82.9
+TF-IDF + TabPFN-3.5 67.8 69.2 69.2
+TF-IDF + EXAONE-Tabular 36.0 68.4 68.0
+TF-IDF + Causilo 59.0 67.4 67.3
+TF-IDF + TabPFN-2.5 56.4 64.4 64.3
+TF-IDF + TabICLv2 65.2 62.9 62.9
+ContextTab 65.6 60.7 60.7
+TabSTAR 22.6 53.8 53.5
+TF-IDF + XGBoost 40.5 53.0 52.8
+TF-IDF + RealMLP 29.4 50.9 50.7
+TF-IDF + Ridge 51.2 25.4 25.6
 22
 
 Preprint.
 B ELO RATINGS
 Figure 1 summarizes the benchmark with Elo ratings, computed with the implementation of
-TabArena (Erickson et al., 2025), which follows Chatbot Arena (Chiang et al., 2024).
+TabArena (Erickson et al., 2025), which follows Chatbot Arena (Chiang et al., 2024). Table B.1 lists
+the rating of every method, with its confidence interval.
 Pairwise comparisonsEach method m is evaluated on dataset d with 5 random train/test splits
 (seeds) s, the same for every method, giving an error em,d,s = 1−R 2 for regression and 1−
 ROC AUC for classification. The unit of comparison is abattle: for every dataset d, seed s and pair
@@ -1129,12 +1148,13 @@ battles: it is the fixed point that online Elo approaches with a vanishing step 
 defined up to a common shift, which we fix so that the mean rating over methods is 1000.
 InterpretationBy Equation 3, only differences between ratings matter. A gap of ∆ points translates
 into an expected head-to-head win probability: ∆ = 100 gives 64%, ∆ = 200 gives 76% and
-∆ = 400 gives 91%. The +333 Elo gap between TILE (Causilo) and the strongest baseline (LLM
-encoder + EXAONE-Tabular) thus means that TILE is expected to beat that baseline on 87.2% of
-splits. On the 500 splits where both were run, it actually wins on 88.6% (443 wins, no ties), and
-88.6% as well when averaged per dataset. This strongest baseline does not appear in Table 1: because
-of compute constraints, we ran LLM encoder + EXAONE-Tabular only atntrain = 1,024, the training
-size of the Elo ratings and of the per-dataset results of Appendix H, and not yet at 10,000 and 50,000.
+∆ = 400 gives 91%. The +342 Elo gap between TILE (Causilo) and the strongest baseline (LLM
+encoder + EXAONE-Tabular) thus means that TILE is expected to beat that baseline on 87.7% of
+splits. On the 500 splits where both were run, it actually wins on 89.9% (449 wins and 1 tie, counted
+as half a win), and 89.9% as well when averaged per dataset. This strongest baseline does not
+appear in Table 1: because of compute constraints, we ran LLM encoder + EXAONE-Tabular only at
+ntrain = 1,024, the training size of the Elo ratings and of the per-dataset results of Appendix H, and
+not yet at10,000and50,000.
 Confidence intervalsError bars are 95% percentile bootstrap intervals. We resample the 100
 datasets with replacement (all seeds of a drawn dataset are kept together), refit the ratings on the
 battles of the resample, and repeat this 200 times (bootstrap random seed 0). The bars go from the
@@ -1143,12 +1163,58 @@ the full benchmark, which is why they can be asymmetric. Resampling datasets rat
 battles accounts for the correlation between battles on the same dataset, so the intervals reflect
 uncertainty over the choice of datasets. Per-method intervals do not directly give the uncertainty of a
 difference, so we bootstrap the gap itself with the same resamples: the gap between TILE (Causilo)
-and LLM encoder + EXAONE-Tabular has a 95% interval of [272,397] and is positive in all 200
+and LLM encoder + EXAONE-Tabular has a 95% interval of [284,408] and is positive in all 200
 resamples.
 Partially evaluated methodsTabLLM was run on 34 classification datasets only. Battles are
 formed only between methods run on the same split, so TabLLM is rated from its 5,845 battles on
 those datasets. Its wider interval reflects the smaller number of battles.
 23
+
+Preprint.
+Table B.1:Elo ratings of all methods, as plotted in Figure 1, at ntrain = 1,024. The interval columns
+give the distance from the rating to the upper and lower bounds of its 95% bootstrap interval. Ratings
+are shifted so that their mean over the 36 methods is 1000. Every method is rated on all 100 datasets,
+except TabLLM, which ran on 34 classification datasets only. LLM enc. is Llama-3.1-8B applied
+to each cell in isolation; TF-IDF is followed by an SVD;CASE-likeis CASE with Gemma-3-4B
+(Appendix E).
+Method Elo 95% interval
+TILE (Causilo) 1500+76−50
+TILE (TabPFN-3.5) 1441+59−42
+TILE (EXAONE-Tabular) 1408+63−44
+TILE (TabPFN-2.5) 1342+47−44
+TILE (TabICLv2) 1315+47−33
+TILE (TabPFN-3) 1301+46−33
+CASE-like + TabPFN-3.5 1084+48−51
+CASE-like + Causilo 1053+45−37
+CASE-like + EXAONE-Tabular 1037+41−33
+CASE-like + TabPFN-3 911+44−45
+CASE-like + TabPFN-2.5 876+46−48
+CASE-like + TabICLv2 864+42−50
+LLM enc. + EXAONE-Tabular 1158+43−41
+LLM enc. + Causilo 1124+43−41
+LLM enc. + TabPFN-3.5 1107+45−44
+LLM enc. + TabPFN-2.5 1024+32−32
+LLM enc. + TabICLv2 1008+37−40
+LLM enc. + TabPFN-3 992+31−32
+LLM enc. + XGBoost 848+25−27
+LLM enc. + RealMLP 815+30−39
+LLM enc. + CatBoost 770+32−37
+LLM enc. + Ridge 744+42−50
+TF-IDF + TabPFN-3.5 1107+30−37
+TF-IDF + EXAONE-Tabular 1090+30−31
+TF-IDF + Causilo 1070+30−34
+TF-IDF + TabPFN-2.5 991+29−33
+TF-IDF + TabICLv2 950+27−34
+TF-IDF + TabPFN-3 929+34−35
+TF-IDF + XGBoost 780+27−33
+TF-IDF + CatBoost 761+30−33
+TF-IDF + RealMLP 743+32−35
+TF-IDF + Ridge 574+47−56
+ContextTab 914+35−34
+TabLLM (T0-3B) 903+95−82
+TabSTAR 816+46−45
+CatBoost 652+42−49
+24
 
 Preprint.
 C THETILEPIPELINE,END TO END
@@ -1165,7 +1231,13 @@ ing givest∈ VL and the token span of each column.
 i=1
 
 , in one forward pass over the training and test rows.
-24
+Embedding extractionEach LLM is truncated after the block of its extraction layer (Section 5.2),
+and its hidden states are read there, without the final normalization layer that precedes the output head:
+Llama-3.1-8B, for instance, keeps its first 14 of 32 blocks. The whole serialized row is tokenized at
+once, and the token span of each cell is located on that tokenization; a token straddling two cells is
+mean-pooled into both. Missing values and blank strings are written “NaN” in the serialization. The
+model runs in bfloat16 on batches of up to65,536tokens, and the embeddings are stored in float16.
+25
 
 Preprint.
 D TARGET ENCODING OF THE CATEGORICAL STRING COLUMNS
@@ -1192,7 +1264,7 @@ reduced embedding and to the table’s own numerical and low-cardinality categor
 are not themselves passed through the PCA. This path is independent of the categorical by-pass: a
 column with fewer than 50 distinct values also reaches the learner as a native categorical feature,
 whereas a high-cardinality column reaches it only through its embedding and its target encoding.
-25
+26
 
 Preprint.
 E BASELINES AND THEIR IMPLEMENTATION
@@ -1246,7 +1318,7 @@ exceptions: XGBoost is tuned by a 100-iteration random search over the grid of T
 by5-fold cross-validation repeated5times on the training rows; and RealMLP uses its own built-in
 hyper-parameter optimization (RealMLP_HPO, 50 search steps, internal 5-fold cross-validation,
 validation metric1-auc_ovrfor classification).
-26
+27
 
 Preprint.
 Additional table foundation modelsWe useTabPFN-3.5(Jäger et al., 2026) through tabpfn
@@ -1282,20 +1354,20 @@ rows every other baseline sees) instead of TabLLM’s own80/20 re-split and clas
 with replacement, and the predictions are scored downstream with the same metric code as every
 other baseline. Since TabLLM is a classifier, it is evaluated on the classification part of the benchmark
 only.
-CASEWe run CASE (Schindler et al., 2026) with the authors’ official implementation (commit
-64a0a79) and its default configuration. As the table-tuned TabGemma checkpoints of the paper
-have not been released, we use the fallback backbone recommended in the official repository,
-google/gemma-3-4b-pt, in bfloat16. All other settings are the library defaults: the KV
-cache is prefilled with 128 training rows and their targets under a 16k-token budget, with at most
-50 tokens per cell; each row is embedded as the last-layer hidden state at its final token; and the
-row embeddings are reduced to 32 components by PCA and appended to the raw features, which
-the downstream learner preprocesses itself. Our only deviation is the attention implementation:
+CASE-likeWe run CASE (Schindler et al., 2026) with the authors’ official implementation (commit
+64a0a79) and its default configuration, but without the table-tuned TabGemma checkpoints of
+the paper, that have not been released. We use the fallback backbone recommended in the official
+repository, google/gemma-3-4b-pt, in bfloat16. All other settings are the library defaults:
+the KV cache is prefilled with 128 training rows and their targets under a 16k-token budget, with
+at most 50 tokens per cell; each row is embedded as the last-layer hidden state at its final token;
+and the row embeddings are reduced to 32 components by PCA and appended to the raw features,
+which the downstream learner preprocesses itself. Our only deviation is the attention implementation:
 PyTorch’s SDPA rather than FlashAttention-2, which computes the same attention without a compiled
 dependency. CASE is fit per split, with the context rows and the PCA taken from the training rows
 only. The resulting features are shared by TabICLv2, TabPFN-2.5 and TabPFN-3, run at their default
 settings on the same splits as every other baseline. Reported preprocessing time covers embedding
 the training and test rows and excludes loading the backbone, which is done once per job.
-27
+28
 
 Preprint.
 F ADDITIONAL EXPERIMENTAL RESULTS
@@ -1307,26 +1379,37 @@ dataset has an improvability of0%.
 F.2 THE FEATURE-CAPACITY WINDOW OF EACH LEARNER
 How many features can a table foundation model actually digest? The number of features used
 to pre-train PFNs is usually much lower than the number of dimensions of an LLM embedding
-(Tajjar et al., 2026; Wang et al., 2026), and being transformers they likely inherit the shortcomings of
-attention with large contexts (Liu et al., 2024). To measure this, we sweep the number of components
-of a single PCA applied to a row’s concatenated cell embeddings, so that the sweep sets the learner’s
-total feature count directly, independently of the table’s width.
-Figure F.1 shows a clear trade-off: too few components and the projection discards information, too
-many and the learner is handed more features than it handles comfortably. Between the two, each
-curve has a broad plateau rather than a sharp optimum. We define a learner’sfeature-capacity window
-as the range of PCA dimensions over which its mean normalized score over all tasks remains flat,
-that is, within about one point (0.01) of the learner’s optimum. This gives [100,300] for TabPFN-2.5,
-[50,300] for TabICLv2, [50,250] for TabPFN-3, [75,300] for TabPFN-3.5, [75,250] for EXAONE-
-Tabular and [75,400] for Causilo. These windows are what TILE sizes its per-column PCA against
-(Section 3.1); the number of components per column is left at its default unless the resulting feature
-count would fall outside the window of the learner at hand.
+(Tajjar et al., 2026; Wang et al., 2026), and being transformers they likely inherit the shortcomings
+of attention with large contexts (Liu et al., 2024). Too narrow an input discards information, while
+too wide a one hands the learner more features than it handles comfortably (Figure F.1). A learner’s
+feature-capacity window [a, b]bounds the total width of its input: the PCA-reduced embeddings plus
+the features that by-pass them (numerical, target-encoded and native categorical columns). Each
+string column keeps 30 components of its own PCA by default; whatever width the by-pass features
+leave in the window, these counts are rescaled to fit it, with at least one component per column
+(Section 3.1).
+Selection procedureThe window is selected automatically on the 27 probing tables (Section A.5).
+We run the learner on each table with its total input width fixed to each budget of a grid from50 to
+1,200 features, using the same per-column PCA as TILE. On each table, we divide the error at every
+budget (1−R 2, with R2 clipped at 0, or 1− AUC) by the error at that table’s best budget. This
+relative error scales the tolerance with the difficulty of the table. We then average these relative errors
+over the tables with a geometric mean, and call the budget with the lowest average the best one. The
+window is the contiguous range of budgets around it whose average relative error stays within 1% of
+the best, allowing for one standard error: a budget is kept unless it is clearly worse than the best one.
+This gives [200,400] for TabPFN-2.5, [200,800] for TabICLv2, [150,400] for TabPFN-3, [200,800]
+for TabPFN-3.5,[150,400]for EXAONE-Tabular and[200,800]for Causilo.
+An ideal learner would not need the windowA larger budget means a milder dimensionality
+reduction, and thus more of the information carried by the embeddings. A learner able to exploit
+all of its input would therefore see its error decrease steadily with the budget, and the curves of
+Figure F.1 would be non-increasing. Instead, the error of every learner rises again beyond its window,
+highlighting that current TFMs do not handle that many features well, and need the dimensionality
+reduction to make use of the embeddings.
 F.3 CARDINALITY THRESHOLD FOR CATEGORICAL COLUMNS
 TILE passes low-cardinality string columns to the tabular learner as native categorical features in
-addition to target encoding and serializing them. The cardinality threshold therefore controls how
-much information is represented by exact category identity.
-Figure F.2 sweeps the threshold from 5 to 100 over the 100 datasets, for TabPFN-2.5, TabICLv2 and
-TabPFN-3. The curves are mostly flat for all three learners and both problem types, so the threshold
-matters little. We use 50 by default, but other values would serve as well.
+addition to target encoding and serializing them. The cardinality threshold decides if a string column
+by-passes the LLM or not. It is selected on the 27 probing tables only (Section A.5). Figure F.2
+sweeps the threshold from 5 to 100 on these tables, for TabPFN-2.5, TabICLv2 and TabPFN-3. The
+curves are mostly flat for all three learners and both problem types, so the threshold matters little. We
+use 50 by default, but other values would serve as well.
 F.4 CHOOSING THE POOLING STRATEGY
 Figure F.3 compares three ways of pooling the token embeddings of Llama-3.1-8B into a row
 representation, at every layer: mean pooling over the whole sequence, the embedding of the last
@@ -1335,41 +1418,49 @@ embeddings alone, without the by-pass features, on the 27 probing datasets of Se
 pooling is ahead at every layer, and at layer 14 it reaches 0.85, against 0.72 for mean pooling of
 the last layer, the default of the sentence-transformers library; we therefore use it in TILE. This
 comparison favors columnar pooling in one respect: Ridge is applied without PCA, so columnar
-pooling hands it one embedding per column, an input M times wider than the single vector of mean
-or last-token pooling, and part of its advantage may come from that extra dimensionality.
-28
+29
 
 Preprint.
-50 100 200 300 500
-0.80
-0.85
-0.90Mean norm. score (R2&AUC)
-TabPFN-2.5
-50 100 200 300 500
-TabICLv2
-50 100 200 500
-TabPFN-3
-50 100 200 300 500
-Number of PCA components
-0.80
-0.85
-0.90Mean norm. score (R2&AUC)
-TabPFN-3.5
-50 100 200 300 500
-Number of PCA components
-EXAONE-Tabular
-50 100 200 300 500
-Number of PCA components
+50 100 200 400 1200
+0
+10
+20
+30
+Error over best budget (%)
+(1 R2 & 1 AUC)
+within 1% of best
 Causilo
-Regression (normalized R2) Classification (normalized ROC-AUC) All tasks
-Figure F.1:Each learner handles a broad range of feature counts.Averaged score as a function of
-the number of components of a single PCA over the concatenated cell embeddings, which here sets
-the number of features the learner receives. Every estimator benefits from the projection, and each
-stays close to its best over a wide plateau, from which we read the feature-capacity windows used in
-Section 3.1. Thick lines represent aggregated performance across the 100 datasets, while thin lines
-represent individual datasets. Error intervals display the standard error of the mean across datasets.
+50 100 200 400 1200
+within 1% of best
+EXAONE-Tabular
+50 100 200 400 1200
+within 1% of best
+TabICLv2
+50 100 200 400 1200
+Input width
+0
+10
+20
+30
+Error over best budget (%)
+(1 R2 & 1 AUC)
+within 1% of best
+TabPFN-2.5
+50 100 200 400 1200
+Input width
+within 1% of best
+TabPFN-3
+50 100 200 400 1200
+Input width
+within 1% of best
+TabPFN-3.5
+Figure F.1:TFMs need dimensionality reduction.Error relative to the best budget, as a function of
+the learner’s total input width (reduced embeddings plus by-pass features). Dots are geometric means
+over the 27 probing tables (± one standard error). The shaded areas where the performance stays
+within1%of the best budget are the feature-capacity windows used in TILE (Section 3.1).
 5 20 40 60 80 100
 Cardinality threshold
+0.87
 0.88
 0.89
 0.90Mean norm. score (R2&AUC)
@@ -1382,10 +1473,12 @@ Cardinality threshold
 T abPFN-3
 Regression Classification All tasks
 Figure F.2:The categorical cardinality threshold has little effect.Averaged normalized score of
-TILE as a function of the cardinality threshold below which a string column is also passed directly to
-the tabular learner, for TabPFN-2.5, TabICLv2 and TabPFN-3. The curves are mostly flat. We use 50
-in all other experiments.
-29
+TILE on the 27 probing tables as a function of the cardinality threshold below which a string column
+is also passed directly to the tabular learner, for TabPFN-2.5, TabICLv2 and TabPFN-3. The curves
+are mostly flat. We use 50 in all other experiments.
+pooling hands it one embedding per column, an input M times wider than the single vector of mean
+or last-token pooling, and part of its advantage may come from that extra dimensionality.
+30
 
 Preprint.
 0 8 16 24 32
@@ -1408,34 +1501,60 @@ strategies across the layers of Llama-3.1-8B, scored by Ridge on the embeddings 
 features), on the 27 probing datasets of Section A.5. Ridge is used without PCA, so columnar pooling
 gives it a higher-dimensional input than the other two strategies. Scores are normalized over the
 strategies shown here, so they are not comparable with those of the other figures.
-30
+31
 
 Preprint.
 G COMPUTE AND MEMORY COSTS
 G.1 HARDWARE AND TOTAL COMPUTE
-All experiments were conducted on a high-performance computing cluster. Model training and
-evaluation, including TILE and all baseline methods, were executed using different hardware. The
-TILE model can typically be run with a single NVIDIA V100 GPU (32GB VRAM) and 15 CPU
-cores.
+All experiments, for TILE and all baselines, were conducted on a high-performance computing
+cluster, on NVIDIA A100, A40 and H100 GPUs (Section G.2), but TILE can be run on a smaller
+GPU. TILE with Llama-3.1-8B runs on a single GPU and 15 CPU cores: its extraction peaks at 17.7
+GB, or about8.7GB with smaller batches (Section G.3).
 In total, this project consumed approximately 15,200 GPU compute hours. This total consists of
 an estimated 6,500 GPU hours dedicated to developing our method, running ablation studies, and
 conducting exploratory research, alongside 8,700 GPU hours for the evaluation and hyperparameter
 tuning of the baseline models.
 G.2 RUNTIME BY TASK
-Figure G.1 plots improvability against median runtime per dataset, separately for each problem type.
-TILE holds the accurate end of the Pareto front in both: with Causilo, TabPFN-2.5, TabICLv2 and
-TabPFN-3 in regression, and with Causilo, TabICLv2 and TabPFN-3 in classification. The TILE
-variants take 26 to 45 s per dataset (median). TF-IDF pipelines hold the cheap end of the front, with
-Ridge, then Causilo and TabPFN-3.5. In classification, CASE with EXAONE-Tabular and several
-LLM-encoder pipelines also reach the front. The best baseline sits at 18% improvability in regression
-and 21% in classification, against 2% and 5% for TILE with Causilo. Of the error that separates the
-best existing pipeline from the per-dataset best, TILE thus removes nearly nine tenths in regression
-and about four fifths in classification.
-Two caveats apply to these runtimes. First, our LLM encoder embeds each unique cell value only
-once and broadcasts the embedding back to the table (Appendix E), an optimization that skrub does
-not implement; without it, the LLM encoder is several times slower than TILE. Second, TILE and the
-LLM encoder ran on V100 GPUs, whereas CASE, limited by memory, ran on A100 and H100 GPUs,
-so its lower runtimes are largely an artifact of the faster hardware.
+Figure G.1 plots improvability against median runtime per dataset, separately for each problem type,
+with TILE run on the four Llama backbones of Section 5.1. TF-IDF pipelines hold the cheap end of
+the Pareto front, with Ridge, then Causilo and TabPFN-3.5, and TILE holds all the rest of it. A larger
+backbone buys accuracy with time. The median time per dataset of the TILE variants grows with the
+backbone: 7 to 22 s with Llama-3.2-1B, 10 to 30 s with Llama-3.2-3B, 15 to 37 s with Llama-3.1-8B,
+and 40 to 63 s with Llama-3.1-70B. Even with Llama-3.2-1B, every TILE variant is more accurate
+than every baseline, in less time than most cell-wise LLM-encoder and CASE-like pipelines (14 to
+37 s). The best baseline, an LLM-encoder pipeline, sits at 19% improvability in regression and 22%
+in classification, against 2.1% and 4.9% for TILE with Llama-3.1-8B and Causilo, and 1.7% and
+4.2% for the best TILE with Llama-3.1-70B. Of the error that separates the best existing pipeline
+from the per-dataset best, TILE with Llama-3.1-8B thus removes nearly nine tenths in regression and
+more than three quarters in classification.
+We ran TILE pipelines on A100 or A40 GPUs, except the embedding extraction of TILE with Llama-
+3.1-70B, which ran on one H100; this faster hardware slightly favors the runtimes of that backbone.
+Other baselines also ran on A100 or A40 GPUs, except CASE-like for which some datasets produced
+out-of-memory errors and were run on H100 GPUs instead.
+G.3 PEAKGPUMEMORY
+Figure G.2 plots improvability against the peak GPU memory of each method, measured on the same
+1,024 training rows of one dataset (CARTEchocolate_bar_ratings). For two-stage methods,
+the LLM and the tabular learner run one after the other, so the footprint is the larger of the two stages.
+CASE-like keeps its backbone and its learner loaded at the same time, and its footprint covers both.
+TILE peaks at 17.7 GB, CASE-like at 24.6 GB, and the LLM encoder at 16.0 GB, while TILE has
+the lowest improvability in both regression (3.2% vs. 25.4% for the LLM encoder) and classification
+(11.5% vs. 28.5%). TILE’s peak comes from its embedding extraction and mostly reflects its batch
+size, not its model. TILE reads its embeddings at layer 14 of Llama-3.1-8B and therefore loads only
+the first 14 of its 32 blocks, 6.7 GB of weights in bfloat16, about half the 14 GB of the full model
+that the LLM encoder loads. The rest of TILE’s peak is activations, because the extraction groups
+rows into batches of up to 65,536 tokens to make it faster. With a batch of 16 rows, comparable
+to the LLM encoder’s, TILE’s extraction peaks at about 8.7 GB, roughly half the memory of the
+LLM encoder and a third of that of CASE-like. Memory can therefore be traded for extraction speed
+through the batch size.
+TF-IDF with TabPFN-2.5 holds the frugal end of the Pareto front at 2.0 GB, and ContextTab and
+TabSTAR sit just beside it at 2.1–2.2 GB while being markedly less accurate. In classification,
+the LLM encoder also reaches the front, being slightly lighter than TILE at its default batch size.
+TabLLM needs 17.1 GB, about as much as TILE, to generate its predictions as text, for a much
+higher improvability. CASE-like is the heaviest method and, at 30.6% improvability in regression
+and38.6%in classification, it sits in the dominated top-right corner of both panels.
+32
+
+Preprint.
 1 10 100 1000
 Time per 1,024 samples (s), median over datasets
 0
@@ -1456,19 +1575,14 @@ Time per 1,024 samples (s), median over datasets
 50Improvability (%)
 Optimal
 Classification (ROC AUC)
-TILE LLM encoder TF-IDF Internal CASE Pareto front Partially evaluated Tuned
-Figure G.1:TILE holds the accurate end of the Pareto front.Improvability against median time per
-dataset at ntrain = 1,024, split into regression (left) and classification (right). The dashed staircase is
-the Pareto front; Pareto-optimal pipelines are labeled in bold, and the other TILE variants in light
-type. Colors indicate the string encoding and labels the learner; squares mark tuned baselines. CASE
-ran on faster GPUs than TILE and the LLM encoder (Section G.2). TabLLM supports classification
-only, and is evaluated on the 34 datasets it completes.
-G.3 PEAKGPUMEMORY
-Figure G.2 reports the memory counterpart of Figure G.1, measured on a V100-32GB with batches
-of 16 rows, on the chocolate_bar_ratings dataset of CARTE (Kim et al., 2024). TILE peaks
-31
-
-Preprint.
+TILE-1B TILE-3B TILE-8B TILE-70B LLM encoder TF-IDF Internal CASE-like
+Pareto front Partially evaluated Tuned
+Figure G.1:TILE holds the accurate end of the Pareto front.Improvability against median time
+per dataset at ntrain = 1,024, split into regression (left) and classification (right). TILE is run with the
+four Llama backbones, from TILE-1B (Llama-3.2-1B, lightest brown) to TILE-70B (Llama-3.1-70B,
+darkest). The dashed staircase is the Pareto front, and only Pareto-optimal pipelines are labeled, with
+their learner. Colors indicate the string encoding; squares mark tuned baselines. TabLLM supports
+classification only, and is evaluated on the 34 datasets it completes.
 2 5 10 20
 Peak GPU memory (GB)
 0
@@ -1489,33 +1603,18 @@ Peak GPU memory (GB)
 50Improvability (%)
 Optimal
 Classification (ROC AUC)
-TILE LLM encoder TF-IDF Internal CASE Pareto front Partially evaluated
-Figure G.2:TILE nearly halves the memory of the same LLM applied cell-wise.Improvability
-(Section F.1, lower is better) against the peak GPU memory a method needs on1,024 train rows of the
-chocolate_bar_ratings dataset of CARTE, taken as the larger of its two stages: building the
-representation, then fitting the learner and predicting. As in Figure G.1, both axes are costs and the
-dashed staircase is the Pareto front. We report it for TILE, for TF-IDF, the LLM encoder and CASE
-combined with the same learner (TabPFN-2.5), and for the three end-to-end models, which read the
-raw table with a single network. TabLLM supports classification only, and runs out of memory on
-one of the 35 classification datasets, hence the open “partially evaluated” marker: its improvability is
-computed on the 34 datasets it completes.
-at 8.7 GB against 16.0 GB for the cell-wise LLM encoder built on the same Llama-3.1-8B. Loading
-only the layers up to the extraction point, about 45% of the model, nearly halves the footprint of
-the LLM stage, and TILE is by far the more accurate of the two. The learner that follows is light in
-comparison, needing about 2 GB on the projected representation, as much as on TF-IDF features,
-so the additional memory TILE requires is entirely the language model and is released once the
-representation is built.
-The front has only two points on this axis. TF-IDF with TabPFN-2.5 holds the frugal end at 2.0 GB,
-and ContextTab and TabSTAR sit just beside it at2.1–2.2 GB while being markedly less accurate.
-TabLLM needs 17.1 GB—twice TILE’s footprint—to generate its predictions as text, for a much
-higher improvability. CASE is the heaviest method, peaking at 24.6 GB, about three times TILE: it
-keeps its Gemma-3-4B backbone loaded while TabPFN-2.5 runs, so the backbone and the learner
-count together. Its accuracy does not make up for it: at 30% improvability in regression and 38%
-in classification, against 3.6% and 11.3% for TILE, it sits in the dominated top-right corner of both
-panels. Relative to the frugal end, TILE trades about four times the memory for an improvability
-divided by six in regression and by about three in classification. The LLM stage of TILE, not the
-tabular learner, is the binding constraint on the hardware it requires.
-32
+TILE LLM encoder TF-IDF Internal CASE-like Pareto front Partially evaluated
+Figure G.2:TILE can trade memory for speed.Improvability (Section F.1, lower is better) against
+the peak GPU memory a method needs on 1,024 train rows of the chocolate_bar_ratings
+dataset of CARTE (Kim et al., 2024), taken as the larger of its two stages: building the representation,
+then fitting the learner and predicting (CASE-like keeps both loaded, so its footprint covers both).
+As in Figure G.1, both axes are costs and the dashed staircase is the Pareto front. TILE extracts
+embeddings in batches of up to 65,536 tokens; with batches of 16 rows, its peak drops to about 8.7
+GB. We report it for TILE, for TF-IDF, the LLM encoder and CASE-like combined with the same
+learner (TabPFN-2.5), and for the three end-to-end models, which read the raw table with a single
+network. TabLLM supports classification only, its improvability is computed on the 34 datasets it
+completes.
+33
 
 Preprint.
 Table H.1:Raw scores at every training-set size.Unnormalized counterpart of Table 1: R2 for
@@ -1523,107 +1622,110 @@ regression and ROC-AUC for classification, multiplied by 100 and aggregated over
 enough for each training size; their number in parentheses. Because the set of datasets changes with
 the training size, compare scores within a column rather than across. LLM enc. is Llama-3.1-8B
 applied to each cell content in isolation, the same LLM as TILE; TF-IDF is followed by an SVD;
-CASE uses Gemma-3-4B (Appendix E). Best result in bold, second best underlined.
+CASE-likeis CASE with Gemma-3-4B (Appendix E). Best result in bold, second best underlined.
 Regression (R2) Classification (AUC)
 Method 1k (65) 10k (38) 50k (7) 1k (35) 10k (10) 50k (2)
-TILE (TabPFN-2.5) 70.8 76.7 82.6 89.4 90.5 82.6
-TILE (TabICLv2) 70.1 76.4 82.4 89.6 90.3 82.6
-TILE (TabPFN-3) 70.2 76.4 82.3 89.4 90.5 82.7
-TILE (TabPFN-3.5) 70.9 77.1 83.4 89.7 90.6 83.1
-TILE (Causilo)71.3 77.8 84.1 89.7 90.683.0
-CASE + TabPFN-2.5 58.4 61.8 53.9 86.8 89.3 78.4
-CASE + TabICLv2 57.1 62.1 55.9 87.3 89.4 79.2
-CASE + TabPFN-3 58.3 62.5 55.3 86.8 89.4 79.4
-CASE + TabPFN-3.5 61.8 67.2 59.5 88.2 90.2 81.2
-CASE + Causilo 63.2 70.9 76.3 88.0 89.8 80.8
-ContextTab 63.1 71.0 74.5 87.1 89.4 79.7
-TabSTAR 61.9 71.0 79.4 86.1 89.0 79.5
-CatBoost 55.7 65.7 70.9 83.2 89.0 80.8
-LLM enc. + TabPFN-2.5 62.9 72.4 79.9 88.3 90.0 80.0
-LLM enc. + TabICLv2 60.6 72.7 80.0 88.5 90.0 81.3
-LLM enc. + TabPFN-3 63.9 70.7 79.3 87.7 89.0 79.8
-LLM enc. + TabPFN-3.5 64.0 73.6 80.0 88.5 89.9 80.7
-LLM enc. + Causilo 64.7 73.5 81.1 88.6 90.0 81.0
-LLM enc. + RealMLP 58.1 70.5 80.3 86.4 89.2 80.0
-LLM enc. + XGBoost 58.9 70.8 79.6 87.3 89.6 80.7
-LLM enc. + CatBoost 55.0 71.3 79.2 87.2 89.5 80.6
-LLM enc. + Ridge 56.9 63.9 74.0 86.1 87.5 78.1
-TF-IDF + TabPFN-2.5 64.0 71.7 78.7 87.3 89.3 79.8
-TF-IDF + TabICLv2 63.0 71.1 79.2 87.3 89.3 80.5
-TF-IDF + TabPFN-3 63.3 71.0 79.7 86.7 89.0 79.7
-TF-IDF + TabPFN-3.5 65.4 74.0 81.3 87.9 89.9 81.6
-TF-IDF + Causilo 64.6 73.2 80.6 87.6 89.5 81.0
-TF-IDF + RealMLP 60.1 70.3 78.9 85.6 88.5 79.8
-TF-IDF + XGBoost 60.8 70.0 78.4 86.0 88.7 80.0
-TF-IDF + CatBoost 60.5 70.1 77.9 85.9 88.7 80.1
-TF-IDF + Ridge 48.8 32.4 44.5 84.3 75.8 75.7
+TILE (TabPFN-2.5) 71.03 76.95 82.66 89.39 90.54 82.63
+TILE (TabICLv2) 70.27 76.52 82.83 89.56 90.18 82.76
+TILE (TabPFN-3) 70.28 76.48 82.48 89.31 90.43 82.69
+TILE (TabPFN-3.5) 71.12 77.01 83.39 89.67 90.4783.21
+TILE (Causilo)71.56 77.77 84.04 89.77 90.5883.15
+CASE-like + TabPFN-2.5 58.36 61.78 53.90 86.83 89.28 78.43
+CASE-like + TabICLv2 57.09 62.13 55.95 87.31 89.38 79.21
+CASE-like + TabPFN-3 58.27 62.49 55.32 86.80 89.45 79.45
+CASE-like + TabPFN-3.5 61.82 67.18 59.47 88.19 90.21 81.22
+CASE-like + Causilo 63.25 70.86 76.30 87.99 89.75 80.79
+ContextTab 63.10 70.99 74.54 87.09 89.36 79.71
+TabSTAR 61.93 71.05 79.42 86.11 88.98 79.48
+CatBoost 55.70 65.69 70.88 83.24 88.98 80.76
+LLM enc. + TabPFN-2.5 62.94 72.39 79.88 88.33 89.97 80.01
+LLM enc. + TabICLv2 60.64 72.71 79.96 88.55 89.98 81.27
+LLM enc. + TabPFN-3 63.88 70.67 79.30 87.65 88.95 79.83
+LLM enc. + TabPFN-3.5 64.02 73.60 79.96 88.55 89.93 80.73
+LLM enc. + Causilo 64.75 73.46 81.12 88.60 89.95 80.98
+LLM enc. + RealMLP 58.07 70.48 80.26 86.44 89.20 80.03
+LLM enc. + XGBoost 58.95 70.75 79.59 87.29 89.59 80.67
+LLM enc. + CatBoost 54.96 71.29 79.24 87.17 89.53 80.57
+LLM enc. + Ridge 56.91 63.92 74.05 86.15 87.51 78.14
+TF-IDF + TabPFN-2.5 63.95 71.73 78.74 87.34 89.33 79.80
+TF-IDF + TabICLv2 62.97 71.11 79.24 87.32 89.27 80.45
+TF-IDF + TabPFN-3 63.34 70.99 79.69 86.66 89.01 79.69
+TF-IDF + TabPFN-3.5 65.37 74.03 81.26 87.87 89.89 81.59
+TF-IDF + Causilo 64.60 73.17 80.59 87.55 89.54 80.96
+TF-IDF + RealMLP 60.14 70.34 78.87 85.65 88.45 79.77
+TF-IDF + XGBoost 60.83 69.96 78.40 86.02 88.71 79.95
+TF-IDF + CatBoost 60.53 70.06 77.92 85.89 88.67 80.09
+TF-IDF + Ridge 48.81 32.44 44.51 84.26 75.84 75.72
 H RAW RESULTS
 Table H.1 gives the raw scores behind Table 1, for every method and every training-set size. Table H.2
-gives the normalized scores of every method, including the learners omitted from Table 1.
+gives the normalized scores of every method, including the learners omitted from Table 1 for space
+reasons.
 Table H.3 reports how TILE’s performance changes with the base LLM choice and with the ablations
 presented in Figure 4 (removing inter-column attention or using the base LLM directly on cell content,
 the LLM encoder).
 Raw scores on STRABLETable H.5 gives the unnormalized scores behind Figure 3: the mean
 ROC-AUC over STRABLE’s 32 classification datasets and the mean R2 over its 76 regression
-datasets, for the four TILE variants and the STRABLE baselines. The baselines are run with
-STRABLE’s protocol and implementations (Blayer et al., 2026), not those of Appendix E. Most pair
-a string encoder with a tabular learner:
+datasets, for the TILE variants, with Llama-3.1-8B and Llama-3.1-70B, and the 63 STRABLE
+baselines. The baselines are run with STRABLE’s protocol and implementations (Blayer et al., 2026),
+not those of Appendix E. Most pair a string encoder with a tabular learner:
 • String encoders:TF-IDF; FastText (Bojanowski et al., 2017); the sentence encoders E5-small-v2
-(Wang et al., 2022), All-MiniLM-L6-v2 (Wang et al., 2020), Jasper-0.6B (Zhang et al., 2025)
-and Qwen3-Embedding-8B (Yang et al., 2025); Llama-3.1-8B (Grattafiori et al., 2024); Skrub’s
-33
+(Wang et al., 2022), All-MiniLM-L6-v2 (Wang et al., 2020), Jasper-0.6B (Zhang et al., 2025),
+34
 
 Preprint.
-Table H.2:Normalized scores at every training-set size, all learners.Full version of Table 1. Nor-
-malized scores ×100, aggregated over the datasets large enough for each size; counts in parentheses.
-Because the set of datasets varies, compare scores within columns only. LLM enc. is Llama-3.1-
-8B applied to each cell independently; TF-IDF is followed by SVD; CASE uses Gemma-3-4B
-(Appendix E). Best result in bold, second best underlined. Table H.1 gives raw scores.
+Table H.2:Normalized scores at every training-set size, all learners.Full version of Table 1.
+Normalized scores ×100, aggregated over the datasets large enough for each size; counts in paren-
+theses. Because the set of datasets varies, compare scores within columns only. LLM enc. is
+Llama-3.1-8B applied to each cell independently; TF-IDF is followed by SVD;CASE-likeis CASE
+with Gemma-3-4B (Appendix E). Best result in bold, second best underlined. Table H.1 gives raw
+scores.
 Regression (normalizedR 2) Classification (normalized AUC)
 Method 1,024 (65) 10k (38) 50k (7) 1,024 (35) 10k (10) 50k (2)
-TILE (TabPFN-2.5) 90.21 93.19 92.58 88.00 87.62 79.64
-TILE (TabICLv2) 88.70 92.32 92.00 88.94 85.93 80.17
-TILE (TabPFN-3) 88.66 92.32 92.14 87.72 87.67 80.68
-TILE (TabPFN-3.5) 90.67 94.11 94.66 90.35 88.31 84.58
-TILE (Causilo)91.63 95.20 96.05 90.3888.02 83.67
-CASE + TabPFN-2.5 61.97 64.96 49.11 67.50 77.13 35.14
-CASE + TabICLv2 59.43 63.19 48.94 70.45 76.86 42.45
-CASE + TabPFN-3 63.35 66.28 53.68 67.51 77.80 44.33
-CASE + TabPFN-3.5 70.74 74.16 57.43 78.45 84.90 63.31
-CASE + Causilo 71.88 77.00 68.16 76.52 80.83 59.23
-ContextTab 70.78 78.83 66.68 69.96 80.46 49.36
-TabSTAR 66.96 79.52 81.26 57.40 75.75 46.36
-CatBoost 52.33 64.40 51.89 41.02 75.67 62.07
-LLM enc. + TabPFN-2.5 72.97 83.20 85.26 79.48 83.24 52.16
-LLM enc. + TabICLv2 68.82 83.61 85.67 80.59 83.46 66.50
-LLM enc. + TabPFN-3 74.09 79.25 83.21 74.12 76.97 49.29
-LLM enc. + TabPFN-3.5 76.36 86.03 85.81 80.65 83.51 60.38
-LLM enc. + Causilo 77.84 85.10 88.73 80.99 83.34 63.75
-LLM enc. + RealMLP 61.65 79.02 85.37 63.28 77.64 52.22
-LLM enc. + XGBoost 64.29 79.10 83.11 70.21 81.11 58.73
-LLM enc. + CatBoost 53.18 79.59 82.05 68.86 79.97 58.24
-LLM enc. + Ridge 56.28 62.99 66.20 53.58 60.17 32.36
-TF-IDF + TabPFN-2.5 72.91 80.41 79.55 72.59 78.37 50.79
-TF-IDF + TabICLv2 71.03 79.28 79.86 71.80 77.83 57.42
-TF-IDF + TabPFN-3 71.61 78.73 81.86 67.36 75.14 49.37
-TF-IDF + TabPFN-3.5 76.57 86.12 86.65 76.47 82.54 69.50
-TF-IDF + Causilo 75.11 84.13 84.50 74.00 80.05 63.16
-TF-IDF + RealMLP 62.95 77.37 80.18 57.62 71.65 50.36
-TF-IDF + XGBoost 64.98 76.38 77.80 60.93 74.56 52.51
-TF-IDF + CatBoost 64.28 76.78 76.50 59.75 73.04 54.19
-TF-IDF + Ridge 39.72 17.24 12.40 38.62 15.04 12.18
-TargetEncoder (Micci-Barreca, 2001); and TARTE (Kim et al., 2025). The language models embed
-each cell on its own.
-• Tabular learners:the table foundation models TabPFN-2.5 (Grinsztajn et al., 2025), TabICLv2
-(Qu et al., 2026) and Causilo (Cho et al., 2026), and the learners trained from scratch TabM
-(Gorishniy et al., 2025), RealMLP (Holzmüller et al., 2024), XGBoost (Chen & Guestrin, 2016),
-ExtraTrees and Ridge. The suffix “-tuned” marks a hyper-parameter-tuned learner.
+TILE (TabPFN-2.5) 90.42 93.29 92.57 87.03 88.18 79.14
+TILE (TabICLv2) 88.50 92.23 92.61 88.25 85.66 80.68
+TILE (TabPFN-3) 88.36 91.94 91.89 86.91 87.32 80.22
+TILE (TabPFN-3.5) 90.59 93.66 94.43 89.59 88.28 85.05
+TILE (Causilo)91.76 94.99 95.88 89.97 88.3384.37
+CASE-like + TabPFN-2.5 61.68 64.75 49.14 67.23 77.31 34.91
+CASE-like + TabICLv2 59.23 63.05 48.99 70.13 77.02 42.19
+CASE-like + TabPFN-3 63.10 66.10 53.76 67.24 77.98 44.08
+CASE-like + TabPFN-3.5 70.35 73.88 57.55 78.05 85.19 62.99
+CASE-like + Causilo 71.53 76.72 68.26 76.17 81.08 58.94
+ContextTab 70.52 78.56 66.74 69.61 80.79 49.11
+TabSTAR 66.67 79.23 81.33 57.19 75.98 46.12
+CatBoost 52.16 64.19 51.96 40.82 75.93 61.80
+LLM enc. + TabPFN-2.5 72.59 82.88 85.34 79.07 83.50 51.91
+LLM enc. + TabICLv2 68.46 83.33 85.77 80.16 83.75 66.19
+LLM enc. + TabPFN-3 73.77 78.97 83.30 73.76 77.19 49.03
+LLM enc. + TabPFN-3.5 75.99 85.72 85.93 80.24 83.79 60.10
+LLM enc. + Causilo 77.44 84.77 88.84 80.57 83.61 63.47
+LLM enc. + RealMLP 61.34 78.72 85.46 62.96 77.87 51.96
+LLM enc. + XGBoost 64.01 78.84 83.18 69.86 81.39 58.45
+LLM enc. + CatBoost 52.88 79.31 82.11 68.53 80.22 57.96
+LLM enc. + Ridge 56.10 62.80 66.19 53.33 60.33 32.17
+TF-IDF + TabPFN-2.5 72.58 80.11 79.62 72.21 78.65 50.54
+TF-IDF + TabICLv2 70.74 79.00 79.92 71.42 78.11 57.15
+TF-IDF + TabPFN-3 71.30 78.45 81.94 67.05 75.39 49.13
+TF-IDF + TabPFN-3.5 76.22 85.80 86.79 76.08 82.83 69.18
+TF-IDF + Causilo 74.78 83.81 84.63 73.62 80.34 62.87
+TF-IDF + RealMLP 62.71 77.10 80.27 57.37 71.88 50.12
+TF-IDF + XGBoost 64.74 76.12 77.87 60.65 74.83 52.26
+TF-IDF + CatBoost 64.01 76.51 76.54 59.50 73.30 53.93
+TF-IDF + Ridge 39.64 17.19 12.41 38.43 15.16 12.14
+Nemotron-1B and Qwen3-Embedding-8B (Yang et al., 2025); Llama-3.1-8B (Grattafiori et al.,
+2024); Skrub’s TargetEncoder (Micci-Barreca, 2001); and TARTE (Kim et al., 2025). The language
+models embed each cell on its own.
+• Tabular learners:the table foundation models TabPFN-2.5 (Grinsztajn et al., 2025), TabPFN-3
+(Grinsztajn et al., 2026), TabPFN-3.5 (Jäger et al., 2026), TabICLv2 (Qu et al., 2026) and Causilo
+(Cho et al., 2026), and the learners trained from scratch TabM (Gorishniy et al., 2025), RealMLP
+(Holzmüller et al., 2024), XGBoost (Chen & Guestrin, 2016), ExtraTrees and Ridge. The suffix
+“-tuned” marks a hyper-parameter-tuned learner.
 • End-to-end models, which handle strings internally: CatBoost (Prokhorenkova et al., 2018),
 ContextTab (Spinaci et al., 2025), TabSTAR (Arazi et al., 2025) and Mambular (Thielmann et al.,
 2024).
 Tables H.6–H.23 report the raw R2 and ROC-AUC scores of all methods on each individual dataset,
 averaged over 5 random seeds.
-34
+35
 
 Preprint.
 Table H.3:Serialization ablation results aggregated over 100 datasets.Scores are raw R2/AUC
@@ -1633,22 +1735,22 @@ the full-depth model weights exceed the memory of our GPUs. TILE runs with that 
 only loads the layers up to the extraction point.
 Method Base LLM Regression (R 2) Classification (AUC)
 TILE
-Llama-3.1-70B72.16 89.82
-Llama-3.1-8B 70.76 89.44
-Llama-3.2-3B 69.27 89.03
-Llama-3.2-1B 68.33 89.02
-Qwen3-8B-Base 69.35 89.02
-Qwen3-4B-Base 68.51 88.80
-Qwen3-0.6B-Base 66.56 88.23
+Llama-3.1-70B72.38 89.83
+Llama-3.1-8B 71.03 89.39
+Llama-3.2-3B 69.65 89.16
+Llama-3.2-1B 68.66 89.06
+Qwen3-8B-Base 69.95 89.12
+Qwen3-4B-Base 69.05 88.95
+Qwen3-0.6B-Base 67.05 88.31
 TILE w/o
 inter-col. attention
-Llama-3.1-70B 67.12 89.22
-Llama-3.1-8B 68.06 89.07
-Llama-3.2-3B 68.37 88.91
-Llama-3.2-1B 67.28 88.80
-Qwen3-8B-Base 65.98 88.92
-Qwen3-4B-Base 65.46 88.72
-Qwen3-0.6B-Base 65.83 88.27
+Llama-3.1-70B 67.50 89.23
+Llama-3.1-8B 66.98 89.04
+Llama-3.2-3B 65.45 88.88
+Llama-3.2-1B 65.30 88.76
+Qwen3-8B-Base 65.99 89.01
+Qwen3-4B-Base 65.19 88.71
+Qwen3-0.6B-Base 66.61 88.26
 Base LLM on
 cell content
 (LLM encoder)
@@ -1659,129 +1761,188 @@ Llama-3.2-1B 61.36 88.11
 Qwen3-8B-Base 59.67 87.78
 Qwen3-4B-Base 59.84 87.61
 Qwen3-0.6B-Base 64.27 87.72
+73 pipelines of the STRABLE benchmark, by decreasing score
+0.6
+0.7
+0.8
+0.9
+1.0
+Mean normalized score (R2&AUC)
+Score of 1 = using the best baseline on each dataset
+TILE-70B + Causilo (1.057)
+TILE-70B + TabPFN-3.5 (1.042)
+TILE-70B + TabPFN-2.5 (1.027)
+TILE-8B + Causilo (1.022)
+TILE-8B + TabPFN-3.5 (1.006)
+TILE-70B + TabPFN-3 (0.992)
+TILE-70B + TabICLv2 (0.991)
+TILE-8B + TabPFN-2.5 (0.989)
+TILE-8B + TabICLv2 (0.953)
+TILE-8B + TabPFN-3 (0.952)
+Qwen3-Embedding-8B (no PCA) + Causilo (0.950)
+TF-IDF + T abPFN-3.5 (0.947)
+ContextT ab (0.807)
+T argetEncoder + T abPFN-2.5 (0.765)
+String handling
+TILE-8B
+TILE-70B
+LLM encoder
+TF-IDF
+Other encoder
+End-to-end
+5 more baselines
+score below 0.6
+Tabular learner
+TFM non TFM
+Figure H.1:A larger backbone further improves TILE on STRABLE.Same as Figure 3, with
+TILE also run on Llama-3.1-70B (TILE-70B, dark brown); the baselines and their normalization are
+unchanged. With every learner, TILE with Llama-3.1-70B scores above TILE with Llama-3.1-8B.
+36
+
+Preprint.
 Table H.4:Ablation study, raw scores.The ablations of Table 2, with the raw R2/AUC (×100) of the
 default architecture for each learner, and the raw difference obtained for each variation. Differences
 on classification are compressed here because ROC-AUC saturates near the top of its range; the
 normalized scores of Table 2 place the two problem types on a comparable scale.
 TabPFN-2.5 TabICLv2 TabPFN-3
 Model AUCR 2 AUCR 2 AUCR 2
-−numerical by-pass -0.47 -4.41 -0.50 -4.02 -0.52 -4.39
-−inter-column attention -0.37 -2.70 -0.34 -3.65 -0.83 -3.87
-−intermediate layer (last layer) -0.01 -1.51 -0.09 -1.50 -0.01 -1.38
-−numbers in the serialization -0.14 -0.49 -0.16 -0.65 -0.15 -0.68
-−feature-capacity window -0.02 -0.74 -0.01 -0.18 +0.01 -0.47
-−target-encoding by-pass -0.05 -0.13 -0.12 -0.00 -0.13 -0.03
-−standard scaling -0.03 -0.12 -0.04 -0.10 -0.07 -0.17
-−categorical by-pass +0.02 -0.06 +0.01 -0.01 +0.01 -0.04
-TILE (default) 89.44 70.76 89.57 70.14 89.37 70.19
-+numerical-cell embeddings -0.03 -0.03 -0.03 -0.01 -0.05 -0.01
-+one-hot instead of native cat. -0.05 -0.07 +0.02 -0.02 +0.02 -0.06
-+target name -0.20 -0.27 -0.14 -0.26 -0.16 -0.33
-+repeated serialization -0.16 -0.40 -0.19 -0.42 -0.23 -0.51
-+mirrored column order -0.20 -0.66 -0.24 -0.85 -0.28 -0.99
-+uninformative column names -0.26 -1.13 -0.31 -1.26 -0.31 -1.09
-LLM encoder (skrub) -1.11 -7.82 -1.03 -9.50 -1.71 -6.32
-LLM encoder+by-pass features -1.00 -6.73 -0.98 -8.46 -1.86 -7.00
-LLM encoder+feature-capacity window -1.15 -7.43 -1.05 -8.76 -2.12 -8.40
-35
+−numerical by-pass -0.50 -4.64 -0.49 -4.21 -0.53 -4.77
+−inter-column attention -0.35 -4.05 -0.31 -3.02 -0.88 -3.81
+−intermediate layer (last layer) -0.01 -1.21 -0.02 -1.14 +0.01 -1.06
+−feature-capacity window -0.02 -0.91 -0.06 -0.23 +0.00 -0.55
+−numbers in the serialization +0.01 -0.14 -0.07 -0.09 -0.08 -0.15
+−target-encoding by-pass -0.03 -0.08 -0.11 +0.06 -0.08 +0.08
+−standard scaling -0.01 -0.11 -0.03 -0.08 -0.03 -0.12
+−categorical by-pass -0.02 -0.03 -0.01 -0.00 -0.03 -0.04
+TILE (default) 89.39 71.03 89.56 70.27 89.31 70.28
++numerical-cell embeddings +0.00 -0.08 +0.04 +0.10 -0.04 +0.07
++one-hot instead of native cat. -0.01 -0.03 -0.02 -0.03 -0.02 -0.01
++repeated serialization -0.15 -0.00 -0.14 -0.05 -0.17 -0.09
++mirrored column order -0.03 -0.41 -0.02 -0.28 -0.16 -0.56
++target name -0.11 -0.27 -0.10 -0.28 -0.04 -0.29
++uninformative column names -0.25 -1.26 -0.33 -1.27 -0.33 -1.22
+LLM encoder (skrub) -1.06 -8.09 -1.02 -9.63 -1.66 -6.40
+LLM encoder+by-pass features -0.95 -7.00 -0.97 -8.59 -1.80 -7.08
+LLM encoder+feature-capacity window -1.03 -7.67 -0.97 -9.41 -2.00 -8.12
+37
 
 Preprint.
-Table H.5:Raw scores on STRABLE.Unnormalized counterpart of Figure 3, multiplied by 100: the
-ROC-AUC averaged over the 32 classification datasets, and theR2 (clipped at 0) averaged over the
-76 regression datasets, each dataset scored by its average over 3 cross-validation folds. The ± is the
-standard error of that mean due to the cross-validation splits. Labels in parentheses are STRABLE’s
-preprocessing variants of the same pipeline. Best result in bold.
+Table H.5:Raw scores on STRABLE.Unnormalized counterpart of Figure 3, multiplied by 100:
+the ROC-AUC averaged over the 32 classification datasets, and theR2 (clipped at 0) averaged over
+the 76 regression datasets, each dataset scored by its average over 3 cross-validation folds. The ± is
+the standard error of that mean due to the cross-validation splits. TILE is run with Llama-3.1-8B and
+Llama-3.1-70B (Figure H.1). Labels in parentheses are STRABLE’s preprocessing variants of the
+same pipeline. Best result in bold.
 Pipeline Classification AUC (32) RegressionR 2 (76)
-TILE + Causilo86.4±0.173.0±0.1
-TILE + TabPFN-2.5 86.0±0.172.1±0.1
-TILE + TabICLv2 85.9±0.171.4±0.1
-TILE + TabPFN-3 85.7±0.171.3±0.1
-TF-IDF + Causilo86.4±0.170.7±0.2
-TF-IDF + TabPFN-2.5 85.9±0.169.7±0.2
-Qwen3-Embedding-8B (no PCA) + TabPFN-2.5 85.5±0.170.0±0.1
-E5-small-v2 + TabPFN-2.5 85.7±0.167.5±0.2
-FastText + TabPFN-2.5 85.2±0.167.7±0.2
-TF-IDF + TabICLv2 85.4±0.168.3±0.2
-Qwen3-Embedding-8B + TabM 84.4±0.168.4±0.1
-Qwen3-Embedding-8B + TabICLv2 (no PCA) 85.1±0.168.6±0.2
-All-MiniLM-L6-v2 + TabPFN-2.5 85.4±0.267.2±0.3
-Llama-3.1-8B + TabM 84.1±0.168.0±0.2
-TF-IDF + XGBoost-tuned 85.0±0.267.5±0.2
-ContextTab 84.2±0.168.1±0.2
-TF-IDF + RealMLP 83.8±0.167.9±0.2
-All-MiniLM-L6-v2 + TabM 83.6±0.167.2±0.1
-E5-small-v2 + XGBoost-tuned 84.7±0.166.4±0.2
-E5-small-v2 + ExtraTrees-tuned 84.5±0.166.9±0.2
-TF-IDF + ExtraTrees-tuned 84.5±0.166.6±0.2
-All-MiniLM-L6-v2 + ExtraTrees-tuned 84.3±0.166.7±0.2
-FastText + XGBoost-tuned 84.1±0.266.3±0.1
-All-MiniLM-L6-v2 + RealMLP 83.0±0.167.3±0.2
-All-MiniLM-L6-v2 + XGBoost-tuned 84.3±0.166.0±0.2
-TF-IDF + TabM 83.7±0.166.1±0.2
-FastText + ExtraTrees-tuned 83.8±0.266.6±0.2
-Llama-3.1-8B + ExtraTrees-tuned 84.4±0.166.2±0.2
-Llama-3.1-8B + RealMLP 83.3±0.266.3±0.4
-Qwen3-Embedding-8B + ExtraTrees-tuned 84.7±0.165.9±0.2
-TargetEncoder + TabPFN-2.5 82.8±0.166.6±0.2
-Qwen3-Embedding-8B + RealMLP 83.4±0.166.6±0.2
-Jasper-0.6B + ExtraTrees-tuned 84.5±0.165.3±0.2
-TabSTAR 83.7±0.364.3±0.2
-Target encoding + XGBoost-tuned 82.2±0.265.2±0.2
-Qwen3-Embedding-8B + TabICLv2 84.7±0.262.3±0.3
-E5-small-v2 + ExtraTrees 81.2±0.166.0±0.2
-Target encoding + ExtraTrees-tuned 82.0±0.264.9±0.2
-CatBoost 82.2±0.164.2±0.2
-TARTE + TabPFN-2.5 81.3±0.265.2±0.2
-CatBoost-tuned 82.0±0.264.2±0.2
-Llama-3.1-8B + XGBoost-tuned 84.4±0.261.2±0.5
-Qwen3-Embedding-8B + XGBoost-tuned 84.5±0.161.1±0.4
-Jasper-0.6B + XGBoost-tuned 83.9±0.261.2±0.4
-TF-IDF + XGBoost 82.7±0.163.3±0.2
-Qwen3-Embedding-8B + TabPFN-2.5 85.1±0.158.4±0.5
-Llama-3.1-8B + TabPFN-2.5 84.5±0.157.8±0.4
-Jasper-0.6B + TabPFN-2.5 85.0±0.157.9±0.4
-Llama-3.1-8B + TabICLv2 (StandScal + PCA (30)) 84.3±0.257.8±0.5
-Llama-3.1-8B + TabICLv2 84.4±0.257.4±0.6
-TARTE + XGBoost-tuned 79.8±0.260.1±0.1
-Qwen3-Embedding-8B + Ridge (OHE|CT=30) 80.8±0.156.5±0.2
-Qwen3-Embedding-8B + Ridge 80.8±0.156.1±0.2
-TARTE + ExtraTrees-tuned 78.3±0.156.5±0.1
-Mambular 75.8±0.249.9±0.2
-36
+TILE (Llama-3.1-70B) + Causilo 87.63±0.1174.23±0.13
+TILE (Llama-3.1-70B) + TabPFN-3.587.66±0.1073.63±0.14
+TILE (Llama-3.1-70B) + TabPFN-2.5 87.05±0.1173.65±0.14
+TILE (Llama-3.1-8B) + Causilo 87.19±0.1273.41±0.11
+TILE (Llama-3.1-8B) + TabPFN-3.5 87.27±0.1172.67±0.13
+TILE (Llama-3.1-70B) + TabPFN-3 86.75±0.1272.67±0.15
+TILE (Llama-3.1-70B) + TabICLv2 87.05±0.1172.40±0.15
+TILE (Llama-3.1-8B) + TabPFN-2.5 86.59±0.0972.71±0.13
+TILE (Llama-3.1-8B) + TabICLv2 86.62±0.1171.41±0.14
+TILE (Llama-3.1-8B) + TabPFN-3 86.18±0.1271.80±0.13
+Qwen3-Embedding-8B (no PCA) + Causilo 86.34±0.1171.52±0.14
+Qwen3-Embedding-8B (no PCA) + TabPFN-3.5 86.56±0.1171.41±0.14
+TF-IDF + TabPFN-3.5 86.75±0.1270.99±0.16
+Llama-3.1-8B (no PCA) + TabPFN-3.5 86.38±0.1171.25±0.14
+Llama-3.1-8B (no PCA) + Causilo 86.18±0.1271.25±0.14
+TF-IDF + Causilo 86.36±0.1370.66±0.17
+All-MiniLM-L6-v2 + TabPFN-3.5 86.33±0.1269.54±0.14
+All-MiniLM-L6-v2 + Causilo 85.96±0.1369.38±0.17
+TF-IDF + TabPFN-2.5 85.93±0.1369.65±0.16
+Qwen3-Embedding-8B (no PCA) + TabPFN-2.5 85.50±0.1270.03±0.14
+E5-small-v2 + TabPFN-2.5 85.74±0.1267.46±0.23
+TF-IDF + TabPFN-3 85.19±0.1468.66±0.15
+FastText + TabPFN-2.5 85.24±0.1267.69±0.19
+TF-IDF + TabICLv2 85.38±0.1468.33±0.17
+Qwen3-Embedding-8B (no PCA) + TabPFN-3 84.75±0.1268.91±0.14
+Qwen3-Embedding-8B + TabM 84.39±0.1168.36±0.14
+Qwen3-Embedding-8B (no PCA) + TabICLv2 85.06±0.1068.59±0.15
+All-MiniLM-L6-v2 + TabPFN-2.5 85.40±0.1567.22±0.31
+Llama-3.1-8B (no PCA) + TabPFN-3 84.43±0.1268.57±0.14
+Llama-3.1-8B + TabM 84.10±0.1267.99±0.15
+TF-IDF + XGBoost-tuned 85.01±0.1567.52±0.15
+Llama-3.1-8B (StandScal + PCA (30)) + TabPFN-2.5 85.83±0.1465.48±0.28
+ContextTab 84.23±0.1068.11±0.15
+Nemotron-1B + TabPFN-2.5 85.37±0.1665.27±0.29
+TF-IDF + RealMLP 83.81±0.1367.88±0.18
+All-MiniLM-L6-v2 + TabM 83.57±0.1167.16±0.14
+E5-small-v2 + XGBoost-tuned 84.71±0.1166.38±0.16
+E5-small-v2 + ExtraTrees-tuned 84.51±0.1466.92±0.16
+TF-IDF + ExtraTrees-tuned 84.54±0.1466.64±0.18
+All-MiniLM-L6-v2 + ExtraTrees-tuned 84.28±0.1266.68±0.17
+FastText + XGBoost-tuned 84.06±0.2066.25±0.13
+All-MiniLM-L6-v2 + RealMLP 82.98±0.0967.27±0.16
+All-MiniLM-L6-v2 + XGBoost-tuned 84.33±0.1465.98±0.21
+TF-IDF + TabM 83.69±0.1166.09±0.16
+FastText + ExtraTrees-tuned 83.82±0.1566.57±0.19
+All-MiniLM-L6-v2 + TabPFN-3 84.12±0.1266.21±0.21
+Llama-3.1-8B + ExtraTrees-tuned 84.43±0.1366.21±0.21
+Llama-3.1-8B + RealMLP 83.27±0.1566.32±0.35
+Qwen3-Embedding-8B + ExtraTrees-tuned 84.65±0.1465.86±0.21
+TargetEncoder + TabPFN-2.5 82.84±0.1366.56±0.16
+Qwen3-Embedding-8B + RealMLP 83.35±0.1366.61±0.24
+Jasper-0.6B + ExtraTrees-tuned 84.49±0.1265.27±0.20
+TabSTAR 83.74±0.3164.30±0.22
+TargetEncoder + XGBoost-tuned 82.21±0.1665.24±0.16
+Qwen3-Embedding-8B + TabICLv2 84.71±0.1562.41±0.33
+E5-small-v2 + ExtraTrees 81.22±0.1265.97±0.17
+TargetEncoder + ExtraTrees-tuned 81.99±0.1564.85±0.17
+CatBoost 82.18±0.1264.15±0.17
+CatBoost-tuned 81.96±0.1764.22±0.18
+TARTE + TabPFN-2.5 81.33±0.1565.17±0.15
+Llama-3.1-8B + XGBoost-tuned 84.37±0.2261.17±0.53
+Qwen3-Embedding-8B + XGBoost-tuned 84.50±0.1361.12±0.42
+Jasper-0.6B + XGBoost-tuned 83.92±0.2361.24±0.40
+TF-IDF + XGBoost 82.66±0.1163.29±0.16
+Qwen3-Embedding-8B + TabPFN-2.5 85.07±0.1158.42±0.46
+Llama-3.1-8B + TabPFN-2.5 84.49±0.1457.84±0.42
+Jasper-0.6B + TabPFN-2.5 85.01±0.1257.92±0.37
+Llama-3.1-8B (StandScal + PCA (30)) + TabICLv2 84.29±0.1857.75±0.51
+Llama-3.1-8B + TabICLv2 84.38±0.1757.46±0.55
+TARTE + XGBoost-tuned 79.77±0.1560.09±0.13
+Qwen3-Embedding-8B + Ridge 80.79±0.1456.12±0.15
+TARTE + ExtraTrees-tuned 78.32±0.1356.46±0.13
+Mambular 76.32±0.2049.93±0.19
+38
 
 Preprint.
-Table H.6:Regression results for TextTabBench datasets (part 1 of 3).Raw R2 scores (clipped
-at 0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples,
-for TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder
+Table H.6:Regression results for TextTabBench datasets (part 1 of 3).Raw R2 scores (clipped at
+0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
+TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder
 (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
 Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Airbnb 73.78 72.38 55.48 73.77 71.20 69.86 52.16 71.66 72.17 70.80 64.30 71.24
-Beer 66.99 57.30 62.73 58.71 66.33 58.02 62.68 58.78 66.19 59.08 62.91 58.45
-COVID Trials 22.49 23.22 18.62 25.07 23.20 22.50 14.19 24.82 22.55 22.30 18.64 23.90
-California Houses 69.63 65.18 67.11 67.24 68.08 66.22 66.64 66.53 68.26 63.67 66.49 66.60
-IT Salary 48.2246.77 39.18 46.93 45.57 44.35 0.84 33.50 47.85 38.81 42.39 44.74
-Insurance Complaints 42.55 39.68 35.48 42.34 45.15 44.46 35.87 44.30 44.09 43.69 35.85 42.98
-Mercari 43.30 24.09 32.50 26.53 41.63 23.81 32.83 26.84 41.58 26.24 29.71 25.27
-San Francisco Permits 61.44 62.87 57.09 63.65 62.31 63.46 47.41 63.99 62.38 63.34 60.36 64.18
-Stack Overflow 99.70 99.82 85.96 99.67 99.78 99.78 87.65 99.86 99.59 97.08 79.10 99.70
-Wine 87.79 74.79 69.19 76.90 87.23 73.21 65.46 73.73 86.78 75.50 71.08 74.92
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Airbnb 73.98 72.38 55.48 73.77 71.00 69.86 52.16 71.66 71.70 70.80 64.30 71.24
+Beer 66.48 57.30 62.73 58.71 66.39 58.02 62.68 58.78 65.84 59.08 62.91 58.45
+COVID Trials 22.11 23.22 18.62 25.07 21.77 22.50 14.19 24.82 21.12 22.30 18.64 23.90
+California Houses 69.15 65.18 67.11 67.24 67.88 66.22 66.64 66.53 68.36 63.67 66.49 66.60
+IT Salary 47.66 46.77 39.18 46.93 46.64 44.35 0.84 33.50 47.72 38.81 42.39 44.74
+Insurance Complaints42.75 39.68 35.48 42.34 44.58 44.46 35.87 44.30 44.30 43.69 35.85 42.98
+Mercari 44.15 24.09 32.50 26.53 43.79 23.81 32.83 26.84 40.61 26.24 29.71 25.27
+San Francisco Permits62.85 62.87 57.09 63.65 61.71 63.46 47.41 63.99 62.69 63.34 60.36 64.18
+Stack Overflow 99.73 99.82 85.96 99.67 99.73 99.78 87.65 99.86 99.62 97.08 79.10 99.70
+Wine 86.68 74.79 69.19 76.90 84.41 73.21 65.46 73.73 85.58 75.50 71.08 74.92
 Table H.7:Regression results for TextTabBench datasets (part 2 of 3).Raw R2 scores (clipped at
 0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
-TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder
-(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
+TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM
+encoder (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35
+methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Airbnb 72.27 70.12 66.51 73.15 74.5273.57 64.80 74.27 74.29 73.30 64.22 74.21
-Beer 66.80 64.28 64.45 61.84 67.5059.20 64.30 60.66 67.24 59.75 64.02 59.32
-COVID Trials 25.00 26.13 23.90 26.32 23.03 24.81 22.51 25.58 25.85 26.21 20.0126.76
-California Houses 68.93 66.28 66.92 68.01 69.99 68.51 68.13 68.51 70.7468.07 68.10 68.14
-IT Salary 47.98 46.43 38.28 45.50 47.63 46.54 41.60 45.44 46.68 44.38 20.59 29.52
-Insurance Complaints 44.81 45.79 26.50 45.98 44.34 44.46 40.51 45.39 44.98 45.46 39.28 44.65
-Mercari 42.41 31.58 34.47 29.91 44.79 26.67 35.13 29.58 44.9629.74 34.63 29.36
-San Francisco Permits 62.82 63.67 57.83 64.37 62.93 63.68 60.91 64.20 63.33 63.91 61.1564.47
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Airbnb 72.29 70.12 66.51 73.15 74.3673.57 64.80 74.27 74.15 73.30 64.22 74.21
+Beer 66.71 64.28 64.45 61.84 67.2859.20 64.30 60.66 66.67 59.75 64.02 59.32
+COVID Trials 24.73 26.13 23.90 26.32 22.88 24.81 22.51 25.58 25.91 26.21 20.0126.76
+California Houses 69.22 66.28 66.92 68.01 70.6668.51 68.13 68.51 69.88 68.07 68.10 68.14
+IT Salary 48.64 46.43 38.28 45.50 47.32 46.54 41.60 45.44 48.8244.38 20.59 29.52
+Insurance Complaints44.62 45.79 26.50 45.98 44.61 44.46 40.51 45.39 44.30 45.46 39.28 44.65
+Mercari 43.51 31.58 34.47 29.91 43.36 26.67 35.13 29.58 45.2329.74 34.63 29.36
+San Francisco Permits62.47 63.67 57.83 64.37 62.89 63.68 60.91 64.20 63.40 63.91 61.1564.47
 Stack Overflow 99.79 99.81 77.97 99.78 99.9399.9499.88 99.93 99.87 99.89 99.26 99.86
-Wine 88.09 77.83 78.81 77.63 88.41 76.19 76.96 78.33 88.7874.86 79.91 77.29
+Wine 86.51 77.83 78.81 77.63 87.17 76.19 76.96 78.33 87.4274.86 79.91 77.29
 Table H.8:Regression results for TextTabBench datasets (part 3 of 3).Raw R2 scores (clipped
 at 0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples,
 for the remaining learners, fed with the cell-wise LLM encoder (Llama-3.1-8B) or TF-IDF, and the
@@ -1799,105 +1960,106 @@ Mercari 30.62 25.55 30.63 25.43 15.53 31.38 24.86 25.72 21.42 26.93 41.42
 San Francisco Permits 53.23 62.59 51.92 61.86 59.84 36.24 62.40 54.77 54.11 60.27 59.41
 Stack Overflow 96.85 97.90 94.04 98.22 89.78 90.71 97.47 31.92 41.50 82.93 97.53
 Wine 71.74 70.34 65.02 68.92 69.20 68.77 74.97 76.15 69.35 73.04 67.75
-37
+39
 
 Preprint.
 Table H.9:Regression results for CARTE datasets (part 1 of 3).Raw R2 scores (clipped at 0
 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
-TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder
+TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder
 (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
 Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Anime Planet 64.08 46.31 54.11 54.43 63.69 39.48 56.66 54.29 63.21 45.92 57.03 54.52
-Babies R Us 81.78 76.26 53.45 79.38 82.64 71.75 68.73 79.39 82.46 77.76 70.49 79.84
-Beer Ratings 61.27 51.78 57.67 53.38 60.23 52.03 57.78 54.36 59.89 52.80 56.61 52.32
-BikeDekho 80.8678.12 63.47 78.81 80.01 77.75 71.36 78.66 80.22 78.85 74.62 78.73
-BikeWale 80.77 72.46 76.74 75.04 80.26 72.70 77.14 75.32 80.50 75.36 78.82 74.96
-Buy Buy Baby 81.88 76.43 68.66 77.79 81.51 74.99 77.98 78.22 81.84 78.71 78.86 77.76
-CLEAR Corpus 66.39 61.68 69.13 60.34 65.62 60.38 65.13 60.58 63.82 62.15 65.58 60.23
-CarDekho 92.92 82.36 88.87 92.28 91.84 81.94 81.26 91.13 91.62 85.45 88.22 90.99
-Company Employees 83.52 80.43 59.13 79.87 83.77 80.43 36.47 79.53 84.24 80.97 66.93 79.96
-Employee Remuneration65.60 54.13 62.95 61.19 66.22 55.52 63.83 61.89 65.79 56.71 61.65 61.49
-Employee Salaries 91.03 74.90 74.92 89.10 90.86 75.54 54.72 89.57 91.58 79.64 88.88 89.97
-FIFA 22 Players 89.22 73.91 86.22 82.55 86.74 67.56 86.19 79.42 88.29 73.19 85.42 83.24
-FilmTV Movies 47.65 41.79 44.09 43.64 48.51 42.35 46.07 44.17 48.30 43.76 44.77 43.94
-Japanese Anime 67.63 63.49 59.07 65.66 65.80 54.47 58.78 63.00 66.95 48.04 59.32 63.64
-Journal JCR 68.44 41.21 54.33 48.97 67.05 36.91 54.55 47.94 67.90 27.78 54.39 48.60
-Journal SJR 85.03 44.33 73.15 80.68 84.22 42.43 72.09 80.02 84.07 43.85 70.69 79.78
-K-Drama 54.96 51.25 47.60 55.01 53.42 54.09 34.56 52.47 53.79 52.38 44.46 50.99
-ML/DS Salaries 47.30 46.21 25.09 46.90 47.75 46.31 24.22 45.75 47.78 46.86 37.67 47.35
-Movies 73.7852.96 67.49 68.29 72.43 48.25 66.94 66.99 72.38 46.76 68.12 67.45
-Museums 71.53 55.68 61.77 59.70 71.98 51.94 61.01 57.67 71.66 55.75 57.47 58.58
-MyDramaList 57.96 51.07 55.79 56.66 57.04 47.07 52.88 53.97 58.10 50.38 50.66 54.82
-Prescription Drugs 86.06 79.06 86.02 84.37 85.95 78.42 86.08 83.73 85.88 77.57 85.65 84.15
-Rotten Tomatoes 57.22 46.98 52.01 47.94 53.40 45.20 48.02 45.93 55.62 46.56 50.43 46.95
-US Accidents Counts 38.17 22.68 29.99 21.35 38.46 20.41 30.36 22.90 38.72 22.83 28.70 22.02
-US Presidential 77.22 61.79 46.82 60.84 77.14 62.63 52.26 61.21 77.07 62.53 64.37 61.21
-Used Cars 24 89.94 87.92 86.55 87.71 89.53 88.58 73.33 88.01 89.37 88.57 84.54 88.08
-Used Cars Benz Italy 92.48 88.53 90.84 91.64 92.07 89.72 90.41 91.66 92.44 89.55 92.10 91.99
-Used Cars Pakistan 91.96 91.55 84.62 91.30 91.95 91.83 86.84 91.42 91.86 92.26 91.33 91.55
-Used Cars Saudi Arabia 64.62 62.91 60.88 61.97 63.38 63.27 39.19 61.08 63.89 62.90 63.22 61.53
-UsedCars.Com 88.39 67.53 86.17 83.59 88.55 70.81 88.15 83.90 87.77 77.38 87.49 83.23
-Videogame Sales 57.12 41.06 44.55 33.41 57.19 40.67 45.02 33.78 57.20 42.99 41.48 32.84
-Vivino Prices 83.22 77.48 79.08 77.51 83.40 77.15 79.12 77.15 83.28 77.68 78.36 77.44
-Vivino Ratings 59.75 59.41 59.10 59.97 60.26 59.84 58.94 59.61 60.13 60.13 58.78 60.03
-WikiLIQ Beer 68.91 61.65 64.35 64.88 70.20 61.65 66.60 64.90 69.46 61.73 67.03 64.55
-WikiLIQ Spirit 64.91 50.91 60.19 53.79 64.84 51.03 60.59 54.18 63.69 51.80 57.88 53.11
-Wina Poland 76.05 65.45 60.62 67.11 76.60 63.98 59.19 67.36 75.46 68.62 56.31 64.92
-Wine.com Prices 83.29 73.51 79.33 74.62 82.59 73.05 78.75 72.99 82.40 73.67 78.72 72.84
-Wine.com Ratings 27.45 24.23 27.42 26.77 27.42 19.89 26.45 27.02 26.69 23.86 25.60 26.14
-WineEnthusiasts Prices 64.77 55.34 62.45 58.75 64.14 54.83 62.27 59.15 62.77 56.62 60.84 59.37
-WineEnthusiasts Ratings74.79 49.36 69.31 58.39 74.41 50.02 69.85 58.78 72.73 51.75 68.92 58.01
-38
+String encoding TILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDF
+Anime Planet 64.58 46.31 54.11 54.43 63.28 39.48 56.66 54.29 63.54 45.92 57.03 54.52
+Babies R Us 81.85 76.26 53.45 79.38 82.70 71.75 68.73 79.39 82.47 77.76 70.49 79.84
+Beer Ratings 60.94 51.78 57.67 53.38 60.57 52.03 57.78 54.36 59.66 52.80 56.61 52.32
+BikeDekho 81.1078.12 63.47 78.81 79.49 77.75 71.36 78.66 80.08 78.85 74.62 78.73
+BikeWale 81.1272.46 76.74 75.04 80.30 72.70 77.14 75.32 80.50 75.36 78.82 74.96
+Buy Buy Baby 82.06 76.43 68.66 77.79 81.86 74.99 77.98 78.22 81.80 78.71 78.86 77.76
+CLEAR Corpus 66.44 61.68 69.13 60.34 65.05 60.38 65.13 60.58 63.87 62.15 65.58 60.23
+CarDekho 93.09 82.36 88.87 92.28 91.75 81.94 81.26 91.13 91.57 85.45 88.22 90.99
+Company Employees 83.90 80.43 59.13 79.87 84.35 80.43 36.47 79.53 84.57 80.97 66.93 79.96
+Employee Remuneration65.92 54.13 62.95 61.19 67.64 55.52 63.83 61.89 65.70 56.71 61.65 61.49
+Employee Salaries 90.78 74.90 74.92 89.10 91.07 75.54 54.72 89.57 91.09 79.64 88.88 89.97
+FIFA 22 Players 89.82 73.91 86.22 82.55 87.98 67.56 86.19 79.42 89.33 73.19 85.42 83.24
+FilmTV Movies 47.70 41.79 44.09 43.64 48.06 42.35 46.07 44.17 48.45 43.76 44.77 43.94
+Japanese Anime 69.51 63.49 59.07 65.66 67.08 54.47 58.78 63.00 68.42 48.04 59.32 63.64
+Journal JCR 71.04 41.21 54.33 48.97 68.82 36.91 54.55 47.94 69.73 27.78 54.39 48.60
+Journal SJR 85.41 44.33 73.15 80.68 84.85 42.43 72.09 80.02 84.81 43.85 70.69 79.78
+K-Drama 57.04 51.25 47.60 55.01 54.40 54.09 34.56 52.47 54.60 52.38 44.46 50.99
+ML/DS Salaries 47.84 46.21 25.09 46.90 48.06 46.31 24.22 45.75 48.23 46.86 37.67 47.35
+Movies 72.74 52.96 67.49 68.29 70.69 48.25 66.94 66.99 70.48 46.76 68.12 67.45
+Museums 71.45 55.68 61.77 59.70 71.78 51.94 61.01 57.67 71.68 55.75 57.47 58.58
+MyDramaList 58.62 51.07 55.79 56.66 58.30 47.07 52.88 53.97 58.85 50.38 50.66 54.82
+Prescription Drugs 85.93 79.06 86.02 84.37 85.71 78.42 86.08 83.73 85.68 77.57 85.65 84.15
+Rotten Tomatoes 57.44 46.98 52.01 47.94 54.30 45.20 48.02 45.93 55.81 46.56 50.43 46.95
+US Accidents Counts 38.24 22.68 29.99 21.35 38.45 20.41 30.36 22.90 38.61 22.83 28.70 22.02
+US Presidential 77.93 61.79 46.82 60.84 77.61 62.63 52.26 61.21 77.55 62.53 64.37 61.21
+Used Cars 24 89.87 87.92 86.55 87.71 89.79 88.58 73.33 88.01 89.70 88.57 84.54 88.08
+Used Cars Benz Italy 92.59 88.53 90.84 91.64 91.98 89.72 90.41 91.66 92.42 89.55 92.10 91.99
+Used Cars Pakistan 92.16 91.55 84.62 91.30 92.19 91.83 86.84 91.42 91.95 92.26 91.33 91.55
+Used Cars Saudi Arabia65.77 62.91 60.88 61.97 63.89 63.27 39.19 61.08 64.05 62.90 63.22 61.53
+UsedCars.Com 88.72 67.53 86.17 83.59 88.73 70.81 88.15 83.90 88.16 77.38 87.49 83.23
+Videogame Sales 57.71 41.06 44.55 33.41 57.23 40.67 45.02 33.78 56.72 42.99 41.48 32.84
+Vivino Prices 83.42 77.48 79.08 77.51 83.64 77.15 79.12 77.15 83.42 77.68 78.36 77.44
+Vivino Ratings 59.99 59.41 59.10 59.97 60.47 59.84 58.94 59.61 60.46 60.13 58.78 60.03
+WikiLIQ Beer 68.02 61.65 64.35 64.88 69.90 61.65 66.60 64.90 68.27 61.73 67.03 64.55
+WikiLIQ Spirit 65.93 50.91 60.19 53.79 65.28 51.03 60.59 54.18 63.09 51.80 57.88 53.11
+Wina Poland 75.90 65.45 60.62 67.11 76.27 63.98 59.19 67.36 75.65 68.62 56.31 64.92
+Wine.com Prices 83.34 73.51 79.33 74.62 82.48 73.05 78.75 72.99 82.60 73.67 78.72 72.84
+Wine.com Ratings 27.89 24.23 27.42 26.77 27.63 19.89 26.45 27.02 27.48 23.86 25.60 26.14
+WineEnthusiasts Prices66.09 55.34 62.45 58.75 64.89 54.83 62.27 59.15 63.15 56.62 60.84 59.37
+WineEnthusiasts Ratings74.76 49.36 69.31 58.39 73.34 50.02 69.85 58.78 73.04 51.75 68.92 58.01
+40
 
 Preprint.
 Table H.10:Regression results for CARTE datasets (part 2 of 3).Raw R2 scores (clipped at 0
 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
-TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder
-(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
+TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM
+encoder (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35
+methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Anime Planet 64.06 50.64 59.31 55.22 64.54 48.39 58.93 55.93 64.5548.04 59.41 55.42
-Babies R Us 82.90 80.86 73.11 81.67 82.48 78.95 73.90 79.73 83.73 80.35 70.64 81.19
-Beer Ratings 60.54 56.35 58.86 56.52 61.6253.08 59.23 55.36 61.52 53.37 58.87 54.57
-BikeDekho 79.56 79.95 74.81 78.85 79.84 78.16 73.78 77.90 79.71 79.28 70.28 79.11
-BikeWale 80.20 76.53 79.00 76.44 80.9678.82 78.25 75.90 80.84 79.61 77.80 75.73
-Buy Buy Baby 82.5881.50 80.37 78.66 82.31 79.25 78.25 79.13 82.08 80.08 78.03 79.26
-CLEAR Corpus 65.90 63.49 69.81 61.77 66.05 63.1170.2260.79 66.93 63.04 69.35 60.84
-CarDekho 91.92 87.77 89.61 92.00 93.06 90.54 91.07 92.70 93.1590.60 84.88 92.36
-Company Employees 84.4181.03 31.84 79.84 83.94 80.61 16.20 80.09 84.08 80.91 49.74 80.13
-Employee Remuneration66.64 60.82 65.52 63.24 66.43 59.60 63.79 62.29 66.18 60.81 65.00 63.27
-Employee Salaries 91.56 85.70 80.65 89.94 91.20 89.30 82.83 89.99 91.5989.78 82.02 90.26
-FIFA 22 Players 89.31 78.3191.0489.15 89.91 81.96 89.96 87.58 89.80 82.27 89.11 85.17
-FilmTV Movies 48.76 44.18 45.98 45.07 48.89 43.19 45.61 43.75 48.9342.87 46.42 44.45
-Japanese Anime 67.73 64.34 61.75 66.16 68.7065.39 65.44 66.55 68.07 65.11 61.79 65.44
-Journal JCR 68.46 39.90 56.15 50.53 69.4348.09 55.85 50.02 68.58 43.87 56.46 50.00
-Journal SJR 84.76 56.78 73.31 81.92 84.99 70.18 70.35 81.04 85.3369.59 71.45 81.47
-K-Drama 55.32 52.26 49.84 52.74 55.42 52.23 47.90 51.90 56.96 53.18 51.27 55.00
-ML/DS Salaries 47.9047.22 24.49 47.39 47.81 46.45 27.22 47.62 47.04 46.27 30.44 47.56
-Movies 73.12 51.49 68.38 68.27 73.75 66.50 68.01 68.52 73.75 65.45 68.77 68.11
-Museums 72.18 57.11 62.21 61.63 71.88 56.70 63.60 60.75 72.2558.03 62.85 60.13
-MyDramaList 59.16 52.68 54.82 56.78 59.8451.50 57.30 58.06 59.20 51.55 56.56 57.10
-Prescription Drugs 86.51 81.31 87.19 85.50 86.77 83.29 86.55 85.27 86.14 82.5987.3985.06
-Rotten Tomatoes 55.98 48.87 51.88 47.36 58.4650.08 52.79 48.72 57.03 49.25 51.65 47.82
-US Accidents Counts 39.7529.19 30.41 24.59 39.26 29.40 30.34 23.77 39.27 30.20 30.63 24.50
-US Presidential 77.83 62.94 34.88 61.60 76.97 61.43 30.27 61.21 77.9063.16 43.98 61.99
-Used Cars 24 89.6390.5686.04 88.88 89.89 89.92 86.50 88.54 89.92 90.30 84.03 88.58
-Used Cars Benz Italy 92.41 91.71 92.18 92.23 92.5990.96 92.15 92.18 92.49 90.82 92.32 92.20
-Used Cars Pakistan 92.13 92.52 91.50 91.81 92.38 92.20 90.97 91.75 92.2892.6290.98 91.93
-Used Cars Saudi Arabia 64.96 64.95 59.3665.65 64.70 63.55 60.93 63.11 64.37 64.30 63.21 63.26
-UsedCars.Com 88.20 82.08 88.14 84.38 89.3485.05 88.75 84.64 88.93 85.39 88.35 84.25
-Videogame Sales 57.87 43.69 42.97 36.35 58.06 43.45 46.41 34.35 58.9643.52 45.82 34.77
-Vivino Prices 83.73 79.21 78.81 78.31 83.74 78.02 80.35 78.41 83.8178.74 80.05 78.71
-Vivino Ratings 61.0460.41 58.75 60.97 60.74 60.45 60.76 60.79 60.75 60.25 59.90 60.86
-WikiLIQ Beer 70.15 62.83 66.20 64.82 70.00 62.50 66.54 65.36 70.6662.51 66.46 65.70
-WikiLIQ Spirit 65.04 56.39 60.94 56.05 66.6553.02 61.73 55.39 66.31 53.70 62.52 55.88
-Wina Poland 77.12 72.03 67.91 69.48 77.66 68.79 67.07 69.49 78.5468.18 58.54 69.42
-Wine.com Prices 83.10 75.99 79.44 74.99 83.63 73.74 80.58 75.18 83.6974.84 80.85 74.90
-Wine.com Ratings 27.63 24.68 26.29 27.14 27.91 26.7828.8427.72 27.45 26.58 27.97 27.78
-WineEnthusiasts Prices 64.63 57.69 62.70 59.74 65.2856.39 63.40 59.83 65.14 56.92 63.30 59.53
-WineEnthusiasts Ratings74.69 52.07 69.88 60.50 75.9752.16 70.99 60.35 75.42 51.94 71.06 60.01
-39
+String encoding TILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDF
+Anime Planet 64.43 50.64 59.31 55.22 65.4948.39 58.93 55.93 65.19 48.04 59.41 55.42
+Babies R Us 82.87 80.86 73.11 81.67 82.92 78.95 73.90 79.73 83.69 80.35 70.64 81.19
+Beer Ratings 60.32 56.35 58.86 56.52 61.2253.08 59.23 55.36 61.21 53.37 58.87 54.57
+BikeDekho 79.49 79.95 74.81 78.85 79.61 78.16 73.78 77.90 79.56 79.28 70.28 79.11
+BikeWale 80.58 76.53 79.00 76.44 80.89 78.82 78.25 75.90 80.77 79.61 77.80 75.73
+Buy Buy Baby 82.5981.50 80.37 78.66 82.38 79.25 78.25 79.13 82.00 80.08 78.03 79.26
+CLEAR Corpus 65.56 63.49 69.81 61.77 66.77 63.1170.2260.79 66.56 63.04 69.35 60.84
+CarDekho 91.95 87.77 89.61 92.00 93.2390.54 91.07 92.70 93.08 90.60 84.88 92.36
+Company Employees 84.9381.03 31.84 79.84 84.29 80.61 16.20 80.09 84.56 80.91 49.74 80.13
+Employee Remuneration67.03 60.82 65.52 63.24 67.15 59.60 63.79 62.29 66.91 60.81 65.00 63.27
+Employee Salaries 91.21 85.70 80.65 89.94 90.97 89.30 82.83 89.99 91.3389.78 82.02 90.26
+FIFA 22 Players 90.56 78.3191.0489.15 90.63 81.96 89.96 87.58 90.57 82.27 89.11 85.17
+FilmTV Movies 48.70 44.18 45.98 45.07 48.64 43.19 45.61 43.75 48.8442.87 46.42 44.45
+Japanese Anime 69.70 64.34 61.75 66.16 69.8365.39 65.44 66.55 69.64 65.11 61.79 65.44
+Journal JCR 70.37 39.90 56.15 50.53 71.0648.09 55.85 50.02 70.52 43.87 56.46 50.00
+Journal SJR 85.14 56.78 73.31 81.92 85.55 70.18 70.35 81.04 85.6569.59 71.45 81.47
+K-Drama 56.00 52.26 49.84 52.74 56.29 52.23 47.90 51.90 57.70 53.18 51.27 55.00
+ML/DS Salaries 48.4747.22 24.49 47.39 47.71 46.45 27.22 47.62 47.71 46.27 30.44 47.56
+Movies 70.69 51.49 68.38 68.27 72.8266.50 68.01 68.52 72.58 65.45 68.77 68.11
+Museums 72.21 57.11 62.21 61.63 72.03 56.70 63.60 60.75 72.3558.03 62.85 60.13
+MyDramaList 59.73 52.68 54.82 56.78 60.3151.50 57.30 58.06 59.93 51.55 56.56 57.10
+Prescription Drugs 86.62 81.31 87.19 85.50 86.66 83.29 86.55 85.27 86.39 82.5987.3985.06
+Rotten Tomatoes 55.74 48.87 51.88 47.36 57.9550.08 52.79 48.72 57.18 49.25 51.65 47.82
+US Accidents Counts 39.9329.19 30.41 24.59 39.26 29.40 30.34 23.77 39.15 30.20 30.63 24.50
+US Presidential 78.13 62.94 34.88 61.60 77.71 61.43 30.27 61.21 78.3863.16 43.98 61.99
+Used Cars 24 89.4690.5686.04 88.88 84.96 89.92 86.50 88.54 89.79 90.30 84.03 88.58
+Used Cars Benz Italy 92.41 91.71 92.18 92.23 92.6890.96 92.15 92.18 92.57 90.82 92.32 92.20
+Used Cars Pakistan 92.23 92.52 91.50 91.81 92.46 92.20 90.97 91.75 92.59 92.6290.98 91.93
+Used Cars Saudi Arabia65.8964.95 59.36 65.65 65.55 63.55 60.93 63.11 65.27 64.30 63.21 63.26
+UsedCars.Com 88.07 82.08 88.14 84.38 89.4285.05 88.75 84.64 89.25 85.39 88.35 84.25
+Videogame Sales 58.46 43.69 42.97 36.35 58.01 43.45 46.41 34.35 58.8943.52 45.82 34.77
+Vivino Prices 83.79 79.21 78.81 78.31 83.85 78.02 80.35 78.41 84.0878.74 80.05 78.71
+Vivino Ratings 61.05 60.41 58.75 60.97 61.12 60.45 60.76 60.79 61.2060.25 59.90 60.86
+WikiLIQ Beer 69.87 62.83 66.20 64.82 69.82 62.50 66.54 65.36 70.2862.51 66.46 65.70
+WikiLIQ Spirit 65.55 56.39 60.94 56.05 66.53 53.02 61.73 55.39 66.9753.70 62.52 55.88
+Wina Poland 76.82 72.03 67.91 69.48 77.39 68.79 67.07 69.49 78.1268.18 58.54 69.42
+Wine.com Prices 83.02 75.99 79.44 74.99 83.72 73.74 80.58 75.18 83.8174.84 80.85 74.90
+Wine.com Ratings 28.66 24.68 26.29 27.14 28.28 26.7828.8427.72 28.39 26.58 27.97 27.78
+WineEnthusiasts Prices64.99 57.69 62.70 59.74 66.46 56.39 63.40 59.83 66.8156.92 63.30 59.53
+WineEnthusiasts Ratings74.23 52.07 69.88 60.50 74.87 52.16 70.99 60.35 75.4051.94 71.06 60.01
+41
 
 Preprint.
 Table H.11:Regression results for CARTE datasets (part 3 of 3).Raw R2 scores (clipped at
@@ -1947,51 +2109,52 @@ Wine.com Prices 75.11 71.06 60.55 71.12 67.58 70.74 71.34 58.52 67.27 72.46 69.0
 Wine.com Ratings 24.93 24.95 21.87 24.21 20.57 23.66 24.55 16.36 16.67 26.40 22.28
 WineEnthusiasts Prices 57.33 56.19 57.44 56.77 52.91 59.31 56.11 53.64 53.40 56.26 52.27
 WineEnthusiasts Ratings 63.84 53.90 64.19 54.56 38.36 67.30 55.80 64.50 49.01 46.60 66.85
-40
+42
 
 Preprint.
-Table H.12:Regression results for WikiDBs datasets (part 1 of 3).Raw R2 scores (clipped at
-0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples,
-for TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder
+Table H.12:Regression results for WikiDBs datasets (part 1 of 3).Raw R2 scores (clipped at 0
+if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
+TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder
 (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
 Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Artworks Inventory 32.92 27.13 25.01 28.71 33.64 28.18 26.49 29.11 33.16 27.76 28.13 30.01
-Business Locations 86.13 77.36 78.46 72.02 82.96 66.91 71.78 61.73 85.88 78.16 77.07 70.58
-Dissolved Municipalities 62.71 37.54 56.63 54.56 62.04 46.09 56.10 53.42 62.17 41.34 56.60 53.92
-Drawings Catalog 80.50 80.23 80.49 80.58 80.70 79.93 80.44 80.24 80.78 80.60 79.95 80.53
-Eclipsing Binary Stars 64.01 27.11 62.06 60.07 63.28 0.00 60.14 58.61 63.49 13.68 61.97 59.87
-Geopolitical Regions 66.65 53.63 55.40 50.08 64.23 28.50 49.97 45.14 62.49 52.32 51.89 45.54
-Historical Figures 78.76 0.00 68.04 55.68 78.50 30.34 67.60 55.87 77.82 0.00 68.11 55.79
-Municipal District Capitals83.32 75.75 75.48 69.36 80.90 73.15 69.83 64.90 81.44 76.40 69.56 67.03
-Poets 88.11 0.00 85.11 79.12 87.90 0.00 85.78 77.88 88.16 0.00 85.54 79.57
-Registered Ships 94.63 93.86 93.72 93.87 94.42 94.06 93.82 93.92 94.91 93.62 94.10 94.00
-Research Article Citations82.6453.38 66.73 45.29 81.92 48.19 62.93 42.53 81.27 53.47 59.97 41.63
-Research Articles 98.80 98.79 98.76 98.74 98.68 98.04 98.16 97.69 98.98 98.85 98.77 98.80
-Territorial Entities 87.22 77.09 78.46 74.15 85.57 75.45 74.89 69.38 85.08 77.75 76.32 71.44
-Ukrainian Villages 77.71 79.15 76.96 78.23 70.74 75.86 76.26 77.01 73.8279.8479.02 78.92
-WWI Personnel 39.55 1.89 32.51 20.10 40.04 3.94 31.92 22.36 40.92 1.33 31.80 18.53
+String encoding TILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDF
+Artworks Inventory 32.21 27.13 25.01 28.71 32.79 28.18 26.49 29.11 32.64 27.76 28.13 30.01
+Business Locations 87.73 77.36 78.46 72.02 84.64 66.91 71.78 61.73 86.62 78.16 77.07 70.58
+Dissolved Municipalities64.16 37.54 56.63 54.56 64.49 46.09 56.10 53.42 63.70 41.34 56.60 53.92
+Drawings Catalog 80.63 80.23 80.49 80.58 80.73 79.93 80.44 80.24 80.80 80.60 79.95 80.53
+Eclipsing Binary Stars 63.99 27.11 62.06 60.07 63.00 0.00 60.14 58.61 63.44 13.68 61.97 59.87
+Geopolitical Regions 66.8953.63 55.40 50.08 64.51 28.50 49.97 45.14 62.67 52.32 51.89 45.54
+Historical Figures 77.62 0.00 68.04 55.68 78.08 30.34 67.60 55.87 77.32 0.00 68.11 55.79
+Municipal District Capitals83.27 75.75 75.48 69.36 80.47 73.15 69.83 64.90 81.60 76.40 69.56 67.03
+Poets 87.98 0.00 85.11 79.12 87.29 0.00 85.78 77.88 87.99 0.00 85.54 79.57
+Registered Ships 94.77 93.86 93.72 93.87 94.51 94.06 93.82 93.92 95.14 93.62 94.10 94.00
+Research Article Citations85.35 53.38 66.73 45.29 84.09 48.19 62.93 42.53 84.08 53.47 59.97 41.63
+Research Articles 98.89 98.79 98.76 98.74 98.77 98.04 98.16 97.69 99.07 98.85 98.77 98.80
+Territorial Entities 87.96 77.09 78.46 74.15 86.92 75.45 74.89 69.38 86.19 77.75 76.32 71.44
+Ukrainian Villages 77.70 79.15 76.96 78.23 69.67 75.86 76.26 77.01 73.9379.8479.02 78.92
+WWI Personnel 37.82 1.89 32.51 20.10 38.11 3.94 31.92 22.36 38.30 1.33 31.80 18.53
 Table H.13:Regression results for WikiDBs datasets (part 2 of 3).Raw R2 scores (clipped at 0
 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
-TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder
-(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35 methods.
+TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM
+encoder (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 35
+methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Artworks Inventory 33.7529.08 26.60 29.91 33.20 29.10 31.10 30.19 33.12 30.11 29.95 30.17
-Business Locations 86.7079.49 78.79 72.92 85.97 74.44 78.30 71.16 85.76 70.23 77.58 69.15
-Dissolved Municipalities 63.24 46.76 58.34 55.88 63.03 54.18 58.66 55.69 64.0053.60 57.85 55.37
-Drawings Catalog 81.2581.6881.26 81.23 81.16 81.22 80.85 81.50 81.34 81.30 80.84 81.02
-Eclipsing Binary Stars 63.61 57.36 61.82 59.37 64.13 61.45 61.96 60.47 64.1460.42 62.34 60.62
-Geopolitical Regions 65.83 56.56 56.39 50.28 67.2336.73 56.05 53.43 65.41 34.45 56.42 51.06
-Historical Figures 79.25 0.00 67.34 61.55 78.71 50.70 71.37 57.04 79.7852.54 69.85 58.07
-Municipal District Capitals81.81 76.99 73.57 69.36 83.4075.20 76.49 71.05 83.15 74.99 76.50 69.91
-Poets 88.68 0.00 85.10 82.09 88.15 52.73 85.51 80.14 88.8842.94 85.68 80.46
-Registered Ships 95.3794.52 94.55 94.21 94.54 93.91 94.38 94.22 95.17 94.27 94.49 94.49
-Research Article Citations82.37 67.88 66.90 58.83 82.31 50.65 72.28 51.62 82.50 53.25 66.10 46.85
-Research Articles 99.0798.74 98.68 98.83 98.89 98.82 98.87 98.87 99.01 98.62 98.92 98.85
-Territorial Entities 86.20 79.15 77.49 74.35 87.6177.34 78.60 74.02 87.35 78.23 78.25 73.48
-Ukrainian Villages 74.31 78.49 78.51 78.37 77.26 79.10 77.88 78.87 74.61 79.62 79.22 79.34
-WWI Personnel 41.621.75 34.20 25.18 39.15 12.53 33.37 22.20 41.51 10.96 33.39 23.18
+String encoding TILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDFTILE CASE-like LLM encoder TF-IDF
+Artworks Inventory 32.96 29.08 26.60 29.91 33.01 29.10 31.10 30.19 33.2830.11 29.95 30.17
+Business Locations 87.9379.49 78.79 72.92 86.97 74.44 78.30 71.16 87.24 70.23 77.58 69.15
+Dissolved Municipalities65.7446.76 58.34 55.88 64.97 54.18 58.66 55.69 65.50 53.60 57.85 55.37
+Drawings Catalog 81.3081.6881.26 81.23 81.20 81.22 80.85 81.50 81.37 81.30 80.84 81.02
+Eclipsing Binary Stars 63.56 57.36 61.82 59.37 64.15 61.45 61.96 60.47 64.2160.42 62.34 60.62
+Geopolitical Regions 64.39 56.56 56.39 50.28 66.64 36.73 56.05 53.43 64.90 34.45 56.42 51.06
+Historical Figures 79.06 0.00 67.34 61.55 77.95 50.70 71.37 57.04 79.3252.54 69.85 58.07
+Municipal District Capitals81.50 76.99 73.57 69.36 83.5375.20 76.49 71.05 83.29 74.99 76.50 69.91
+Poets 88.42 0.00 85.10 82.09 87.89 52.73 85.51 80.14 88.6042.94 85.68 80.46
+Registered Ships 95.5594.52 94.55 94.21 94.76 93.91 94.38 94.22 95.29 94.27 94.49 94.49
+Research Article Citations85.7867.88 66.90 58.83 85.36 50.65 72.28 51.62 85.37 53.25 66.10 46.85
+Research Articles 99.1298.74 98.68 98.83 98.93 98.82 98.87 98.87 99.11 98.62 98.92 98.85
+Territorial Entities 87.29 79.15 77.49 74.35 88.18 77.34 78.60 74.02 88.1878.23 78.25 73.48
+Ukrainian Villages 74.32 78.49 78.51 78.37 77.06 79.10 77.88 78.87 75.11 79.62 79.22 79.34
+WWI Personnel 39.71 1.75 34.20 25.18 37.93 12.53 33.37 22.20 40.1810.96 33.39 23.18
 Table H.14:Regression results for WikiDBs datasets (part 3 of 3).Raw R2 scores (clipped at
 0 if negative) multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples,
 for the remaining learners, fed with the cell-wise LLM encoder (Llama-3.1-8B) or TF-IDF, and the
@@ -2014,35 +2177,35 @@ Research Articles 98.23 98.32 98.42 98.48 98.52 92.72 92.73 79.31 78.89 98.23 98
 Territorial Entities 75.10 71.56 74.17 70.51 70.98 74.45 67.63 71.43 58.24 73.03 67.08
 Ukrainian Villages 69.91 69.78 56.67 69.33 73.68 66.40 68.27 39.30 39.83 63.71 67.18
 WWI Personnel 33.38 17.74 27.35 16.45 6.53 29.79 14.92 27.06 17.18 34.71 26.92
-41
+43
 
 Preprint.
-Table H.15:Classification results for TextTabBench datasets (part 1 of 3).Raw ROC AUC scores
-multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-2.5,
-TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder (Llama-3.1-8B) or
-TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
-Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Customer Complaints 89.05 88.61 89.23 89.41 89.22 88.57 88.90 89.19 89.12 88.60 88.33 88.89
-Diabetes 97.72 97.70 97.69 97.72 97.61 97.63 97.70 97.77 97.89 97.79 97.89 97.87
-Job Frauds 99.12 97.82 98.69 98.73 99.10 97.32 98.99 98.76 99.04 97.43 98.59 98.65
-Kickstarter 86.70 78.65 85.05 84.67 86.77 85.33 85.18 84.91 87.10 79.64 84.62 84.29
-Lending Club 69.94 69.48 69.20 69.16 70.22 69.64 69.01 69.26 70.36 69.48 68.98 68.52
-OSHA Accidents 59.26 58.84 58.54 59.28 60.6257.77 59.12 59.32 60.07 58.77 58.04 59.25
-Spotify 98.37 94.87 97.83 95.92 98.25 95.34 97.66 95.96 98.36 94.79 97.54 95.55
-Table H.16:Classification results for TextTabBench datasets (part 2 of 3).Raw ROC AUC
+Table H.15:Classification results for TextTabBench datasets (part 1 of 3).Raw ROC AUC
 scores multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for
-TabPFN-3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder
+TabPFN-2.5, TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder
+(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
+Method TabPFN-2.5 TabICLv2 TabPFN-3
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Customer Complaints89.10 88.61 89.23 89.41 89.13 88.57 88.90 89.19 89.01 88.60 88.33 88.89
+Diabetes 97.62 97.70 97.69 97.72 97.64 97.63 97.70 97.77 97.83 97.79 97.89 97.87
+Job Frauds 99.15 97.82 98.69 98.73 99.25 97.32 98.99 98.76 99.13 97.43 98.59 98.65
+Kickstarter 86.74 78.65 85.05 84.67 86.91 85.33 85.18 84.91 87.05 79.64 84.62 84.29
+Lending Club 68.96 69.48 69.20 69.16 69.91 69.64 69.01 69.26 70.26 69.48 68.98 68.52
+OSHA Accidents 58.76 58.84 58.54 59.28 60.30 57.77 59.12 59.32 60.02 58.77 58.04 59.25
+Spotify 98.36 94.87 97.83 95.92 98.28 95.34 97.66 95.96 98.40 94.79 97.54 95.55
+Table H.16:Classification results for TextTabBench datasets (part 2 of 3).Raw ROC AUC scores
+multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-
+3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM encoder
 (Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Customer Complaints 89.29 89.06 88.80 89.48 89.12 89.17 89.65 89.86 89.28 88.92 89.08 89.45
-Diabetes 97.90 97.90 97.8998.01 97.93 97.82 97.87 97.92 97.92 97.85 97.87 97.90
-Job Frauds 99.16 99.04 98.85 98.92 99.15 98.78 99.04 98.79 99.2298.71 98.70 98.81
-Kickstarter 87.4686.07 86.15 85.93 86.61 86.03 86.23 85.48 87.32 85.33 85.62 85.03
-Lending Club 70.6569.68 69.96 69.31 69.76 69.71 69.43 69.43 69.89 69.74 68.99 69.27
-OSHA Accidents 60.40 59.19 58.16 59.85 59.46 59.85 58.66 58.84 60.28 60.06 58.55 59.32
-Spotify 98.58 97.40 98.15 96.99 98.45 96.17 98.00 96.90 98.5996.49 98.06 96.26
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Customer Complaints89.23 89.06 88.80 89.48 89.11 89.17 89.65 89.86 89.32 88.92 89.08 89.45
+Diabetes 97.90 97.90 97.8998.01 97.83 97.82 97.87 97.92 97.89 97.85 97.87 97.90
+Job Frauds 99.21 99.04 98.85 98.92 99.12 98.78 99.04 98.79 99.2798.71 98.70 98.81
+Kickstarter 87.3686.07 86.15 85.93 86.47 86.03 86.23 85.48 87.36 85.33 85.62 85.03
+Lending Club 70.3769.68 69.96 69.31 68.73 69.71 69.43 69.43 69.48 69.74 68.99 69.27
+OSHA Accidents 60.77 59.19 58.16 59.85 59.15 59.85 58.66 58.84 60.8560.06 58.55 59.32
+Spotify 98.62 97.40 98.15 96.99 98.47 96.17 98.00 96.90 98.6296.49 98.06 96.26
 Table H.17:Classification results for TextTabBench datasets (part 3 of 3).Raw ROC AUC
 scores multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for the
 remaining learners, fed with the cell-wise LLM encoder (Llama-3.1-8B) or TF-IDF, and the methods
@@ -2057,43 +2220,43 @@ Kickstarter 82.90 82.00 82.44 81.76 84.62 80.41 79.63 76.32 73.65 83.38 73.24 80
 Lending Club 68.47 67.74 65.81 65.91 68.63 66.43 66.33 65.49 69.31 68.38 66.74 –
 OSHA Accidents 57.67 57.97 54.52 57.37 56.84 54.69 57.82 58.06 58.35 57.99 57.94 58.76
 Spotify 96.26 93.51 96.52 94.28 93.88 95.81 92.94 91.81 88.22 96.44 92.94 96.86
-42
+44
 
 Preprint.
 Table H.18:Classification results for CARTE datasets (part 1 of 3).Raw ROC AUC scores
 multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-2.5,
-TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder (Llama-3.1-8B) or
-TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
-Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Chocolate Bar Ratings 82.44 78.28 80.17 80.62 82.25 78.80 80.71 80.29 81.61 78.50 78.47 79.06
-Coffee Ratings 93.21 84.68 91.81 93.48 92.72 85.27 92.45 93.44 92.31 84.67 90.85 92.51
-Michelin 90.89 84.69 89.07 88.20 90.86 86.42 89.20 88.01 90.73 86.05 88.45 87.70
-NBA Draft 90.59 89.38 89.25 89.05 90.66 89.32 88.99 88.98 90.87 89.37 88.90 88.89
-Ramen Ratings 69.63 68.15 69.57 69.05 70.40 69.45 70.33 69.15 70.12 69.03 68.26 67.76
-Roger Ebert 84.43 78.53 78.82 75.84 84.40 78.31 78.44 75.69 84.29 78.36 78.21 75.74
-Spotify 98.7894.94 95.42 90.57 98.55 94.95 95.55 90.23 98.50 94.86 94.76 90.37
-US Accidents Severity79.04 77.64 78.03 78.51 79.66 78.16 77.92 78.06 79.44 77.76 75.12 77.31
-Whisky 88.13 86.52 86.99 86.50 88.37 86.72 87.20 86.63 88.30 86.70 85.22 86.07
-Yelp 80.45 79.54 78.10 76.45 80.46 79.36 77.91 76.00 80.59 79.29 76.52 76.08
-Zomato 72.72 70.94 71.40 71.39 73.04 71.27 71.04 70.90 72.61 70.82 70.56 70.31
-Table H.19:Classification results for CARTE datasets (part 2 of 3).Raw ROC AUC scores
-multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-3.5,
-EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder (Llama-3.1-
+TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder (Llama-3.1-
 8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
+Method TabPFN-2.5 TabICLv2 TabPFN-3
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Chocolate Bar Ratings81.87 78.28 80.17 80.62 81.98 78.80 80.71 80.29 81.06 78.50 78.47 79.06
+Coffee Ratings 92.90 84.68 91.81 93.48 92.44 85.27 92.45 93.44 92.08 84.67 90.85 92.51
+Michelin 90.66 84.69 89.07 88.20 90.81 86.42 89.20 88.01 90.65 86.05 88.45 87.70
+NBA Draft 90.78 89.38 89.25 89.05 90.97 89.32 88.99 88.98 90.97 89.37 88.90 88.89
+Ramen Ratings 69.61 68.15 69.57 69.05 70.55 69.45 70.33 69.15 70.21 69.03 68.26 67.76
+Roger Ebert 83.76 78.53 78.82 75.84 84.00 78.31 78.44 75.69 84.05 78.36 78.21 75.74
+Spotify 98.9394.94 95.42 90.57 98.72 94.95 95.55 90.23 98.68 94.86 94.76 90.37
+US Accidents Severity79.44 77.64 78.03 78.51 78.46 78.16 77.92 78.06 79.26 77.76 75.12 77.31
+Whisky 88.04 86.52 86.99 86.50 88.3286.72 87.20 86.63 88.05 86.70 85.22 86.07
+Yelp 80.58 79.54 78.10 76.45 80.62 79.36 77.91 76.00 80.81 79.29 76.52 76.08
+Zomato 72.78 70.94 71.40 71.39 73.03 71.27 71.04 70.90 72.73 70.82 70.56 70.31
+Table H.19:Classification results for CARTE datasets (part 2 of 3).Raw ROC AUC scores
+multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-
+3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM encoder
+(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Chocolate Bar Ratings 82.8580.17 80.98 81.58 82.62 78.44 81.06 81.26 82.73 79.06 80.67 80.60
-Coffee Ratings 93.00 87.04 92.57 93.58 93.23 85.97 91.91 93.73 93.26 85.51 92.39 93.37
-Michelin 90.96 87.19 88.66 88.31 90.57 87.32 89.45 88.23 91.0187.19 88.94 88.12
-NBA Draft 90.97 89.25 89.21 88.99 90.68 89.08 89.17 89.06 90.9789.37 89.32 89.06
-Ramen Ratings 70.50 70.05 70.34 70.13 69.80 69.28 70.72 69.21 70.41 69.55 70.46 69.31
-Roger Ebert 84.48 78.72 78.99 76.04 84.40 77.74 78.77 75.90 84.6078.37 78.68 76.09
-Spotify 98.75 95.61 96.24 91.71 98.59 95.04 96.43 92.04 98.74 95.24 95.96 90.71
-US Accidents Severity80.0579.21 78.28 79.60 79.51 79.53 79.45 79.08 79.80 78.83 77.75 78.47
-Whisky 88.43 86.96 85.10 86.75 88.03 86.56 86.96 86.63 88.4886.81 86.83 86.62
-Yelp 80.69 79.57 78.09 76.61 80.28 79.54 78.44 77.54 80.8279.50 77.84 76.49
-Zomato 73.2672.64 71.03 71.85 72.87 71.94 70.57 71.79 73.20 71.53 70.88 71.46
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Chocolate Bar Ratings82.39 80.17 80.98 81.58 82.33 78.44 81.06 81.26 82.4379.06 80.67 80.60
+Coffee Ratings 92.81 87.04 92.57 93.58 92.94 85.97 91.91 93.73 93.12 85.51 92.39 93.37
+Michelin 90.77 87.19 88.66 88.31 90.52 87.32 89.45 88.23 90.8487.19 88.94 88.12
+NBA Draft 91.13 89.25 89.21 88.99 90.68 89.08 89.17 89.06 91.2089.37 89.32 89.06
+Ramen Ratings 70.17 70.05 70.34 70.13 70.03 69.28 70.72 69.21 70.72 69.55 70.46 69.31
+Roger Ebert 84.04 78.72 78.99 76.04 84.16 77.74 78.77 75.90 84.2878.37 78.68 76.09
+Spotify 98.85 95.61 96.24 91.71 98.68 95.04 96.43 92.04 98.92 95.24 95.96 90.71
+US Accidents Severity79.9979.21 78.28 79.60 79.43 79.53 79.45 79.08 79.58 78.83 77.75 78.47
+Whisky 88.27 86.96 85.10 86.75 87.93 86.56 86.96 86.63 88.22 86.81 86.83 86.62
+Yelp 80.72 79.57 78.09 76.61 80.36 79.54 78.44 77.54 80.8379.50 77.84 76.49
+Zomato 73.3772.64 71.03 71.85 72.87 71.94 70.57 71.79 73.10 71.53 70.88 71.46
 Table H.20:Classification results for CARTE datasets (part 3 of 3).Raw ROC AUC scores
 multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for the remaining
 learners, fed with the cell-wise LLM encoder (Llama-3.1-8B) or TF-IDF, and the methods with
@@ -2112,55 +2275,55 @@ US Accidents Severity76.94 76.90 75.56 76.82 78.76 75.47 77.26 76.64 75.97 79.49
 Whisky 81.41 85.52 84.07 85.29 84.95 75.74 86.18 86.42 86.53 86.47 85.10 84.10
 Yelp 75.73 74.48 74.87 73.14 73.33 73.90 72.56 75.51 72.45 76.51 73.97 73.72
 Zomato 69.39 70.47 69.64 70.25 67.16 66.34 70.02 71.07 71.71 71.27 67.27 68.57
-43
+45
 
 Preprint.
 Table H.21:Classification results for WikiDBs datasets (part 1 of 3).Raw ROC AUC scores
 multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-2.5,
-TabICLv2 and TabPFN-3, each fed with TILE, CASE, the cell-wise LLM encoder (Llama-3.1-8B) or
-TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
+TabICLv2 and TabPFN-3, each fed with TILE, CASE-like, the cell-wise LLM encoder (Llama-3.1-
+8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
 Method TabPFN-2.5 TabICLv2 TabPFN-3
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Artists Copyright 80.00 74.83 78.61 78.53 80.45 75.09 78.60 77.12 79.64 75.16 76.22 77.36
-Artworks Catalog 97.53 97.23 97.21 97.31 97.59 97.38 97.37 97.09 97.30 97.29 97.00 96.99
-CC Authors 99.75 99.44 99.31 91.77 99.78 99.28 99.33 92.86 99.74 99.43 99.14 92.29
-Defenders 99.48 97.80 99.01 95.23 99.47 97.74 99.04 95.75 99.42 97.76 99.02 94.83
-Forward Players 89.23 87.13 88.96 88.80 89.43 87.57 89.08 88.55 89.01 87.10 88.25 88.06
-Geographers 99.54 98.38 99.12 93.62 99.60 98.49 99.12 93.95 99.6298.46 99.07 92.08
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Artists Copyright 80.23 74.83 78.61 78.53 80.53 75.09 78.60 77.12 79.72 75.16 76.22 77.36
+Artworks Catalog97.45 97.23 97.21 97.31 97.61 97.38 97.37 97.09 97.11 97.29 97.00 96.99
+CC Authors 99.75 99.44 99.31 91.77 99.74 99.28 99.33 92.86 99.73 99.43 99.14 92.29
+Defenders 99.40 97.80 99.01 95.23 99.41 97.74 99.04 95.75 99.37 97.76 99.02 94.83
+Forward Players 89.26 87.13 88.96 88.80 89.46 87.57 89.08 88.55 89.07 87.10 88.25 88.06
+Geographers 99.54 98.38 99.12 93.62 99.56 98.49 99.12 93.95 99.54 98.46 99.07 92.08
 Islands 99.95 99.98 99.91 99.97 99.97 99.99 99.97 99.97 99.97 99.99 99.97 99.97
-Magic Narratives 71.05 67.76 66.95 68.04 72.36 69.14 70.41 68.97 69.59 67.10 65.38 65.65
+Magic Narratives 71.62 67.76 66.95 68.04 73.66 69.14 70.41 68.97 68.48 67.10 65.38 65.65
 Museums 99.98 99.97 99.97 99.94 99.98 99.98 99.98 99.93 99.98 99.98 99.98 99.93
-Noble Individuals 83.20 79.19 80.84 80.09 83.41 79.49 82.83 80.78 82.97 77.36 80.73 79.67
-Notable Trees 96.54 88.27 96.30 97.13 96.45 88.24 96.28 96.95 96.37 88.32 96.08 96.89
-Philosophers 98.70 95.85 98.05 93.11 98.72 96.97 98.17 93.00 98.72 95.42 98.06 91.71
-Sculptures 89.35 86.62 88.62 87.57 89.29 87.44 88.54 87.33 89.09 86.59 87.40 86.20
+Noble Individuals82.97 79.19 80.84 80.09 83.17 79.49 82.83 80.78 82.90 77.36 80.73 79.67
+Notable Trees 96.44 88.27 96.30 97.13 96.41 88.24 96.28 96.95 96.31 88.32 96.08 96.89
+Philosophers 98.64 95.85 98.05 93.11 98.65 96.97 98.17 93.00 98.63 95.42 98.06 91.71
+Sculptures 89.34 86.62 88.62 87.57 89.16 87.44 88.54 87.33 88.88 86.59 87.40 86.20
 Spring Locations 99.98 99.98 99.99 99.98 99.99 99.97 99.99 99.99 99.99 99.98 99.99 99.98
 State Schools 99.99 99.98 99.99 99.97 99.99 99.98 99.99 99.97 99.99 99.98 99.99 99.97
-Transport Stations 99.98 99.94 99.94 99.86 99.99 99.94 99.97 99.86 99.98 99.96 99.96 99.82
-US Music Albums 95.51 87.42 93.90 91.56 95.43 89.43 94.12 91.70 95.18 86.17 92.34 86.94
+Transport Stations99.97 99.94 99.94 99.86 99.98 99.94 99.97 99.86 99.96 99.96 99.96 99.82
+US Music Albums96.01 87.42 93.90 91.56 96.13 89.43 94.12 91.70 95.91 86.17 92.34 86.94
 Table H.22:Classification results for WikiDBs datasets (part 2 of 3).Raw ROC AUC scores
-multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-3.5,
-EXAONE-Tabular and Causilo, each fed with TILE, CASE, the cell-wise LLM encoder (Llama-3.1-
-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
+multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for TabPFN-
+3.5, EXAONE-Tabular and Causilo, each fed with TILE, CASE-like, the cell-wise LLM encoder
+(Llama-3.1-8B) or TF-IDF. Best in bold, second best underlined, both computed over all 36 methods.
 Method TabPFN-3.5 EXAONE-Tabular Causilo
-String encoding TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF TILE CASE LLM encoder TF-IDF
-Artists Copyright 80.38 76.89 77.06 78.61 80.31 76.81 79.13 78.56 80.7477.36 78.43 78.48
-Artworks Catalog 97.66 97.72 97.57 97.68 97.73 97.67 97.56 97.63 97.7597.66 97.48 97.45
-CC Authors 99.7899.54 99.38 93.28 99.72 99.48 99.28 93.04 99.77 99.46 99.31 93.02
-Defenders 99.44 98.56 99.12 96.06 99.40 98.23 99.13 95.91 99.5198.14 99.08 95.55
-Forward Players 89.63 89.25 88.96 89.02 89.58 88.53 89.46 89.07 89.7188.35 89.26 88.95
-Geographers 99.61 98.83 98.97 95.45 99.55 98.73 99.11 94.17 99.62 98.67 99.07 94.12
+String encoding TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF TILE CASE-like LLM encoder TF-IDF
+Artists Copyright 80.61 76.89 77.06 78.61 80.26 76.81 79.13 78.56 80.7277.36 78.43 78.48
+Artworks Catalog 97.6097.7297.57 97.68 97.55 97.67 97.56 97.63 97.70 97.66 97.48 97.45
+CC Authors 99.7999.54 99.38 93.28 99.72 99.48 99.28 93.04 99.75 99.46 99.31 93.02
+Defenders 99.41 98.56 99.12 96.06 99.36 98.23 99.13 95.91 99.4798.14 99.08 95.55
+Forward Players 89.67 89.25 88.96 89.02 89.72 88.53 89.46 89.07 89.7688.35 89.26 88.95
+Geographers 99.57 98.83 98.97 95.45 99.49 98.73 99.11 94.17 99.5798.67 99.07 94.12
 Islands 99.9899.9999.98 99.98 99.97 99.99 99.98 99.98 99.98 99.99 99.97 99.98
-Magic Narratives 72.03 71.10 70.74 69.80 73.17 69.67 70.78 69.86 72.76 71.67 71.27 69.15
+Magic Narratives 71.61 71.10 70.74 69.80 72.66 69.67 70.78 69.86 74.25 71.67 71.27 69.15
 Museums 99.9999.98 99.98 99.96 99.98 99.98 99.97 99.95 99.99 99.98 99.98 99.95
-Noble Individuals 83.38 80.50 82.93 80.86 83.41 81.44 82.44 80.90 83.7382.03 82.72 81.12
-Notable Trees 96.74 90.39 96.52 97.22 96.63 91.45 96.5797.35 96.66 91.15 96.45 97.25
-Philosophers 98.75 97.11 98.24 94.05 98.67 97.66 98.23 93.93 98.7797.72 98.26 93.53
-Sculptures 89.68 87.96 88.58 87.77 89.55 88.24 89.40 88.03 89.8188.16 89.10 87.64
-Spring Locations 100.00 100.00100.0099.99 99.99 99.99 99.99 99.99 100.00 99.99 99.99 99.99
-State Schools 99.9999.99 99.99 99.98 99.99 99.99 99.99 99.98 99.99 99.98 99.99 99.98
-Transport Stations 99.99 99.96 99.97 99.87 99.98 99.96 99.96 99.88 99.9999.95 99.97 99.87
-US Music Albums 95.8094.11 93.76 92.25 95.63 92.09 94.44 92.52 95.75 91.22 94.14 92.01
+Noble Individuals 83.10 80.50 82.93 80.86 83.22 81.44 82.44 80.90 83.3982.03 82.72 81.12
+Notable Trees 96.71 90.39 96.52 97.22 96.56 91.45 96.5797.35 96.67 91.15 96.45 97.25
+Philosophers 98.66 97.11 98.24 94.05 98.58 97.66 98.23 93.93 98.7197.72 98.26 93.53
+Sculptures 89.54 87.96 88.58 87.77 89.34 88.24 89.40 88.03 89.6788.16 89.10 87.64
+Spring Locations 100.00 100.00100.0099.99 100.00 99.99 99.99 99.99 99.99 99.99 99.99 99.99
+State Schools 99.99 99.99 99.99 99.98 99.99 99.99 99.99 99.98 99.9999.98 99.99 99.98
+Transport Stations99.97 99.96 99.97 99.87 99.97 99.96 99.96 99.88 99.9999.95 99.97 99.87
+US Music Albums96.38 94.11 93.76 92.25 96.26 92.09 94.44 92.52 96.4291.22 94.14 92.01
 Table H.23:Classification results for WikiDBs datasets (part 3 of 3).Raw ROC AUC scores
 multiplied by 100, averaged over 5 random seeds for a train size of 1,024 samples, for the remaining
 learners, fed with the cell-wise LLM encoder (Llama-3.1-8B) or TF-IDF, and the methods with
@@ -2185,7 +2348,7 @@ Spring Locations 99.96 99.95 99.97 99.96 99.97 99.93 99.92 98.60 98.59 99.84 99.
 State Schools 99.95 99.93 99.95 99.92 98.68 99.98 99.89 99.86 99.50 99.90 99.88 99.93
 Transport Stations 99.89 99.73 99.89 99.72 99.14 99.86 99.73 99.71 98.71 99.89 99.68 99.65
 US Music Albums 91.81 87.63 92.36 88.45 88.93 91.50 87.57 88.20 83.19 92.55 86.38 94.48
-44
+46
 
 Preprint.
 I MODELS,SOFTWARE AND LICENSES
@@ -2219,4 +2382,4 @@ wise embeddings, and PyTorch and Hugging Facetransformersfor the LLM forward pas
 Apart from the Llama checkpoints, which carry the community licenses quoted above, every model
 and library listed here is distributed under a permissive open-source license (Apache 2.0, BSD-3-
 Clause or MIT). We use each of them for research purposes and in accordance with its terms.
-45
+47

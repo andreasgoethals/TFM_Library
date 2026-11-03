@@ -1,0 +1,1332 @@
+Comparison of modeling methods for Loss Given Default
+Min Qi a, Xinlei Zhao a,b,⇑
+a Credit Risk Analysis Division, Ofﬁce of the Comptroller of Currency, 250 E. St. SW, Washington, DC 20219, USA
+b Department of Finance, Kent State University, Kent, OH 44242, USA
+article info
+Article history:
+Received 20 August 2010
+Accepted 16 March 2011
+Available online 21 March 2011
+JEL classiﬁcation:
+G21
+G28
+Keywords:
+Loss Given Default (LGD)
+Regression tree
+Neural network
+Fractional response regression
+Inverse Gaussian regression
+Beta transformation
+abstract
+We compare six modeling methods for Loss Given Default (LGD). We ﬁnd that non-parametric methods
+(regression tree and neural network) perform better than parametric methods both in and out of sample
+when over-ﬁtting is properly controlled. Among the parametric methods, fractional response regression
+has a slight edge over OLS regression. Performance of the transformation methods (inverse Gaussian and
+beta transformation) is very sensitive to
+e, a small adjustment made to LGDs of 0 or 1 prior to transfor-
+mation. Model ﬁt is poor when e is too small or too large, although the ﬁtted LGDs have strong bi-modal
+distribution with very small e. Therefore, models that produce strong bi-model pattern do not necessarily
+have good model ﬁt and accurate LGD predictions. Even with an optimal e, the performance of the trans-
+formation methods can only match that of the OLS.
+Published by Elsevier B.V.
+1. Introduction
+The expected credit loss rate on any pool of debt over any given
+horizon can be expressed as the product of probability of default
+(PD) and Loss Given Default (LGD). Therefore, LGD is one of the
+two determining factors of the premium of risky bonds, credit de-
+fault swap spreads, and credit losses. It is also one of the key
+parameters in the Basel II framework that are used to calculate
+banks’ regulatory capital requirements. 1 In spite of its obvious
+importance, the number of studies on LGD has been relatively low,
+although growing in recent years. Most of the LGD studies focus
+on investigating the importance of various factors that affect LGD,
+for example, contract characteristics, borrower characteristics,
+industry conditions, and macroeconomic conditions. 2 Very few stud-
+ies of LGD explore the alternative modeling methodologies.
+LGD modeling methods are of interest because the distribution
+of LGD can be very different from the normal distribution, which is
+behind most of the commonly used statistical models. First, LGDs
+for corporate exposures tend to have a bi-modal distribution (for
+example, Schuermann (2004)). That is, the LGD is either very high
+or very low. Second, LGD is bounded between 0 and 1, while
+theoretically the predicted values from the ordinary least squares
+(OLS) regression can range from negative inﬁnity to positive inﬁn-
+ity. Despite this unconventional distribution, most studies on LGD
+continue to use the OLS regression.
+3 Some studies take into consid-
+eration the LGD boundaries when choosing an LGD modeling
+method. For example, Dermine and Neto de Carvalho (2006), Bellotti
+and Crook (2007) , and Bastos (2010) use fractional response regres-
+sion, Hu and Perraudin (2002) use inverse Gaussian regression, and
+the Moody’s LossCalc 2.0 ( Gupton and Stein (2005) ) uses inverse
+Gaussian regression with the beta transformation. All these methods
+are parametric, requiring functional form and distribution assump-
+tions. Both academic studies (for instance, Bastos (2010)) and indus-
+try practice sometimes use the non-parametric regression tree in
+LGD analysis. So far no academic study or industry practice has
+investigated the relevance of the neural network for LGD modeling.
+Furthermore, there is a lack of a comprehensive study on the relative
+0378-4266/$ - see front matter Published by Elsevier B.V.
+doi:10.1016/j.jbankﬁn.2011.03.011
+⇑ Corresponding author at: Credit Risk Analysis Division, Ofﬁce of the Comptroller
+of Currency, 250 E. St. SW, Washington, DC 20219, USA. Tel.: +1 202 927 9960; fax:
++1 301 324 4313.
+E-mail addresses: min.qi@occ.treas.gov (M. Qi), xinlei.zhao@occ.treas.gov
+(X. Zhao).
+1 The Basel II risk parameters are probability of default (PD), loss given default
+(LGD) and exposure at default (EAD). Effective maturity (M) is also needed for
+corporate, sovereign, and bank exposures.
+2 See Altman et al. (2005) for a comprehensive survey of studies on default
+recovery rates.
+3 For example, Covitz and Han (2004), Acharya et al., (2007), Caselli et al., (2008) ,
+and Qi and Yang (2009) .
+Journal of Banking & Finance 35 (2011) 2842–2855
+Contents lists available at ScienceDirect
+Journal of Banking & Finance
+journal homepage: www.else vier.com/locate/jbf
+
+
+performance of all these models. In particular, non-parametric meth-
+ods are more prone to data over-ﬁtting than parametric methods,
+which may lead to inferior out-of-sample performance. Given the
+importance of LGD in credit risk analysis, a good understanding of
+these methods is crucial for ﬁxed-income investors, rating agencies,
+bankers, bank regulators, and academics.
+This study aims to ﬁll the gap in the understanding of the var-
+ious methods to model LGD. We employ a large dataset comprising
+of 3751 defaulted securities in the US from 1985 to 2008 to com-
+pare various LGD modeling methods. Our sample includes both
+bank loans and bonds. We examine a total of six methods, four
+of which are parametric – ordinary least squares regression
+(OLS), fractional response regression (FRR), inverse Gaussian
+regression (IGR), and inverse Gaussian regression with beta
+transformation (IGR-BT), and the other two are non-parametric –
+regression tree (RT) and neural network (NN).
+We ﬁnd that the non-parametric methods provide better ﬁt and
+more accurate prediction than the parametric methods. Among the
+parametric methods, although fractional response regression has a
+slight edge over OLS, both methods perform reasonably well.
+Performance of the two transformation regression methods (i.e.,
+inverse Gaussian and inverse Gaussian with beta transformation)
+is very sensitive to the choice of
+e, a small value added to LGD of
+0 and subtracted from LGD of 1 prior to transformation. Very small
+or very large e’s can result in inferior model ﬁt. Our ﬁndings thus
+suggest that these transformation methods need to be used with
+caution. Although ﬁtted LGDs from all methods show some degree
+of bi-modal distributions, the two transformation methods with
+extremely small e’s generate bi-modal patterns with heavy concen-
+trations near LGD of 0 and 1, even though these models yield poor
+model ﬁt. This evidence suggests that a model’s ability to produce a
+strong bi-modal distribution does not necessarily lead to accurate
+LGD estimation.
+All models, including the non-parametric methods when the
+over-ﬁtting problem is under control, are able to generate quite
+stable out-of-sample results. However, inferences on some instru-
+ment-level explanatory variables are slightly different between
+models, suggesting that these instrument-level variables may not
+have a clear-cut linear relation with LGD. This ﬁnding implies that
+the current industry practice, which relies solely on instrument-le-
+vel variables to predict LGDs, may not be adequate. Additional vari-
+ables and non-linear or non-parametric relations should also be
+considered.
+The rest of paper proceeds as follows. In the next section, we
+discuss different methods, and Section 3 describes the data. We
+present results in Section 4, discuss robustness tests in Section 5,
+and the ﬁnal section concludes.
+2. Estimation methods
+2.1. Fractional response regression (FRR)
+This simple quasi-likelihood method was proposed by Papke
+and Wooldridge (1996) to model a continuous variable ranging
+between 0 and 1 and to perform asymptotically valid inference.
+The model speciﬁcation is as follows:
+EðLGDjxÞ¼ GðxbÞ; ð1Þ
+where x is a vector of explanatory variables, b is a vector of model
+parameters, and the functional form for G(/C1) is usually the logistic
+function,
+GðxbÞ¼ 1
+1 þ expð/C0 xbÞ ; ð2Þ
+or the log-log function,
+GðxbÞ¼ expð/C0 expð/C0 xbÞÞ: ð3Þ
+Since it is clear that 0 < G(z) < 1 for all z e R, the predicted value
+from fractional response regression is bounded between 0 and 1.
+To estimate the coefﬁcients b, we maximize the following log-
+likelihood function:
+X
+i
+lið^bÞ¼
+X
+i
+LGDi /C2 log Gðxi ^bÞ
+hi
+þð 1 /C0 LGDiÞ/C2 log 1 /C0 Gðxi ^bÞ
+hino
+:
+ð4Þ
+FRR does not need to use ad hoc transformations to handle observed
+LGDs of 0 or 1, and the estimators of b from FRR are consistent and
+asymptotically normal.
+2.2. The transformation regressions
+Because LGDs are bounded in the unit interval [0, 1], whereas
+the predicted LGDs from an OLS regression are not bounded, cer-
+tain transformation can be applied to LGDs before running the
+regression and the ﬁtted LGDs from the regression are then trans-
+formed back to (0, 1). We consider two commonly used transfor-
+mation regressions – inverse Gaussian that addresses the [0, 1]
+boundary, and beta transformation that considers the bi-modal
+LGD distribution, in addition to the [0, 1] boundary.
+2.2.1. Inverse Gaussian regression (IGR)
+First, we transform LGDs from the unit interval (0, 1) to
+(/C01 , 1) using an inverse Gaussian distribution function. We then
+run an OLS regression using the transformed LGDs, and ﬁnally, we
+transform the ﬁtted values back from ( /C01 , 1) to (0, 1) using the
+Gaussian distribution function. We choose the Gaussian distribu-
+tion function out of convenience.
+2.2.2. Inverse Gaussian regression with beta transformation (IGR-BT)
+In this approach, we assume that LGDs follow a beta distribu-
+tion. First, we use the realized LGDs to estimate the beta distribu-
+tion parameters a and b. The cumulative probabilities are then
+calculated using these estimated beta distribution parameters
+and transformed from (0, 1) to ( /C01 , 1) using an inverse Gaussian
+distribution. We then run an OLS regression and transform the ﬁt-
+ted values from OLS back from ( /C01 , 1) to (0, 1) using the Gaussian
+distribution. We ﬁnally convert the probabilities back from uni-
+modal Gaussian distribution to bi-modal beta distribution using
+the inverse beta distribution. So this method is quite similar to
+the inverse Gaussian regression, except that it assumes a beta dis-
+tribution for LGDs and uses the beta distribution to pre-process
+and post-process LGDs.
+2.2.3. Treatment for LGD values of 0 and 1
+Neither inverse Gaussian nor beta transformation is deﬁned
+when LGD equals 0 or 1, and thus, we need to adjust LGD values
+of 0 or 1 by adding or subtracting a small positive value e. To min-
+imize LGD data distortion, a natural choice for e would be a very
+small number. However, if e is very small, the transformed value
+of LGD = 0 (or e) is a ﬁnite number very close to /C01 , while the
+transformed value of LGD = 1 (or 1 /C0 e) is a ﬁnite number very
+close to 1. If a substantial proportion of the observations have
+LGDs equal to 0 or 1, the transformed values will have very large
+spikes near /C01 or 1, which are likely to result in poor model ﬁt
+and inaccurate predictions. On the other hand, larger e could lead
+to larger differences between the actual LGDs and the LGDs used
+for model estimation when LGDs equal 0 or 1, which is likely to re-
+sult in poor model ﬁt and inaccurate LGD predictions, too. There-
+fore, it is important to investigate model sensitivity to different
+e’s and whether there exists an optimal e that balances the impact
+of data distortion and extreme values on model performance.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2843
+
+2.3. Regression tree (RT)
+Regression tree is popularized by Breiman et al. (1984) and can
+be used to predict continuous dependent variables or categorical
+predictor variables. We derive predictions from a few simple if-
+then conditions and partition the dataset recursively into smaller
+mutually exclusive subsets.
+The split algorithm of a regression tree minimizes intra-subset
+variance. It starts with a root node that contains all observations.
+It then searches over all possible binary splits of all variables to
+generate the smallest intra-subset variation of the LGD in the next
+level of nodes. The predicted LGDs are the average value of the
+LGDs in each leaf node. This process is repeated recursively until
+no further reduction in variance is possible or certain stopping
+criterion is met. Because LGDs are in the range of [0, 1] and predic-
+tions are given by averages of LGDs in each leaf node, predicted
+LGDs from a regression tree will be bounded in [0, 1].
+Results from a regression tree are easy to interpret and commu-
+nicate, which makes it very appealing to users. In addition,
+regression trees can easily handle non-linearity because they
+approximate non-linear functions by piece-wise constant ones.
+Further, this method is fairly robust to outliers.
+Although over-ﬁtting can be a problem for all methods, it is
+more of a concern for non-parametric methods, including regres-
+sion tree. Given the noise in any real data, determining when to
+stop splitting the tree is important when building a regression tree.
+For example, 9 splits applied to a dataset of only 10 observations
+would result in perfect ﬁt in sample, but the resulting model is un-
+likely to generate robust prediction out of sample. In general, near
+perfect ﬁt can be achieved with a sufﬁcient number of splits, but an
+overly complex tree cannot produce accurate out-of-sample pre-
+diction. One way to alleviate the concern of over-ﬁtting is to ﬂoor
+the number of observations in each leaf node. Further, it is impor-
+tant to conduct cross-validation tests by applying the tree built
+from one set of observations (development sample) to another
+completely independent set of observations (validation sample).
+If most of the splits in the development sample are driven by noise,
+then the prediction on the validation sample would be poor.
+We use 10-fold cross-validation to examine the usefulness of a
+regression tree. We divide the entire sample randomly into 10
+mutually exclusive subsets of roughly the same size and reserve
+each of the 10 subsets as the validation sample with the model
+estimated using the remaining 9 subsets. We report the sum of
+SSE from each of the 10 validation subsets and R-squared based
+on this sum of SSE. To be consistent, we also apply the same 10-
+fold cross-validation to other modeling methods as well.
+2.4. Neural network (NN)
+Neural networks are a class of ﬂexible non-linear models in-
+spired by the way human brain processes information. Given an
+appropriate number of hidden-layer units, neural networks can
+approximate a non-linear (or linear) function to an arbitrary de-
+gree of accuracy through the composition of a network of relatively
+simple functions (see White (1990)). Among various types of neu-
+ral networks, the three-layer feedforward network is the most
+widely used. Let f be the unknown underlying function (linear or
+non-linear), through which a vector of input variables x explain
+LGD, i.e., LGD = f(x). We can then approximate f with a three-layer
+neural network model:
+f ðxÞ¼ a0 þ
+Xn
+j¼1
+ajG
+Xk
+i¼1
+bijxi þ b0j
+ !
+þ e; ð5Þ
+where n is the number of units in the hidden layer, k is the number
+of x variables; G is the logistic function as in Eq. (2), a commonly
+used transfer function in feedforward neural networks; { aj, j =
+0, 1, ... , n} represents a vector of coefﬁcients from the hidden-layer
+units to the output-layer units; { bj, i =0 ,1 , ... , k, j =0 ,1 , ... , n}
+denotes a matrix of coefﬁcients from the input-layer units to the
+hidden-layer units; and e is the error term. The error term can be
+made arbitrarily small if n is sufﬁciently large. However, too large
+an n can cause the model to overﬁt in which case the in-sample
+errors are small but the out-of-sample errors may be large. The
+choice of n is data dependent and there exists no general rule for
+predetermining it. Thus, we perform sensitivity analysis by explor-
+ing different values of n, ranging from 5, 10, 15, and so on, up to 40.
+We estimate the parameters by minimizing the sum of squared
+errors Re2. We use the Levenberg–Marquardt algorithm, as it is by
+far the fastest algorithm for moderate-sized (up to several hundred
+free parameters) feedforward neural networks. We generate the
+initial values of the parameters with Nguyen and Widrow’s
+(1990) method and use early stopping improve NN’s out-of-sample
+performance.4 We also rely on 10-fold cross-validation to examine
+the stability of out-of-sample performance.
+3. Sample
+Our sample is from the Moody’s Ultimate Recovery Database
+(URD). The data coverage is US corporate default events with over
+$50 million in debt at the time of default. It has three alternative
+approaches of calculating recovery: the settlement method, the
+trading price method, and the liquidity event method. 5 The data-
+base also provides Moody’s preferred method, which varies for each
+default and is the one Moody’s consider the most representative of
+the actual recovery. The most common preferred method is the
+settlement method. We use the LGD numbers from the preferred
+method for all our analysis. To obtain discounted ultimate recover-
+ies, each nominal recovery in URD is discounted back to the last time
+when interest was paid using the instrument’s pre-petition coupon
+rate. In total, we have 3751 observations from 1985 to 2008.
+Panel A in Table 1 shows the number of LGD observations,
+mean, median, and standard deviation by year. There are more
+observations in years 2001 and 2002, coinciding with the high de-
+fault rates in these 2 years. The mean LGD ranges from a low of
+19.16% in 2007 to a high of 85.61% in 1985. The median LGD
+reaches a low of 0 in 2006–2007. As is shown in the last row of
+the panel, the standard deviation of the mean LGD by year is
+15.19%, while that of the median LGD by year is 25.29%; these
+numbers are low relative to the overall mean and median at
+45.29% and 44.23%, respectively. However, the apparently low var-
+iance of LGDs from year to year does not necessarily suggest that
+the LGD is highly predictable for individual bonds or loans. The
+standard deviation of LGDs in each year is in the range of 30–
+40%, suggesting that there is a wide range of variations in LGDs
+across individual instruments. The same conclusion can be found
+in Fig. 1 , which shows that LGDs in our sample are quite widely
+spread out, with a heavy concentration at both ends in the inter-
+vals of [0, 0.1) and [0.9, 1]. This bi-modal distribution implies that
+upon default, the most likely outcome is losing almost nothing
+(over 30% chance) or losing almost everything (over 15% chance).
+4 The entire sample is randomly divided into training, validation and test sets. The
+training and validation errors normally decrease during the initial phase of training
+then start to rise when the network begins to overﬁt the data. The validation error is
+monitored during training, and the training is stopped when the validation error
+increases for a speciﬁc number of iterations. The coefﬁcients at the minimum of the
+validation error are returned.
+5 With the settle method the value of the settlement instruments is taken at or
+close to emergence. With the trading price method the value is based on the trading
+price of the defaulted instrument taken at or post-emergence. With the liquidity
+method the value of the settlement instruments is taken at the time of a liquidity
+event, such as the maturity of the instrument, the call of the instrument, or a
+subsequent default event.
+2844 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+Panel B shows the sample distribution and LGDs by each indus-
+try. Consistent with earlier studies (e.g., Altman and Kishore (1996)
+and Acharya et al. (2007) ), we ﬁnd that the utility industry has the
+lowest LGD, both in terms of mean and median; its LGD standard
+deviation is also the lowest among all industries. Following the
+convention, we will include a utility industry dummy to reﬂect this
+phenomenon.
+Panel C shows the sample breakdown by instrument type. There
+are seven different debt instrument types: revolvers, term loans,
+senior secured bonds, senior unsecured bonds, senior subordinated
+bonds, subordinated bonds, and junior bonds. Senior unsecured
+bonds constitute the largest proportion of our sample with 1033
+observations, followed by revolvers (722 observations) and term
+loans (662 observations). Junior bonds constitute the lowest share
+of our sample. The mean LGD is the lowest among revolvers at 18%,
+and highest among junior bonds. The increase in LGD across instru-
+ment types is consistent with the notion of debt seniority. Further,
+there is relatively less variation in LGD among revolvers and junior
+bonds. Senior unsecured bonds have the highest variation in LGD.
+Panel D provides the sample breakdown by collateral type. We
+group collaterals into 11 types: capital stock; equipment; guaran-
+tee; intellectual property; inter-company debt; inventory, receiv-
+ables, and cash; ‘‘most assets’’; other assets; unsecured; second
+lien; and third lien. 6 The majority of our sample debt instruments
+are unsecured, and the LGDs from these instruments are quite high,
+with a mean at 62.62%, and median at 75.32%.
+A small number of the defaulted instruments of certain ﬁrms in
+our sample are guaranteed by a separately rated entity. For exam-
+ple, Motorola provides guarantee to debt instruments of Iridium.
+Panel D shows that when default happens, these guaranteed debt
+instruments have the lowest LGD (mean at 0.85%), with the lowest
+variation (standard deviation at 2.83%). Inventory, receivables, and
+cash also provide good collateral values – defaulted instruments
+with this type of collateral have a mean LGD at 6.24% and median
+LGD at 0. Defaulted instruments secured by capital stock have a
+higher LGD than those secured by inventory, receivables, and cash.
+This is not surprising because if a large proportion of the collateral
+is the stock of the company, they should not worth much when the
+ﬁrm is in default. LGDs of defaulted exposures secured by ‘‘most
+assets’’ and other assets are also quite low, with means at 23.45%
+and 21.40%, respectively.
+The LGDs from debt instruments secured by equipment are
+quite high, with a mean at 56.13% and median at 79.20%. A possible
+explanation for this phenomenon is that equipment is industry- or
+ﬁrm-speciﬁc, which may not command a high value in a ﬁre sale.
+Debts secured by intellectual assets have high LGDs; this result is
+intuitive because the intangible assets may be of only speciﬁc va-
+lue to the default ﬁrm. There is only one case of defaulted exposure
+secured by inter-company debt and it carries a very high LGD of
+87.35%.
+Finally, the LGDs of second liens have a mean of 42.04% and a
+median of 41.76%; they are lower than the mean of 45.25% and
+the median of 43.93% for the ﬁrst liens. Third liens have a mean
+LGD of 64.27% and a median of 76.34%; these numbers are compa-
+rable to those of unsecured. These results suggest that the second-
+and third-lien holders may not fare the worst when default occurs.
+Table 2 provides summary statistics of the explanatory vari-
+ables used in this study. Distance-to-default is a measure of vola-
+tility-adjusted leverage, and it is backed out of the Merton
+(1974) model.7 We use 12 industries as deﬁned in Panel B of Table
+1. The mean industry distance-to-default is 15.00 and the median
+Table 1
+LGD by year, industry, instrument type, and collateral type.
+Number of
+observations
+Median
+(%)
+LGD
+mean (%)
+Std (%)
+Panel A. By year
+1985 2 85.61 85.61 0.33
+1987 39 33.04 37.50 31.68
+1988 54 61.03 79.47 36.12
+1989 72 61.64 69.18 30.69
+1990 179 56.50 61.11 37.30
+1991 256 40.86 35.30 37.25
+1992 103 43.70 41.15 39.95
+1993 96 45.29 57.97 39.74
+1994 58 35.54 33.06 36.57
+1995 110 36.02 30.52 37.22
+1996 66 37.42 21.00 38.95
+1997 60 37.47 20.30 39.81
+1998 73 58.86 64.20 34.43
+1999 180 45.74 39.76 39.15
+2000 281 49.64 54.32 39.12
+2001 573 52.25 64.21 40.36
+2002 688 55.17 68.18 34.69
+2003 335 33.11 26.00 36.24
+2004 175 25.71 1.75 33.90
+2005 182 25.38 12.55 30.63
+2006 68 26.60 0.00 35.75
+2007 35 19.16 0.00 29.00
+2008 66 52.26 52.77 37.12
+Overall 3751 45.29 44.23 38.34
+Std 15.19 25.29
+Panel B. By industry
+Consumer non-durable goods 242 40.03 38.40 34.77
+Consumer durables 157 41.72 48.15 36.34
+Manufacturing 433 39.00 32.74 38.35
+Energy/Natural resources 198 48.33 57.16 35.94
+Chemical 63 29.14 0.00 37.36
+Business equipment 238 46.93 45.27 37.97
+Telecommunications 552 56.04 68.18 37.79
+Utilities 229 16.32 0.00 27.42
+Shops 616 49.63 53.61 39.80
+Health care 150 50.99 58.42 38.69
+Financial institutions 111 49.67 61.69 41.12
+Other 762 46.94 45.35 36.87
+Panel C. By instrument type
+Revolvers 722 18.32 0.00 28.90
+Term loans 662 27.61 3.33E /C0 09 34.02
+Senior secured bonds 505 40.08 41.91 32.94
+Senior unsecured bonds 1033 54.73 61.13 35.40
+Senior subordinated bonds 413 73.18 84.33 29.67
+Subordinated bonds 352 74.25 86.08 31.71
+Junior bonds 64 81.77 95.60 27.98
+Panel D. By collateral type
+Capital Stock 164 34.09 31.77 30.14
+Equipment 119 56.13 79.20 34.36
+Guarantees 11 0.85 0.00 2.83
+Intellectual 5 54.72 62.64 32.62
+Inter-company debt 1 87.35 87.35
+Inventory, receivables
+and cash
+144 6.24 0.00 19.77
+Most assets 1198 23.45 0.00 30.46
+Other assets 31 21.40 0.00 31.37
+Unsecured 1924 62.62 75.32 35.11
+Second lien 126 42.04 41.76 36.16
+Third lien 28 64.27 76.34 35.75
+6 Most assets (all assets excluding inventory and account receivables), all assets,
+PP&E and all non-current assets are grouped together as ‘‘most assets’’. Equipment is
+kept separate because exposures secured by equipment have much higher LGDs than
+those secured by all the collateral types grouped into ‘‘most assets.’’ We group oil and
+gas properties and real estate into other assets due to low numbers of observations
+and the minimal difference between the LGDs of these two collateral types.
+Guarantees, intellectual and inter-company debt are kept separate despite the low
+numbers of observations, because these collateral types are quite unusual and are
+associated with LGDs distinctively different from other collateral types. We classify
+cash in the same group as inventory and receivables because they are all liquid assets
+and have similar LGDs. On the other hand, capital stock, to which cash is often
+grouped with, has fairly high LGDs.
+7 Monthly volatility is the volatility of daily returns during the month. We use
+Compustat quarterly leverage data. We would like to thank Shumway for providing
+the SAS codes.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2845
+
+is 13.65; these numbers are lower than those at the aggregate level.
+The mean trailing 12-month industry default rate is 3.10%, higher
+than the mean aggregate default rate (1.91%). These results suggest
+that the sample ﬁrms are from troubled industries. We use the
+NYSE-NASDAQ-AMEX value-weighted index as the market return,
+and the mean trailing 12-month market return is 3.19%, consistent
+with the by-year distribution reported in Panel A of Table 1 .
+The variable percentage above measures the percentage of debt
+obligations of a ﬁrm that is more senior to a particular instrument.
+This variable is included in Moody’s LossCalc. The variable senior-
+ity index is a variable we constructed using percentage above plus
+one-half of the percentage at the same rank. Both percentages are
+available in URD. The construction of seniority index is motivated
+by the ﬁndings in Bris et al. (2009) that many issuers only issue
+bonds at the same seniority class, suggesting that only incorporat-
+ing percentage above may not be sufﬁcient, as each credit holder is
+likely to recover less in the event of default, the larger the number
+of instruments held by different creditors are at the same rank. Qi
+and Zhao (2010) ﬁnd that this variable is the most important
+explanatory variable of the recovery rate (or 1-LGD). In our sample,
+the mean for percentage above is lower than half of the mean for
+seniority index, suggesting a signiﬁcant portion of the debt instru-
+ments of the same obligor are at the same rank. Panel B of Table 2
+shows the correlation between these two variables and LGD. We
+ﬁnd that LGD has a lower correlation with percentage above than
+with the seniority index. The correlation between percentage
+above and seniority index is 0.853, high but not close to 1, thus
+there is additional information contained in seniority index not
+already captured by percentage above, which may be used to
+improve the ﬁt of an LGD model.
+4. Results
+This section compares results from different modeling methods
+for LGD. We use the same set of independent variables across all
+methods except for the regression tree, for which we include three
+additional variables (percentage above, industry default rate, and
+aggregate distance-to-default). This is because all methods except
+for the regression tree could suffer from the multi-collinearity
+problem as these three variables are highly correlated with the
+other explanatory variables.
+8 Also in all but the regression tree
+methods, we use subordinated bonds as the base instrument and
+Table 2
+Summary statistics.
+Mean Median Std
+Panel A. Summary statistics
+Industry distance-to-default (%) 15.00 13.65 5.73
+Trailing 12-month industry default rate (%) 3.10 2.05 3.53
+Aggregate distance-to-default (%) 17.13 15.92 4.22
+Trailing 12-month aggregate default rate (%) 1.91 1.89 1.01
+Trailing 12-month market return (%) 3.19 5.95 17.90
+3-month T-bill rate (%) 3.63 3.51 2.02
+Percentage above (%) 22.16 2.98 28.95
+Seniority index (%) 48.92 50.00 25.14
+LGD Percentage above
+Panel B. Correlations
+Percentage above 0.460
+Seniority index 0.571 0.853
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+[0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1]
+Intervals
+Fig. 1. Distribution of observed LGDs.
+Table 3
+Regression results from OLS and fractional response (FRR).
+Dependent variable: LGD OLS FRR
+Independent variable Coefﬁcient p-Value Coefﬁcient p-Value
+Seniority index 0.562 <0.001 3.031 <0.001
+Revolvers /C0 0.119 <0.001 /C0 0.477 <0.001
+Term loans /C0 0.075 0.012 /C0 0.145 0.013
+Senior secured bonds /C0 0.01 0.755 0.116 0.074
+Senior unsecured bonds /C0 0.079 <0.001 /C0 0.335 <0.001
+Senior subordinated bonds 0.032 0.128 0.175 <0.001
+Junior bonds 0.020 0.608 0.181 0.180
+Capital stock 0.006 0.810 0.056 0.141
+Equipment 0.104 0.001 0.440 <0.001
+Guarantees /C0 0.259 0.003 /C0 2.388 0.438
+Intellectual 0.274 0.034 1.448 0.171
+Inter company debt 0.443 0.121 1.144 0.811
+Inventory, receivables,
+and cash
+/C0 0.096 <0.001 /C0 1.241 <0.001
+Other /C0 0.065 0.211 /C0 0.272 0.195
+Unsecured 0.145 <0.001 0.717 <0.001
+Second lien 0.065 0.020 0.295 <0.001
+Third lien 0.192 0.001 1.036 <0.001
+Industry distance-to-default /C0 0.953 <0.001 /C0 5.724 <0.001
+Aggregate default rate 0.311 <0.001 1.586 <0.001
+Trailing 12-month
+market return
+/C0 0.011 <0.001 /C0 0.062 <0.001
+3-month T-bill rate 0.128 <0.001 0.768 <0.001
+Utility dummy /C0 0.197 <0.001 /C0 1.011 <0.001
+Intercept 0.211 <0.001 /C0 1.588 <0.001
+Observations 3751 3751
+R-squared 0.448 0.463
+SSE 304.32 296.12
+10-fold cross-validation
+R-squared (std) 0.443 (0.005) 0.457 (0.047)
+SSE (std) 306.92 (7.53) 298.60 (7.87)
+8 Our conclusions do not change if we use the same set of independent variables in
+the regression tree. These results are available upon request.
+2846 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+‘‘most assets’’ as the base collateral type. We report regression
+results from OLS and fractional response in Table 3 and Fig. 2, results
+from the inverse Gaussian, and inverse Gaussian with beta transfor-
+mation in Tables 4 and 5 and Figs. 3.1 and 3.2 , and results from
+regression tree and neural network in Tables 6 and 7 and Figs. 4–7 .
+4.1. Ordinary least squares regression (OLS)
+First of all, the coefﬁcient to the new variable seniority index is
+0.562 and is highly signiﬁcant. Therefore, a 10% increase in the
+percentage of debt more senior than or equal to the instrument
+is likely to lead to 5.6% higher LGD. Further, OLS results suggest
+that revolvers and term loans are associated with signiﬁcantly low-
+er LGDs, and on average, revolvers’ LGD is about 4% points lower
+than the LGD of term loans, after controlling for other factors. LGDs
+of senior secured bonds are not signiﬁcantly different from those of
+subordinated bonds,9 while LGDs of senior unsecured bonds are sig-
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+<0 [0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1] >1
+Intervals
+Actual OLS
+ FRR
+Fig. 2. Distribution of actual versus ﬁtted LGDs from OLS and FRR.
+Table 4
+Results using different e in the transformation regressions.
+In sample 10-fold cross-validation
+R-squared SSE R-squared (Std) SSE (Std)
+Panel A. Inverse Gaussian regression (IGR)
+1.00E/C0 11 0.171 456.93 0.167 (0.089) 459.42 (14.71)
+0.0001 0.327 370.84 0.323 (0.078) 373.48 (13.04)
+0.0005 0.357 354.24 0.353 (0.075) 356.89 (12.50)
+0.001 0.372 346.29 0.367 (0.073) 348.94 (12.21)
+0.005 0.408 326.23 0.403 (0.068) 328.88 (11.32)
+0.01 0.424 317.39 0.420 (0.065) 320.03 (10.82)
+0.05 0.452 302.29 0.447 (0.056) 304.85 (9.18)
+0.08 0.451 302.93 0.446 (0.052) 305.43 (8.52)
+0.1 0.447 305.15 0.442 (0.050) 307.62 (8.15)
+0.2 0.406 327.28 0.402 (0.043) 329.58 (6.80)
+0.3 0.345 361.32 0.341 (0.038) 363.44 (5.82)
+0.5 0.165 460.34 0.162 (0.033) 462.03 (4.78)
+Panel B. Inverse Gaussian regression with Beta transformation (IGR-BT)
+1.00E/C0 11 0.111 490.33 0.106 (0.091) 492.75 (14.94)
+0.0001 0.309 380.77 0.305 (0.081) 383.39 (13.42)
+0.0005 0.345 361.03 0.340 (0.077) 363.68 (12.81)
+0.001 0.362 351.76 0.357 (0.075) 354.40 (12.49)
+0.005 0.403 328.92 0.399 (0.069) 331.57 (11.51)
+0.01 0.421 319.13 0.416 (0.066) 321.78 (10.97)
+0.05 0.451 302.73 0.446 (0.056) 305.30 (9.24)
+0.08 0.450 303.15 0.446 (0.052) 305.66 (8.55)
+0.1 0.446 305.26 0.442 (0.050) 307.74 (8.18)
+0.2 0.407 326.87 0.403 (0.043) 329.17 (6.79)
+0.3 0.346 360.43 0.342 (0.037) 362.55 (5.78)
+0.5 0.168 458.65 0.165 (0.032) 460.33 (4.71)
+Bold numbers indicate the optimal model speciﬁcation that has the highest R-squared and the lowest SSE among the alternative speciﬁcations listed in the table.
+9 This result is quite surprising and is not consistent with conventional wisdom and
+the summary statistics in Panel C of Table 1 . We ﬁnd that this result is driven by the
+inclusion of the utility industry dummy – excluding the utility dummy, the coefﬁcient
+of the senior secured bonds is signiﬁcantly negative.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2847
+
+niﬁcantly lower. There is not much difference in LGDs across senior
+subordinated bonds, subordinated bonds, and junior bonds. On the
+other hand, unsecured debts, debts backed by equipment, intellec-
+tual properties, second and third liens tend to have higher LGDs than
+instrument backed by ‘‘most assets’’ (the base collateral), while
+exposures backed by guarantees, inventory, receivables and cash
+tend to have lower LGDs. Further, LGDs are higher when the aggre-
+gate default rates are higher and the 3-month T-bill rate is higher;
+LGDs are lower when the industry distance-to-default is higher,
+the trailing 12-month market return is higher, and when the issuer
+belongs to the utility industry.
+The R-squared is 0.450 and the SSE is 304.32 from the overall
+regression. They are 0.448 and 306.96, respectively, from the
+10-fold cross-validation, with very low standard deviations. These
+statistics indicate that the OLS model is fairly stable.
+We plot the OLS-ﬁtted LGDs in Fig. 2 . Although some ﬁtted
+LGDs are outside the range of [0, 1], these numbers constitute
+a very small proportion (around 4%) of the sample. The distribu-
+tion of the ﬁtted LGDs is slightly bi-modal, however, the higher
+concentrations are found in the intervals of [0.3, 0.4) and
+[0.6, 0.7), instead of [0, 0.1] and [0.9, 1], respectively, for the ac-
+tual LGDs.
+Table 5
+Regression results from inverse Gaussian (IGR) and inverse Gaussian with beta transformation (IGR-BT) ( e = 0.05).
+Dependent variable: LGD IGR IGR-BT
+Independent variable Coefﬁcient p-Value Coefﬁcient p-Value
+Seniority index 1.962 <0.001 1.453 <0.001
+Revolvers /C0 0.401 <0.001 /C0 0.297 <0.001
+Term loans /C0 0.252 <0.001 /C0 0.187 <0.001
+Senior secured bonds /C0 0.030 0.588 /C0 0.024 0.562
+Senior unsecured bonds /C0 0.250 <0.001 /C0 0.186 <0.001
+Senior subordinated bonds 0.165 <0.001 0.123 <0.001
+Junior bonds 0.101 0.139 0.075 0.135
+Capital stock 0.012 0.779 0.008 0.799
+Equipment 0.231 <0.001 0.167 <0.001
+Guarantees /C0 0.849 <0.001 /C0 0.626 <0.001
+Intellectual 0.815 <0.001 0.599 <0.001
+Inter company debt 1.364 0.006 1.006 0.007
+Inventory, receivables, and cash /C0 0.292 <0.001 /C0 0.214 <0.001
+Other /C0 0.248 0.007 /C0 0.184 0.007
+Unsecured 0.492 <0.001 0.364 <0.001
+Second lien 0.197 <0.001 0.145 <0.001
+Third lien 0.610 <0.001 0.450 <0.001
+Industry distance-to-default /C0 3.210 <0.001 /C0 2.376 <0.001
+Aggregate default rate 1.058 <0.001 0.780 <0.001
+Trailing 12-month market return /C0 0.040 <0.001 /C0 0.029 <0.001
+3-month T-bill rate 0.476 <0.001 0.352 <0.001
+Utility dummy /C0 0.687 <0.001 /C0 0.507 <0.001
+Intercept /C0 0.997 <0.001 /C0 0.658 <0.001
+Observations 3751 3751
+R-squared 0.452 0.451
+SSE 302.29 302.73
+10-fold cross-validation
+R-squared (std) 0.447 (0.056) 0.446 (0.056)
+SSE (std) 304.85 (9.18) 305.30 (9.24)
+0%
+10%
+20%
+30%
+40%
+50%
+60%
+[0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1]
+Intervals
+Actual IGR
+ IGR-BT
+Fig. 3.1. Distribution of ﬁtted LGDs from IGR and IGR-BT ( e = 1.00E/C0 11).
+2848 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+4.2. Fractional response regression (FRR)
+Results from FRR are qualitatively similar to those from the
+OLS.10 The exceptions are (1) senior secured bonds and the senior
+subordinated bonds seem to have signiﬁcantly higher LGDs than
+the base instrument (subordinated bonds), 11 and (2) the collateral
+types of guarantees and intellectuals are not signiﬁcantly related
+to LGD. Similar to OLS, the 10-fold cross-validation R-squared and
+SSE from FRR are quite close to those in sample with low standard
+deviations, suggesting that the underlying relationship is rather sta-
+ble. Further, both the in-sample and out-of-sample R-squared are
+higher and the SSEs are lower for FRR than for OLS. These results
+indicate that FRR yields better model ﬁt than OLS.
+We also plot the histogram of FRR-ﬁtted LGDs in Fig. 2. It is clear
+that FRR-ﬁtted LGDs do a better job than OLS-ﬁtted LGDs in
+mimicking the actual LGD distribution. We ﬁnd high concentra-
+tions in the intervals [0.2, 0.3) and [0.7, 0.8). Not surprisingly, all
+ﬁtted values from FRR fall within [0, 1].
+4.3. Transformation regressions (IGR and IGR-BT)
+We ﬁrst investigate in Table 4 results using different e’s. This ta-
+ble shows that results from the transformation regressions are very
+sensitive to the choice of e. For both IGR and IGR-BT, the model ﬁt
+improves initially as e increases from 1.0E /C0 11 to 0.05 and then
+deteriorates afterwards; the latter part is not surprising as a higher
+e creates larger differences between the actual LGDs and the LGDs
+used in model estimation. With e =1 E/C0 11, IGR yields an R-squared
+of 0.171 and IGR-BT leads to an R-squared of 0.111. The numbers
+are drastically lower than those of OLS and FRR reported in Table
+3. SSEs are also much higher among the transformation methods.
+The highest R-squared and lowest SSE for both methods (both
+in-sample and 10-fold cross-validation) is achieved at e = 0.05,
+suggesting that it may be the optimal epsilon for this sample. At
+e = 0.05, the model ﬁt from IGR and IGR-BT matches that of OLS
+and is slightly worse than that of FRR. Note that the standard
+deviations of R-squared and SSE from the 10-fold cross-validation
+are very high at very low e’s for both transformation methods. This
+result suggests that extreme values generated by very small e’s
+make the transformation methods unstable.
+Table 5 reports the detailed results from the transformation
+methods under e = 0.05. Results from the two transformation meth-
+ods are quite similar. The main differences in coefﬁcient estimates of
+the explanatory variables between these methods and those from
+either OLS or FRR relate to the instrument type senior subordinated
+bonds and collateral types guarantees, intellectual, inter-company
+debt, and other. These variables are non-signiﬁcant under either
+OLS or FRR and become signiﬁcant in Table 5 under both IGR and
+IGR-BT. The ﬁnding that inferences on some instrument-level vari-
+ables are slightly different between models implies that the instru-
+ment-level variables may not have a clear-cut linear relation with
+LGD. Therefore, the current industry practice, which relies solely
+on instrument-level variables to predict LGDs, may not be adequate.
+We illustrate the distribution of ﬁtted LGDs under e = 1.0E/C0 11
+and e = 0.05 in Figs. 3.1 and 3.2 , respectively. The distribution in
+Fig. 3.1 is strongly bi-modal, with large spikes at both ends. In fact,
+this distribution shows a stronger bi-modal pattern than the actual
+LGD distribution. In contrast, the distribution in Fig. 3.2 shows a
+rather weak bi-modal pattern, quite similar to that of FRR in
+Fig. 2 . Since the model ﬁt associated with Fig. 3.1 is rather poor,
+these ﬁgures suggest that models that can generate a strong bi-
+modal pattern in ﬁtted LGDs do not necessary lead to good model
+ﬁt or accurate prediction.
+We also study the scatter plots of the actual versus the ﬁtted LGDs
+from both transformation methods. The ﬁtted LGDs using
+e = 1.0E/C0 11 do not align well with the actual LGDs, with most of
+the ﬁtted values deviating substantially away from the 45/C176line. With
+e = 0.05, the ﬁtted LGDs are more clustered along the 45/C176line, consis-
+tent with the higherR-squared and lower SSE frome = 0.05. The scat-
+ter plots of actual and ﬁtted LGDs for the transformation methods
+under e = 0.05 are quite similar to those from FRR. These scatter plots
+are not reported due to space limit and are available upon request.
+Note that the problem associated with LGDs equal to 0 or 1 is
+not speciﬁc to our sample. The LGDs of 0 or 1 are quite common
+in wholesale credit exposures due to the absolute priority rules
+in ﬁrms’ debt structure. The LGDs of 0 is also common for defaults
+triggered by distressed exchange. The proportion of 0 LGDs further
+increases due to the Basel II deﬁnition of default – a wholesale obli-
+gor is in default if the obligor is deemed by the bank as unlikely to
+pay its credit obligations in full or is 90 days or more past due on
+any material credit obligations. Based on this deﬁnition, perform-
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+[0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1]
+Intervals
+Actual IGR
+ IGR-BT
+Fig. 3.2. Distribution of ﬁtted LGDs from IGR and IGR-BT ( e = 0.05).
+10 We only report results using the logistic function – results using the log–log
+function are quite similar and are not reported due to space limitations.
+11 We ﬁnd that this result is due to the inclusion of seniority index .
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2849
+
+ing loans (i.e., LGD = 0) of an obligor that defaults on any of its
+obligations should be included in the LGD reference data.
+Therefore, users of the transformation methods should exercise
+great caution when choosing e.12
+4.4. Regression tree (RT)
+Table 6 reports results from RT. In Panel A, we show results
+using different minimum size requirement in each leaf. Panel B
+presents the ﬁrst 13 splits of the tree with a minimum of 5
+observations at each leaf.
+We report in Panel A standard deviations from the 10-fold
+cross-validation in parenthesis. This panel shows that as the
+minimum size requirement increases, RT ﬁt worsens, and at a
+minimum of 5 observations in each leaf, the in-sample R-squared
+is as high as 0.847. Although the difference in R-squared and SSE
+between in-sample and 10-fold cross-validation widens when the
+minimum size requirement declines, the out-of-sample prediction
+is still very high at 0.804 at a minimum of 5 observations, with low
+standard deviations from 10-fold cross-validation. However, the
+standard deviations explode at a minimum of 2 observations
+required at each leaf. 13 This shows that RT can indeed suffer from
+the over-ﬁtting problem, although the problem can be monitored
+and perhaps avoided by cross-validation. We caution that the seem-
+Table 6
+Results from the regression tree. This table present results from the regression tree method ( Breiman et al., 1984 ). We include in the regression tree all instrument type and
+collateral type indicators; two industry-level variables: industry distance-to-default (DTD), and trailing 12-month industry default rate; fou r market-level variables: trailing
+12-month aggregate default rate, trailing 12-month stock market returns, aggregate distance-to-default (DTD), and the 3-month T-bill rate; a util ity industry dummy, the
+seniority index, and percentage above.
+Minimum size requirement Maximum steps In sample 10-fold cross-validation
+R-squared SSE R-squared (std) SSE (std)
+Panel A. Regression tree with different minimum size requirements in each leaf
+2 355 0.859 77.65 0.827 95.32
+(0.269) (148.58)
+5 342 0.847 84.12 0.804 107.85
+(0.014) (7.90)
+10 214 0.767 128.29 0.731 148.22
+(0.012) (6.51)
+20 131 0.691 170.19 0.664 185.31
+(0.018) (9.64)
+30 87 0.636 200.64 0.616 211.48
+(0.014) (7.70)
+40 66 0.61 215.04 0.594 223.93
+(0.010) (5.71)
+50 56 0.597 222.12 0.595 228.81
+(0.038) (6.76)
+60 46 0.564 240.49 0.55 248.1
+(0.008) (4.11)
+70 41 0.545 250.8 0.534 256.74
+(0.011) (6.27)
+80 37 0.528 260.44 0.518 265.79
+(0.007) (3.75)
+90 30 0.515 267.15 0.506 272.54
+(0.010) (5.15)
+100 25 0.501 275.24 0.493 279.36
+(0.011) (6.16)
+Split steps Split variable Value In sample 10-fold cross-validation
+R-squared SSE R-squared SSE
+Panel B. First 13 splits of the regression tree with a minimum leaf size requirement of 5 observations
+1 Seniority index 0.511 0.252 412.22 0.251 412.8
+2 Seniority Index 0.295 0.327 370.76 0.326 371.44
+3 Industry distance-to-default 16.585 0.372 346.05 0.371 347.04
+4 Industry distance-to-default 14.096 0.397 332.31 0.395 333.32
+5 Aggregate distance-to-default 13.83 0.421 319.08 0.419 320.27
+6 Industry distance-to-default 8.27 0.434 312.22 0.431 313.56
+7 Unsecured 1 0.447 305.14 0.443 306.96
+8 3-month T-bill rate 9.40% 0.461 297.38 0.457 299.5
+9 Seniority Index 0.213 0.468 293.26 0.464 295.51
+10 Industry default rate 4.42% 0.478 287.52 0.474 290.15
+11 Aggregate distance-to-default 15 0.489 281.91 0.484 284.55
+12 Percentage above 0.77 0.494 278.74 0.49 281.45
+13 Seniority index (Std) 0.674 0.499 276 0.495 278.62
+(0.004) (2.05)
+12 The ﬁndings and conclusions contained in this section are based on the two
+transformation methods we investigated, and do not necessarily have general
+implications for other transformation methods. Further, the optimal value of
+e = 0.05 may be speciﬁc to the data used in this study, and thus may not be
+generalized to other data, even if the same transformation methods are used.
+13 Further, we ﬁnd that, when the minimum size requirement drops to one
+observation at each leaf, R-squared and SSE from the 10-fold cross-validation worsen.
+2850 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+ingly optimal minimum requirement of 5 observations at each leaf
+may be speciﬁc to this sample, thus expect users to investigate the
+optimal minimum size requirement on their own data. Further, a
+large tree with 342 splits may not be practical in a production
+environment.
+We report in Panel B the ﬁrst 13 splits of the tree with the min-
+imum size requirement of 5 observations at each leaf. We show the
+explanatory variable of the split for each step, the value of split,
+and the R-squared and SSE of the resulting tree. We also report
+the R-squared and SSE from the 10-fold cross-validation. The same
+steps are also reported in Fig. 4 . Because of the large size of this
+partial tree, we report it in two parts with the left main branch
+in Fig. 4.1 and the right main branch in Fig. 4.2 .
+The ﬁrst split is based on the variable seniority index at the
+value of 0.511. After the ﬁrst split, all observations fall into two
+groups, those with seniority index below 0.511 and those above
+or equal to 0.511. The predicted LGD is 0.285 for the ﬁrst group,
+and 0.674 for the second group; this pattern is qualitatively consis-
+tent with the regression results that LGD is positively related to
+seniority index. This is a very coarse way to predict LGD and not
+surprisingly, the R-squared is relatively low at 0.252, and the SSE
+is quite high at 412.22. The out-of-sample 10-fold R-squared is
+slightly lower at 0.251 and SSE is slightly higher at 412.80.
+The next split is also based on the variable seniority index at the
+value of 0.295 under the left branch of the ﬁrst split. The entire
+sample is now separated into three groups, those with seniority
+index below 0.295, between 0.295 and 0.511, and those above or
+equal to 0.511. The ﬁtted LGD for each group is 0.13, 0.41, and
+0.67, respectively. With this reﬁnement, the goodness-of-ﬁt is
+improved: the in-sample R-squared climbs to 0.327 and the in-
+sample SSE drops to 370.76. Those from the 10-fold cross-valida-
+tion show similar improvement as well.
+The third split is based on the variable industry distance-to-de-
+fault at the value of 16.585 under the right branch of the ﬁrst split.
+After this split, the sample is grouped into four segments: (1) those
+with seniority index below 0.295, (2) those with seniority index
+between 0.295 and 0.511, (3) those with the seniority index above
+or equal to 0.511 and industry distance-to-default above or equal
+to 16.585, and (4) those with the seniority index above or equal
+to 0.511 and industry distance-to-default below 16.585. The ﬁtted
+LGD for each of the four groups are: 0.13, 0.41, 0.47, and 0.75. The
+ﬁnding that obligors in industries with a higher distance-to-default
+tend to have lower LGDs is consistent with the regression results in
+Tables 3 and 5 . After these three splits, the in-sample R-squared
+improves from 0.327 of the previous split to 0.372, and we ﬁnd
+similar improvement in the 10-fold cross-validation R-squared.
+The SSE now declines to 346.05 for in-sample ﬁt and 347.04 for
+out-of-sample ﬁt.
+Table 7
+Results from the neural network. This table present results from the neural network
+method. We used a three-layer feed forward neural network with the number of
+hidden-layer units ranging from 5 to 40. Early stopping is used to control over-ﬁtting.
+The entire sample is randomly divided into training, validation and test sets. The
+optimal number of hidden-layer nodes is chosen by model performance on the
+validation and testing sets. We include in the model all instrument type and collateral
+type indicators; one industry-level variable: industry distance-to-default (DTD); three
+market-level variables: trailing 12-month aggregate default rate, trailing 12-month
+stock market returns, and the 3-month T-bill rate; a utility industry dummy, and the
+seniority index.
+Hidden-layer nodes R-squared
+Training Validation Testing
+5 0.479 0.478 0.384
+10 0.587 0.491 0.480
+15 0.619 0.498 0.492
+20 0.607 0.544 0.481
+25 0.624 0.556 0.576
+30 0.662 0.554 0.554
+35 0.611 0.517 0.501
+40 0.672 0.537 0.497
+10-fold cross-validation (Using 25 hidden-layer nodes)
+R-squared (Std) 0.529 (0.031)
+SSE (Std) 259.51 (1.586)
+Bold numbers indicate the optimal model speciﬁcation that has the highestR-squared
+and the lowest SSE among the alternative speciﬁcations listed in the table.
+Fig. 4.1. Regression tree. This ﬁgure presents the regression tree ( Breiman et al., 1984 ) developed on the small sample. We include in the regression tree all instrument type
+and collateral type indicators; two industry-level variables: industry distance-to-default (DTD), and trailing 12-month industry default rate; four market-level variables:
+trailing 12-month aggregate default rate, trailing 12-month stock market returns, aggregate distance-to-default (DTD), and the 3-month T-bill ra te; a utility industry dummy,
+and the seniority index. We restrict a minimum of 5 observations in each leaf. Due to space limitation, we only present the ﬁrst 13 splits with the left main branch shown in
+Fig. 4.1 and the right main branch in Fig. 4.2. Left main branch.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2851
+
+As the tree grows, both the in-sample and out-of-sample R-
+squared increases, while the SSEs decline, but all at decreasing
+rates. To achieve the same level of or better goodness-of-ﬁt as
+OLS or the transformation methods, eight splits are required. To
+match or beat FRR, we need nine splits. The last row of the table
+shows that this partial tree is quite stable, with very low standard
+errors of the R-squared and SSE from the 10-fold cross-validation.
+It therefore seems that in spite of the method’s non-parametric
+nature, when properly controlled, over-ﬁtting does not seem to
+pose a serious problem for the regression tree method.
+Fig. 5.1 reports distribution of ﬁtted LGDs from RT with the
+minimum leaf size requirement of 100. The highest concentrations
+are in the intervals [0.1, 0.2) and [0.7, 0.8), rather than [0, 0.1) and
+[0.9, 1]. Further, there is no strong bi-modal pattern. This ﬁnding
+once more implies that the bi-modal distribution may be of only
+secondary importance in predicting LGD.
+Fig. 5.2 reports distribution of ﬁtted LGDs from RT with the
+minimum leaf size requirement of 5. The bi-modal distribution
+pattern in Fig. 5.2 is not as strong as that in Fig. 3.1 – the spike
+at the interval of [0.9, 1] is not as obvious, although the spike at
+[0, 0.1) is still large. This ﬁnding once again implies that a model’s
+ability to generate strong bi-modal distribution may not necessar-
+ily lead to accurate LGD modeling and forecasting. Among all ﬁtted
+LGD distributions, Fig. 5.2 mimics the distribution of the actual
+LGDs the best, consistent with the result in Panel A of Table 6 that
+this tree produces very high predictive accuracy. We caution again
+that the minimum leaf size of 5 can be too low for other samples,
+and such a large tree may not be practical.
+Fig. 4.2. Regression tree. This ﬁgure presents the regression tree ( Breiman et al., 1984 ) developed on the small sample. We include in the regression tree all instrument type
+and collateral type indicators; two industry-level variables: industry distance-to-default (DTD), and trailing 12-month industry default rate; four market-level variables:
+trailing 12-month aggregate default rate, trailing 12-month stock market returns, aggregate distance-to-default (DTD), and the 3-month T-bill ra te; a utility industry dummy,
+and the seniority index. We restrict a minimum of 5 observations in each leaf. Due to space limitation, we only present the ﬁrst 13 splits with the left main branch shown in
+Fig. 4.1 and the right main branch in Fig. 4.2. Right main branch.
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+[0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1]
+Actual RT (Min 100 obs)
+Fig. 5.1. Distribution of ﬁtted LGDs from the regression tree (a minimum size requirement of 100 observations at each leaf).
+2852 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+4.5. Neural network (NN)
+We report results from NN in Table 7 . To choose the optimal n,
+the number of hidden-layer units, we divide the sample randomly
+into three parts: training, validation and test sets, each represent-
+ing 70%, 15%, and 15% of the entire sample. The model ﬁt changes
+when n increases. On the training set, R-squared shows tendency
+to improve as n becomes larger, whereas on the validation and test
+sets, R-squared initially improves then deteriorates as n increases,
+with the peak R-squared of 0.556 and 0.576 on the validation and
+test sets when n is 25. 14 This suggests that the optimal n for our
+sample is likely to be 25, thus we use the same n of 25 to generate
+the 10-fold cross-validation results.
+NN also shows good 10-fold cross-validation results. The SSE for
+the 10-fold cross-validation is the sum of the SSE from each valida-
+tion sample, and the sum of SSE is then used to compute the
+R-squared for the 10-fold cross-validation. Table 7 shows that the
+out-of-sample R-squared of NN is 0.529, which is higher than those
+of parametric methods, and the out-of-sample SSE of NN is 259.51,
+which is lower than those of parametric methods. Both the
+R-squared and SSE have very low standard deviations, indicating
+the stable performance of NN out of sample. RT with the minimum
+size requirement at 70 or less shows better model ﬁt than NN in
+10-fold cross-validation.
+We depict the distribution of the ﬁtted LGDs from NN in Fig. 6 .
+Although some ﬁtted LGDs are outside the range of [0, 1], these
+numbers constitute a fairly small proportion (less than 8%) of the
+sample. The distribution of the ﬁtted LGDs is slightly bi-modal,
+with higher concentrations in the intervals of [0, 0.1) and
+[0.7, 0.8). This result further conﬁrms our earlier ﬁnding that the
+distribution of ﬁtted LGDs is not directly related to model
+performance. So the bi-modal LGD distribution should be of only
+secondary concern in LGD modeling.
+The major drawback of the NN method is that the model param-
+eters are not uniquely identiﬁed and there is no straight forward
+way to show or test the relationship between the dependent and
+explanatory variables. For illustrative purpose, we show in Fig. 7
+plots of ﬁtted LGDs from the in-sample estimated NN model with
+n = 25 against 20 observed seniority index and industry distance-
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+[0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1]
+Actual RT (Min 5 obs.)
+Fig. 5.2. Distribution of ﬁtted LGDs from the regression tree (a minimum size requirement of 5 observations at each leaf).
+0%
+5%
+10%
+15%
+20%
+25%
+30%
+35%
+<0 [0, 0.1) [0.1, 0.2) [0.2, 0.3) [0.3, 0.4) [0.4, 0.5) [0.5, 0.6) [0.6, 0.7) [0.7, 0.8) [0.8, 0.9) [0.9. 1] >1
+Intervals
+Actual NN
+Fig. 6. Distribution of ﬁtted LGDs from the neural network.
+14 Note that Table 7 shows occasional deviations away from the increasing or
+decreasing trend in R-squared as n increases. This is likely due to the multi-modal
+error surface of the NN – even with the same n the optimization algorithm may
+converge to different local minima with different random starting values of the model
+parameters. To avoid local minima, we estimate the NN model ten times using ten
+different sets of random starting values and the model with the best ﬁt is used.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2853
+
+to-default ranging from the lowest to the highest values, holding
+the values of the rest of the explanatory variables at the sample
+mean (the top panel) or the sample median (the bottom panel).
+We can observe the following from Fig. 7 . First, there is a posi-
+tive relationship between LGD and seniority index, holding the rest
+of the explanatory variables at either the sample mean or the
+sample median. This is consistent with the positive correlation
+reported in Panel B of Table 2 , and the results in Tables 3 and 5
+and Fig. 4. Second, the impact of seniority index on LGD is stronger
+when industry distance-to-default is smaller (say under 15%) than
+when industry distance-to-default is larger (say above 20%). This
+ﬁnding suggests that relative standing among creditors is more
+important when industry condition is more severe. Third, contrary
+to the results from the parametric models, the relationship
+between LGD and industry distance-to-default captured by NN
+varies with the level of seniority index and is non-monotonic.
+LGD does not seem to vary much with industry distance-to-default
+when seniority index is high (say close to 1) and when industry
+distance-to-default is under 0.15. But LGD becomes positively
+correlated with industry distance-to-default when seniority index
+is low (say under 0.5) and when industry distance-to-default is
+above 0.15. Therefore, industry condition mainly affects junior
+creditors, indicating that recovery by senior creditors do not rely
+heavily on collateral sales.
+5. Further investigations
+5.1. Model performance on revolvers and term loans
+We also investigate the performance of these six modeling
+methods on a smaller sample (1355 observations) consisting of
+revolvers and term loans. Results from this sample should be more
+relevant to banks’ portfolio and the smaller sample size can also
+test the robustness of our earlier ﬁndings. We ﬁnd that our conclu-
+sion does not change. The goodness-of-ﬁt from the non-parametric
+methods exceeds that from the parametric methods. Second, the
+FRR method tends to produce slightly better goodness-of-ﬁt than
+the OLS method. Third, performance of the transformation meth-
+ods is quite sensitive to the choice of e, and the optimal e is still
+around 0.05 for this sample. We have also tried the same methods
+on the remaining instruments consisting of bonds. We ﬁnd that our
+conclusions hold in this alternative sample as well.
+5.2. Model performance when ﬁrm-level variables are included in the
+model
+In the results reported so far, we do not include ﬁrm-level vari-
+ables among the RHS variables. Incorporating these variables sig-
+niﬁcantly reduces the sample size to 1267 observations. When
+we try the same methods on this smaller sample, our conclusions
+about the comparative performance of the various methods to
+model LGDs do not change. However, we caution that this conclu-
+sion might be speciﬁc to the nature of our sample (i.e., predomi-
+nantly bankruptcy cases and large ﬁrms) and this question is
+worth further examination on alternative samples in the future.
+5.3. Model performance when only dummy variables are included in
+the model
+Further, in separate analysis, we ﬁnd that non-parametric
+methods do not enjoy any advantage relative to parametric
+methods when the explanatory variables consist solely of the
+instrument type and collateral-type variables – the explanatory
+variables commonly used by banks in modeling LGD. 15 There are
+two reasons for the inferior performance of the non-parametric
+methods in this case. First, in models with only instrument type
+and collateral-type variables, the independent variables are all 0/1
+dummy variables, with no non-linearity in the model. Consequently,
+non-parametric methods do not have any edge. Second, unlike the
+non-parametric methods, an intercept term is included in the para-
+metric methods, which results in slightly better ﬁt. We therefore
+conclude that the advantage enjoyed by non-parametric methods
+relative to parametric methods stems from their ability to model
+the non-linear relation between LGDs and continuous variables.
+Therefore, unless continuous variables are included in the model,
+non-parametric methods do not outperform parametric methods,
+even with a very large sample size. Modelers of LGD should thus
+try to compare performance of alternative parametric and non-
+parametric methods on their own data and the set of available
+explanatory variables to determine which method to choose.
+0
+0.2
+0.4
+0.6
+0.8
+1
+0.05
+0.1
+0.15
+0.2
+0.25
+0
+0.2
+0.4
+0.6
+0.8
+1
+Seniority Index
+Median (x)
+Industry Distance-to-Default
+Fitted LGD
+0
+0.2
+0.4
+0.6
+0.8
+1
+0.05
+0.1
+0.15
+0.2
+0.25
+-0.5
+0
+0.5
+1
+Seniority Index
+Mean (x)
+Industry Distance-to-Default
+Fitted LGD
+Fig. 7. Fitted LGDs from the neural network plotted against seniority index and
+industry distance-to-default.
+15 If we require a minimum of 5 observations at each leaf, the regression tree
+produces an R-squared of 0.322 and SSE of 373.77, and the NN produces R-squared of
+0.322 and SSE of 373.83. These are worse than OLS (with an R-squared at 0.370 and
+SSE at 347.07) and FRR (with an R-squared at 0.365 and SSE at 349.98). With e = 0.05,
+we get R-squared = 0.353 and SSE = 356.54 for IGR, and R-squared = 0.352 and
+SSE = 357.17 for IGR-BT.
+2854 M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855
+
+6. Conclusions
+This paper compares various parametric and non-parametric
+methods to model and forecast LGD, a continuous random variable
+that lies in the interval of [0, 1] and often follows a bi-modal distri-
+bution. We include in this study four parametric methods, namely,
+the OLS, fractional response, inverse Gaussian, and inverse Gauss-
+ian with beta transformation regressions, and two non-parametric
+methods, namely, the neural network and regression tree.
+We ﬁnd that the non-parametric methods outperform the para-
+metric methods in terms of model ﬁt and predictive accuracy. The
+neural network method delivers very good model ﬁt both in sam-
+ple and in the 10-fold cross-validation. One of the limitations of the
+neural network method is that the estimated model is often con-
+sidered as a ‘‘black box,’’ since there is no straight forward way
+to show the complex non-linear underlying relationships. The
+regression tree method also provides very high predictive accu-
+racy. After a decent number of splits, the goodness-of-ﬁt from this
+method exceeds those from the parametric methods. When we
+reduce the minimum size requirement to 70 or less and allow 41
+or more splits, the regression tree method provides better ﬁt than
+the neural network in the 10-fold cross-validation. Further, the
+regression tree does not appear to have the over-ﬁtting problem
+even when the minimum size requirement is reduced to 5 with
+as many as 342 splits, although such a large tree may not be
+practical in a production environment.
+Among the parametric methods, fractional response regression
+tends to produce slightly better goodness-of-ﬁt than the OLS
+method, and both the OLS and the fractional response regression
+methods are able to provide decent model ﬁt. Both transformation
+methods are very sensitive to the choice of
+e (which is needed to
+transform LGD = 0 or 1). With an optimal e, their performance
+can match that of the OLS regression. Therefore, users of these
+transformation methods need to exercise great caution.
+Further, we ﬁnd that the bi-modal distribution may be of only
+secondary concern when modeling LGD. Finally, inferences on
+some instrument-level variables are slightly different between
+the models, suggesting that the instrument-level variables may
+not have a clear-cut relation with LGD.
+Acknowledgments
+The authors wish to thank Ross Dillard for research assistance.
+We also thank seminar participants at the Ofﬁce of the Comptroller
+of the Currency and the SIG Validation Subgroup meeting of the
+Basel Committee on Banking Supervision for helpful comments.
+The views expressed in the article are those of the authors and
+do not necessarily represent the views of the Ofﬁce of the Comp-
+troller of the Currency, or the US Treasury Department. The authors
+are responsible for all remaining errors.
+References
+Acharya, V.V., Bharath, S.T., Srinivasan, A., 2007. Does industry-wide distress affect
+defaulted loans? Evidence from creditor recoveries. Journal of Financial
+Economics 85, 787–821.
+Altman, E., Kishore, V.M., 1996. Almost everything you wanted to know about
+recoveries on defaulted bonds. Financial Analysts Journal 52 (6), 57–64.
+Altman, E., Resti, A., Sironi, A., 2005. Default recovery rates in credit risk modeling: a
+review of the literature and recent evidence. Journal of Finance Literature 1, 21–
+45.
+Bastos, J.A., 2010. Forecasting bank loans loss-given-default. Journal of Banking and
+Finance 34, 2510–2517.
+Bellotti, T., Crook, J., 2007. Modelling and predicting loss given default for credit
+cards. Working Paper, Quantitative Financial Risk Management Center.
+Breiman, L., Friedman, J.H., Stone, C.J., Olshen, R.A., 1984. Classiﬁcation and
+Regression Trees. Chapman and Hall/CRC, Boca Raton.
+Bris, A., Ravid, S.A., Sverdlove, R., 2009. Conﬂicts in bankruptcy and the sequence of
+debt issues. Working Paper, Rutgers University.
+Caselli, A., Gatti, S., Querci, F., 2008. The sensitivity of the loss given default rate to
+systematic risk: new empirical evidence on bank loans. Journal of Financial
+Services Research 34, 1–34.
+Covitz, D., Han, S., 2004. An empirical analysis of bond recovery rates: Exploring a
+structural view of default. Working Paper, The Federal Reserve Board.
+Dermine, J., Neto de Carvalho, C., 2006. Bank loan losses-given default: a case study.
+Journal of Banking and Finance 30, 1219–1243.
+Gupton, G.M., Stein R.M., 2005. LossCalc V2: Dynamic Prediction of LGD Modeling
+Methodology, Moody’s KMV.
+Hu, Y., Perraudin, W., 2002. The dependence of recovery rates and defaults. Working
+paper, Birkbeck College.
+Merton, R.C., 1974. On the pricing of corporate debt: the risk structure of interest
+rates. Journal of Finance 29, 449–470.
+Nguyen, D., Widrow, B., 1990. Improving the learning speed of 2-layer neural
+networks by choosing initial values of the adaptive weights. In: Proceedings of
+the International Joint Conference of Neural Networks, vol. 3, pp. 21–26.
+Papke, L.E., Wooldridge, J.M., 1996. Econometric methods for fractional response
+variables with an application to 401(k) plan participation rates. Journal of
+Applied Econometrics 11, 619–632.
+Qi, M., Yang, X., 2009. Loss give default of high loan-to-value residential mortgages.
+Journal of Banking and Finance 33, 788–799.
+Qi, M., Zhao X., 2010. Dynamic debt structure, market value of the ﬁrm and recovery
+rate. Working Paper, Ofﬁce of the Comptroller of the Currency.
+Schuermann, T., 2004. What do we know about loss given default? Wharton
+Financial Institutions Center Working Paper No. 04-01.
+White, H., 1990. Connectionist nonparametric regression: multilayer feedforward
+networks can learn arbitrary mappings. Neural Networks 3, 535–549.
+M. Qi, X. Zhao / Journal of Banking & Finance 35 (2011) 2842–2855 2855

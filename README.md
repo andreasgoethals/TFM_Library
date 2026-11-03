@@ -15,10 +15,10 @@ for every research project that needs them:
 
 Scope is **strictly tabular foundation models**: the PFN/TabPFN lineage,
 direct TFM competitors, and TFM variants. The owner's `Tabular Foundation
-Models` Zotero collection defines the exact paper set, including explicitly
-selected studies of TFM behaviour and evaluation. Unrelated benchmarks,
-ordinary tabular deep learning, and general domain literature are not
-collected here.
+Models` Zotero collection defines the exact core paper set, including explicitly
+selected studies of TFM behaviour and evaluation. Selected supporting sources
+are kept separately in [`supporting-references/`](supporting-references/README.md);
+they are not counted as members of the mirrored TFM collection.
 
 The library is designed to be mounted as a **read-only folder inside
 other projects**, so all of them share one consistently maintained copy.

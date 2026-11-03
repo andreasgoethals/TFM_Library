@@ -4,6 +4,17 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-11-03
+
+- Added Xu et al., *Why Tabular Foundation Models Excel on Relational Data They Have Never Seen* (arXiv 2611.02936v1), with its PDF, generated text, source-grounded summary and synthesis integration separating locality theory from incomplete relational comparisons. The mirrored core now has 72 papers.
+- Refreshed Beyond IID to v2, MulTaBench to v3, RelArena to v3 and TILE to v2 (all 30 October); retained old hashes and paths in the version history, regenerated text and repaired chronology and links. Updated TILE's changed numerical results and newly public code provenance.
+- Added five owner-selected supporting references: TabM, McCloskey and Cohen, French, Kirkpatrick et al. (author-accepted manuscript), and Li et al. (L2-SP). Fourteen supporting sources now have exact PDF/text hashes; these remain outside the mirrored TFM collection and core counts. Maintenance now checks their manifest.
+- Refreshed registered upstream implementation snapshots and official external sources; added the newly linked TILE source-only snapshot, retaining its license and excluding weights, data and outputs.
+
+## 2026-10-30
+
+- Added nine owner-requested supporting papers and generated searchable text with PDF and text hashes; they remain separate from the Zotero-mirrored TFM corpus.
+
 ## 2026-10-28
 
 - Added **Regenwetter et al. 2026-03 — Engineering Regression Without Real-Data Training: Domain Adaptation for Tabular Foundation Models Using Multi-Dataset Embeddings** (arXiv 2603.04692v1), copying the owner's Zotero PDF and generating text. Its real-dataset-embedding-guided synthetic selection adds an engineering regression continued-pretraining example; the summary and synthesis distinguish real-data-guided selection from synthetic-only weight updates and note the missing selection control.

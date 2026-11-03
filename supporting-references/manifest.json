@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "title": "TabArena: A Living Benchmark for Machine Learning on Tabular Data",
+      "citation_key": "2025.ERICKSON.tabarenalivingbenchmarkmachinelearningtabulardata",
+      "doi": "10.52202/085713-0519",
+      "zotero_item_key": "SILEPQ6U",
+      "zotero_attachment_key": "X575EB7X",
+      "pdf": "supporting-references/pdfs/2025/2025_TabArena_A_Living_Benchmark_for_Machine_Learning_on_Tabular_Data_SILEPQ6U.pdf",
+      "text": "supporting-references/text/2025/2025_TabArena_A_Living_Benchmark_for_Machine_Learning_on_Tabular_Data_SILEPQ6U.txt",
+      "pdf_sha256": "8853fd1a1eb09ee7c25bf6f48a194a8e718103774d39af5bcc402b2c41a735e5",
+      "arxiv_banner": [
+        "arXiv:2506.16791v4"
+      ],
+      "text_sha256": "9365703dd3e0fdba62cc02993d2866f928a46ad1d5db9ee2ef9d9e305ff8d425",
+      "pages": 66
+    },
+    {
+      "title": "Why do tree-based models still outperform deep learning on typical tabular data?",
+      "citation_key": "2022.GRINSZTAJN.whytreebasedmodelsstilloutperformdeeplearningtypicaltabulardata",
+      "doi": "10.52202/068431-0037",
+      "zotero_item_key": "QEB68W9Z",
+      "zotero_attachment_key": "EA2MVDWH",
+      "pdf": "supporting-references/pdfs/2022/2022_Why_do_tree_based_models_still_outperform_deep_learning_on_typical_tabul_QEB68W9Z.pdf",
+      "text": "supporting-references/text/2022/2022_Why_do_tree_based_models_still_outperform_deep_learning_on_typical_tabul_QEB68W9Z.txt",
+      "pdf_sha256": "9c640759c303b9c783559a0da5d8327fdcea01e7a718322f08a746bc9f37a0b0",
+      "arxiv_banner": [],
+      "text_sha256": "f156e2ff422c247d67fb64052ca9c43d90a91c2466a3916057ac78165fac3ca9",
+      "pages": 14
+    },
+    {
+      "title": "STRABLE: Benchmarking Tabular Machine Learning with Strings",
+      "citation_key": "2026.BLAYER.strablebenchmarkingtabularmachinelearningstrings",
+      "doi": "10.48550/arXiv.2605.12292",
+      "zotero_item_key": "WXCCD5CQ",
+      "zotero_attachment_key": "YVNA988Q",
+      "pdf": "supporting-references/pdfs/2026/2026_STRABLE_Benchmarking_Tabular_Machine_Learning_with_Strings_WXCCD5CQ.pdf",
+      "text": "supporting-references/text/2026/2026_STRABLE_Benchmarking_Tabular_Machine_Learning_with_Strings_WXCCD5CQ.txt",
+      "pdf_sha256": "df663438be530826a3ba1136640b1e2be882d1f909e9c9a5ae8b8a1b591423c3",
+      "arxiv_banner": [
+        "arXiv:2605.12292v2"
+      ],
+      "text_sha256": "0b61213d038b24b595daa21ac7d7513ac33803c83f65211fc158591621393b03",
+      "pages": 62
+    },
+    {
+      "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+      "citation_key": "2022.HU.loralowrankadaptationlargelanguagemodels",
+      "doi": null,
+      "zotero_item_key": "EB3LQGV7",
+      "zotero_attachment_key": "EYYFDAGZ",
+      "pdf": "supporting-references/pdfs/2022/2022_LoRA_Low_Rank_Adaptation_of_Large_Language_Models_EB3LQGV7.pdf",
+      "text": "supporting-references/text/2022/2022_LoRA_Low_Rank_Adaptation_of_Large_Language_Models_EB3LQGV7.txt",
+      "pdf_sha256": "e9a0d3128767db616085dc0f4e6e455e672e89af823e8ed1282793682787395a",
+      "arxiv_banner": [
+        "arXiv:2106.09685v2"
+      ],
+      "text_sha256": "3509e2c3457e75a55facb7fb2d251e6bec94f71096fc52b6728fd2e374a4fb63",
+      "pages": 26
+    },
+    {
+      "title": "Loss given default models incorporating macroeconomic variables for credit cards",
+      "citation_key": "2012.BELLOTTI.lossgivendefaultmodelsincorporatingmacroeconomicvariablescreditcards",
+      "doi": "10.1016/j.ijforecast.2010.08.005",
+      "zotero_item_key": "WH8JWTTS",
+      "zotero_attachment_key": "486JELHP",
+      "pdf": "supporting-references/pdfs/2012/2012_Loss_given_default_models_incorporating_macroeconomic_variables_for_cred_WH8JWTTS.pdf",
+      "text": "supporting-references/text/2012/2012_Loss_given_default_models_incorporating_macroeconomic_variables_for_cred_WH8JWTTS.txt",
+      "pdf_sha256": "c82244225bfff1d13732fba860198260a6855f48fc4890dae96512f22cb48ebd",
+      "arxiv_banner": [],
+      "text_sha256": "5a19516aa998ae710d0022519785f5bc6a290cf49df5b1dc869990b9a3e1f51b",
+      "pages": 41
+    },
+    {
+      "title": "Downturn Loss Given Default: Mixture distribution estimation",
+      "citation_key": "2014.CALABRESE.downturnlossgivendefaultmixturedistributionestimation",
+      "doi": "10.1016/j.ejor.2014.01.043",
+      "zotero_item_key": "9I28FGHV",
+      "zotero_attachment_key": "29CABJB4",
+      "pdf": "supporting-references/pdfs/2014/2014_Downturn_Loss_Given_Default_Mixture_distribution_estimation_9I28FGHV.pdf",
+      "text": "supporting-references/text/2014/2014_Downturn_Loss_Given_Default_Mixture_distribution_estimation_9I28FGHV.txt",
+      "pdf_sha256": "95cc7770febf6cd36f03ce91b62dda7879c9b1e534330b730189b17b4bb3d31b",
+      "arxiv_banner": [],
+      "text_sha256": "84e43217ab630ddb84a8dc84bb14805dfde3dbd54c7f1226735e8236ddd20d16",
+      "pages": 7
+    },
+    {
+      "title": "Benchmarking regression algorithms for loss given default modeling",
+      "citation_key": "2012.LOTERMAN.benchmarkingregressionalgorithmslossgivendefaultmodeling",
+      "doi": "10.1016/j.ijforecast.2011.01.006",
+      "zotero_item_key": "WHKVAT8Y",
+      "zotero_attachment_key": "HHC78YZL",
+      "pdf": "supporting-references/pdfs/2012/2012_Benchmarking_regression_algorithms_for_loss_given_default_modeling_WHKVAT8Y.pdf",
+      "text": "supporting-references/text/2012/2012_Benchmarking_regression_algorithms_for_loss_given_default_modeling_WHKVAT8Y.txt",
+      "pdf_sha256": "f77d7c55fae4e304eee4282ee541c869bb51a62ac683f322f1b0f5eedfb02b06",
+      "arxiv_banner": [],
+      "text_sha256": "75118409f1cddb40da5bffe1f8c5574965fdab696491e3ff68900068c58d3fe1",
+      "pages": 10
+    },
+    {
+      "title": "Comparison of modeling methods for Loss Given Default",
+      "citation_key": "2011.QI.comparisonmodelingmethodslossgivendefault",
+      "doi": "10.1016/j.jbankfin.2011.03.011",
+      "zotero_item_key": "WYEYMG68",
+      "zotero_attachment_key": "HRZWBMDI",
+      "pdf": "supporting-references/pdfs/2011/2011_Comparison_of_modeling_methods_for_Loss_Given_Default_WYEYMG68.pdf",
+      "text": "supporting-references/text/2011/2011_Comparison_of_modeling_methods_for_Loss_Given_Default_WYEYMG68.txt",
+      "pdf_sha256": "e3282bf997ffcc3bda38f76904148d39f4784428b70e1ffcb8e682cef2f7b432",
+      "arxiv_banner": [],
+      "text_sha256": "9dc61e1be245d9bac31ab243d01b7eabfb68d004124cfd7b746c2acd6cd96dd9",
+      "pages": 14
+    },
+    {
+      "title": "Benchmarking state-of-the-art classification algorithms for credit scoring: An update of research",
+      "citation_key": "2015.LESSMANN.benchmarkingstateoftheartclassificationalgorithmscreditscoringupdateresearch",
+      "doi": "10.1016/j.ejor.2015.05.030",
+      "zotero_item_key": "KYAUANSD",
+      "zotero_attachment_key": "6BYKC5SA",
+      "pdf": "supporting-references/pdfs/2015/2015_Benchmarking_state_of_the_art_classification_algorithms_for_credit_scori_KYAUANSD.pdf",
+      "text": "supporting-references/text/2015/2015_Benchmarking_state_of_the_art_classification_algorithms_for_credit_scori_KYAUANSD.txt",
+      "pdf_sha256": "4978be06d7bcf6476abadcc83ee381fc6538e7c5d17d17b978049114c0265ca3",
+      "arxiv_banner": [],
+      "text_sha256": "9994ee8452dff5244bd611d3ca5940e813c0ea5abb23b6e1c40dc4abea7ef434",
+      "pages": 13
+    },
+    {
+      "title": "TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling",
+      "citation_key": "2025.GORISHNIY.tabmadvancingtabulardeeplearningparameterefficientensembling",
+      "doi": null,
+      "zotero_item_key": "TCLZ6DJK",
+      "zotero_attachment_key": "83KES4X9",
+      "pdf": "supporting-references/pdfs/2025/2025_TabM_Advancing_Tabular_Deep_Learning_with_Parameter_Efficient_Ensembling_TCLZ6DJK.pdf",
+      "text": "supporting-references/text/2025/2025_TabM_Advancing_Tabular_Deep_Learning_with_Parameter_Efficient_Ensembling_TCLZ6DJK.txt",
+      "pdf_sha256": "df7d9d4bdc8a85bdf4e5bb029459dd8fb3f280ba8ce6049742165aae4421f8c5",
+      "arxiv_banner": [],
+      "version_note": "Published conference or journal PDF",
+      "text_sha256": "ee080d7d3137878cd9357eaff63e604a7d0eaaebfa7de125bb51bea8a6c578f3",
+      "pages": 37
+    },
+    {
+      "title": "Catastrophic Interference in Connectionist Networks: The Sequential Learning Problem",
+      "citation_key": "1989.MCCLOSKEY.catastrophicinterferenceconnectionistnetworkssequentiallearningproblem",
+      "doi": "10.1016/S0079-7421(08)60536-8",
+      "zotero_item_key": "CBKWF93B",
+      "zotero_attachment_key": "GB7MJWTB",
+      "pdf": "supporting-references/pdfs/1989/1989_Catastrophic_Interference_in_Connectionist_Networks_The_Sequential_Learning__CBKWF93B.pdf",
+      "text": "supporting-references/text/1989/1989_Catastrophic_Interference_in_Connectionist_Networks_The_Sequential_Learning__CBKWF93B.txt",
+      "pdf_sha256": "042d219b295236f36c3122b406f962941cbf1648c71f6d300a4c6c5a8394af89",
+      "arxiv_banner": [],
+      "version_note": "Published chapter",
+      "text_sha256": "ca136c51235c2736e43b7594290f2fe1e2dc5e89279b4c6a9b5add77323e9d1a",
+      "pages": 57
+    },
+    {
+      "title": "Catastrophic forgetting in connectionist networks",
+      "citation_key": "1999.FRENCH.catastrophicforgettingconnectionistnetworks",
+      "doi": "10.1016/S1364-6613(99)01294-2",
+      "zotero_item_key": "Z3WSDEY6",
+      "zotero_attachment_key": "S63DNRN5",
+      "pdf": "supporting-references/pdfs/1999/1999_Catastrophic_forgetting_in_connectionist_networks_Z3WSDEY6.pdf",
+      "text": "supporting-references/text/1999/1999_Catastrophic_forgetting_in_connectionist_networks_Z3WSDEY6.txt",
+      "pdf_sha256": "46b20ff5a92b71354d75317f192f236bd1be3561a621ae87bde6d3ae3efa7cdf",
+      "arxiv_banner": [],
+      "version_note": "Published conference or journal PDF",
+      "text_sha256": "1cc3db66fd812d2f6a152c798a8b0caba1abd95af5837e27b2ba84d1e6d8643e",
+      "pages": 8
+    },
+    {
+      "title": "Overcoming catastrophic forgetting in neural networks",
+      "citation_key": "2017.KIRKPATRICK.overcomingcatastrophicforgettingneuralnetworks",
+      "doi": "10.1073/pnas.1611835114",
+      "zotero_item_key": "YLN6PKTF",
+      "zotero_attachment_key": "8BIZNU8Z",
+      "pdf": "supporting-references/pdfs/2017/2017_Overcoming_catastrophic_forgetting_in_neural_networks_YLN6PKTF.pdf",
+      "text": "supporting-references/text/2017/2017_Overcoming_catastrophic_forgetting_in_neural_networks_YLN6PKTF.txt",
+      "pdf_sha256": "85ecf0ba93380c1d279cbe327350ecead7f2a4a5b623d19f09df208682181b4d",
+      "arxiv_banner": [],
+      "version_note": "Author-accepted manuscript from Imperial College London; journal metadata retained.",
+      "text_sha256": "3f185625b3caa87ae2c86faf09f99f524df34c77e4c5b786651ea2a48b6d44bd",
+      "pages": 10
+    },
+    {
+      "title": "Explicit Inductive Bias for Transfer Learning with Convolutional Networks",
+      "citation_key": "2018.LI.explicitinductivebiastransferlearningconvolutionalnetworks",
+      "doi": null,
+      "zotero_item_key": "XANE7CRV",
+      "zotero_attachment_key": "FGDM84US",
+      "pdf": "supporting-references/pdfs/2018/2018_Explicit_Inductive_Bias_for_Transfer_Learning_with_Convolutional_Networks_XANE7CRV.pdf",
+      "text": "supporting-references/text/2018/2018_Explicit_Inductive_Bias_for_Transfer_Learning_with_Convolutional_Networks_XANE7CRV.txt",
+      "pdf_sha256": "da898e24defa977a5d38eeaab61da0e08b7cdbc358476b23ff1a28b5de666db0",
+      "arxiv_banner": [],
+      "version_note": "Published conference or journal PDF",
+      "text_sha256": "7457c7e79a24f39865a1d6d95d400a94f94aed2ba24a12ab8e68560712064849",
+      "pages": 10
+    }
+  ]
+}

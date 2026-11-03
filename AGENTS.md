@@ -23,6 +23,12 @@ It is a **read-only knowledge base**, not a code library. Nothing here is
 imported or installed. Downstream agents *read* the literature and grep
 the scraped implementations.
 
+The owner also explicitly selected supporting benchmark, method and domain
+papers in `supporting-references/`. These PDFs and generated text extracts are
+separate from the Zotero-mirrored `papers/` corpus and are not counted in its
+summary or synthesis coverage. Preserve their manifest and source hashes; use
+`scripts/papers/extract_supporting_text.py` to regenerate or check their text.
+
 ## Zotero is upstream of this repository
 
 The owner's reference manager is **Zotero**, and it holds *all* of their

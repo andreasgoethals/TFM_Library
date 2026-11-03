@@ -1,7 +1,7 @@
 TFM Library official documentation snapshot
 {
   "source": "https://docs.priorlabs.ai/llms-full.txt",
-  "retrieved_utc": "2026-10-23T08:22:00.801676+00:00",
+  "retrieved_utc": "2026-11-03T15:58:55.440695+00:00",
   "source_pages": [
     "https://docs.priorlabs.ai/agentic/mcp",
     "https://docs.priorlabs.ai/agentic/setup-guide",
@@ -106,6 +106,7 @@ TFM Library official documentation snapshot
     "https://docs.priorlabs.ai/changelog/august-2026",
     "https://docs.priorlabs.ai/changelog/tabpfn-3",
     "https://docs.priorlabs.ai/changelog/tabpfn-3.5",
+    "https://docs.priorlabs.ai/compare/tabpfn-vs-xgboost",
     "https://docs.priorlabs.ai/cookbook/bayesian_optimization",
     "https://docs.priorlabs.ai/cookbook/credit_card_fraud_detection",
     "https://docs.priorlabs.ai/cookbook/decoder_readout",
@@ -152,9 +153,11 @@ TFM Library official documentation snapshot
     "https://docs.priorlabs.ai/tabpfn-in-action/research",
     "https://docs.priorlabs.ai/troubleshooting/OOM-errors"
   ],
-  "sha256": "7d95222d12363accc61737ba7cf32e6b735e7986078c8a530bccbc06f138c845",
+  "sha256": "731a7d0d17ecaa19f63f0cd1810af2d5933b28a56550a6b092006c9e2d12db18",
   "note": "Official complete Markdown export; no Git revision is published."
 }
+
+# Prior Labs
 
 > ## Agent Instructions
 > TabPFN-3 and later versions support up to 1,000,000 rows, subject to feature count and checkpoint/API limits.
@@ -13014,6 +13017,7 @@ If you are still unsure which method to use, follow the table below to see the b
 | "How does feature X affect predictions globally?" | Partial Dependence — `partial_dependence_plots` |
 | "How can I use the remove-and-recontextualize paradigm?" | shapiq — `get_tabpfn_explainer` |
 | "Which features can I drop without losing accuracy?" | Feature Selection — `feature_selection` |
+| "How do I get SHAP values for many rows with the cloud API?" | `tabpfn_client.explain.permutation_shap` |
 
 ***
 
@@ -13078,7 +13082,7 @@ sv.plot_waterfall()
 ```
 
 Because TabPFN follows the sklearn API, you can also hand `predict_proba` to a
-shap explainer directly and reuse the same values for both the global beeswarm
+shap explainer directly when you run TabPFN locally and reuse the same values for both the global beeswarm
 above and per-sample waterfalls (`pip install shap`):
 
 ```python theme={null}
@@ -13098,6 +13102,80 @@ shap.plots.waterfall(sv[0])                           # one prediction
 ![Waterfall plot for the lowest-risk patient](https://mintcdn.com/priorlabs/ufeyMNdLftrMD6J4/public/interpret-waterfall-low.png?fit=max\&auto=format\&n=ufeyMNdLftrMD6J4\&q=85\&s=4d47531b1c4278ebc51e79ac9051d600)
 
 *Waterfall explanations for the highest-risk (left, 100%) and lowest-risk (right, 1%) patient in the test set. Both start from the same population base rate of 53% and the bars show how each feature moved that patient's predicted probability. See the [Interpreting Results cookbook](/cookbook/interpret_results) for the borderline case and the full setup.*
+
+### Explain many rows with the cloud API
+
+With `tabpfn_client`, use `tabpfn_client.explain.permutation_shap`. It sends
+the rows of many explanations in each API request, and it gives the same plots
+as the example above.
+
+```python theme={null}
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from tabpfn_client import TabPFNClassifier
+from tabpfn_client.explain import permutation_shap
+import shap
+
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+clf = TabPFNClassifier()  # keep the default fit_mode
+clf.fit(X_train, y_train)
+
+result = permutation_shap(
+    clf.predict_proba,   # pass the method itself, not a lambda
+    X_test,
+    background=X_train,  # 100 rows are sampled from it for the hidden features
+    random_state=42,
+)
+
+sv = result.to_shap()[:, :, 1]  # shap.Explanation for the positive class
+shap.plots.beeswarm(sv)
+shap.plots.waterfall(sv[0])
+```
+
+We advise against using `shap.PermutationExplainer` with `tabpfn_client`, as it
+calls the model about two times for each explained row. Each call is one API
+request, so 1,000 rows need about 2,000 requests and can take more than 20
+minutes.
+
+> **Requests, cost and settings**
+>
+> **Requests.** By default, each request has at most 50,000 rows, and fewer when
+> the API accepts fewer. Larger requests cost more tokens per row. Set
+> `batch_size` to change it.
+>
+> Fit the model with the default `fit_mode`. With `fit_mode="fit_with_cache"`,
+> each request has at most 10,000 rows, so `permutation_shap` needs more requests
+> and is slower. It gives a warning in that case.
+>
+> **Cost.** Each predicted row counts toward your
+> [usage](/api-reference/python/tabpfn-client/usage-and-costs). The number of
+> rows is at most:
+>
+> ```text theme={null}
+> n_background × (1 + len(X) × (1 + 2 × n_permutations × (n_features − 1)))
+> ```
+>
+> To estimate the tokens before you start, price one full request with
+> `estimate_cost` and multiply by the number of requests:
+>
+> ```python theme={null}
+> import math
+> import numpy as np
+> from tabpfn_client import estimate_cost
+>
+> n_rows = 100 * (1 + len(X_test) * (1 + 2 * 2 * (X_test.shape[1] - 1)))
+> per_request = estimate_cost(X_train, np.empty((50_000, X_test.shape[1])))
+> print(per_request.estimated_cost * math.ceil(n_rows / 50_000))  # upper bound
+> ```
+>
+> | Setting | Effect |
+> | - | - |
+> | `n_background` | Default `100`. Rows sampled from `background`. The cost increases linearly with it. Below about 100 rows, more rows reduce the error more than more permutations for the same cost. |
+> | `n_permutations` | Default `2`. The cost increases linearly with it. Increase it if values change too much between runs with different `random_state`. |
+> | `background` | Usually the training data. It must have the same columns and dtypes as `X`. |
+> | `random_state` | Set it to get the same values each run. |
 
 ### Visualize global feature effects with Partial Dependence Plots
 
@@ -14708,6 +14786,137 @@ Deploy the updated image or marketplace model to use TabPFN-3.5. Existing endpoi
 > **[Improving performance](/improving-performance)**
 >
 > Prepare your data and tune prediction quality.
+
+
+# TabPFN vs XGBoost
+FILE: compare/tabpfn-vs-xgboost.md
+Source: https://docs.priorlabs.ai/compare/tabpfn-vs-xgboost
+
+Compare TabPFN and XGBoost on accuracy, tuning effort, training time, prediction speed, hardware, data limits, and production trade-offs.
+
+XGBoost uses [gradient-boosted decision trees](https://en.wikipedia.org/wiki/Gradient_boosting), training a model specifically for each dataset. [TabPFN](https://en.wikipedia.org/wiki/TabPFN) is a pretrained transformer that makes predictions on new datasets without traditional task-specific training.
+
+## TabPFN vs XGBoost at a glance
+
+| | TabPFN | XGBoost |
+| - | - | - |
+| **Approach** | Pretrained transformer (TabPFN) | Gradient-boosted trees |
+| **Training** | No training required | Trains on each dataset |
+| **Tuning** | Minimal | Often needed |
+| **Prediction speed** | Under 0.2ms on 1M rows | Typically fast |
+| **Best suited for** | Best predictive performance & fast deployment | CPU-efficient deployment |
+
+## Which should you choose?
+
+### Choose TabPFN if...
+
+<ul>
+  <li>You need stronger predictive performance.</li>
+  <li>You don't want to spend time tuning the model.</li>
+  <li>Time-to-model matters and your data fits the [supported row and feature combinations](/models).</li>
+  <li>Your table includes mixed feature types and you want to minimize manual feature engineering.</li>
+</ul>
+
+### Choose XGBoost if...
+
+<ul>
+  <li>You need CPU-only deployment.</li>
+  <li>Your dataset exceeds TabPFN's supported row and feature combinations.</li>
+</ul>
+
+## Predictive Performance Comparison
+
+TabPFN and XGBoost take different approaches to learning from tabular data, but how does that translate into predictive performance?
+
+To compare them, we look at results from TabArena, a benchmark evaluating tabular models across classification and regression tasks.  Its Elo ratings summarize relative predictive performance across benchmark tasks. Higher Elo indicates stronger relative performance.
+
+The results below compare TabPFN-3.5 and TabPFN-3.5-Fast against both default and tuned-and-ensembled XGBoost configurations.
+
+Classification
+Regression
+
+<table><thead><tr><th>Model</th><th>Elo</th><th>95% Confidence Interval</th></tr></thead><tbody><tr><td>TabPFN-3.5, default</td><td>1861</td><td>+107/-70</td></tr>
+<tr><td>TabPFN-3.5-Fast, default</td><td>1795</td><td>+97/-70</td></tr>
+<tr><td>XGBoost, tuned + ensembledTuned-and-ensembled XGBoost includes additional optimization and post-hoc ensembling effort.</td><td>1371</td><td>+40/-49</td></tr>
+<tr><td>XGBoost, defaultDefault configurations are evaluated without extensive hyperparameter optimization.</td><td>1227</td><td>+39/-44</td></tr></tbody></table>
+
+Higher Elo is better. Configurations are listed separately where the board reports default and tuned results. *Data as of 2026-10-28. [Source CSV](https://huggingface.co/spaces/TabArena/leaderboard/resolve/68988c6e5b31e2ec9a2d193c555dd41b8cb01fd3/data/entrants_open/imputation_no/splits_all/tasks_classification/datasets_all/website_leaderboard.csv). Revision: `68988c6e5b31e2ec9a2d193c555dd41b8cb01fd3`.*
+
+On TabArena, TabPFN-3.5 outperforms both default and tuned-and-ensembled XGBoost in classification and regression rankings. Notably, TabPFN achieves these results without dataset-specific hyperparameter tuning, while the tuned XGBoost configuration includes additional optimization and ensembling.
+
+## Training and prediction speed
+
+Predictive performance is only part of the comparison. The time required to prepare a model and generate predictions also matters.
+
+XGBoost trains decision trees on each dataset. TabPFN uses a pretrained model, avoiding traditional task-specific weight training.
+
+This means that achieving stronger performance with XGBoost often involves hyperparameter tuning (testing different model configurations) and ensembling (combining predictions from multiple trained models), both of which can significantly increase training time.
+
+Classification
+Regression
+
+<table><thead><tr><th>Model</th><th>Fit/setup (s/1K)</th><th>Predict (s/1K)</th><th>Hardware</th></tr></thead><tbody><tr><td>TabPFN-3.5, default</td><td>1.85</td><td>0.518</td><td>GPU</td></tr>
+<tr><td>TabPFN-3.5-Fast, default</td><td>0.72</td><td>0.168</td><td>GPU</td></tr>
+<tr><td>XGBoost, tuned + ensembledTuned-and-ensembled XGBoost includes additional optimization and post-hoc ensembling effort.</td><td>685.87</td><td>1.454</td><td>CPU</td></tr>
+<tr><td>XGBoost, defaultDefault configurations are evaluated without extensive hyperparameter optimization.</td><td>1.77</td><td>0.117</td><td>CPU</td></tr></tbody></table>
+
+TabArena median times per 1,000 rows. Fit/setup time for TabPFN is per-dataset setup and context processing rather than weight training. *Data as of 2026-10-28. [Source CSV](https://huggingface.co/spaces/TabArena/leaderboard/resolve/68988c6e5b31e2ec9a2d193c555dd41b8cb01fd3/data/entrants_open/imputation_no/splits_all/tasks_classification/datasets_all/website_leaderboard.csv). Revision: `68988c6e5b31e2ec9a2d193c555dd41b8cb01fd3`.*
+
+**Note:** These timings reflect the hardware used in the benchmark: TabPFN runs on GPU, while XGBoost runs on CPU. They illustrate the benchmark configurations rather than a hardware-controlled speed comparison.
+
+## Native data types
+
+TabPFN-3.5 supports common tabular feature types and includes built-in preprocessing for text and datetime columns, reducing the need for manual feature engineering:
+
+| Data type | TabPFN-3.5 | XGBoost |
+| :- | :- | :- |
+| Numerical | Native support | Native support |
+| Categorical | Native support | Native support (`enable_categorical=True`) |
+| Missing values | Native support | Native support |
+| Text | Built-in preprocessing | Requires feature engineering |
+| Datetime | Built-in preprocessing | Requires feature engineering |
+
+## Dataset characteristics
+
+Beyond raw feature types, dataset characteristics such as class imbalance, temporal structure, and distribution shift can affect model performance and the amount of additional configuration required. The table below compares how TabPFN and XGBoost approach these challenges.
+
+| Dataset characteristic | TabPFN-3.5 | XGBoost |
+| :- | :- | :- |
+| Small datasets | Strong out of the box | Prone to overfitting without careful regularization and tuning |
+| Imbalanced classes | Robust by default, with optional [metric tuning](/capabilities/metric-tuning) (`balance_probabilities`, `eval_metric`) | Requires manual handling (e.g. `scale_pos_weight`, resampling) |
+| Time series / forecasting | Supported via [TabPFN-TS](/capabilities/forecasting) and [related-series forecasting](/cookbook/forecast_hierarchical_series) | Requires feature engineering (lags, rolling windows, calendar features) |
+| Grouped data | Strong results on grouped splits  in BeyondArena; see [grouped data comparison](/cookbook/grouped_data_model_comparison) | Prone to overfitting groups without careful group-aware splits and tuning |
+| Distribution shift | Adapts in-context | Requires retraining and re-tuning on new data |
+
+> [!NOTE]
+>
+> Performance depends on the dataset, evaluation split, and metric. [BeyondArena](https://huggingface.co/datasets/TabArena/BeyondArena) evaluates tabular models across different dataset characteristics, including temporal and grouped splits.
+
+> **[See the difference in action](/cookbook/tabpfn_vs_xgboost)**
+>
+> Compare TabPFN and XGBoost on a real dataset from OpenML.
+
+## Frequently asked questions
+
+> **Is TabPFN better than XGBoost?**
+>
+> On TabArena, TabPFN-3.5 outperforms default and tuned-and-ensembled XGBoost in both classification and regression. However, performance depends on your dataset, so benchmark both models on your own data before choosing.
+
+> **Does TabPFN require training?**
+>
+> TabPFN is pretrained and does not require traditional task-specific weight training. Its .fit() method prepares the dataset for inference rather than training model weights, unlike XGBoost, which trains decision trees on each dataset.
+
+> **Can TabPFN replace XGBoost?**
+>
+> For many supervised tabular prediction tasks, TabPFN can be an alternative to XGBoost, particularly when you want strong performance with minimal tuning. However, XGBoost may be preferable for very large datasets, CPU-only environments, or applications requiring specific high-throughput inference.
+
+> **Is TabPFN faster than XGBoost?**
+>
+> It depends on what you’re measuring. TabPFN avoids traditional model training, which can reduce time to a strong model. XGBoost typically offers efficient prediction after training, particularly on CPUs. Compare end-to-end runtime and prediction latency on your hardware.
+
+> **How can I compare TabPFN and XGBoost on my own dataset?**
+>
+> Use identical train/test splits, evaluation metrics, and comparable computational budgets. Evaluate both models using validation or cross-validation, then report final performance on an untouched test set. Follow the [benchmarking guide](/benchmarking) or the [TabPFN vs XGBoost cookbook](/cookbook/tabpfn_vs_xgboost).
 
 
 # Bayesian Optimization with TabPFN Extensions
@@ -25558,7 +25767,7 @@ TabPFN-3 supports numerical and categorical data, missing values, and up to 160 
 | [**TabPFN-3-Thinking**](/capabilities/thinking-mode) | The most accurate offering, spends more compute for better predictions. | 200,000 | 2,000 | Hosted API & `tabpfn-client`, VPC. |
 
 Row and column limits trade off, so their maximum values cannot necessarily be used together. Use the [many-class extension](/capabilities/many-class) for classification tasks with more than 160 classes.
-The model is licensed under [TABPFN-3 License v1.0](https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE). Code under [Prior Labs License](https://raw.githubusercontent.com/PriorLabs/TabPFN/49394b053a6759cfe68e90c21a2d51c31b396768/LICENSE).
+The model is licensed under [TABPFN-3 License v1.0](https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE). Code under [Apache 2.0](https://github.com/PriorLabs/TabPFN/blob/main/LICENSE).
 
 ***
 
@@ -25570,7 +25779,7 @@ TabPFN-2.6 was the default model in TabPFN OSS package versions v7.0.0–v7.1.x.
 | :- | :- | -: | -: | :- |
 | **TabPFN-2.6** | Handles numerical and categorical features and missing values. Supports classification with up to 10 classes. | 100,000 | 2,000 | Local `tabpfn` package, hosted API & `tabpfn-client`. |
 
-The model is licensed under [TABPFN-2.6 License v1.0](https://huggingface.co/Prior-Labs/tabpfn_2_6/blob/main/LICENSE). Code under [Prior Labs License](https://raw.githubusercontent.com/PriorLabs/TabPFN/49394b053a6759cfe68e90c21a2d51c31b396768/LICENSE).
+The model is licensed under [TABPFN-2.6 License v1.0](https://huggingface.co/Prior-Labs/tabpfn_2_6/blob/main/LICENSE). Code under [Apache 2.0](https://github.com/PriorLabs/TabPFN/blob/main/LICENSE).
 
 ***
 
@@ -25585,7 +25794,7 @@ TabPFN-2.5 expanded support to larger datasets than TabPFNv2. The family include
 
 Read the [TabPFN-2.5 model report](https://arxiv.org/abs/2511.08667).
 
-The model weights are licensed under [TABPFN-2.5 License v1.1](https://huggingface.co/Prior-Labs/tabpfn_2_5/blob/main/LICENSE). Code under [Prior Labs License](https://raw.githubusercontent.com/PriorLabs/TabPFN/49394b053a6759cfe68e90c21a2d51c31b396768/LICENSE).
+The model weights are licensed under [TABPFN-2.5 License v1.1](https://huggingface.co/Prior-Labs/tabpfn_2_5/blob/main/LICENSE). Code under [Apache 2.0](https://github.com/PriorLabs/TabPFN/blob/main/LICENSE).
 
 ***
 
@@ -25597,7 +25806,7 @@ TabPFNv2 is the model published in *Nature* and the first TabPFN to handle real-
 | :- | :- | -: | -: | :- |
 | **TabPFNv2** | Best suited for smaller datasets. Handles numerical and categorical features and missing values, with up to 10 classes. | 10,000 | 500 | Local `tabpfn` package, hosted API & `tabpfn-client`. |
 
-The model is licensed under [Prior Labs License](https://raw.githubusercontent.com/PriorLabs/TabPFN/49394b053a6759cfe68e90c21a2d51c31b396768/LICENSE).
+The model weights are licensed under the Prior Labs License (Apache 2.0 with an additional attribution requirement): [classifier license](https://huggingface.co/Prior-Labs/TabPFN-v2-clf/blob/main/LICENSE.txt), [regressor license](https://huggingface.co/Prior-Labs/TabPFN-v2-reg/blob/main/LICENSE.txt). Code under [Apache 2.0](https://github.com/PriorLabs/TabPFN/blob/main/LICENSE).
 
 > **[Nature Publication](https://www.nature.com/articles/s41586-024-08328-6)**
 >
@@ -25606,6 +25815,10 @@ The model is licensed under [Prior Labs License](https://raw.githubusercontent.c
 ***
 
 ## TabPFN Model License
+
+> **Which license covers the TabPFN code, and which the model weights?**
+>
+> The code in the [TabPFN repository](https://github.com/PriorLabs/TabPFN) is licensed under Apache 2.0, starting with `tabpfn` 9.0.0. Model weights are licensed separately: TabPFN-2.5, TabPFN-2.6, TabPFN-3 and TabPFN-3.5 weights under non-commercial licenses, and TabPFNv2 weights under the Prior Labs License. Each model section above links its license.
 
 > **Does accepting the license share my datasets with Prior Labs?**
 >

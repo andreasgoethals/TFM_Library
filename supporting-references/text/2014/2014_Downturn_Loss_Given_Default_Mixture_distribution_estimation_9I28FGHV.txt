@@ -1,0 +1,883 @@
+Decision Support
+Downturn Loss Given Default: Mixture distribution estimation
+Raffaella Calabrese ⇑
+Essex Business School, University of Essex, Wivenhoe Park, Colchester CO4 3SQ, United Kingdom
+article info
+Article history:
+Received 21 February 2013
+Accepted 20 January 2014
+Available online 30 January 2014
+Keywords:
+Downturn LGD
+Mixture model
+EM algorithm
+Mixed random variable
+abstract
+The internal estimates of Loss Given Default (LGD) must reﬂect economic downturn conditions, thus esti-
+mating the ‘‘downturn LGD’’, as the new Basel Capital Accord Basel II establishes. We suggest a method-
+ology to estimate the downturn LGD distribution to overcome the arbitrariness of the methods suggested
+by Basel II. We assume that LGD is a mixture of an expansion and recession distribution. In this work, we
+propose an accurate parametric model for LGD and we estimate its parameters by the EM algorithm.
+Finally, we apply the proposed model to empirical data on Italian bank loans.
+/C2112014 Elsevier B.V. All rights reserved.1. Introduction
+Loss Given Default (LGD) is the loss incurred by a ﬁnancial insti-
+tution when an obligor defaults on a loan, given as the fraction of
+Exposure At Default (EAD) unpaid after some period of time. In the
+Basel II framework ( Basel Committee on Banking Supervision,
+2004, paragraph 286–317 ), banks adopting the advanced Internal
+Rating Based (IRB) approach are allowed to use their own esti-
+mates of LGDs that have to reﬂect economic downturn conditions.
+Hence, the ‘‘downturn LGD’’ is the maximum of the long-run
+default-weighted average LGD and the stressed LGD.
+It requires the banks to identify the appropriate downturn con-
+ditions and incorporate them so as to produce LGD parameters for
+the bank’s exposures, which are consistent with the identiﬁed
+downturn conditions. The main reason for this requirement is that
+the Vasicek model ( Vasicek, 2002 ) used in Basel II does not have
+systematic correlation between Probability of Default (PD) and
+LGD and, to compensate for this deﬁciency, downturn LGD are
+required to be used as input to the model.
+Although the downturn LGD is a key variable for banking prac-
+tice, such a pivotal topic is relatively unexplored in the literature.
+The main aim of this paper is to propose a methodology to estimate
+the downturn LGD distribution. To achieve this aim, we consider
+the dynamic behaviour of LGD over the economic cycle character-
+ised by two regimes: expansion and recession.
+We assume that the LGD is a mixture of an expansion and a
+recession distributions, each of these distributions is given by the
+mixture of a Bernoulli random variable and a beta random variable,
+as Calabrese (in press) suggested. On the one hand, the Bernoulli
+random variable allows to reproduce the high concentration of
+data at total recovery and total loss ( Calabrese & Zenga, 2010;
+Renault & Scaillet, 2004; Schuermann, 2003 ). On the other hand,
+the beta distribution is well suited 1 to the modelling of LGDs
+(Bruche & González-Aguado, 2008; Gupton, Finger, & Bhatia, 1997;
+Gupton & Stein, 2002 ). To estimate the parameters of the downturn
+LGD distribution, we apply the EM algorithm ( Dempster, Laird, &
+Rubin, 1977 ). To obtain a ﬁnite beta density function, Calabrese
+and Zenga (2010) ’s parametrization is used. With this method banks
+do not need to identify arbitrarily downturn conditions and, unlike
+the factor method, data on the default risk and default correlation
+are not required. Finally, we apply this proposal to a comprehensive
+Bank of Italy data set ( Bank of Italy, 2001 ) of 149,378 Italian bank
+loans and we compare it with some methods used in the literature
+to estimate the downturn LGD.
+The present paper is organised as follows. The next section anal-
+yses the available literature on downturn LGD. Section 3 describes
+some approaches to estimate downturn LGD. The following section
+presents the proposed approach to estimate the downturn LGD
+distribution. Section 5 describes the dataset of the Bank of Italy
+and shows the estimation results by applying the proposed model
+to these data. Finally, the last section is devoted to conclusions.
+2. Literature review
+An extensive literature suggested a link between LGD and the
+economic cycle (e.g. Bellotti & Crook, 2012 ; Calabrese, in press ).
+http://dx.doi.org/10.1016/j.ejor.2014.01.043
+0377-2217//C2112014 Elsevier B.V. All rights reserved.
+⇑ Tel.: +44 (0) 1206 874569; fax: +44 (0) 1206 873429.
+E-mail address: rcalab@essex.ac.uk
+1 Since LGD lies in the interval [0, 1], the beta distribution is a suitable parametric
+model for LGDs since it has support [0, 1] and, in spite of requiring only two
+parameters, is quite ﬂexible.
+European Journal of Operational Research 237 (2014) 271–277
+Contents lists available at ScienceDirect
+European Journal of Operational Research
+journal homepage: www.else vier.com/locate/ejor
+
+
+The systematic correlation between PD and LGD is not taken into
+account in many models. In the standard rating-based credit risk
+model developed by Gupton et al. (1997) , it is assumed that recov-
+eries on defaulted exposures are random outcomes, independent of
+the default event. A similar independence assumption is made in
+the model of Jarrow, Lando, and Turnbull (1997) and in the Vasicek
+model (Vasicek, 2002) used in the Basel II Accord. However, if real-
+izations of recoveries are low exactly at times when many ﬁrms
+default, the assumption that recoveries are independent of default
+rates or constant would result in an underestimation of credit risk.
+To compensate for this deﬁciency, downturn LGD estimates are
+required to be used as an input to the model.
+In the Basel II Accord ( BCBS, 2005b ), two approaches are
+presented to estimate downturn LGD. One approach would be
+to apply a mapping function similar to that used for the PDs that
+would extrapolate downturn LGDs from bank-reported average
+LGDs. Alternatively, banks could be asked to provide downturn
+LGD ﬁgures based on their internal assessments LGDs during
+adverse conditions. Provided that data is available, the latter
+approach is the easiest to implement, so Basel III ( BCBS, 2011,
+paragraph 20 ) considers only this method to compute downturn
+LGD.
+The drawback is that LGD data is generally sparse and there is
+very limited industry experience with regard to LGD estimates.
+Downturn LGD estimation based on historical data is currently
+not possible for many banks because of the short time periods
+available or for the lack of an economic downturn during the avail-
+able period. The ﬁrst approach of Basel II is an appropriate solution
+when historical data is not available.
+Following the ﬁrst approach of Basel II, Miu and Ozdemir
+(2006) suggest that the original LGD assessment by banks,
+without considering PD and LGD correlation, can be appropriately
+adjusted by incorporating a certain degree of conservatism in
+cyclical LGD estimates within a point-in-time modelling frame-
+work. They use Monte Carlo to tabulate the relationship between
+long-run and downturn LGD. Barco (2007) extends their work to
+develop an analytical relationship between long-run and down-
+turn LGD.
+Moreover, Sabato and Schmid (2008) suggest a simple map-
+ping function to estimate downturn LGD. They investigate the
+relationship between LGD and the credit cycle over the period
+from 2002 to 2007 using data covering a set of retail loans.
+The linear mapping function proposed by the Board of Governors
+of the Federal Reserve Bank (2006) can be considered as a par-
+ticular case of Sabato and Schmid’s proposal, as explained in
+Section 3.
+Both the approaches presented by Basel II show the pivotal
+drawback of how economic downturn or mapping function of aver-
+age LGD should be deﬁned and identiﬁed. This arbitrariness leads
+to very different approaches being implemented across banks
+and countries, and signiﬁcant effects on the level of capital require-
+ments. As many authors have shown (e.g., Saurina & Trucharte,
+2007; Altman & Sabato, 2005 ), Basel II Advanced-IRB capital
+requirements are highly sensible to LGD values in particular for re-
+tail asset classes. Hence, there is the necessity of suggesting a
+method to estimate downturn LGD to overcome the arbitrariness
+of the approaches suggested by Basel II.
+3. Downturn LGD estimation models
+Following the ﬁrst approach of Basel II (BCBS, 2005b) , Sabato
+and Schmid (2008) suggest the following linear mapping function
+to estimate downturn LGD on unsecured positions
+DLGD /C0 lLGD ¼ LGDSFð1 /C0 lLGDÞð 1Þ
+where lLGD is the long-term average 2 LGD, DLGD is the expected
+Downturn LGD and LGDSF is the LGD Stressing Factor given by
+LGDSF ¼ stressedLGD /C0 LGD
+LGD : ð2Þ
+Sabato and Schmid (2008) suggest to compute the stressed
+LGD as a function (not speciﬁed) of the stressed PD, given by
+the average PD plus the standard deviation of the observed
+default rates. The mapping function (1) implies that debts with
+relatively low historical LGD rates (e.g. senior bank loans) should
+have relatively large adjustments to their long-term average LGD
+rates, while debts with high historical LGD rates (e.g. subordi-
+nated bonds) should have relatively small adjustments. In other
+words, the difference between downturn LGD and the long-term
+average LGD varies inversely with the long-term average LGD.
+In recognition that banks may be unable to estimate the LGD
+stressing factor, the Board of Governors of the Federal Reserve
+Bank (2006) proposes the following particular case of Eq. (1) with
+LGDSF ¼ 0:08
+DLGD ¼ :08 þ :92lLGD: ð3Þ
+where lLGD equals the long-term average LGD and DLGD is the ex-
+pected Downturn LGD. It is worth noting that the magnitudes of the
+proposed adjustments to LGD are relatively modest, with a maxi-
+mum adjustment of only eight percentage points. The Federal
+Reserve has offered no justiﬁcation for the linear mapping function
+(3) except perhaps its intuitive appeal that debts with the lowest
+historical average LGD rates receive the largest upward downturn
+LGD adjustments.
+The methodology suggested by Miu and Ozdemir (2006) and
+then generalised by Barco (2007) also belongs to the ﬁrst approach
+of Basel II. To analyse Barco’s model, we start with the well-known
+Merton framework where the log return of the obligor i’s asset
+value is given by
+Ai ¼ qPD
+i Xm þ
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+1 /C0 qPD
+i
+/C0/C1 2
+q
+Xis
+where qPD
+i is known as correlation of asset returns. The independent
+standard normal random variables Xm and Xis are the systematic
+factor and obligor-speciﬁc idiosyncratic factor, respectively. Barco
+(2007) models the value of the asset of the creditor with a lognor-
+mal distribution. This is achieved by ﬁrst establishing the following
+relationship for the standardised asset return
+Ri ¼ qR
+i Xm þ
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+1 /C0 qR
+i
+/C0/C1 2
+q
+Ym
+where Ym is an independent standard normal random variable
+representing the residual systematic asset return not explained
+by Xm. The parameter qR
+i correlates the assets of the obligor to
+the systemic factor Xm. Assuming obligor exposure is one unit
+with mean default rate denoted by lPD
+i , its loss random variable
+is deﬁned by
+Li ¼ 1 Ai <U/C0 1 lPD
+iðÞfg LR
+i
+where 1fgð/C1Þis the indicator function and U/C0 1ð/C1Þis the quantile func-
+tion of the standard normal distribution.
+Assuming a fully granular portfolio, Li is contained in a homoge-
+neous portfolio and continue to suppose that its exposure is equal
+to one unit, so Barco (2007) deﬁnes
+L1 ¼ lim
+N!1
+1
+N
+XN
+i¼1
+Li:
+2 lLGD is known as long-run default-weighted average loss rate given default in Basel II
+(BCBS, 2005a) .
+272 R. Calabrese / European Journal of Operational Research 237 (2014) 271–277
+
+In a model with two systematic factors, from Proposition 3 in
+Gordy (2003) and the strong law of large numbers Barco (2007)
+obtains
+qaðL1Þ¼ qa lim
+N!1
+1
+N
+XN
+i¼1
+Li
+"#
+¼ qa EðLijXm; YmÞ½/C138
+where qa is the a quantile.
+An important result obtained by Barco (2007) is the analytical
+expression of the downturn LGD
+DLGD ¼ qa EðLijXm; YmÞ½/C138
+U
+U/C0 1 ðlPD
+i ÞþqPD
+i
+U/C0 1 ðaÞ
+ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+1/C0ð qPD
+i Þ2
+p
+ ! ð4Þ
+where Uð/C1Þis the cumulative distribution function of a standard
+normal distribution.
+The main drawback of the ﬁrst approach of Basel II is that the
+mapping function between long-run and downturn LGD can
+change from model to model. This difference can have a signiﬁcant
+effect on capital requirements. For example, Barco (2007) and Miu
+and Ozdemir (2006) using the normal distribution underestimate
+tail contributions.
+4. A new modelling approach for downturn LGD
+We consider a dynamic behaviour of LGD over the economic
+cycle characterised by two distributions of LGDs held over expan-
+sion and recession periods. By considering two regimes of the
+economic cycle, expansion and recession, LGDs are drawn from a
+mixture of an expansion ( E) and a recession ( R) distributions
+FLGDðyÞ¼ pFLGD=EðyÞþð 1 /C0 pÞFLGD=RðyÞ 0 6 y 6 1 ð5Þ
+where FLGD=SðyÞ is the cumulative distribution function of the LGD
+over a given period conditional on the state S (S ¼ E; R) of the
+economic cycle and p is the probability of the expansion regime
+(Filardo, 1994 ). We assume that the parameter p is ﬁxed over a
+given period of time.
+In order to ﬁt the model (5) to LGDs data, we ﬁrst specify the
+cumulative distribution functions FLGD=Eð/C1Þand FLGD=Rð/C1Þ, which later
+we estimate jointly with the parameter p. Since the incidence of
+LGDs equal to 0 or 1 is high ( Calabrese & Zenga, 2010; Renault &
+Scaillet, 2004; Schuermann, 2003 ), to supply accurate estimations
+for the extreme values, Calabrese (in press) proposes to consider
+LGD as a mixed random variable, obtained as the mixture of a Ber-
+noulli random variable and the beta random variable B. This means
+that the distribution function of LGD FLGD=Sð/C1Þconditional on the
+state S of the economic cycle is deﬁned as
+FLGD=SðyÞ¼
+ps
+0 y ¼ 0
+ps
+0 þ½ 1 /C0 ps
+0 /C0 ps
+1/C138FB=SðyÞ y 2ð 0; 1Þ
+1 y ¼ 1
+8
+>>
+><
+>>>
+:
+ð6Þ
+where FB=Sð/C1Þdenotes the distribution function of the beta ran-
+dom variable B conditional on the state S of the economic cycle
+and ps
+j ¼ PfLGD ¼ j=Sg is the conditional probability that the
+LGD is equal to j with j ¼ 0; 1 given the state S of the economic
+cycle.
+Consistently with the hypothesis that LGD is a mixed random
+variable, we deﬁne the cumulative distribution estimator of
+LGD as
+bF LGDðy; p; h; rÞ¼
+n0
+n y ¼ 0
+n0
+n þ 1 /C0 n0
+n /C0 n1
+n
+/C0/C1 bF M ðy; p; h; rÞ y 2ð 0; 1Þ
+1 y ¼ 1:
+8
+>>><
+>>
+>
+:
+ð7Þ
+where n0 ¼ ]fLGDi ¼ 0g and n1 ¼ ]fLGDi ¼ 1g indicate the
+frequency of the LGDs equal to 0 and 1, respectively, and n is the
+number of LGDs in the portfolio.
+The cumulative distribution estimator of the mixture M of two
+beta random variables is given by
+bF M ðy;p;h;rÞ¼ 1
+n/C0 n0 /C0 n1
+/C2
+Z y
+0
+Xn/C0 n0 /C0 n1
+i¼1
+pfeðlgdi;he;reÞþð 1/C0 pÞfr ðlgdi;hr ;rr Þ½/C138 dlgdi
+ð8Þ
+where p is the probability of the expansion regime. Moreover,
+fsðlgd; hs; rs Þ is the probability density function of the beta random
+variable Bs (with s ¼ r; e) of parameters hs
+rs
+þ 1 and 1/C0 hs
+rs
+þ 1
+fsðlgd; hs; rsÞ¼
+C 1
+rs
+þ 2
+/C16/C17
+lgd
+hs
+rs ð1 /C0 lgdÞ
+1/C0 hs
+rs
+C hs
+rs
+þ 1
+/C16/C17
+C 1/C0 hs
+rs
+þ 1
+/C16/C17 ; ð9Þ
+where hs is the mode of the sth beta density function and rs > 0i s
+the dispersion parameter. The parametrization of the beta density
+function fsðlgd; hs; rsÞ is applied by Calabrese and Zenga (2010) in
+the nonparametric estimation. The main advantage of this
+parametrization is that every beta density function of the mixture
+M is ﬁnite for all values of hs and rs since the beta parameters
+hs
+rs
+þ 1 and 1/C0 hs
+rs
+þ 1 are higher than one.
+The beta random variable Bs of parameters hs
+rs
+þ 1 and 1/C0 hs
+rs
+þ 1
+has an expected value
+EðBsÞ¼ hs þ rs
+2rs þ 1
+and variance
+VðBsÞ¼ rsðhs /C0 h2
+s þ rs þ r2
+s Þ
+ð1 þ 2rsÞ2ð1 þ 3rsÞ
+ð10Þ
+for S ¼ r; e. To understand the inﬂuence of the parameter rs,i n
+Fig. 1 we plot the variance VðBsÞ as a function of rs by ﬁxing hs.
+From this plot we can deduce that the variance of Bs increases by
+increasing rs and with constant hs. An interesting result is that
+the limit of the variance VðBsÞ,a s rs tends to inﬁnity, is 0 :08, the
+variance of a uniform random variable with support the unit
+0 1 02 03 04 05 0
+0.00 0.02 0.04 0.06 0.08
+s
+V (Bs)
+Fig. 1. The variance VðBS Þ of the beta random variable Bs as a function of the
+parameter rS with hS ¼ 0:5.
+R. Calabrese / European Journal of Operational Research 237 (2014) 271–277 273
+
+interval [0, 1]. This outcome is due to the convergence of the beta
+density function (9) to a uniform density function as rs diverges
+to inﬁnity.
+When rs goes to zero, we can apply Maclaurin series to Eq. (10)
+obtaining
+VðBsÞ¼ rshsð1 /C0 hsÞþ Oðr2
+s Þ;
+this means that by ﬁxing hj the variance VðBsÞ tends to zero as rs
+tends to zero too, as Fig. 1 shows. From this approximation we
+can also deduce that by ﬁxing rs near to zero, the variance VðBsÞ be-
+comes a parabola with maximum in hs ¼ 0:5.
+In this paper we propose a method to estimate the unknown
+parameters in the mixture of two beta density functions. We use
+the Expectation–Maximisation (EM) algorithm ( Dempster et al.,
+1977) to estimate the parameters p and h; r in Eq. (8). For notation
+simplicity, we consider the parameter vector p ¼½ p; 1 /C0 p/C1380,s ow e
+aim at estimating the parameters vector ðp; h; rÞ.
+In the mixture framework, the observed data lgd ¼ð lgd1; lgd2;
+... ; lgdn/C0 n0 /C0 n1 Þ are completed with a component-label vector
+Z ¼ð Z1; Z2; ... ; Zn/C0 n0 /C0 n1 Þ whose elements are assumed to be inde-
+pendent and are deﬁned as
+zis ¼ 1i f lgdi comes from the state s
+0 otherwise :
+/C26
+Under the assumption that LGDi are independent and identi-
+cally distributed random variables with cumulative distribution
+function (5), the complete-data log-likelihood function is
+lc p; p0; p1; h; rðÞ ¼ ln p
+Xn/C0 n0 /C0 n1
+i¼1
+zie þ lnð1 /C0 pÞ
+Xn/C0 n0 /C0 n1
+i¼1
+zir
+þ
+Xn/C0 n0 /C0 n1
+i¼1
+X
+S¼e;r
+zis ln fLGD=S lgdi; hs; rsðÞ : ð11Þ
+The EM algorithm ( Dempster et al., 1977; McLachlan & Krish-
+nan, 2007 ) maximises the log-likelihood function (11). Each itera-
+tion of the EM algorithm includes the ‘‘E-step’’, which computes
+the conditional expectation of the complete-data log-likelihood
+(11) given the observed data lgd, and the ‘‘M-step’’, which obtains
+the maximum of the complete-data log-likelihood function (11).
+To compute the initial value pð0Þ, analogously to Ji, Wu, Liu,
+Wang, and Coombes (2005) we assign the smallest 50% of lgdi
+belonging to the interval (0, 1) to the expansion component, and
+the highest 50% of lgdi to the recession component. Maximizing
+(11), we obtain the initial values ðpð0Þ; hð0Þ; rð0ÞÞ.
+Afterwards, the algorithm 3 follows the sequence:
+(1) On the ðk þ 1Þth iteration, the E-step requires the calcula-
+tion of the conditional expectation of the complete-data
+log-likelihood (11). Since Z is non-observed data, zðkÞ
+is is
+replaced by the conditional expectation of Zis given the
+observed data lgd and we consider the parameter estimates
+ðpðkÞ; hðkÞ; rðkÞÞ from the kth iteration of the M-step
+z kþ1ðÞ
+is ¼ EZ is lgdi; p kðÞ ; h kðÞ ; r kðÞ
+/C12/C12
+/C12
+/C16/C17
+¼ PZ
+is ¼ 1 lgdi; p kðÞ ; h kðÞ ; r kðÞ
+/C12/C12
+/C12
+/C16/C17
+¼
+p kðÞ
+s fs lgdi; h kðÞ
+s ; r kðÞ
+s
+/C16/C17
+P
+s¼e;r p kðÞ
+s fs lgdi; h kðÞ
+s ; r kðÞ
+s
+/C16/C17
+with i ¼ 1; 2; ... ; n /C0 n0 /C0 n1 and S ¼ r; e.
+(2) On the ðk þ 1Þth iteration, the M-step requires the maximi-
+sation of the complete-data log-likelihood function (11)
+with respect to p; h; r replacing zis by zðkþ1Þ
+is . Firstly, the ele-
+ments of the updated estimates hðkþ1Þ are obtained as
+bpðkþ1Þ
+s ¼
+Pn/C0 n0 /C0 n1
+i¼1 zðkþ1Þ
+is
+n /C0 n0 /C0 n1
+;
+with S ¼ r; e.
+To estimate hðkþ1Þ and rðkþ1Þ, we compute the score functions for h
+and r (see Appendix A ). The updated estimates hðkþ1Þ and rðkþ1Þ
+are the solution of the following system
+@lc p;h;rðÞ
+@h ¼ 0
+@lc p;h;rðÞ
+@r ¼ 0
+(
+Since the updated estimates hðkþ1Þ and rðkþ1Þ do not have a closed-
+form, they are obtained by using a nonlinear optimisation
+algorithm.
+The E-step and the M-step are alternatively repeated until the
+difference between two consecutive values of the complete-data
+log-likelihood (11) is negligible.
+5. Empirical evidence
+5.1. Data set
+A comprehensive survey on the loan recovery process of Italian
+banks was conducted in the years 2000–2001 by the Bank of Italy.
+Its purpose was to gather information on the main characteristics
+of the Italian recovery process.
+The survey is divided into three main sections. The ﬁrst focuses
+on organizational aspects, the second regards credit recovery pro-
+cedures and the last concerns analytical data on individual debts.
+About 250 banks were surveyed by means of a questionnaire.
+The database is composed of 149,378 defaulted borrowers and,
+since they covered nearly 90% of total domestic loans, this is the
+most recent and the most important survey on the Italian recovery
+process.
+It is important to specify that data refer to individual loans
+which are privately held, and not listed on the market. In particu-
+lar, loans are towards Italian resident debtors non-performing on
+the 31/12/1998 and entirely written off within the end of 1999.
+The deﬁnition of default chosen in the survey is narrower than
+the one proposed by the BCBS (2004, paragraph 452) . The differ-
+ence is the inclusion of transitory non-performing debts. Finally,
+the Bank of Italy established the discount rates for each quarter
+from 1975 to 1999 by relying on the interest rates on short-term
+loans.
+We highlight that to constrain LGD within the interval [0, 1], we
+apply the expression proposed by Calabrese and Zenga (2010)
+LGD ¼ LOSS
+TE ¼ LOSS
+EAD þ I þ L :
+where LOSS is the loss amount and TE denotes the Total Exposure,
+given by the sum of the Exposure At Default ( EAD), the legal costs
+(L) and the interest on delayed payment ( I).
+Table 1 reports the main characteristics of the Bank of Italy’s
+data. Our results are consistent with the values suggested by the
+Basel II Accord (BCBS, 2004 paragraph 287–8) under the founda-
+tion IRB approach: LGD is ﬁxed at 45% for all senior unsecured
+debts and at 75% for all subordinated exposures. Moreover, Schuer-
+mann (2003) obtain similar values for positions with different
+seniority levels and instrument types. For the dispersion, the coef-
+ﬁcient of variation (55.17% of the average LGD) is similar to the re-
+sults obtained by Schuermann (2003) (53.63% of the average
+recovery rate) and by Renault and Scaillet (2004) (60.31% of the
+average recovery rate) on corporate bonds.3 The code in R language is available in Appendix B .
+274 R. Calabrese / European Journal of Operational Research 237 (2014) 271–277
+
+Fig. 2 shows the LGD distribution. Firstly, the mode of the LGD
+distribution is the extreme value 1, with 23% of the observations.
+Besides, LGD equal to 0 exhibits also a high percentage (7.78%).
+Many authors obtain a bimodal LGD distribution for different
+countries, for example, Araten, Jacobs, and Varshney (2004) and
+Asarnow and Edwards (1995) for the US, Hurt and Felsovalyi
+(1998) for Latin America, Franks, de Servigny, and Davydenko
+(2004) for France, Grunert and Weber for Germany (2005) and
+Dermine and Neto de Carvalho (2006) for Portugal. For instance,
+in Friedman and Sandow (2003) study about 10% and 20% of the
+observations showed recovery rates respectively equal to zero
+and one.
+5.2. Estimation results and comparative analysis
+In order to estimate the downturn LGD, we apply the method-
+ology proposed in this work and the four methods analysed in Sec-
+tions 2 and 3 to the Bank of Italy’s database. The results 4 are
+reported in Table 2. Even if the database concerns loans, our proposal
+is also applicable to bonds.
+The main advantage of the methodology here proposed is that it
+allows to estimate the downturn LGD distribution, shown in Fig. 3,
+without the arbitrary deﬁnition of an economic downturn period
+or a mapping function of long-run LGD. Moreover, the high concen-
+tration of data at total recovery and total loss ( Calabrese & Zenga,
+2010; Renault & Scaillet, 2004; Schuermann, 2003 ) can be repli-
+cated by the model suggested in this work.
+The approach proposed in this paper is compared with the four
+models analysed in Sections 2 and 3 . For the model suggested by
+Sabato and Schmid (2008) (SS model ) we need to estimate the
+LGD stressing factor deﬁned in Eq. (2). Following the authors’ sug-
+gestion, the LGD stressing factor is given by the sum of the mean
+(lPD ¼ 0:0063) and the standard deviation ( rPD ¼ 0:0055) of the
+default rates. These results are obtained from data of the Interna-
+tional Monetary Fund by assigning to each loan the annual default
+rate evaluated at the time of default. Furthermore, for both the SS
+model and the one proposed by the Federal Reserve System ( FED
+model), we consider the average LGD (0.6154) from Table 1 .
+For the factor model suggested by Barco (2007) we consider
+a ¼ 0:999. We specify that from Eq. (4) we should estimate lPD
+i
+and qPD
+i
+for each loan. Since these data are not available in the Bank
+of Italy’s survey, we assign to each loan the annual PD evaluated at
+default time and supplied by the International Monetary Fund. This
+means that we assign the same PD to loans defaulted the same year.
+Moreover, we compute the correlation coefﬁcient qPD of the as-
+signed PDs and, for lack of data, it is assumed constant for all obser-
+vations. Finally, compliant to Basel II adverse conditions are
+identiﬁed as a negative GDP growth rate, occurred only in 1993. This
+means that in the second approach of Basel II ( AC model) the down-
+turn LGD is given by the mean of 12,992 LGDs defaulted in 1993.
+Furthermore, we apply the methodology suggested in this paper
+and the obtained estimates are reported in Table 2. If we focus our
+attention only on the recession distribution, this represents the
+downturn LGD distribution and it is shown in Fig. 3 . We compute
+the average of this distribution and we report it in Table 3 . The
+downturn LGDs computed by the methods outlined in Sections 2
+and 3 are also reported in Table 3 .
+To understand how we should interpret the results in Table 3 ,
+we underline that for a bank the underestimation of the downturn
+LGD
+Density
+0.0 0.2 0.4 0.6 0.8 1.0
+012345
+Fig. 2. The LGD distribution of the Bank of Italy data set.
+Table 2
+Estimates obtained by the mixture model from the Bank of Italy’s data.
+^p ^p0 ^p1 ^h ^r
+Expansion 0.7337 0.0571 0.1687 0.3925 0.5968
+Recession 0.2663 0.0207 0.0612 0.9171 0.1014
+Table 1
+Some characteristics of the Bank of Italy’s data set. The amounts ‘‘Loss’’ and ‘‘Total
+Exposure’’ are expressed in thousands of euros.
+Loss Total exposure LGD
+Mean 0.1319 0.2275 0.6154
+Median 0.0067 0.0133 0.6667
+Standard deviation 4.4815 14.0504 0.3395
+Minimum 0 ’00
+Maximum 1212.3954 5135.7263 1
+I quartile 0.0020 0.0045 0.3333
+II quartile 0.0067 0.0133 0.6667
+III quartile 0.0233 0.0429 0.9545
+0.0 0.2 0.4 0.6 0.8 1.0
+012345
+Downturn LGD
+Density
+Probability
+0 0.2 0.4 0.6 0.8 1
+0
+0.251
+0.749
+1
+Fig. 3. Estimate of downturn LGD distribution from the Bank of Italy data set. The
+upper part of the plot is the estimate of the extreme values 0 and 1 (the discrete
+component). The lower part of the plot is the estimate of the values belonging to the
+interval (0, 1) (the continuous component).
+4 To obtain these results we apply the algorithm in Appendix A .
+R. Calabrese / European Journal of Operational Research 237 (2014) 271–277 275
+
+LGD is more risky than the overestimation. The ﬁrst important re-
+sult of this comparison is that the approach suggested by Basel II
+and III of using estimates during adverse conditions strongly
+underestimates the downturn LGD. We can deduce it because the
+estimate of the downturn LGD 0.6370 is very close to the long-
+run default-weighted average loss rate lLGD ¼ 0:6154. This result
+could be due to the long-term inﬂuence of the GDP growth rate
+on LGDs, coherent with Calabrese (in press) and Bellotti and Crook
+(2012). In this way, we would show the arbitrariness of identifying
+adverse conditions.
+Even using a mapping function, as SS and FED models do, the
+estimate of downturn LGD are 8.08% and 5.60% lower, respectively,
+than the estimate obtained by our proposal. The FED model shows
+the clear drawback of using a mapping function with ﬁxed param-
+eters. Even if these parameters are estimated in the SS model, we
+obtain a downturn LGD lower than that of the FED model. We pre-
+sume that this result could be due to the lack of an accurate meth-
+od to estimate the LGD stressing factor LGDSF deﬁned in Eq. (2).
+This means that also this method is subject to arbitrariness.
+Finally, Barco’s model supplies a downturn LGD a bit lower than
+that of our proposal. This means that Barco’s model overcomes the
+drawback of the underestimation of downturn LGD but it needs
+some information (i.e. lPD
+i and qPD
+i
+) for each loan that are often
+not available. We highlight that we do not need this information
+or any kind of additional information to apply our model.
+From this empirical analysis we can conclude that, on the one
+hand, the model proposed in this paper overcomes the drawback
+of arbitrariness of some methods used in the literature. On the
+other hand, it is an accurate model that allows to represent the
+high concentration of data at total loss. In this way it overcomes
+the drawback of the underestimation of the downturn LGD, with-
+out using any additional information on borrowers.
+Different types of portfolios (e.g. for bonds by Renault & Scaillet
+(2004) and Schuermann (2003) ) and different geographic areas
+(e.g. Araten et al. (2004) for US, Grunert and Weber for Germany
+(2005)) show a high concentration of data at total loss, we could
+expect also for these datasets that our proposal outperforms the
+methods used in the literature. In conclusion, our proposal could
+supply accurate estimate of the downturn LGD for different types
+of portfolios with different geographic locations.
+6. Concluding remarks
+This paper aims at proposing an accurate method to estimate
+the downturn LGD distribution to compensate for the fact that
+the Vasicek regulatory capital model does not incorporate system-
+atic LGD. To represent the dynamic behaviour of LGD over the eco-
+nomic cycle, this paper proposes that the LGD distribution is given
+by a mixture of an expansion and a recession distributions. To rep-
+resent the high concentration of data at total loss and total recov-
+ery, we suggest an accurate parametric model for each state of the
+economic cycle and a method to estimate their parameters.
+The main advantages of this proposal are that banks do not
+need to identify arbitrarily downturn conditions and additional
+information on the default risk for each borrower. Finally, we apply
+our proposal to a comprehensive dataset of Italian bank loans. The
+main result of this empirical analysis is that our model can
+replicate the high concentration of data at total loss, unlike the
+other analysed models, so it overcomes the drawback of underes-
+timating the downturn LGD. Our hope is to provide a framework
+that banks can use based on their internal data to estimate down-
+turn LGD for different portfolios.
+Appendix A
+In this appendix, we obtain the score functions for h and r. The
+notation used here is deﬁned in Section 4. The derivatives of the
+complete-data log-likelihood function (11) with respect to h and
+r are
+@lc p; p0; p1; h; rðÞ
+@h ¼
+Xn
+i¼1
+X
+S¼e;r
+z kþ1ðÞ
+is
+@ ln gs lgdi; hs; rsðÞ
+@h
+@lc p; h; rðÞ
+@r ¼
+Xn
+i¼1
+X
+S¼e;r
+z kþ1ðÞ
+is
+@ ln gs lgdi; hs; rsðÞ
+@r :
+To compute the score functions, we consider the following
+results
+@ ln gs lgdi;hs;rsðÞ
+@hs
+¼ 1
+hs
+w 1/C0 hs
+rs
+þ1
+/C18/C19
+/C0 w hs
+rs
+þ1
+/C18/C19/C20/C21
+þln lgdi
+1/C0 lgdi
+/C18/C19/C26/C27
+and
+@ ln gs lgdi; hs; rsðÞ
+@rs
+¼ 1
+r2
+s
+hsw hs
+rs
+þ 1
+/C18/C19
+þ 1 /C0 hsðÞ w 1 /C0 hs
+rs
+þ 1
+/C18/C19/C20/C21/C26
+þ/C0 w 1
+rs
+þ 2
+/C18/C19 /C27
+/C0 ln ðlgdiÞ
+hs
+ð1 /C0 lgdiÞ
+1/C0 hs
+ð12Þ
+where wð/C1Þis called digamma function ( Abramowitz & Stegun, 1972,
+p. 380 ) wðzÞ¼ @logCðzÞ
+@z ¼ @CðzÞ
+CðzÞ for z > 0.
+Appendix B. Supplementary material
+Supplementary data associated with this article can be found, in
+the online version, at http://dx.doi.org/10.1016/j.ejor.2014.01.043.
+References
+Abramowitz, M., & Stegun, I. A. (1972). Handbook of mathematical functions with
+formulas, graphs, and mathematical tables . New York: Dover .
+Altman, E. I., & Sabato, G. (2005). Effects of the new basel capital accord on bank
+capital requirements for SMEs. Journal of Financial Services Research, 28 , 15–42 .
+Araten, M., Jacobs, M., Jr, & Varshney, P. (2004). Measuring LGD on commercial
+loans: An 18-year internal study. Journal of Risk Management Association, 4 ,
+96–103.
+Asarnow, E., & Edwards, D. (1995). Measuring loss on default bank loans: A 24-year
+study. Journal of Commercial Lending, 77 , 11–23 .
+Bank of Italy (2001). Principali risultati della rilevazione sull’attivit Ã? di recupero dei
+crediti. Bollettino di Vigilanza 12, December.
+Barco, M. (2007). Going downturn . Risk Australia (Spring, pp. 39–44).
+Basel Committee on Banking Supervision (2004). International convergence of capital
+measurement and capital standards: A revised framework . Bank for International
+Settlements: Basel (June).
+Basel Committee on Banking Supervision (2005a). Guidance on paragraph 468 of the
+framework document . Bank for International Settlements: Basel (July).
+Basel Committee on Banking Supervision (2005b). An explanatory note on the basel II
+IRB risk weight functions . Bank for International Settlements: Basel (September).
+Basel Committee on Banking Supervision (2011). Basel III: A global regulatory
+framework for more resilient banks and banking systems . Bank for International
+Settlements: Basel (June).
+Bellotti, T., & Crook, J. (2012). Loss given default models incorporating
+macroeconomic variables for credit cards. International Journal of Forecasting,
+28(1), 171–182 .
+Board of Governors of the Federal Reserve Bank (2006). Basel II capital accord-notice
+of proposed rulemaking . Federak Reserve Bank (September).
+Bruche M., & González-Aguado C. (2008). Recovery rates, default probabilities and the
+credit cycle . Working paper, CEMFI.
+Calabrese, R. (in press). Predicting bank loan recovery rates with mixed continuous-
+discrete model. Applied Stochastic Models in Business and Industry .
+Calabrese, R., & Zenga, M. (2010). Bank loan recovery rates: Measuring and
+nonparametric density estimation. Journal of Banking and Finance, 34 (5),
+903–911.
+Table 3
+Average downturn LGD.
+Mixture
+model
+Barco’s
+model
+FED
+model
+SS
+model
+AC
+model
+Downturn
+LGD
+0.7823 0.7673 0.7385 0.7191 0.6370
+276 R. Calabrese / European Journal of Operational Research 237 (2014) 271–277
+
+Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). Maximum likelihood from
+incomplete data via the EM algorithm (with discussion). Journal of the Royal
+Statistical Society B, 39 (1), 1–38 .
+Dermine, J., & Neto de Carvalho, C. (2006). Bank loan losses-given-default: A case
+study. Journal of Banking and Finance, 30 , 1219–1243 .
+Filardo, A. S. (1994). Business-cycles phases and their transitional dynamics. Journal
+of Business and Economic Statistics, 12 (3), 299–308 .
+Franks, J., de Servigny, A., Davydenko, S. (2004). A comparative analysis of the
+recovery process and recovery rates for private companies in the U.K., France and
+Germany. Standard & Poors Risk Solutions Report, 1–93.
+Friedman, C., & Sandow, S. (2003). Ultimate recoveries. Risk, 16 , 69–73 .
+Gordy, M. B. (2003). A risk-factor model foundation for ratings-based bank capital
+rules. Journal of Financial Intermediation, 12 (3), 199–232 .
+Gupton, G. M., Stein, R. M. (2002). Losscalc™: Model for predicting loss given default
+(LGD). Moody’s Investors Service.
+Gupton, G. M., Finger, C. C., & Bhatia, M. (1997). CreditMetrics. Technical document .
+J.P. Morgan .
+Hurt, L., & Felsovalyi, A. (1998). Measuring loss on Latin American defaulted bank
+loans, a 27-year study of 27 countries. The Journal of Lending & Credit Risk
+Management, 41–46 .
+Jarrow, R., Lando, D., & Turnbull, S. (1997). A Markov model for the term structure of
+credit risk spreads. Review of Financial Studies , 481–523 .
+Ji, Y., Wu, C., Liu, P., Wang, S., & Coombes, K. R. (2005). Applications of beta-mixture
+models in bioinformatics. Bioinformatics, 21 (9), 2118–2122 .
+McLachlan, G., & Krishnan, T. (2007). The EM algorithm and extensions . New York:
+John Wiley & Sons .
+Miu, P., & Ozdemir, B. (2006). Basel requirements of downturn LGD: Modeling and
+estimating probability of default and loss given default correlations. Journal of
+Credit Risk, 2 (2), 43–68 .
+Renault, O., & Scaillet, O. (2004). On the way to recovery: A nonparametric bias free
+estimation of recovery rate densities. Journal of Banking and Finance, 28 ,
+2915–2931.
+Sabato, G., Schmid, M. (2008). Estimating conservative loss given default . Swiss
+Institute of Banking and Finance, University of St. Gallen working paper.
+Saurina, J., & Trucharte, C. (2007). An assessment of basel II procyclicality in
+mortgage portfolios. Journal of Financial Services Research, 32 , 81–101 .
+Schuermann, T. (2003). What do we know about loss given default? Recovery risk .
+Working paper, Federal Reserve Bank of New York.
+Vasicek, O. (2002). Risk. Loan portfolio value , 160–162 (December) .
+R. Calabrese / European Journal of Operational Research 237 (2014) 271–277 277

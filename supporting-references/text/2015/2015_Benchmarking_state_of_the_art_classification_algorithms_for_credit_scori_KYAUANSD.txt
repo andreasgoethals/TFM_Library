@@ -1,0 +1,1375 @@
+European Journal of Operational Research 247 (2015) 124–136
+Contents lists available at ScienceDirect
+European Journal of Operational Research
+journal homepage: www.elsevier.com/locate/ejor
+Stochastics and Statistics
+Benchmarking state-of-the-art classiﬁcation algorithms for credit
+scoring: An update of research
+Stefan Lessmanna,∗, Bart Baesensb,c, Hsin-Vonn Seowd, Lyn C. Thomasc
+a School of Business and Economics, Humboldt-University of Berlin, Unter den Linden 6, 10099 Berlin, Germany
+b Department of Decision Sciences & Information Management, Catholic University of Leuven, Naamsestraat 69, B-3000 Leuven, Belgium
+c School of Management, University of Southampton, Highﬁeld, Southampton SO17 1BJ, United Kingdom
+d Nottingham University Business School, University of Nottingham-Malaysia Campus, Jalan Broga, 43500 Semenyih, Selangor Darul Ehsan, Malaysia
+article info
+Article history:
+Received 23 December 2013
+Accepted 11 May 2015
+A v a i l a b l eo n l i n e1 4M a y2 0 1 5
+Keywords:
+Data mining
+Credit scoring
+OR in banking
+Forecasting benchmark
+abstract
+Many years have passed since Baesens et al. published their benchmarking study of classiﬁcation algorithms
+in credit scoring [Baesens, B., Van Gestel, T., Viaene, S., Stepanova, M., Suykens, J., & Vanthienen, J. (2003).
+Benchmarking state-of-the-art classiﬁcation algorithms for credit scoring.Journal of the Operational Research
+Society, 54(6), 627–635.]. The interest in prediction methods for scorecard development is unbroken. How-
+ever, there have been several advancements including novel learning methods, performance measures and
+techniques to reliably compare different classiﬁers, which the credit scoring literature does not reﬂect. To
+close these research gaps, we update the study of Baesens et al. and compare several novel classiﬁcation al-
+gorithmstothestate-of-the-artincreditscoring.Inaddition,weexaminetheextenttowhichtheassessment
+ofalternativescorecardsdiffersacrossestablishedandnovelindicatorsofpredictiveaccuracy.Finally,weex-
+plore whether more accurate classiﬁers are managerial meaningful. Our study provides valuable insight for
+professionalsandacademicsincreditscoring.Ithelpspractitionerstostayabreastoftechnicaladvancements
+in predictive modeling. From an academic point of view, the study provides an independent assessment of
+recent scoring methods and offers a new baseline to which future approaches can be compared.
+© 2015 Elsevier B.V. and Association of European Operational Research Societies (EURO) within the
+International Federation of Operational Research Societies (IFORS). All rights reserved.
+1. Introduction
+Credit scoring is concerned with developing empirical models to
+support decision making in the retail credit business (Crook, Edel-
+man, & Thomas, 2007). This sector is of considerable economic im-
+portance. For example, the volume of consumer loans held by banks
+in the US was $1132bn in 2013; compared to $1541bn in the cor-
+porate business.1 In UK, loans and mortgages to individuals were
+evenhigherthancorporateloansin2012(£11,676mc.f.£10,388m). 2
+These ﬁgures indicate that ﬁnancial institutions require formal tools
+to inform lending decisions.
+A credit score is a model-based estimate of the probability that a
+borrowerwillshowsomeundesirablebehaviorinthefuture.Inappli-
+cationscoring,forexample,lendersemploypredictivemodels,called
+∗ Corresponding author. Tel.: +49 30 2093 5742; fax:+49 30 2093 5741.
+E-mail address: stefan.lessmann@hu-berlin.de, stefan.lessmann@gmx.de
+(S. Lessmann).
+1 Data from the Federal Reserve Board, H8, Assets and Liabilities of Commercial
+Banks in the United States (http://www.federalreserve.gov/releases/h8/current/).
+2 Data from ONS Online, SDQ7: Assets, Liabilities and Transactions in Finance Leas-
+ing, Factoring and Credit Granting: 1st quarter 2012 (http://www.ons.gov.uk).
+scorecards, to estimate how likely an applicant is to default. Such PD
+(probabilityofdefault)scorecardsareroutinelydevelopedusingclas-
+siﬁcation algorithms (e.g.,Hand & Henley, 1997). Many studies have
+examinedtheaccuracyofalternativeclassiﬁers.Oneofthemostcom-
+prehensive classiﬁer comparisons to date is the benchmarking study
+ofBaesens et al. (2003).
+Albeit much research, we argue that the credit scoring literature
+does not reﬂect several recent advancements in predictive learning.
+For example, the development of selective multiple classiﬁer sys-
+tems that pool different algorithms and optimize their weighting
+through heuristic search represents an important trend in machine
+learning(e.g., Partalas,Tsoumakas,&Vlahavas,2010 ).Yet,noattempt
+has been made to systematically examine the potential of such ap-
+proach for credit scoring. More generally, recent advancements con-
+cern three dimensions: (i) novel classiﬁcation algorithms todevelop
+scorecards (e.g., extreme learning machines, rotation forest, etc.), (ii)
+novelperformancemeasuresto assessscorecards(e.g.,the H-measure
+or the partial Gini coeﬃcient), and (iii) statistical hypothesis tests to
+compare scorecard performance (e.g.,García, Fernández, Luengo, &
+Herrera, 2010). An analysis of the PD modeling literature conﬁrms
+that these developments have received little attention in credit
+scoring, and reveals further limitations of previous studies; namely
+http://dx.doi.org/10.1016/j.ejor.2015.05.030
+0377-2217/© 2015 Elsevier B.V. and Association of European Operational Research Societies (EURO) within the International Federation of Operational Research Societies (IFORS).
+All rights reserved.
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 125
+(i) using few and/or small data sets, (ii) not comparing different
+state-of-the-art classiﬁers to each other, and (iii) using only a small
+setofconceptuallysimilaraccuracyindicators.Weelaborateonthese
+issues inSection 2.
+The above research gaps warrant an update of Baesens et al.
+(2003). Therefore, the motivation of this paper is to provide a holis-
+tic view of the state-of-the-art in predictive modeling and how it can
+supportdecisionmakingintheretailcreditbusiness.Inpursuingthis
+objective, we make the following contributions: ﬁrst, we perform a
+largescalebenchmarkof41classiﬁcationmethodsacrosseightcredit
+scoring data sets. Several of the classiﬁers are new to the commu-
+nity and for the ﬁrst time assessed in credit scoring. Second, using
+theprinciplesofcost-sensitivelearning,weshedlightonthelinkbe-
+tweenthe(statistical)accuracyofscorecardpredictionsandthebusi-
+ness valueof ascorecard. This offerssome guidancewhetherdeploy-
+ing advanced—more accurate—classiﬁcation models is economically
+sensible. Third, we examine the correspondence between empirical
+results obtained using different accuracy indicators. In particular, we
+clarifythereliabilityofscorecardcomparisonsinthelightofrecently
+identiﬁed limitations of the area under a receiver operating charac-
+teristics curve (Hand, 2009; Hand & Anagnostopoulos, 2013). Finally,
+we illustrate the use of advanced nonparametric testing procedures
+to secure empirical ﬁndings and, thereby, offer guidance how to or-
+ganize future classiﬁer comparisons.
+In the remainder of the paper we ﬁrst review related work
+in Section 2. We then summarize the classiﬁers that we compare
+(Section 3) and describe our experimental design (Section 4). Next,
+we discuss empirical results (Section 5). Section 6concludes the pa-
+per. The online appendix
+3 provides a detailed description of the clas-
+siﬁcation algorithms and additional results.
+2. Literature review
+Much literature explores the development, application, and eval-
+uation of predictive decision support models in the credit industry
+(see, Crook et al., 2007; Kumar & Ravi, 2007for reviews). Such mod-
+elsestimatecreditworthinessbasedonasetofexplanatoryvariables.
+Corporate risk models employ data from balance sheets, ﬁnancial ra-
+tios, or macro-economic indicators, whereas retail models use data
+from application forms, customer demographics, and transactional
+data from the customer history (e.g.,Thomas, 2010). The differences
+between the types of variables suggest that speciﬁc modeling chal-
+lengesariseinconsumerasopposedtocorporatecreditscoring.Thus,
+many studies focus on either the corporate or the retail business. The
+latter is the focus of this paper.
+A variety of prediction tasks arise in consumer credit risk model-
+ing. The Basel II Capital Accord requires ﬁnancial institutions to es-
+timate, respectively, the probability of default (PD), the exposure at
+default (EAD), and the loss given default (LGD). EAD and LGD mod-
+els have recently become a popular research topic (e.g.,Calabrese,
+2014; Yao, Crook, & Andreeva, 2015). PD models are especially well
+researched and continue to attract much interest. Topical research
+question include, for example, how to update PD scorecards in the
+faceofnewinformation( Hofer ,20 1 5;Sohn&Ju,20 1 4).Theprevailing
+methods to develop PD models are classiﬁcation and survival analy-
+sis. The latter facilitates estimating not only whether but also when
+a customer defaults (e.g.,Tong, Mues, & Thomas, 2012). In addition,
+a special type of survival model called mixture cure model facilitates
+predicting multiple events of interest; for example default and early
+repayment (e.g.,Dirick, Claeskens, & Baesens, 2015; Liu, Hua, & Lim,
+2015). Classiﬁcation analysis, on the other hand, represents the clas-
+sic approach and beneﬁts from an unmatched variety of modeling
+methods.
+3 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+We concentrate on PD modeling using classiﬁcation analysis.
+Table 1 examines previous work in this ﬁeld. To conﬁrm the need
+for an update ofBaesens et al. (2003), we focus on empirical clas-
+siﬁer evaluations published in 2003 or thereafter and analyze three
+characteristics of such studies: the type of credit scoring data, the
+employed classiﬁcation algorithms, and the indicators used to assess
+these algorithms. With respect to classiﬁcation algorithms,Table 1
+clariﬁes the extent to which advanced classiﬁers have been consid-
+ered in the literature. We pay special attention to ensemble classi-
+ﬁers, whichBaesens et al. (2003)do not cover.
+Five conclusions emerge fromTable 1. First, it is common practice
+to use a small number of data sets (1.9 on average), many of which
+contain only few cases and/or independent variables. This appears
+inappropriate.Usingmultipledatasets(e.g.,datafromdifferentcom-
+panies)facilitatesexaminingtherobustnessofascorecardtowarden-
+vironmentalconditions.Also,real-worldcreditdatasetsaretypically
+large and high-dimensional. The data used in classiﬁer comparisons
+should be similar to ensure the external validity of empirical results
+(e.g.,Finlay, 2011; Hand, 2006).
+Second, the number of classiﬁers per study varies consider-
+ably. This can be explained with common research setups. Stud-
+ies with fewer classiﬁers propose a novel algorithm and com-
+pare it to some reference methods (e.g.,Abellán & Mantas, 2014;
+Akkoc, 2012; Yang, 2007). Studies with several classiﬁers often
+pair algorithms and ensemble strategies in a factorial design (e.g.,
+Marqués, García, & Sánchez, 2012a; Nanni & Lumini, 2009; Wang,
+Hao, Ma, & Jiang, 2011). Both setups have limitations. The latter
+focuses on preselected methods and omits a systematic compar-
+ison of several state-of-the-art classiﬁers. Studies that introduce
+novel classiﬁers may be over-optimistic because (i) the developers
+of a new method are more adept with their approach than exter-
+nal users, and (ii) the new method may have been tuned more in-
+tensively than reference methods (Hand, 2006; Thomas, 2010). In-
+dependent benchmarks complement the other setups in that they
+compare many classiﬁers without prior hypotheses which method
+excels.
+Third,moststudiesrelyonasingleperformancemeasureormea-
+sures of the same type. In general, performance measures split into
+three types. Those that assess the discriminatory ability of the score-
+card (e.g., AUC); those that assess the accuracy of the scorecard’s
+probability predictions (e.g., Brier Score); and those that assess the
+correctness of the scorecard’s categorical predictions (e.g., classiﬁca-
+tion error). Different types of indicators embody a different notion
+of classiﬁer performance. Few studies mix evaluation measures from
+different categories. For example, none of the reviewed studies uses
+the Brier Score to assess the accuracy of probabilistic predictions.
+This misses an important aspect of scorecard performance because
+ﬁnancial institutions require PD estimates that are not only accu-
+ratebutalsowellcalibrated.Furthermore,nopreviousstudyusesthe
+H-measure, although it overcomes conceptual shortcomings of the
+AUC (Hand,2009).Itisthusbeneﬁcialtoalsoconsiderthe H-measure
+in classiﬁer comparisons and, more generally, to assess scorecards
+with conceptually different performance measures.
+Fourth, statistical hypothesis testing is often neglected or em-
+ployed inappropriately. Common mistakes include using parametric
+tests (e.g., the t-test) or performing multiple comparisons without
+controlling the family-wise error level (shown by a ‘P’ in the last col-
+umn ofTable 1). The approaches are inappropriate because the as-
+sumptions of parametric tests are violated in classiﬁer comparisons
+(Demšar, 2006). Similarly, pairwise comparisons withoutp-value ad-
+justment increase the actual probability of Type-I errors beyond the
+stated level of
+α(e.g., García et al., 2010).
+Last, only two studies employ selective ensembles and they use
+rather simple approaches (Yu, Wang, & Lai, 2008; Zhou, Lai, & Yu,
+2010). Selective ensembles are an active ﬁeld of research and have
+shown promising results (e.g., Partalas et al., 2010) .T h el a c ko fa
+
+126 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+Table 1
+Analysis of classiﬁer comparisons in retail credit scoring.
+Data∗ Classiﬁers∗∗ Evaluation∗∗∗
+Retail credit scoring study Number Observations/variables Number
+(in chronological order) of data sets per data set of classiﬁers ANN SVM ENS S-ENS TM AUC H ST
+Baesens et al. (2003) 8 4875 21 17 X X X X P
+Malhotra and Malhotra (2003)1 1 0 7 8 6 2 X X P
+Atish and Jerrold (2004)2 6 1 0 1 6 5 X X X P
+He, Shi, and Xu (2004) 1 5000 65 4 X X
+Lee and Chen (2005)1 5 1 0 1 8 5 X X
+Hand, Sohn, and Kim (2005) 1 1000 20 4 X X
+Ong, Huanga, and Tzeng (2005) 2 845 17 6 X X
+W e s t ,D e l l a n a ,a n dQ i a n( 2 00 5) 2 845 19 4 X X X P
+Huang, Hunga, and Jiau (2006) 1 10,000 n.a. 10 X X
+Lee, Chiu, Chou, and Lu (2006) 1 8000 9 5 X X
+L i ,S h i u e ,a n dH u a n g( 2 006)1 6 0 0 1 72 X X X P
+Xiao, Zhao, and Fei (2006)39 7 2 1 7 1 3 X X X X P
+Huang, Chen, and Wang (2007) 2 845 19 4 X X F
+Yang (2007)2 1 6 , 8 1 7 8 5 3 X X
+Abdou, Pointon, and El-Masry (2008) 1 581 20 6 X X A
+Sinha and Zhao (2008) 1 220 13 7 X X X X A
+Tsai and Wu (2008) 3 793 16 3 X X X P
+Xu, Zhou, and Wang (2009) 1 690 15 4 X X
+Yu et al. (2008) 1 653 13 7 X X X
+Abdou (2009) 1 1262 25 3 X
+Bellotti and Crook (2009) 1 25,000 34 4 X X
+Chen, Ma, and Ma (2009) 1 2000 15 5 X X
+Nanni and Lumini (2009) 3 793 16 16 X X X X X
+Šušteršiˇc, Mramor, and Zupan (2009) 1 581 84 2 X X
+Tsai, Lin, Cheng, and Lin (2009)1 1 8 7 7 1 4 4 X X Q
+Yu, Wang, and Lai (2009) 3 959 16 10 X X X X X P
+Zhang, Shi, and Zhang (2009) 1 1000 102 4 X
+Hsieh and Hung (2010) 1 1000 20 4 X X X X
+Martens et al. (2010) 1 1000 20 4 X X
+Twala (2010) 2 845 18 5 X X
+Yu, Yue, Wang, and Lai (2010) 1 1225 14 8 X X X X P
+Zhang, Zhou, Leung, and Zheng (2010) 2 845 17 11 X X X X
+Zhou et al. (2010) 2 1113 17 25 X X X X X
+L i ,W e i ,L i ,a n dX u( 2 0 1 1) 2 845 17 11 X X
+Finlay (2011)2 1 0 4 , 6 4 9 4 7 1 8 X X X P
+Ping and Yongheng (2011) 2 845 17 4 X X X
+Wang et al. (2011)3 6 4 3 1 7 1 3 X X X X
+Yap, Ong, and Husain (2011)1 2 7 6 5 4 3 X
+Yu, Yao, Wang, and Lai (2011) 2 845 17 23 X X X
+Akkoc (2012) 1 2000 11 4 X X X
+Brown and Mues (2012) 5 2582 30 9 X X X X F/P
+Hens and Tiwari (2012) 2 845 19 4 X X
+Li, Tsang, and Chaudhari (2012)2 6 7 2 1 5 5 X X X
+Marqués et al. (2012a) 4 836 20 35 X X X X F/P
+Marqués, García, and Sánchez (2012b) 4 836 20 17 X X X X X F/P
+Kruppa et al. (2013) 1 65,524 17 5 X X
+Abellán and Mantas (2014) 3 793 16 5 X X X A
+Tsai (2014) 3 793 16 21 X X X F/P
+Mean/counts 1.9 6167 24 7.8 30 24 18 3 40 10 0 17
+∗ We report the mean of observations and independent variables for studies that employ multiple data sets. Eight studies mix retail and corporate credit data. This table
+considers the retail data sets only.
+∗∗ Abbreviations have the following meaning: ANN= Artiﬁcial neural network, SVM= Support vector machine, ENS= Ensemble classiﬁer, S-ENS= Selective Ensemble
+(e.g., Partalas et al., 2010).
+∗∗∗ Abbreviations have the following meaning: TM= Threshold metric (e.g., classiﬁcation error, true positive rate, costs, etc.), AUC=Area under receiver operating
+characteristics curve,H = H-measure (Hand, 2009), ST=Statistical hypothesis testing. We use the following codes to report the type of statistical test used for classiﬁer
+comparisons: P=Pairwise comparison (e.g., pairedt-test), A=Analysis of variance, F=Friedman test, F/P=Friedman test together with post-hoc test (e.g.,Demšar, 2006),
+Q = Press’s Q statistic.
+systematic evaluation of selective ensembles in credit scoring might
+thus be an important research gap.
+Fromtheliteraturereview,weconcludethatanupdateof Baesens
+et al. (2003)is needed. This study overcomes several of the above is-
+sues through (i) conducting a large-scale comparison of many estab-
+lished and novel classiﬁers including selective ensembles, (ii) using
+multiple data sets of considerable size, (iii) considering several con-
+ceptually different performance criteria, and (iv) using suitable sta-
+tistical testing procedures.
+3. Classiﬁcation algorithms for scorecard construction
+We illustrate the development of a credit scorecard in the
+context of application scoring. Let x = (x1, x2,..., xm) ∈ Rm be an
+m-dimensional vector with application characteristics and let y ∈
+{−1;+1} be a binary variable that distinguishes good(y =− 1) and
+bad loans (y =+ 1). A scorecard estimates the (posterior) prob-
+ability p(+|xi) that a default event will be observed for loan i;
+where p(+|x) is a shorthand form ofp(y =+ 1|x).T od e c i d eo na n
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 127
+Fig. 1. Classiﬁer development and evaluation process.
+application,acreditanalystcomparestheestimateddefaultprobabil-
+ity to a thresholdτ; approving the loan ifp(+|x) ≤ τ, and rejecting
+it otherwise. The task to estimatep(+|x)belongs to the ﬁeld of clas-
+siﬁcation (e.g.,Hand & Henley, 1997). A scorecard is a classiﬁcation
+model that results from applying a classiﬁcation algorithm to a data
+set D = (yi, xi)n
+i=1 of past loans.
+Thisstudycompares41differentclassiﬁcationalgorithms.Ourse-
+lection draws inspiration from previous studies (e.g.,Baesens et al.,
+2003; Finlay, 2011; Verbeke, Dejaeger, Martens, Hur, & Baesens,
+2012) and covers several different approaches (linear/nonlinear,
+parametric/non-parametric,etc.).Thealgorithmssplitintoindividual
+and ensemble classiﬁers. The eventual scorecard consists of a single
+classiﬁcation model in the ﬁrst group. Ensemble classiﬁers integrate
+thepredictionofmultiplemodels,calledbasemodels.Wedistinguish
+homogeneous ensembles, which create the base models using the
+samealgorithm,andheterogeneousensembles,whichemploydiffer-
+ent algorithms.Fig. 1illustrates the modeling process using different
+classiﬁers.
+Given the large number of classiﬁers, it is not possible to describe
+all algorithms in detail. We summarize the methods used here in
+Table 2and brieﬂy describe the main algorithmic approaches under-
+neath different classiﬁer families. A comprehensive discussion of the
+41classiﬁersandtheirspeciﬁccharacteristicsisavailableinanonline
+appendix.
+4
+Notethatmostalgorithmsexhibitmeta-parameters.Examplesin-
+clude the number of hidden nodes in a neural network or the kernel
+functioninasupportvectormachine(e.g., Baesensetal.,2003 ).Rely-
+ing on literature recommendations, we deﬁne several candidate set-
+tings for such meta-parameters and create one classiﬁcation model
+persetting(see Table2).Acarefulexplorationofthemeta-parameter
+space ensures that we obtain a good estimate how well a classiﬁer
+can perform on a given data set. This is important when compar-
+ing alternative classiﬁers. The speciﬁc meta-parameter settings and
+implementation details of different algorithms are documented in
+Table A.I in the online appendix.
+5
+4 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+5 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+3.1. Individual classiﬁers
+Individualclassiﬁerspursuedifferentobjectivestodevelopa(sin-
+gle) classiﬁcation model. Statistical methods either estimatep(+|x)
+directly (e.g., logistic regression) or estimate class-conditional prob-
+abilities p(x|y), which they then convert into posterior probabilities
+usingBayes’rule(e.g.,discriminantanalysis).Semi-parametricmeth-
+odssuchasartiﬁcialneuralnetworksorsupportvectormachinesop-
+erate in a similar manner, but support different functional forms and
+require the modeler to select one speciﬁcation a priori. The parame-
+ters of the resulting model are estimated using nonlinear optimiza-
+tion.Tree-basedmethodsrecursivelypartitionadatasetsoastosep-
+arate good and bad loans through a sequence of tests (e.g., is loan
+amount > threshold). This produces a set of rules that facilitate as-
+sessing new loan applications. The speciﬁc covariates and threshold
+values to branch a node follow from minimizing indicators of node
+impuritysuchasthe Ginicoeﬃcientorinformationgain(e.g., Baesens
+et al., 2003).
+3.2. Homogeneous ensemble classiﬁers
+Homogeneous ensemble classiﬁers pool the predictions of multi-
+plebasemodels.Muchempiricalandtheoreticalevidencehasshown
+that model combination increases predictive accuracy (e.g.,Finlay,
+2011; Paleologo, Elisseeff, & Antonini, 2010). Homogeneous ensem-
+ble learners create the base models in an independent or dependent
+manner. For example, the bagging algorithm derives independent
+base models from bootstrap samples of the original data (Breiman,
+1996).Boostingalgorithms,ontheotherhand,growanensembleina
+dependent fashion. They iteratively add base models that are trained
+toavoidtheerrorsofthecurrentensemble( Freund&Schapire,1996 ).
+Severalextensionsofbaggingandboostinghavebeenproposedinthe
+literature(e.g., Breiman,2001;Friedman,2002;Rodriguez,Kuncheva,
+&A l o n s o ,2 006). The common denominatorof homogeneousensem-
+bles is that they develop the base models using the same classiﬁca-
+tion algorithm.
+3.3. Heterogeneous ensemble classiﬁers
+Heterogeneous ensembles also combine multiple classiﬁcation
+models but create these models using different classiﬁcation
+
+128 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+Table 2
+Classiﬁcation algorithms considered in the benchmarking study.
+BM selection Classiﬁcation algorithm Acronym Models
+Individual classiﬁer
+Bayesian Network B-Net 4
+CART CART 10
+n.a. Extreme learning machine ELM 120
+Kernalized ELM ELM-K 200
+k-nearest neighbor kNN 22
+J4.8 J4.8 36
+Linear discriminant analysis
+a LDA 1
+Linear support vector machine SVM-L 29
+Logistic regression
+a LR 1
+Multilayer perceptron artiﬁcial neural network ANN 171
+Naive Bayes NB 1
+Quadratic discriminant analysis
+a QDA 1
+Radial basis function neural network RbfNN 5
+Regularized logistic regression LR-R 27
+SVM with radial basis kernel function SVM- Rbf 300
+Voted perceptron VP 5
+Classiﬁcation models from individual classiﬁers 16 933
+Homogenous ensembles
+Alternating decision tree ADT 5
+Bagged decision trees Bag 9
+Bagged MLP BagNN 4
+n.a. Boosted decision trees Boost 48
+Logistic model tree LMT 1
+Random forest RF 30
+Rotation forest RotFor 25
+Stochastic gradient boosting SGB 9
+Classiﬁcation models from homogeneous ensembles 8 131
+Simple average ensemble AvgS 1
+n.a. Weighted average ensemble AvgW 1
+Stacking Stack 6
+Heterogeneous ensembles
+Complementary measure CompM 4
+Ensemble pruning via reinforcement learning EPVRL 4
+GASEN GASEN 4
+Static direct Hill-climbing ensemble selection HCES 12
+HCES with bootstrap sampling HCES-Bag 16
+Matching pursuit optimization ensemble MPOE 1
+Top-Tensemble Top- T 12
+Clustering using compound error CuCE 1
+k-Means clustering k-Means 1
+Static indirect Kappa pruning KaPru 4
+Margin distance minimization MDM 4
+Uncertainty weighted accuracy UWA 4
+Probabilistic model for classiﬁer competence PMCC 1Dynamic k-nearest oracle kNORA 1
+Classiﬁcation models from heterogeneous ensembles 1 7 77
+Overall number of classiﬁcation algorithms and models 41 1 141
+a To overcome problems associated with multicollinearity in high-dimensional data sets, we use correlation-based feature
+selection (Hall, 2000) to reduce the variable set prior to building a classiﬁcation model.
+algorithms. In that sense, they encompass individual classiﬁers and
+homogeneous ensembles as special cases (seeFig. 1). The idea is
+that different algorithms have different views on the same data and
+cancomplementeachother.Recently,heterogeneousensemblesthat
+prune some base models prior to combination have attracted much
+research (e.g.,Partalas et al., 2010). This study pays special attention
+to such selective ensembles because they have received little atten-
+tion in credit scoring (seeTable 1).
+Generally speaking, ensemble modeling involves two steps: base
+models development and forecast combination. Selective ensembles
+add a third step. After creating a pool of base models, they search the
+space of available base models for a ‘suitable’ model subset that en-
+terstheensemble.Aninterestingfeatureofthisframeworkisthatthe
+search problem can be approached in many different ways. Hence,
+much research concentrates on developing different ensemble se-
+lection strategies (e.g.,Caruana, Munson, & Niculescu-Mizil, 2006;
+Partalas, Tsoumakas, & Vlahavas, 2009).
+Selective ensembles split into static and dynamic approaches, de-
+pending on how they organize the selection step. Static approaches
+perform the base model search once. Dynamic approaches repeat
+the selection step for every case. More speciﬁcally, using the inde-
+pendent variables of a case, they compose a tailor-made ensemble
+from the model library. Dynamic ensemble selection might violate
+regulatory requirements in credit scoring because one would effec-
+tivelyusedifferentscorecardsfordifferentcustomers.Inviewofthis,
+we focus on static methods, but consider two dynamic approaches
+(Ko, Sabourin, & Britto, 2008; Woloszynski & Kurzynski, 2011)a s
+benchmarks.
+The goal of an ensemble is to predict with high accuracy. To
+achieve this, many selective ensembles chose base models so as to
+maximize predictive accuracy (e.g.,Caruana et al., 2006). We call this
+a direct approach. Indirect approaches, on the other hand, optimize
+the diversity among base models, which is another determinant of
+ensemble success (e.g.,Partalas et al., 2010).
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 129
+Table 3
+Summary of credit scoring data sets.
+Name Cases Independent variables Prior default rate Nx2 cross-validation Source
+AC 690 14 .445 10 Lichman (2013)
+GC 1000 20 .300 10 Lichman (2013)
+Th02 1225 17 .264 10 Thomas et al. (2002)a
+Bene 1 3123 27 .667 10 Baesens et al. (2003)
+Bene 2 7190 28 .300 5 Baesens et al. (2003)
+UK 30,000 14 .040 5 Baesens et al. (2003)
+PAK 50,000 37 .261 5 http://sede.neurotech.com.br/PAKDD2010/
+GMC 150,000 12 .067 3 http://www.kaggle.com/c/GiveMeSomeCredit
+a An anonymous referee indicated that some editions of the book may not include a CD with the data set. In such case, we are happy to make
+the data available upon request.
+4. Experimental setup
+4.1. Credit scoring data sets
+The empirical evaluation includes eight retail credit scoring data
+sets. The data sets Australian credit (AC) and German credit (GC)
+from the UCI Library (Lichman, 2013)a n dt h eTh02 data set from
+Thomas, Edelman, and Crook (2002)have been used in several previ-
+ous papers (seeSection 2). Three other data sets,Bene-1, Bene-2,a n d
+UK, also used inBaesens et al. (2003), were collected from major ﬁ-
+nancialinstitutionsintheBeneluxandUK,respectively.Notethatour
+dataset UKencompassesthe UK-1,…, UK-4datasetsof Baesensetal.
+(2003). We pool the data because it refers to the same product and
+time period. Finally, the data sets PAK and GMC have been provided
+by two ﬁnancial institutions for the 2010 PAKDD data mining chal-
+lenge and the “Give me some credit” Kaggle competition, respectively.
+The data sets include several covariates to develop PD scorecards
+and a binary response variable, which indicates bad loans. The co-
+variates capture information from the application form (e.g., loan
+amount, interest rate, etc.) and customer information (e.g., demo-
+graphic,social-graphic,andsolvencydata). Table3 summarizessome
+relevant data characteristics.
+The prior default rates ofTable 3report the fraction of bad loans
+in a data set. For example,GC includes 1000 loans, 300 of which de-
+faulted. Thus, the prior default rate is 0.3.
+It has been shown that class imbalance impedes classiﬁcation. In
+particular, a classiﬁer may overemphasize the majority class while
+paying insuﬃcient attention to the minority group. Resampling
+approaches such as under-/oversampling or SMOTE have been pro-
+posed as a remedy (e.g.,Verbeke et al., 2012). However, we refrain
+from balancing classes for three reasons. First, our objective is to
+examine relative performance differences across different classiﬁers.
+If class imbalance hurts all classiﬁers in the same way, it would
+affect theabsolute level of observed performance but not therelative
+performancedifferencesamongclassiﬁers.Ifontheotherhandsome
+classiﬁers are particularly robust toward class imbalance, then such
+traitisarelevantindicatoroftheclassiﬁer’smerit.Resamplingwould
+mask differences associated with imbalance robustness/sensitivity.
+Second, it is debatable how prevalent resampling is in the corporate
+landscape. This also suggests that it is preferable to give an unbiased
+picture of the performance of alternative algorithms. Last,Table 3
+reveals that most of our data sets exhibit a moderate imbalance.
+We observe a more severe imbalance for two larger data sets (UK
+and GMC). Due to their size, these data sets still include a sizeable
+number of defaults, so that classiﬁcation algorithms should be able
+to discern default patterns.
+4.2. Performance indicators
+Weconsidersixindicatorstomeasurethepredictiveaccuracyofa
+scorecard: the percentage correctly classiﬁed (PCC), the AUC, a par-
+tial Gini index (PG), the H-measure, the Brier Score (BS), and the
+Kolmogorov–Smirnov statistic (KS). We chose these indicators for
+two reasons: they are popular in credit scoring and cover the three
+types of measures (seeSection 2). The PCC and KS assess the correct-
+ness of categorical predictions, the AUC,H-measure, and PG assess
+discriminatory ability, and the BS assesses the accuracy of probabil-
+ity predictions. The basis of accuracy calculations are the estimated
+p(+|x).Sincesomeclassiﬁersdonotproduceprobabilitypredictions,
+we calibrate scorecard estimates usingPlatt’s (2000)method.
+The PCC is the fraction of correctly classiﬁed observations. It re-
+quires discrete class predictions, which we obtain by comparing
+p(+|x) to a threshold τ and assigning x to the positive class if
+p(+|x) > τ,andthenegativeclassotherwise.Inpractice,appropriate
+choices of τ depend on the costs associated with granting credit to
+defaulting customers or rejecting good customers (e.g.,Hand, 2005).
+Lackingsuchinformation,wecompute τ (foreverydataset)suchthat
+the fraction of examples classiﬁed as positive equals the fraction of
+positives in the training set.
+The BS is the mean-squared error betweenp(+|x)and a zero-one
+response variable (e.g.,Hernández-Orallo, Flach, & Ramirez, 2011).
+The KS is also based onp(+|x), but considers a ﬁxed reference point.
+In particular, the KS is the maximum difference between the cumu-
+lative score distributions of positive and negative cases (e.g.,Thomas
+et al., 2002). The AUC equals the probability that a randomly chosen
+positivecasereceivesascorehigherthanarandomlychosennegative
+case.
+The PCC and the KS embody a local scorecard assessment. They
+measure accuracy relative to a single reference point (i.e.,
+τ or the KS
+point). The AUC and the BS perform a global assessment in that they
+consider the whole score distribution. The former uses relative (to
+other cases) score ranks. The latter considers absolute score values. A
+global perspective assumes implicitly that all thresholds are equally
+probable. This is not plausible in credit scoring (e.g.,Hand, 2005).
+Considering that only applications with a score below the thresh-
+old will be accepted, the accuracy of a scorecard in the lower tail of
+the score distribution is particularly important. The PG concentrates
+on one part of the score distributionp
+(+|x) ≤ b (Pundir & Seshadri,
+2012). We choseb = 0.4 and compute theGini index among the cor-
+responding cases.
+The H-measure gives a normalized classiﬁer assessment based on
+expected minimum misclassiﬁcation loss; ranging from zero to one
+for a random and perfect classiﬁer, respectively.Hand (2009)shows
+that the AUC suffers some deﬁciencies, which theH-measure over-
+comes. In particular, the AUC assumes different cost distributions for
+differentclassiﬁers.Instead,thedistributionofmisclassiﬁcationcosts
+should depend on the classiﬁcation problem, and not on the classi-
+ﬁer (Hand & Anagnostopoulos, 2013). Therefore, theH-measure uses
+a beta-distribution
+6 to specify the relative severities of classiﬁcation
+errors in a way that is consistent across classiﬁers.
+6 We use a beta-distribution with parameters α = β = 2. Supplementary ma-
+terial associated with this article can be found in the online version, at
+doi:10.1016/j.ejor.2015.05.030.
+
+130 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+Given that the class distributions in our data show some imbal-
+ance (seeTable 3), it is important to reason whether and how class
+skew affects the performance measures. The AUC is not affected by
+class imbalance (Fawcett, 2006). This feature extends to the other
+ranking measures (i.e., the PG and the H-measure) because these
+ground on the same principles as the AUC. The BS and the KS are
+basedonthescoredistributionofaclassiﬁer.Assuch,theyarerobust
+toward class skew in general (e.g.,Gong & Huang, 2012). However,
+classimbalancecould exert anindirecteffectinthat it mightbiasthe
+scores that the classiﬁer produces. Finally, using the PCC in the pres-
+ence of class imbalance is often discouraged. A common critic is that
+PCCreportshighperformancefornaïveclassiﬁers,whichalwayspre-
+dict the majority class. However, we argue that this critic is mislead-
+inginthatitmissestheimportantroleoftheclassiﬁcationthreshold .
+A proper choice of
+τ, for example according to Bayes’ rule, reﬂects
+the prior probabilities of the classes and thereby mitigates the naïve
+classiﬁer problem, at least to some extent.
+For the reasons outlined above, we consider each of the six per-
+formance measures a viable approach for classiﬁer comparisons. In
+addition, further protection from class imbalance biasing the bench-
+marking results comes from our approach to calibrate predictions
+prior to assessing accuracy (see above). Calibration ensures that we
+compare different classiﬁers on a common ground. More speciﬁcally,
+calibrationsanitizesaclassiﬁer’sscoredistributionandthusprevents
+imbalance from indirectly affecting the BS or the KS. For the PCC, we
+set
+τ such that the fraction of cases classiﬁed as positive is equal to
+the prior default probability in the training set. With these strategies
+in place, we argue that the residual effect of class imbalance on the
+observedresultscomesdirectlyfromdifferentalgorithmsbeingmore
+or less sensitive toward imbalance. Such effects are useful to observe
+as class imbalance is a common phenomenon in credit scoring.
+4.3. Data preprocessing and partitioning
+We ﬁrst impute missing values using a mean/mode replacement
+for numeric/nominal attributes. Next, we create two versions of each
+data set, one which mixes nominal and numeric variables and one
+where all nominal variables are converted to numbers using weight-
+of-evidence coding (e.g.,Thomas et al., 2002). This is because some
+classiﬁcation algorithms are well suited to work with data of mixed
+scaling level (e.g., classiﬁcation trees and Bayes classiﬁers), whereas
+others (e.g., ANNs and SVMs) beneﬁt from encoding nominal vari-
+ables (e.g.,Crone, Lessmann, & Stahlbock, 2006).
+An important pre-processing decision concerns data partitioning
+(see Fig. 1). We useNx2-fold cross-validation (Dietterich, 1998). This
+involves (i) randomly splitting a data set in half, (ii) using the ﬁrst
+and second half for model building and evaluation, respectively, (iii)
+switching the roles of the two partitions, and (iv) repeating the two-
+fold validation N times. Compared to using a ﬁxed training and test
+set, multiple repetitions of two-fold cross-validation give more ro-
+bust results, especially when working with small data sets. Thus, we
+set Ndepending on data set size (Table 3). This is also to ensure com-
+putational feasibility.
+Recall that we develop multiple classiﬁcation models with one
+algorithm. The models differ in terms of their meta-parameter set-
+tings (seeTable 2). Thus, prior to comparing different classiﬁers, we
+identifythebestmeta-parameterconﬁgurationforeachclassiﬁcation
+algorithm. This requires auxiliary validation data. We also require
+validation data to prune base models in selective ensemble algo-
+rithms. To obtain such validation data, we perform an additional (in-
+ternal) ﬁve-fold cross-validation on every training set of the (outer)
+Nx2-cross-validation loop (Caruana et al., 2006). The classiﬁcation
+models selected in this stage enter the actual benchmark, where
+we compare the best models from different algorithms in the outer
+Nx2 cross-validation loop. Given that model performance depends
+on the speciﬁc accuracy indicator employed, we repeat the selec-
+tion of the best model per classiﬁer for every performance measure.
+This way, we tune every classiﬁer to the speciﬁc performance mea-
+sure under consideration and ensure that the algorithm predicts as
+accurately as possible given the predeﬁned candidate settings for
+meta-parameters (see Table A.1 in the online appendix
+7).
+5. Empirical results
+The empirical results consist of performance estimates of the 41
+classiﬁers across the eight credit scoring data sets in terms of the six
+performance measures. Interested readers ﬁnd these raw results in
+Table A.2–A.7 in the online appendix.8 Below, we report aggregated
+results.
+5.1. Benchmarking results
+Inthecorebenchmark,werankclassiﬁerperformanceacrossdata
+setsandaccuracyindicators.Forexample,theclassiﬁerthatgivesthe
+highest AUC on the AC data sets receives a rank of one, the second
+best classiﬁer a rank of two and the worst classiﬁer a rank of 41.
+Table 4shows the average (across data sets) ranks per accuracy
+indicator. The second to last column ofTable 4gives a grand aver-
+age(AvgR),whichwecomputeasthemeanclassiﬁerrankacrossper-
+formance measures. The last column translates the AvgR into a high
+score position (e.g., the overall best performing classiﬁer receives the
+ﬁrst place, the second best classiﬁer place two, etc.)
+The average ranks of Table 4 are also the basis of a statistical
+analysis of model performance. In particular, we employ a nonpara-
+metric testing framework to compare the classiﬁers to a control
+classiﬁer(Demšar,2006).Thecontrolclassiﬁeristhebestperforming
+classiﬁer per performance measure. The last row ofTable 4depicts
+the test statistic andp-value (in brackets) of a Friedman test of the
+null-hypothesis that all classiﬁer ranks are equal. Given that we can
+reject the null-hypothesis for all performance measures (p < .000),
+we proceed with pairwise comparisons of a classiﬁer to the control
+classiﬁer using the Rom-procedure for p-value adjustment (García
+et al., 2010). Table 4 depicts the p-values corresponding to these
+pairwise comparisons in brackets. An underscore indicates that we
+can reject the null-hypothesis of a classiﬁer performing equal to the
+control classiﬁer (i.e.,p <.05).
+Anumberofconclusionsemergefrom Table4.First,itemphasizes
+the need to updateBaesens et al. (2003)who focused on individual
+classiﬁers. With an average rank of 18.8, the best individual classiﬁer
+(ANN) performs only midﬁeld. This evidences notable advancements
+in predictive learning since 2003. Similar toBaesens et al. (2003),
+we observe ANN to perform slightly better than the industry stan-
+dard LR (AvgR 19.3). Some authors have taken the similarity between
+LR and advanced methods such as ANN as evidence that complex
+classiﬁers do not offer much advantage over simpler methods (e.g.,
+Finlay, 2009). We do not agree with this view. Our results suggest
+thatcomparisonsamongindividualclassiﬁersaretoonarrowtoshed
+lightonthevalueofadvancedclassiﬁers.Forexample,the p-valuesof
+the pairwise comparisons indicate that the individual classiﬁers pre-
+dict signiﬁcantly less accurately than the best classiﬁer. This shows
+that advanced methodscan outperform simple classiﬁers and LR in
+particular.
+On the other hand, a second result ofTable 4 is that sophisti-
+catedmethodsdonot necessarilyimproveaccuracy.Morespeciﬁcally,
+Table 4casts doubt on some of the latest attempts to improve exist-
+ing algorithms. For example, ELMs and RotFor extend classical ANNs
+and the RF classiﬁer, respectively (Guang-Bin, Lei, & Chee-Kheong,
+2006; Rodriguez et al., 2006). According toTable 4, neither of the
+7 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+8 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 131
+Table 4
+Average classiﬁer ranks across data sets for different performance measures.
+Classiﬁer family BM selection Classiﬁer AUC PCC BS H PG KS AvgR High score
+Individual classiﬁer n.a. ANN 16.2 (.000) 18.6 (.000) 27.5 (.000) 17.9 (.000) 14.9 (.020) 17.6 (.000) 18.8 14
+B-Net 27.8 (.000) 26.8 (.000) 20.4 (.000) 28.3 (.000) 23.7 (.000) 26.2 (.000) 25.5 30
+CART 36.5 (.000) 32.8 (.000) 35.9 (.000) 36.3 (.000) 25.7 (.000) 34.1 (.000) 33.6 38
+ELM 30.1 (.000) 29.8 (.000) 35.9 (.000) 30.6 (.000) 27.0 (.000) 27.9 (.000) 30.2 36
+ELM-K 20.6 (.000) 19.9 (.000) 36.8 (.000) 19.0 (.000) 23.0 (.000) 20.6 (.000) 23.3 26
+J4.8 36.9 (.000) 34.2 (.000) 34.3 (.000) 35.4 (.000) 35.7 (.000) 32.5 (.000) 34.8 39
+k-NN 29.3 (.000) 30.1 (.000) 27.2 (.000) 30.0 (.000) 26.6 (.000) 30.5 (.000) 29.0 34
+LDA 21.8 (.000) 20.9 (.000) 16.7 (.000) 20.5 (.000) 24.8 (.000) 21.9 (.000) 21.1 20
+LR 20.1 (.000) 19.9 (.000) 13.3 (.000) 19.0 (.000) 23.1 (.000) 20.4 (.000) 19.3 16
+LR-R 22.5 (.000) 22.0 (.000) 34.6 (.000) 22.5 (.000) 21.4 (.000) 21.4 (.000) 24.1 28
+NB 30.1 (.000) 29.9 (.000) 23.8 (.000) 29.3 (.000) 22.2 (.000) 29.1 (.000) 27.4 33
+RbfNN 31.4 (.000) 31.7 (.000) 28.0 (.000) 31.9 (.000) 24.1 (.000) 31.7 (.000) 29.8 35
+QDA 27.0 (.000) 26.4 (.000) 22.6 (.000) 26.4 (.000) 23.6 (.000) 27.3 (.000) 25.5 31
+SVM-L 21.7 (.000) 23.0 (.000) 31.8 (.000) 22.6 (.000) 19.7 (.000) 21.7 (.000) 23.4 27
+SVM-Rbf 20.5 (.000) 22.2 (.000) 31.8 (.000) 22.0 (.000) 21.7 (.000) 21.3 (.000) 23.2 25
+VP 37.8 (.000) 36.4 (.000) 31.4 (.000) 37.8 (.000) 34.6 (.000) 37.6 (.000) 35.9 40
+Homogeneous ensemble n.a. ADT 22.0 (.000) 18.8 (.000) 19.0 (.000) 21.7 (.000) 19.4 (.000) 20.0 (.000) 20.2 17
+Bag 25.1 (.000) 22.6 (.000) 18.3 (.000) 23.5 (.000) 25.2 (.000) 24.7 (.000) 23.2 24
+BagNN 15.4 (.000) 17.3 (.000) 12.6 (.000) 16.5 (.000) 15.0 (.020) 16.6 (.000) 15.6 13
+Boost 16.9 (.000) 16.7 (.000) 25.2 (.000) 18.2 (.000) 19.2 (.000) 18.1 (.000) 19.0 15
+LMT 22.9 (.000) 23.4 (.000) 15.6 (.000) 25.1 (.000) 20.1 (.000) 22.9 (.000) 21.7 22
+RF 14.7 (.000) 14.3 (.039) 12.6 (.000) 12.8 (.004) 19.4 (.000) 15.3 (.000) 14.8 12
+RotFor 22.8 (.000) 21.9 (.000) 23.0 (.000) 21.1 (.000) 21.6 (.000) 22.9 (.000) 22.2 23
+SGB 21.0 (.000) 19.9 (.000) 20.8 (.000) 21.2 (.000) 22.5 (.000) 20.8 (.000) 21.0 19
+Heterogeneous ensemble None AvgS 8.7 (.795) 10.8 (.812) 6.6 (.628) 9.2 (.556) 12.0 (.420) 9.2 (.513) 9.4 4
+AvgW 7. 3 ( / ) 12.6 (.578) 7.9 (.628) 7.3 (/) 10.2 (/) 7.9 (/) 8.9 2
+Stack 30.6 (.000) 26.6 (.000) 37.4 (.000) 29.6 (.000) 30.7 (.000) 29.5 (.000) 30.7 37
+Static direct CompM 18.3 (.000) 15.3 (.004) 36.5 (.000) 17.2 (.000) 20.0 (.000) 18.2 (.000) 20.9 18
+EPVRL 8.2 (.795) 10.8 (.812) 6.8 (.628) 9.3 (.556) 13.7 (.125) 11.0 (.226) 10.0 5
+GASEN 8.6 (.795) 10.6 (.812) 6.5 (.628) 9.0 (.556) 11. 4 (.420) 9.0 (.513) 9.2 3
+HCES 10.9 (.191) 11.7 (.812) 7.5 (.628) 10.2 (.449) 14.8 (.020) 13.1 (.010) 11.4 9
+HCES-Bag 7.7 (.795) 9.7 (/) 5.8 (/) 8.2 (.559) 12.5 (.420) 9.2 (.513) 8.8 1
+MPOE 9.9 (.637) 10.1 (.812) 9.4 (.126) 9.9 (.524) 15.1 (.018) 10.9 (.226) 10.9 6
+Top-T 8.7 (.795) 11.3 (.812) 10.0 (.055) 9.8 (.524) 14.8 (.020) 12.3 (.048) 11.2 8
+Static indirect CuCE 10.0 (.637) 12.0 (.812) 10.1 (.050) 10.8 (.220) 12.1 (.420) 11.2 (.226) 11 . 0 7
+k-means 12.6 (.008) 13.6 (.118) 9.8 (.073) 11.2 (.109) 14.9 (.020 )1 2 . 0 ( . 0 7 7 ) 1 2 . 41 0
+KaPru 27.7 (.000) 25.3 (.000) 15.7 (.000) 28.1 (.000) 25.1 (.000) 25.4 (.000) 24.5 29
+MDM 24.4 (.000) 24.0 (.000) 11.6 (.002) 23.7 (.000) 21.7 (.000) 23.7 (.000) 21.5 21
+UWA 9.3 (.795) 11. 8 (.812) 19.5 (.000) 10.1 (.453) 14.3 (.049) 10.9 (.226) 12.7 11
+Dynamic kNORA 27.1 (.000) 26.7 (.000) 28.1 (.000) 28.1 (.000) 23.4 (.000) 25.9 (.000) 26.6 32
+PMCC 40.1 (.000) 38.6 (.000) 32.9 (.000) 39.5 (.000) 39.9 (.000) 38.8 (.000) 38.3 41
+Friedman χ2
+40 2775.1 (.000) 2076.3 (.000) 3514.4 (.000) 2671.7 (.000) 1462.3 (.000) 2202.6 (.000)
+Bold face indicates the best classiﬁer (lowest average rank) per performance measure. Italic script highlights classiﬁers that perform best in their family (e.g., best individual classiﬁer, best homogeneous ensemble, etc.). Values
+in brackets give the adjustedp-value corresponding to a pairwise comparison of the row classiﬁer to the best classiﬁer (per performance measure). An underscore indicates thatp-values are signiﬁcant at the 5percent level.
+To account for the total number of pairwise comparisons, we adjustp-values using theRom-procedure (García et al., 2010). Prior to conducting multiple comparisons, we employ the Friedman test to verify that at least two
+classiﬁers perform signiﬁcantly different (e.g.,Demšar, 2006). The last row shows the correspondingχ2 and p-values.
+
+132 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+augmented classiﬁers improves upon its ancestor. Additional evi-
+dence against the merit of sophisticated classiﬁers comes from the
+resultsofdynamicensembleselectionalgorithms.Arguably,dynamic
+ensembles are the most complex classiﬁers in the study. However,
+no matter what performance measure we consider, they predict a lot
+lessaccuratelythansimpleralternativesincludingLRandotherwell-
+known techniques.
+Givensomewhatcontradictorysignalsastothevalueofadvanced
+classiﬁers, our results suggest that the complexity and/or recency of
+a classiﬁer are misleading indicators of its prediction performance.
+Instead, there seem to be some speciﬁc approaches that work well;
+at least for the credit scoring data sets considered here. Identifying
+these ‘nuggets’ among the myriad of methods is an important objec-
+tive and contribution of classiﬁer benchmarks.
+In this sense, a third result ofTable 4is that it conﬁrms and ex-
+tends previous ﬁndings ofFinlay (2011). We conﬁrmFinlay (2011)in
+thatwealsoobservemultipleclassiﬁerarchitecturestopredictcredit
+risk with high accuracy. We also extend his study by considering se-
+lective ensemble methods, and ﬁnd some evidence that such meth-
+ods are effective in credit scoring. Overall, heterogeneous ensembles
+secure the ﬁrst 11 ranks. The strongest competitor outside this fam-
+ily is RF with an average rank of 14.8 (corresponding to place 12).
+RF is often credited as a very strong classiﬁer (e.g.,Brown & Mues,
+2 0 1 2 ;K r u p p a ,S c h w a r z ,A r m i n g e r ,&Z i e g l e r ,2 0 1 3). We also observe
+RFtooutperformseveralalternativemethods(includingSVMs,ANNs,
+and boosting). However, a comparison to heterogeneous ensemble
+classiﬁers—not part of previous studies and explicitly requested by
+Finlay (2011, p. 377)—reveals that such approaches further improve
+on RF. For example, thep-values inTable 4show that RF predicts sig-
+niﬁcantly less accurately than the best classiﬁer.
+Finally, Table 4 also facilitates some conclusions related to the
+relative effectiveness of different types of heterogeneous ensembles.
+First, we observe that the very simple approach to combine all base
+model predictions through (unweighted) averaging achieves com-
+petitive performance. Overall, the AvgS ensemble gives the fourth-
+best classiﬁer in the comparison. Moreover, AvgS predicts never sig-
+niﬁcantly less accurately than the best classiﬁer. Second, we ﬁnd
+some evidence that combining base models using a weighted aver-
+age (AvgW) might be even more promising. This approach produces
+a very strong classiﬁer with second best overall performance. Third,
+weobservemixedresultsforselectiveensembleclassiﬁers.Directap-
+proaches achieve ranks in the top-10. In many pairwise comparisons,
+we cannot reject the null-hypothesis that a direct selective ensem-
+ble and the best classiﬁer perform akin. The overall best classiﬁer in
+the study, HCES-Bag (Caruana et al., 2006), also belongs to the fam-
+ily of direct selective ensembles. Recall that direct approaches select
+ensemble members so as to maximize predictive accuracy (see the
+online appendix for details
+9). Consequently, they compose different
+ensembles for different performance measures from the same base
+modellibrary.Inasimilarway,usingdifferentperformancemeasures
+leads to different base model weights in the AvgW ensemble. On the
+otherhand,performance-measure-agnosticensemblestrategiestend
+topredictlessaccurately.Exceptionstothistendencyexist,forexam-
+ple the high performance of AvgS or the relatively poor performance
+ofCompM.However, Table4 suggestsanoveralltrendthattheability
+to account explicitly for an externally given performance measure is
+important in credit scoring.
+5.2. Comparison of selected scoring techniques
+To complement the previous comparison of several classiﬁers to
+a control classiﬁer (i.e., the best classiﬁer per performance measure),
+this section examines to what extent four selected classiﬁers are sta-
+9 Supplementary material associated with this article can be found in the online
+version, atdoi:10.1016/j.ejor.2015.05.030.
+Table 5
+Full-pairwise comparison of selected classiﬁers.
+Adjusted p-values of pairwise comparisons
+AvgR ANN LR RF
+ANN 2.44
+LR 3.02 .000
+RF 2.53 .167 .000
+HCES-Bag 2.01 .000 .000 .000
+Friedman χ2
+3 216.2 .000
+tistically different. In particular, we concentrate on LR, ANN, RF, and
+HCES-Bag. We select LR for its popularity in credit scoring, and the
+otherthreeforperformingbestintheircategory(bestindividualclas-
+siﬁer, best homogeneous/heterogeneous ensemble).
+Table 5reports the results of a full pairwise comparison of these
+classiﬁers.Thesecondcolumnreportstheiraverageranksacrossdata
+sets and performance measures and the last row the results of the
+Friedman test. Based on the observed
+χ2
+3 = 216.2, we reject the null-
+hypothesis that the average ranks are equal (p < .000) and proceed
+with pairwise comparisons. For each pair of classiﬁers,i and j,w e
+compute (Demšar, 2006):
+z = Ri − R j/
+√
+k(k +1)
+6N (1)
+where Ri and Rj are the average ranks of classiﬁeri and j,r e s p e c -
+tively, k (=4) denotes the number of classiﬁers, andN (=8) the num-
+ber of data sets used in the comparison. We convert thez-values
+into probabilities using the standard normal distribution and adjust
+the resulting p-values for the overall number of comparisons using
+the Bergmann–Hommelprocedure (García & Herrera,2008). Based on
+the results shown inTable 5, we conclude that (i) LR predicts sig-
+niﬁcantly less accurately than any of the other classiﬁers, that (ii)
+HCES-Bagpredictssigniﬁcantlymoreaccuratelythananyoftheother
+classiﬁers, and that (iii) the empirical results do not provide suﬃ-
+cientevidencetoconcludewhetherRFandANNperformsigniﬁcantly
+different.
+5.3. Financial implications of using different scorecards
+Previous results have established that certain classiﬁers predict
+signiﬁcantly more accurately than alternative classiﬁers. An impor-
+tant managerial question is to what degree accuracy improvements
+add to the bottom line. In the following, we strive to shed some light
+on this once more on the four classiﬁers LR, ANN, RF, and HCES-Bag.
+Estimating scorecard proﬁtability at the account level is diﬃcult
+for several reasons (e.g.,Finlay, 2009). For example, the time of a
+default event plays an important role when estimating returns and
+EAD. To forecast time to default, sophisticated proﬁt estimation ap-
+proaches use survival analysis or Markov processes (e.g.,Andreeva,
+2006; So & Thomas, 2011). Estimates of EAD and LGD are also re-
+quired when using sophisticated proﬁt measures for binary score-
+cards(e.g., Verbraken,Bravo,Weber,&Baesens,2014 ).Inbenchmark-
+ing experiments, where multiple data sets are employed, it is often
+diﬃcult to obtain estimates of these parameters for every individual
+data set. In particular, our data sets lack speciﬁc information related
+to time, LGD, or EAD. Therefore, we employ a simpler approach to
+estimate scorecard proﬁtability. In particular, we examine the costs
+that follow from classiﬁcation errors (e.g.,Viaene & Dedene, 2004).
+This approach is commonly used in the literature (e.g.,Akkoc, 2012;
+Sinha & Zhao, 2008) and can, at least, give a rough estimate of the
+ﬁnancial rewards that follow from more accurate scorecards.
+We calculate the misclassiﬁcation costs of a scorecard as a
+weightedsumofthefalsepositiverate(FPR;i.e.,fractionofgoodrisks
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 133
+0%
+1%
+2%
+3%
+4%
+5%
+6%
+7%
+8%
+9%
+10%
+2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 25 30 35 40 45 50
+RLotderapmocnoitcudertsoC
+C(-|+)
+ANN
+RF
+HCES-Bag
+Fig. 2. Expected percentage reduction in error costs compared to LR across different settings forC(−|+)assuming C(+|−) = 1 and using a Bayes optimal threshold.
+classiﬁed as bad) and the false negative rate (FNR; i.e., fraction of bad
+risks classiﬁed as good), weighted with their corresponding decision
+costs. LetC(+|−) be the opportunity costs that result from denying
+credit to a good risk. Similarly, letC(−|+) be the costs of granting
+credittoabadrisk(e.g.,netpresentvalueofEAD ∗LGD—interestspaid
+priortodefault).Then,wecancalculatetheerrorcostsofascorecard,
+C(s), as:
+C(s) = C(+|−)
+∗FPR + C(−|+)
+∗FNR (2)
+Given that a scorecard produces probability estimatesp(+|x),F P R
+and FNR depend on the thresholdτ. Bayesian decision theory sug-
+gests that an optimal threshold depends on the prior probabilities of
+good and bad risks and their corresponding misclassiﬁcation costs
+(e.g., Viaene & Dedene, 2004). To cover different scenarios, we con-
+sider25costratiosintheinterval C
+(+|−): C(−|+) = 1:2 ,..., 1:5 0 ,
+always assuming that it is more costly to grant credit to a bad risk
+thanrejectingagoodapplication(e.g., Thomasetal.,2002 ).Notethat
+ﬁxing C(+|−) at one does not constrain generality (e.g.,Hernández-
+Orallo et al., 2011). For each cost setting and credit scoring data set,
+we (i) compute the misclassiﬁcation costs of a scorecard from (2), (ii)
+estimate expected error costs through averaging over data sets, and
+(iii) normalize costs such that they represent percentage improve-
+ments compared to LR.Fig. 2depicts the corresponding results.
+Fig. 2reveals that the considered classiﬁers can substantially re-
+duce the error costs of a LR-based scorecard. For example, the aver-
+ageimprovements(acrossallcostsettings)ofANN,RF,andHCES-Bag
+over LR are, respectively, 3.4 percent, 5.7 percent, and 4.8 percent.
+Improvements of multiple percent are meaningful from a manage-
+rial point of view, especially when considering the large number of
+decisions that scorecards support in the ﬁnancial industry. Another
+result is that the most accurate classiﬁer, HCES-Bag loses its advan-
+tage when the cost of misclassifying bad credit risks increases. This
+shows that the link between (statistical) accuracy and business value
+is far from perfect. The most accurate classiﬁer does not necessarily
+give the most proﬁtable scorecard.
+RF and ANN achieve a larger cost reduction than HCES-Bag when
+misclassifying a bad risk is 11 and 18 times more expensive than the
+opposite error, respectively. Using a Bayes-optimal threshold, higher
+costsofmisclassifyingabadrisklowerthethresholdandthustheac-
+ceptance rate. Hence, incorrect rejections of actually good risks be-
+come the main determinant of the error costs of a scorecard. This
+suggests that the partial superiority of RF (and ANN) over HCES-
+Bag results from the latter producing too conservative predictions
+for clients with low credit risk. It could be interesting to examine
+whether this pattern persistsif HCES-Bag weresetup to minimizeer-
+ror costs directly (i.e., within ensemble selection). We leave this test
+to future research.
+Table 6
+Correlation of classiﬁer rankings across performance mea-
+sures.
+AUC PCC BS H PG KS
+AUC 1.00
+PCC .88 1.00
+BS .54 .54 1.00
+H .93 .91 .56 1.00
+PG .79 .72 .51 .76 1.00
+KS .92 .89 .54 .91 .79 1.00
+5.4. Correspondence of classiﬁer performance across performance
+measures
+Given that many previous studies have used a small number
+of accuracy indicators, it is interesting to examine the dependency
+of observed results on the chosen indicator. Moreover, such an
+analysis can add some empirical evidence to the recent debate
+whether and when the AUC is a suitable measure to compare dif-
+ferent classiﬁers and retail scorecards in particular (e.g., Hand &
+Anagnostopoulos, 2013; Hernández-Orallo et al., 2011).
+Table 6depicts the agreement of classiﬁer rankings across accu-
+racy indicators usingKendall’s rank correlation coeﬃcient. With re-
+spect to the AUC, we ﬁnd that empirical results do not differ much
+betweenthismeasureandthe H-measure(correlation:.93).Thus,ifa
+creditanalystweretochooseascorecardamongalternatives,theAUC
+and the H-measure would typically give similar recommendations.
+In fact, Table 6 supports generalizing this view even further. Pair-
+wise correlations around .90 indicate high similarity between clas-
+siﬁer ranks in terms of the KS and the PCC with those of the AUC and
+the H-measure. Despite substantial conceptual differences between
+thesemeasures(e.g.,localversusglobalassessment;see Section4.3),
+they rank classiﬁers rather similarly. Therefore, it appears suﬃcient
+to use one of them in empirical classiﬁer comparisons.
+A different conclusion emerges for the BS and the PG. Using the
+same measurement approach as the AUC, the PG emphasizes the ac-
+curacyofascorecardinthemostimportantsegmentofthescoredis-
+tribution. Our results conﬁrm that this captures a different aspect of
+performance.Forexample,theAUCisnotablylesscorrelatedwiththe
+PG than with theH-measure. However, we observe the smallest cor-
+relation between the BS and the other measures. The BS is the only
+indicator that assesses the accuracy of probability estimates.Table 6
+reveals that this notion of performance contributes useful informa-
+tion to a classiﬁer comparison over and above those captured in the
+AUC, PCC,H-measure, and KS.
+Based onTable 6we recommend that future studies use at least
+three performance measures: the AUC, the PG, and the BS, whereby
+one could replace the AUC with theH-measure. The PG and the BS
+
+134 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+offer an additional angle from which to examine predictive accuracy.
+Thus, they should routinely be part of scorecard comparisons.
+6. Conclusions
+We set out to updateBaesens et al. (2003) and to explore the
+relative effectiveness of alternative classiﬁcation algorithms in retail
+credit scoring. To that end, we compared 41 classiﬁers in terms of
+sixperformancemeasuresacrosseightreal-worldcreditscoringdata
+sets.Ourresultssuggestthatseveralclassiﬁerspredictcreditrisksig-
+niﬁcantly more accurately than the industry standard LR. Especially
+heterogeneous ensembles classiﬁers perform well. We also provide
+some evidence that more accurate scorecards facilitate sizeable ﬁ-
+nancial returns. Finally, we show that several common performance
+measures give similar signals as to which scorecard is most effective,
+and recommend the use of two rarely employed measures that con-
+tribute additional information.
+Our study consolidates previous work in PD modeling and pro-
+vides a holistic picture of the state-of-the-art in predictive modeling
+for retail scorecard development. This has implications for academia
+andindustry.Fromanacademicpointofview,animportantquestion
+is whether efforts into the development of novel scoring techniques
+areworthwhile.Ourstudyprovidessomesupportbutalsoraisescon-
+cerns.Weﬁndsomeadvancedmethodstoperformextremelywellon
+ourcreditscoringdatasets,butneverobservethemostrecentclassi-
+ﬁers to excel. ANNs perform better than ELMs, RF better than RotFor,
+and dynamic selective ensembles worse than almost all other clas-
+siﬁers. This may indicate that progress in the ﬁeld has stalled (e.g.,
+Hand, 2006), and that the focus of attention should move from PD
+models to other modeling problems in the credit industry including
+dataquality,scorecardrecalibration,variableselection,andLGD/EAD
+modeling.
+On the other hand, we do not expect the desire to develop better,
+more accurate scorecards to end any time soon. Likely, future papers
+will propose novel classiﬁers and the “search for the silver bullet”
+(Thomas, 2010) will continue. An implication of our study is that
+such efforts must be accompanied by a rigorous assessment of the
+proposed method vis-à-vis challenging benchmarks. In particular,
+we recommend RF as benchmark against which to compare new
+classiﬁcation algorithms. HCES-Bag might be even more diﬃcult
+to outperform, but is not as easily available in standard software.
+Furthermore, we caution against the practice to compare a newly
+proposed classiﬁer to LR (or some other individual classiﬁer) only,
+which we still observe in the literature. LR is the industry standard
+and it is useful to examine how a new classiﬁer compares to this
+approach. However, given the state-of-the-art, outperforming LR can
+no longer be accepted as a signal of methodological advancement.
+An important question to be answered in future research is
+whetherthecharacteristicsofaclassiﬁcationalgorithmandadataset
+facilitate appraising the classiﬁer’s suitability for this data set a pri-
+ori.WehaveidentiﬁedclassiﬁersthatworkwellforPDmodeling,but
+cannot explaintheirsuccess.Nonetheless,ourbenchmarkcanbeseen
+asaﬁrststeptowardgainingexplanatoryinsightinthatitprovidesan
+empirical fundament for meta-analytic research. For example, gath-
+eringfeaturesofindividualclassiﬁersandcharacteristicsofthecredit
+scoringdatasets,andusingtheseascovariatesinaregressionframe-
+work to explain classiﬁer performance (as dependent variable) could
+help to uncover the underlying drivers of classiﬁer eﬃcacy in credit
+scoring.
+From a managerial perspective, it is important to reason whether
+the superior performance that we observe for some classiﬁers gener-
+alizes to real-world applications, and to what extent their adoption
+would increase returns. These questions are much debated in the lit-
+erature (e.g.,Finlay, 2011). From this study, we can add some points
+to the discussion.
+First, we show that advancements in computer power, classiﬁer
+learning, and statistical testing facilitate rigorous classiﬁer compar-
+isons.Thisdoesnotguaranteeexternalvalidity.Severalconcernswhy
+laboratoryexperiments(asthisone)mayoverestimatetheadvantage
+of advanced classiﬁers remain valid; and might be insurmountable
+(e.g.,Hand,2006 ).However,experimentaldesignswithseveralcross-
+validation repetitions, different performance measures, and appro-
+priate multiple-comparison procedures overcome some limitations
+of previous studies and, thereby, provide stronger support that ad-
+vanced classiﬁers have the potential to increase predictive accuracy
+not only in the laboratory but also in industry.
+Second, our results facilitate some remarks related to the organi-
+zational acceptance of advanced classiﬁers. In particular, a lack of ac-
+ceptance can result from concerns that much expertise is needed to
+handle such classiﬁers. Our results show that this is not the case. The
+accuracy differences that we observe result from a fully-automatic
+modelingapproach.Consequently,certainadvancedclassiﬁersdonot
+require human intervention to predict signiﬁcantly more accurately
+than simpler alternatives. Furthermore, the current interest in Big
+Dataindicatesashifttowardadata-drivendecisionmakingparadigm
+amongmanagers.Thismightfurtherincreasetheacceptabilityofad-
+vanced scoring methods.
+Finally, the business value of more accurate scorecard predictions
+isacrucialissue.Ourpreliminarysimulationprovidessomeevidence
+that the “higher (statistical) accuracy equals more proﬁt equation”
+might hold. Furthermore, retail scorecards support a vast number of
+business decisions. Consider for example the credit card industry or
+scoring tasks in online settings. In such environments, one-time in-
+vestments(e.g.,forhardware,software,andusertraining)intoamore
+elaborate scoring technique will pay-off in the long run when small
+but signiﬁcant accuracy improvements are multiplied by hundreds
+of thousands of scorecard applications. The diﬃculties of introduc-
+ing advanced scoring methods including ensemble models are more
+psychological than business related. Using a large number of models,
+a signiﬁcant minority of which give contradictory answers, is coun-
+terintuitivetomanybusinessleaders.Suchorganizationswillneedto
+experimentfullybeforeacceptingachangefromthehistoricindustry
+standard procedures.
+Regulatory frameworks and organizational acceptance constrain
+and sometimes prohibit the use of advanced scoring techniques to-
+day; at least for classic credit products. However, given the current
+interest in data-centric decision aids and the richness of online-
+mediated forms of credit granting, we foresee a bright future for ad-
+vanced scoring methods in credit scoring.
+Acknowledgements
+We thank Immanuel Bomze for his efforts, support, and advice
+during the handling of the paper. We are also grateful to ﬁve anony-
+mous referees for constructive comments and valuable suggestions
+how to further improve the paper.
+Supplementary Materials
+Supplementarymaterialassociatedwiththisarticlecanbefound,
+in the online version, atdoi:10.1016/j.ejor.2015.05.030.
+References
+Abdou,H.A.(2009).Geneticprogrammingforcreditscoring:ThecaseofEgyptianpub-
+lic sector banks.Expert Systems with Applications, 36, 11402–11417.
+Abdou, H. A., Pointon, J., & El-Masry, A. (2008). Neural nets versus conventional tech-
+niques in credit scoring in Egyptian banking.Expert Systems with Applications, 35 ,
+1275–1292.
+Abellán, J., & Mantas, C. J. (2014). Improving experimental studies about ensembles of
+classiﬁers for bankruptcy prediction and credit scoring.Expert Systems with Appli-
+cations, 41, 3825–3830.
+
+S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136 135
+Akkoc,S.(2012).Anempiricalcomparisonofconventionaltechniques,neuralnetworks
+and the three stage hybrid Adaptive Neuro Fuzzy Inference System (ANFIS) model
+forcreditscoringanalysis:ThecaseofTurkishcreditcarddata. European Journal of
+Operational Research, 222, 168–178.
+Andreeva, G. (2006). European generic scoring models using survival analysis.Journal
+of the Operational Research Society, 57,1 1 8 0 – 1 1 8 7 .
+Atish,P.S.,&Jerrold,H.M.(2004).Evaluatingandtuningpredictivedataminingmodels
+using receiver operating characteristic curves.Journal of Management Information
+Systems, 21, 249–280.
+Baesens,B.,VanGestel,T.,Viaene,S.,Stepanova,M.,Suykens,J.,&Vanthienen,J.(2003).
+Benchmarking state-of-the-art classiﬁcation algorithms for credit scoring.Journal
+of the Operational Research Society, 54, 627–635.
+Bellotti,T.,&Crook,J.(2009).Supportvectormachinesforcreditscoringanddiscovery
+of signiﬁcant features.Expert Systems with Applications, 36, 3302–3308.
+Breiman, L. (1996). Bagging predictors.Machine Learning, 24, 123–140.
+Breiman, L. (2001). Random forests.Machine Learning, 45, 5–32.
+Brown, I., & Mues, C. (2012). An experimental comparison of classiﬁcation algorithms
+forimbalancedcreditscoringdatasets. Expert Systems with Applications, 39,3446–
+3453.
+Calabrese, R. (2014). Downturn loss given default: Mixture distribution estimation.
+European Journal of Operational Research, 237, 271–277.
+Caruana,R.,Munson,A.,&Niculescu-Mizil,A.(2006).Gettingthemostoutofensemble
+selection. Proceedings of the 6th international conference on data mining (pp. 828–
+833). Hong Kong, China: IEEE Computer Society.
+Chen, W., Ma, C., & Ma, L. (2009). Mining the customer credit using hybrid support
+vector machine technique.Expert Systems with Applications, 36, 7611–7616.
+Crone, S. F., Lessmann, S., & Stahlbock, R. (2006). The impact of preprocessing on data
+mining:Anevaluationofclassiﬁersensitivityindirectmarketing. European Journal
+of Operational Research, 173, 781–800.
+Crook, J. N., Edelman, D. B., & Thomas, L. C. (2007). Recent developments in
+consumer credit risk assessment. European Journal of Operational Research, 183 ,
+1447–1465.
+Demšar, J. (2006). Statistical comparisons of classiﬁers over multiple data sets.Journal
+of Machine Learning Research, 7, 1–30.
+Dietterich,T. G.(1998). Approximatestatistical tests forcomparingsupervisedclassiﬁ-
+cation learning.Neural Computation, 10, 1895–1923.
+Dirick,L.,Claeskens,G.,&Baesens,B.(2015).AnAkaikeinformationcriterionformulti-
+pleevent mixture cure models.European Journal of Operational Research, 241,449 –
+457.
+Fawcett,T.(2006).AnintroductiontoROCanalysis. Pattern Recognition Letters, 27,86 1–
+874.
+Finlay, S. (2009). Credit scoring for proﬁtability objectives.European Journal of Opera-
+tional Research, 202, 528–537.
+Finlay, S. (2011). Multiple classiﬁer architectures and their application to credit risk
+assessment. European Journal of Operational Research, 210, 368–378.
+Freund, Y., & Schapire, R. E. (1996). Experiments with a new boosting algorithm. In
+L. Saitta (Ed.),Proceedings of the 13th international conference on machine learning
+(pp. 148–156). Bari, Italy: Morgan Kaufmann.
+Friedman, J. H. (2002). Stochastic gradient boosting.Computational Statistics & Data
+Analysis, 38, 367–378.
+García, S., Fernández, A., Luengo, J., & Herrera, F. (2010). Advanced nonparametric tests
+for multiple comparisons in the design of experiments in computational intelli-
+gence and data mining: Experimental analysis of power.Information Sciences, 180,
+2044–2064.
+García, S., & Herrera, F. (2008). An extension on “Statistical comparisons of classiﬁers
+over multiple data sets” for all pairwise comparisons.Journal of Machine Learning
+Research, 9, 2677–2694.
+Gong, R., & Huang, S. H. (2012). A Kolmogorov–Smirnov statistic based segmentation
+approach to learning from imbalanced datasets: With application in property reﬁ-
+nance prediction.Expert Systems with Applications, 39, 6192–6200.
+Guang-Bin, H., Lei, C., & Chee-Kheong, S. (2006). Universal approximation using incre-
+mentalconstructivefeedforwardnetworkswithrandomhiddennodes. IEEE Trans-
+actions on Neural Networks, 17, 879–892.
+Hall, M. A. (2000). Correlation-based feature selection for discrete and numeric class
+machinelearning.InP.Langley(Ed.), Proceedings of the 17th international conference
+on machine learning (pp. 359–366). Stanford, CA, USA: Morgan Kaufmann.
+Hand, D. J. (2005). Good practice in retail credit scorecard assessment.Journal of the
+Operational Research Society, 56, 1109–1117.
+Hand, D. J. (2006). Classiﬁer technology and the illusion of progress.Statistical Science,
+21, 1–14.
+Hand,D.J.(2009).Measuringclassiﬁerperformance:Acoherentalternativetothearea
+under the ROC curve.Machine Learning, 77, 103–123.
+Hand, D. J., & Anagnostopoulos, C. (2013). When is the area under the receiver operat-
+ing characteristic curve an appropriate measure of classiﬁer performance?Pattern
+Recognition Letters, 34, 492–495.
+Hand, D. J., & Henley, W. E. (1997). Statistical classiﬁcation models in consumer credit
+scoring:Areview. Journal of the Royal Statistical Society: Series A (General), 160,523–
+541.
+Hand, D. J., Sohn, S. Y., & Kim, Y. (2005). Optimal bipartite scorecards.Expert Systems
+with Applications, 29, 684–690.
+He, J., Shi, Y., & Xu, W. (2004). Classiﬁcations of credit cardholder behavior by using
+multiplecriterianon-linearprogramming.InY .Shi,W .X u,&Z.Chen(Eds.), Chinese
+academy of sciences symposium on data mining and knowledge management: vol.
+3327(pp. 154–163). Beijing, China: Springer.
+Hens, A. B., & Tiwari, M. K. (2012). Computational time reduction for credit scoring:
+An integrated approach based on support vector machine and stratiﬁed sampling
+method. Expert Systems with Applications, 39, 6774–6781.
+Hernández-Orallo,J.,Flach,P.A.,&Ramirez,C.F.(2011).Briercurves:Anewcost-based
+visualisationofclassiﬁerperformance.InL.Getoor,&T.Scheffer(Eds.), Proceedings
+of the 28th international conference on machine learning (pp. 585–592). Bellevue,
+WA, USA: Omnipress.
+Hofer, V. (2015). Adapting a classiﬁcation rule to local and global shift when
+only unlabelled data are available.European Journal of Operational Research, 243 ,
+177–189.
+Hsieh, N.-C., & Hung, L.-P. (2010). A data driven ensemble classiﬁer for credit scoring
+analysis. Expert Systems with Applications, 37, 534–545.
+Huang, C.-L., Chen, M.-C., & Wang, C.-J. (2007). Credit scoring with a data mining ap-
+proach based on support vector machines.Expert Systems with Applications, 33 ,
+847–856.
+Huang, Y.-M., Hunga, C.-M., & Jiau, H. C. (2006). Evaluation of neural networks and
+data mining methods on a credit assessment task for class imbalance problem.
+Nonlinear Analysis: Real World Applications, 7, 720–747.
+Ko, A. H. R., Sabourin, R., & Britto, J. A. S. (2008). From dynamic classiﬁer selection to
+dynamic ensemble selection.Pattern Recognition, 41, 1735–1748.
+Kruppa,J.,Schwarz,A.,Arminger,G.,&Ziegler,A.(2013).Consumercreditrisk:Individ-
+ualprobabilityestimatesusingmachine learning. Expert Systems with Applications,
+40, 5125–5131.
+Kumar, P. R., & Ravi, V. (2007). Bankruptcy prediction in banks and ﬁrms via statistical
+andintelligenttechniques—Areview. European Journal of Operational Research, 180,
+1–28.
+Lee, T.-S., & Chen, I. F. (2005). A two-stage hybrid credit scoring model using artiﬁcial
+neural networks and multivariate adaptive regression splines.Expert Systems with
+Applications, 28, 743–752.
+Lee, T.-S., Chiu, C.-C., Chou, Y.-C., & Lu, C.-J. (2006). Mining the customer credit us-
+ing classiﬁcation and regression tree and multivariate adaptive regression splines.
+Computational Statistics & Data Analysis, 50, 1113–1130.
+Li,J.,Wei,L.,Li,G.,&Xu,W.(2011).Anevolutionstrategy-basedmultiplekernelsmulti-
+criteria programming approach: The case of credit decision making.Decision Sup-
+port Systems, 51, 292–298.
+Li,S.-T.,Shiue,W.,&Huang,M.-H.(2006).Theevaluationofconsumerloansusingsup-
+port vector machines.Expert Systems with Applications, 30, 772–782.
+Li, S., Tsang, I. W., & Chaudhari, N. S. (2012). Relevance vector machine based inﬁnite
+decision agent ensemble learning for credit risk analysis.Expert Systems with Ap-
+plications, 39, 4947–4953.
+Lichman, M. (2013). UCI machine learning repository <http://archive.ics.uci.edu/ml/>.
+Irvine, CA: School of Information and Computer Science , University of California
+Accessed 16.02.15.
+Liu, F., Hua, Z., & Lim, A. (2015). Identifying future defaulters: A hierarchical Bayesian
+method. European Journal of Operational Research, 241, 202–211.
+Malhotra, R., & Malhotra, D. K. (2003). Evaluating consumer loans using neural net-
+works. Omega, 31, 83–96.
+Marqués, A. I., García, V., & Sánchez, J. S. (2012a). Exploring the behaviour of base clas-
+siﬁers in credit scoring ensembles.Expert Systems with Applications, 39 ,1 0 2 4 4 –
+10250.
+Marqués, A. I., García, V., & Sánchez, J. S. (2012b). Two-level classiﬁer ensembles for
+credit risk assessment.Expert Systems with Applications, 39, 10916–10922.
+Martens, D., Van Gestel, T., De Backer, M., Haesen, R., Vanthienen, J., & Baesens,
+B. (2010). Credit rating prediction using Ant Colony Optimization.Journal of the
+Operational Research Society, 61, 561–573.
+Nanni, L., & Lumini, A. (2009). An experimental comparison of ensemble of classiﬁers
+for bankruptcy prediction and credit scoring.Expert Systems with Applications, 36 ,
+3028–3033.
+Ong, C.-S., Huanga, J.-J., & Tzeng, G.-H. (2005). Building credit scoring models using
+genetic programming.Expert Systems with Applications, 29, 41–47.
+Paleologo, G., Elisseeff, A., & Antonini, G. (2010). Subagging for credit scoring models.
+European Journal of Operational Research, 201, 490–499.
+Partalas, I., Tsoumakas, G., & Vlahavas, I. (2009). Pruning an ensemble of classiﬁers via
+reinforcement learning.Neurocomputing, 72, 1900–1909.
+Partalas, I., Tsoumakas, G., & Vlahavas, I. (2010). An ensemble uncertainty aware mea-
+sure for directed hill climbing ensemble pruning.Machine Learning, 81, 257–282.
+Ping, Y., & Yongheng, L. (2011). Neighborhood rough set and SVM based hybrid credit
+scoring classiﬁer.Expert Systems with Applications, 38, 11300–11304.
+Platt, J. C. (2000). Probabilities for support vector machines. In A. Smola, P. Bartlett,
+B. Schölkopf, & D. Schuurmans (Eds.),Advances in large margin classiﬁers (pp. 61–
+74). Cambridge: MIT Press.
+Pundir, S., & Seshadri, R. (2012). A novel concept of partial lorenz curve and partial
+giniindex. International Journal of Engineering, Science and Innovative Technology, 1,
+296–301.
+Rodriguez, J. J., Kuncheva, L. I., & Alonso, C. J. (2006). Rotation forest: A new classiﬁer
+ensemble method. IEEE Transactions on Pattern Analysis and Machine Intelligence,
+28, 1619–1630.
+Sinha, A. P., & Zhao, H. (2008). Incorporating domain knowledge into data mining clas-
+siﬁers: An application in indirect lending.Decision Support Systems, 46, 287–299.
+So,M.M.C.,&Thomas,L.C.(2011).ModellingtheproﬁtabilityofcreditcardsbyMarkov
+decision processes.European Journal of Operational Research, 212, 123–130.
+Sohn, S. Y., & Ju, Y. H. (2014). Updating a credit-scoring model based on new attributes
+without realization of actual data.European Journal of Operational Research, 234 ,
+119–126.
+Šušteršiˇc, M., Mramor, D., & Zupan, J. (2009). Consumer credit scoring models with
+limited data.Expert Systems with Applications, 36, 4736–4744.
+Thomas, L. C. (2010). Consumer ﬁnance: Challenges for operational research.Journal of
+the Operational Research Society, 61, 41–52.
+Thomas, L. C., Edelman, D. B., & Crook, J. N. (2002).Credit scoring and its applications .
+Philadelphia: SIAM.
+
+136 S. Lessmann et al. / European Journal of Operational Research 247 (2015) 124–136
+Tong, E. N. C., Mues, C., & Thomas, L. C. (2012). Mixture cure models in credit scoring:
+if and when borrowers default.European Journal of Operational Research, 218, 132–
+139.
+Tsai,C.-F.(2014).Combiningclusteranalysiswithclassiﬁerensemblestopredictﬁnan-
+cial distress.Information Fusion, 16, 46–58.
+Tsai, C.-F., & Wu, J.-W. (2008). Using neural network ensembles for bankruptcy predic-
+tion and credit scoring.Expert Systems with Applications, 34, 2639–2649.
+Tsai, M.-C., Lin, S.-P., Cheng, C.-C., & Lin, Y.-P. (2009). The consumer loan default pre-
+dicting model—An application of DEA-DA and neural network.Expert Systems with
+Applications, 36, 11682–11690.
+Twala,B.(2010).Multipleclassiﬁerapplicationtocreditriskassessment. Expert Systems
+with Applications, 37, 3326–3336.
+Verbeke, W., Dejaeger, K., Martens, D., Hur, J., & Baesens, B. (2012). New insights into
+churnpredictioninthetelecommunicationsector:Aproﬁtdrivendataminingap-
+proach. European Journal of Operational Research, 218, 211–229.
+Verbraken, T., Bravo, C., Weber, R., & Baesens, B. (2014). Development and application
+of consumer credit scoring models using proﬁt-based classiﬁcation measures.Eu-
+ropean Journal of Operational Research, 238, 505–513.
+Viaene, S., & Dedene, G. (2004). Cost-sensitive learning and decision making revisited.
+European Journal of Operational Research, 166, 212–220.
+Wang,G.,Hao,J.,Ma,J.,&Jiang,H.(2011).Acomparativeassessmentofensemblelearn-
+ing for credit scoring.Expert Systems with Applications, 38, 223–230.
+West,D.,Dellana,S.,&Qian,J.(2005).Neuralnetworkensemblestrategiesforﬁnancial
+decision applications.Computers & Operations Research, 32, 2543–2559.
+Woloszynski, T., & Kurzynski, M. (2011). A probabilistic model of classiﬁer competence
+for dynamic ensemble selection.Pattern Recognition, 44, 2656–2668.
+Xiao, W., Zhao, Q., & Fei, Q. (2006). A comparative study of data mining methods in
+consumerloanscreditscoringmanagement. Journal of Systems Science and Systems
+Engineering, 15, 419–435.
+Xu, X., Zhou, C., & Wang, Z. (2009). Credit scoring algorithm based on link analysis
+ranking with support vector machine.Expert Systems with Applications, 36 , 2625–
+2632.
+Yang,Y.(2007).Adaptivecreditscoringwithkernellearningmethods. European Journal
+of Operational Research, 183, 1521–1536.
+Yao,X.,Crook,J.,&Andreeva,G.(2015).Supportvectorregressionforlossgivendefault
+modelling. European Journal of Operational Research, 240, 528–538.
+Yap, B. W., Ong, S. H., & Husain, N. H. M. (2011). Using data mining to improve assess-
+ment of credit worthiness via credit scoring models.Expert Systems with Applica-
+tions, 38, 13274–13283.
+Yu, L., Wang, S., & Lai, K. K. (2008). Credit risk assessment with a multistage neural
+network ensemble learning approach.Expert Systems with Applications, 34 , 1434–
+1444.
+Yu, L., Wang, S., & Lai, K. K. (2009). An intelligent-agent-based fuzzy group decision
+making model for ﬁnancial multicriteria decision support: The case of credit scor-
+ing. European Journal of Operational Research, 195, 942–959.
+Yu, L., Yao, X., Wang, S., & Lai, K. K. (2011). Credit risk evaluation using a weighted least
+squares SVM classiﬁer with design of experiment for parameter selection.Expert
+Systems with Applications, 38, 15392–15399.
+Yu, L., Yue, W., Wang, S., & Lai, K. K. (2010). Support vector machine based multiagent
+ensemble learning for credit risk evaluation.Expert Systems with Applications, 37 ,
+1351–1360.
+Zhang, D., Zhou, X., Leung, S. C. H., & Zheng, J. (2010). Vertical bagging decision trees
+model for credit scoring.Expert Systems with Applications, 37, 7838–7843.
+Zhang, J., Shi, Y., & Zhang, P. (2009). Several multi-criteria programming methods for
+classiﬁcation. Computers & Operations Research, 36, 823–836.
+Zhou, L., Lai, K. K., & Yu, L. (2010). Least Squares Support Vector Machines ensemble
+models for credit scoring.Expert Systems with Applications, 37, 127–133.

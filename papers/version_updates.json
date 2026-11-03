@@ -75,6 +75,54 @@
       "zotero_attachment": "copied byte-for-byte from the owner's attachment on item N7HRDZFC (arXiv v1 banner; v1 confirmed latest via the arXiv API on 2026-10-27); Zotero record unchanged",
       "filed_title": "TabFM: A Zero-Shot Foundation Model for Tabular Data",
       "replaces": "Google Research blog post \"Introducing TabFM: A zero-shot foundation model for tabular data\" (Kong and Das, 30 June 2026), replaced by the arXiv paper at the owner's request"
+    },
+    {
+      "arxiv": "2606.30410",
+      "version": 2,
+      "filed_version_date": "2026-10-30",
+      "source_url": "https://arxiv.org/pdf/2606.30410v2",
+      "path": "papers/2026/10_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf",
+      "sha256": "dde04280ec59b7ac214f84fe1ce062769cac4f2e1e640243d68380a5348e685b",
+      "previous_path": "papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf",
+      "previous_sha256": "7d7f407b087c6c0c8ef716b9745a0a2309ec6cff36d040b97e2e3979b1b31676",
+      "retrieved": "2026-11-03",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2605.10616",
+      "version": 3,
+      "filed_version_date": "2026-10-30",
+      "source_url": "https://arxiv.org/pdf/2605.10616v3",
+      "path": "papers/2026/10_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf",
+      "sha256": "c997287dfb3d7d46aebebc41935edb44d093abaa5a4cff28ca3df4f646c15fcd",
+      "previous_path": "papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf",
+      "previous_sha256": "fc251de32281221e52917f00c3642ca38661589546ca614edb6cae7d6c31aa32",
+      "retrieved": "2026-11-03",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2608.16319",
+      "version": 3,
+      "filed_version_date": "2026-10-30",
+      "source_url": "https://arxiv.org/pdf/2608.16319v3",
+      "path": "papers/2026/10_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf",
+      "sha256": "3bc3670a7892091ab9086f31a03bf50bef90754f98da523146a70b1bc91d6c84",
+      "previous_path": "papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf",
+      "previous_sha256": "b858963cde6d6779ad05d1e50ae93234cbd4e84b97c68bcd97c03acca6ebe855",
+      "retrieved": "2026-11-03",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2610.17065",
+      "version": 2,
+      "filed_version_date": "2026-10-30",
+      "source_url": "https://arxiv.org/pdf/2610.17065v2",
+      "path": "papers/2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf",
+      "sha256": "f54a69f90700e0b5a27327aad1dccfedef962617efb024e8e1f5f362182e866d",
+      "previous_path": "papers/2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf",
+      "previous_sha256": "6a26d5fd208685af68634ad32a1356e9630caee2d1e04cce80cfed5964d2c1c6",
+      "retrieved": "2026-11-03",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
     }
   ]
 }

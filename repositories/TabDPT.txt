@@ -16,6 +16,7 @@ Directory structure:
     │       ├── bar_distribution.py
     │       ├── classifier.py
     │       ├── estimator.py
+    │       ├── explain.py
     │       ├── model.py
     │       ├── regressor.py
     │       └── utils.py
@@ -30,6 +31,7 @@ Directory structure:
         ├── device_utils.py
         ├── test_cls.py
         ├── test_estimator.py
+        ├── test_explain.py
         ├── test_inference.py
         ├── test_reg.py
         └── test_utils.py
@@ -774,7 +776,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabdpt"
-version = "1.3.1"
+version = "1.3.2"
 description = "TabDPT: Scaling Tabular Foundation Models on Real Data"
 readme = "README.md"
 license = "Apache-2.0"
@@ -807,6 +809,9 @@ reproduce-results = [
     "tenacity==9.1.2",
     "gdown==5.2.0",
 ]
+explain = [
+    "captum~=0.9.0"
+]
 
 [project.urls]
 Repository = "https://github.com/layer6ai-labs/TabDPT-inference"
@@ -824,6 +829,7 @@ show_missing = true
 
 [dependency-groups]
 dev = [
+    "tabdpt[explain]",
     "pytest>=8.4.1",
     "pytest-cov>=5.0.0,<8.0",
     "rliable>=1.2.0,<2.0",
@@ -1074,6 +1080,7 @@ from .bar_distribution import (
 )
 from .classifier import TabDPTClassifier
 from .regressor import OutputType, TabDPTRegressor
+from .explain import integrated_gradients
 
 __all__ = [
     "TabDPTClassifier",
@@ -1085,6 +1092,7 @@ __all__ = [
     "distribution_mode",
     "distribution_quantiles",
     "distribution_sample",
+    "integrated_gradients",
 ]
 
 
@@ -1251,7 +1259,7 @@ from scipy.special import softmax
 from sklearn.base import ClassifierMixin
 
 from .estimator import TabDPTEstimator
-from .utils import generate_random_permutation, pad_x
+from .utils import generate_random_permutation
 
 
 class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
@@ -1343,81 +1351,50 @@ class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
         Returns:
             A class probability array of size `n_instances` x `n_classes`.
         """
-        train_x, train_y, test_x = self._prepare_prediction(X, class_perm=class_perm, seed=seed)
-        num_features = torch.tensor([train_x.shape[-1]], dtype=torch.long, device=train_x.device)
+        prep = self._preprocess(X, context_size=context_size, seed=seed, class_perm=class_perm)
+        X_ctx, y_ctx, X_query = prep.X_ctx, prep.y_ctx, prep.X_query
+        num_features = torch.tensor([X_ctx.shape[-1]], dtype=torch.long, device=X_ctx.device)
 
         if context_size is None:
             context_size = np.inf
-
         if batch_size is None:
-            if self.device == "cpu":
-                batch_size = 4096
-            else:
-                batch_size = 128*1024
-
-        if seed is not None:
-            feat_perm = generate_random_permutation(train_x.shape[1], seed)
-            train_x = train_x[:, feat_perm]
-            test_x = test_x[:, feat_perm]
+            batch_size = self._default_batch_size()
 
         pred_list = []
-        if self._uses_stacked_context(context_size):
-            X_ctx, y_ctx = self._prepare_stacked_context(train_x, train_y, context_size, seed)
-            X_test = pad_x(test_x[None, :, :], self.max_features).to(self.device)
+        for b in range(math.ceil(len(self.X_test) / batch_size)):
+            start = b * batch_size
+            end = min(len(self.X_test), (b + 1) * batch_size)
 
-            for b in range(math.ceil(len(self.X_test) / batch_size)):
-                start = b * batch_size
-                end = min(len(self.X_test), (b + 1) * batch_size)
+            if self._uses_stacked_context(context_size):
+                X_query_batch = X_query[:, start:end]
+                X_ctx_batch = X_ctx
+                y_ctx_batch = y_ctx
+            else:
+                X_query_batch = X_query[start:end]
+                X_ctx_batch = X_ctx[prep.indices_nni[start:end]]
+                y_ctx_batch = y_ctx[prep.indices_nni[start:end]]
 
-                if self.num_classes <= self.max_num_classes:
-                    pred = self.model(
-                        x_src=torch.cat([X_ctx, X_test[:, start:end]], dim=1),
-                        y_src=y_ctx,
-                        is_cls=True
-                    )
-                    pred = torch.nn.functional.log_softmax(pred[..., : self.num_classes].float(), dim=-1)
-                else:
-                    pred = self._predict_large_cls(X_ctx, X_test[:, start:end], y_ctx, num_features)
+            if self.num_classes <= self.max_num_classes:
+                pred = self.model(
+                    x_src=torch.cat([X_ctx_batch, X_query_batch], dim=1),
+                    y_src=y_ctx_batch,
+                    is_cls=True
+                )
+                pred = torch.nn.functional.log_softmax(pred[..., : self.num_classes].float(), dim=-1)
+            else:
+                pred = self._predict_large_cls(X_ctx_batch, X_query_batch, y_ctx_batch, num_features)
 
-                if not return_logits:
-                    pred = pred[..., :self.num_classes] / temperature
-                    pred = torch.nn.functional.softmax(pred.float(), dim=-1)
+            if not return_logits:
+                pred = pred[..., :self.num_classes] / temperature
+                pred = torch.nn.functional.softmax(pred.float(), dim=-1)
+
+            if self._uses_stacked_context(context_size):
                 pred_list.append(pred.squeeze(1))
-        else:
-            for b in range(math.ceil(len(self.X_test) / batch_size)):
-                start = b * batch_size
-                end = min(len(self.X_test), (b + 1) * batch_size)
-
-                indices_nni = self._get_context_indices(
-                    self.X_test[start:end], context_size=context_size, seed=seed
-                )
-                X_nni = train_x[torch.tensor(indices_nni)]
-                y_nni = train_y[torch.tensor(indices_nni)]
-
-                X_nni, y_nni = (
-                    pad_x(torch.Tensor(X_nni), self.max_features).to(self.device),
-                    torch.Tensor(y_nni).to(self.device),
-                )
-                X_eval = test_x[start:end]
-                X_eval = pad_x(X_eval.unsqueeze(1), self.max_features).to(self.device)
-
-                if self.num_classes <= self.max_num_classes:
-                    pred = self.model(
-                        x_src=torch.cat([X_nni, X_eval], dim=1),
-                        y_src=y_nni,
-                        is_cls=True
-                    )
-                    pred = torch.nn.functional.log_softmax(pred[..., : self.num_classes].float(), dim=-1)
-                else:
-                    pred = self._predict_large_cls(X_nni, X_eval, y_nni, num_features)
-
-                pred = pred.float()
+            else:
                 if not return_logits:
-                    pred = pred[..., :self.num_classes] / temperature
-                    pred = torch.nn.functional.softmax(pred, dim=-1)
-                    pred /= pred.sum(axis=-1, keepdims=True)  # numerical stability
-
-                pred_list.append(pred.squeeze(dim=0))
+                    # numerical stability - not sure if needed now, but from legacy code
+                    pred /= pred.sum(axis=-1, keepdims=True)
+                pred_list.append(pred.squeeze(0))
 
         pred_val = torch.cat(pred_list, dim=0).detach().cpu().float().numpy()
 
@@ -1539,9 +1516,10 @@ class TabDPTClassifier(TabDPTEstimator, ClassifierMixin):
 ================================================
 FILE: src/tabdpt/estimator.py
 ================================================
+from __future__ import annotations
 import json
 from typing import Literal
-import warnings
+from dataclasses import dataclass
 
 import numpy as np
 import torch
@@ -1554,7 +1532,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, Po
 from sklearn.utils.validation import check_is_fitted
 
 from .model import TabDPTModel
-from .utils import convert_to_torch_tensor, Log1pScaler, generate_random_permutation, pad_x
+from .utils import convert_to_torch_tensor, Log1pScaler, generate_random_permutation, pad_x, normalize_data
 
 # Constants for model caching and download
 _VERSION = "1_3"
@@ -1824,8 +1802,39 @@ class TabDPTEstimator(BaseEstimator):
         y_ctx = ctx_y[None, :].float()
         return X_ctx, y_ctx
 
-    def _prepare_prediction(self, X: np.ndarray, class_perm: np.ndarray | None = None, seed: int | None = None):
+    def _get_ensemble_iterator(self, n_ensembles: int, seed: int | None = None):
+        generator = np.random.SeedSequence(seed)
+        ensemble_iterator = generator.generate_state(n_ensembles)
+        if self.verbose:
+            from tqdm import tqdm
+            ensemble_iterator = tqdm(ensemble_iterator, desc="ensembles")
+        return ensemble_iterator
+
+    @dataclass
+    class PreprocessResult:
+        X_ctx: torch.Tensor
+        y_ctx: torch.Tensor
+        X_query: torch.Tensor
+        feat_perm: torch.Tensor
+        mean_y: torch.Tensor | None
+        std_y: torch.Tensor | None
+        indices_nni: torch.Tensor | None
+
+    def _preprocess(
+        self,
+        X: np.ndarray,
+        context_size: int | None = None,
+        seed: int | None = None,
+        class_perm: np.ndarray | None = None,
+        normalize_y_ctx: bool = False
+    ) -> TabDPTEstimator.PreprocessResult:
+        """
+        Do all operations requred to go from a predict function input to tensors for the model
+        """
+
         check_is_fitted(self)
+        if context_size is None:
+            context_size = np.inf
 
         if self.missing_indicators:
             inds = np.isnan(X)[:, self.has_missing_indicator].astype(float)
@@ -1836,38 +1845,197 @@ class TabDPTEstimator(BaseEstimator):
             if self.normalizer == 'quantile-uniform':
                 self.X_test = 2*self.X_test - 1
 
-        train_x, train_y, test_x = (
+        X_ctx, y_ctx, X_query = (
             convert_to_torch_tensor(self.X_train).to(self.device).float(),
             convert_to_torch_tensor(self.y_train).to(self.device).float(),
             convert_to_torch_tensor(self.X_test).to(self.device).float(),
         )
 
         # Apply PCA/subsampling to reduce the number of features if necessary
+        feat_perm = None
         if self.n_features > self.max_features:
             if self.feature_reduction == "pca":
-                train_x = train_x @ self.projection
-                test_x = test_x @ self.projection
+                X_ctx = X_ctx @ self.projection
+                X_query = X_query @ self.projection
             elif self.feature_reduction == "subsample":
-                feat_perm = generate_random_permutation(train_x.shape[1], seed)
-                train_x = train_x[:, feat_perm][:, :self.max_features]
-                test_x = test_x[:, feat_perm][:, :self.max_features]
+                feat_perm = generate_random_permutation(X_ctx.shape[1], seed)
+                X_ctx = X_ctx[:, feat_perm][:, :self.max_features]
+                X_query = X_query[:, feat_perm][:, :self.max_features]
 
         if class_perm is not None:
             assert self.mode == "cls", "class_perm only makes sense for classification"
             inv_perm = np.argsort(class_perm)
-            train_y = train_y.to(torch.long)
-            inv_perm = torch.as_tensor(inv_perm, device=train_y.device)
-            train_y = inv_perm[train_y].to(torch.float)
+            y_ctx = y_ctx.to(torch.long)
+            inv_perm = torch.as_tensor(inv_perm, device=y_ctx.device)
+            y_ctx = inv_perm[y_ctx].to(torch.float)
 
-        return train_x, train_y, test_x
+        if feat_perm is None:
+            if seed is not None:
+                feat_perm = generate_random_permutation(X_ctx.shape[1], seed)
+                X_ctx = X_ctx[:, feat_perm]
+                X_query = X_query[:, feat_perm]
+            else:
+                feat_perm = torch.arange(X_ctx.shape[1])
 
-    def _get_ensemble_iterator(self, n_ensembles: int, seed: int | None = None):
-        generator = np.random.SeedSequence(seed)
-        ensemble_iterator = generator.generate_state(n_ensembles)
-        if self.verbose:
-            from tqdm import tqdm
-            ensemble_iterator = tqdm(ensemble_iterator, desc="ensembles")
-        return ensemble_iterator
+        if normalize_y_ctx:
+            y_ctx, mean_y, std_y = normalize_data(y_ctx, return_mean_std=True)
+        else:
+            mean_y, std_y = None, None
+
+        if not self._uses_stacked_context(context_size):
+            indices_nni = self._get_context_indices(
+                self.X_test, context_size=context_size, seed=seed
+            )
+            X_ctx = pad_x(X_ctx, self.max_features)
+            X_query = pad_x(X_query.unsqueeze(1), self.max_features).to(self.device)
+            return self.PreprocessResult(X_ctx, y_ctx, X_query, feat_perm, mean_y, std_y, torch.tensor(indices_nni))
+
+        X_ctx, y_ctx = self._prepare_stacked_context(X_ctx, y_ctx, context_size, seed)
+        X_query = pad_x(X_query[None, :, :], self.max_features).to(self.device)
+        return self.PreprocessResult(X_ctx, y_ctx, X_query, feat_perm, mean_y, std_y, None)
+
+    def _default_batch_size(self):
+        return 4096 if self.device == "cpu" else 128*1024
+
+
+
+================================================
+FILE: src/tabdpt/explain.py
+================================================
+import math
+import warnings
+import numpy as np
+import torch
+
+from .classifier import TabDPTClassifier
+from .regressor import TabDPTRegressor
+
+
+def integrated_gradients(
+    fitted_model: TabDPTRegressor | TabDPTClassifier,
+    X_test: np.ndarray,
+    class_index: int = 0,
+    batch_size: int | None = None,
+    n_steps: int = 50,
+    context_size: int | None = None,
+    seed: int | None = None,
+    class_perm: np.ndarray | None = None
+) -> np.ndarray:
+    """
+    Runs integrated gradients for one output and returns local attributions.
+
+    Attributions for classification are relative to logit space (normalized by log_softmax), and attributions for
+    regression are relative to output values after normalization by target mean/std.
+
+    Options for baselines are not included because by default, mean/std scaling is applied, meaning that a zero baseline
+    is reasonable, and using the model without similar scaling would be an uncommon use case.
+
+    Retrieval is not supported since the context will no longer be relevant when testing points along the integration
+    path. Support for high numbers of classes is not yet implemented, although integrated gradients does not scale well
+    to high numbers of classes anyway.
+
+    Args:
+        fitted_model: TabDPT model after running .fit
+        X_test: Model inputs to attribute, of size `n_test` x `n_features`
+        class_index: For classifiers, the index of the class to produce attributions for. Logits are normalized using
+            log_softmax, so for the binary classification case, only explaining either class index 0 or 1 should suffice,
+            but multiple runs could be required for >2 classes.
+        batch_size: Internal test batch size for forward and backward passes. The context is shared and batching
+            across the sequence dimension is used. Note that IG requires `n_steps*X_test.shape[0]` actual test points, so
+            larger batch sizes than the size of `X_test` can be used if memory permits.
+        n_steps: Number of steps to integrate over
+        context_size, seed, class_perm: Same meaning as in predict functions
+
+    Returns:
+        Local attributions of size `n_test` x `n_features`
+    """
+    from captum.attr import IntegratedGradients
+
+    if context_size is not None and not fitted_model._uses_stacked_context(context_size):
+        raise NotImplementedError(
+            "Integrated gradients only supports shared contexts for test points. Note that IG with retrieval is not "
+            "well-defined since the context depends on the test point values."
+        )
+
+    is_cls = isinstance(fitted_model, TabDPTClassifier)
+    if is_cls and fitted_model.num_classes > fitted_model.max_num_classes:
+        raise NotImplementedError(
+            "Integrated gradients not implemented for high numbers of classes, since this requires multiple forward "
+            "passes internally."
+        )
+
+    if fitted_model.scaler is None:
+        warnings.warn(
+            "Using integrated gradients with no scaler will likely produce invalid results since we assume a zero baseline"
+        )
+
+    if batch_size is None:
+        batch_size = fitted_model._default_batch_size()
+
+    prep = fitted_model._preprocess(
+        X_test,
+        context_size=context_size,
+        seed=seed,
+        class_perm=class_perm,
+        normalize_y_ctx=not is_cls
+    )
+    X_ctx, y_ctx, X_query, feat_perm = prep.X_ctx, prep.y_ctx, prep.X_query, prep.feat_perm
+    feat_perm = feat_perm.cpu().numpy()
+
+    def cls_wrapped_forward(X_query):
+        x_src = torch.cat([X_ctx, X_query.unsqueeze(0)], dim=1)
+        pred = fitted_model.model(x_src=x_src, y_src=y_ctx, is_cls=True)
+        return torch.nn.functional.log_softmax(pred[..., :fitted_model.num_classes], dim=-1).squeeze(1)
+
+    def reg_wrapped_forward(X_query):
+        x_src = torch.cat([X_ctx, X_query.unsqueeze(0)], dim=1)
+        pred = fitted_model.model(x_src=x_src, y_src=y_ctx, is_cls=False)
+        logits = pred.squeeze(1)[:, fitted_model.max_num_classes:].float()
+        ret = fitted_model._expectation_from_regression_logits(logits)
+        return ret
+
+    forward = cls_wrapped_forward if is_cls else reg_wrapped_forward
+    ig = IntegratedGradients(forward)
+
+    attrs = []
+    for b in range(math.ceil(X_query.shape[1] / batch_size)):
+        attrs.append(ig.attribute(
+            X_query.squeeze(0)[b*batch_size : (b+1)*batch_size],
+            internal_batch_size=batch_size,
+            n_steps=n_steps,
+            target=class_index if is_cls else None
+        ).cpu().numpy())
+    attrs = np.concatenate(attrs)
+
+    if fitted_model.n_features > fitted_model.max_features and fitted_model.feature_reduction == "pca":
+        # In the case of PCA projection, IG is done with respect to the principal components: u = x @ V, so divide by u
+        # to get the integral, multiply by V.T to make the inner derivative in the IG formula be with respect to x
+        # (chain rule), then multiply by x.
+        pca_X = X_query.squeeze(0).cpu().numpy()
+        integral = np.divide(attrs, pca_X, out=np.zeros_like(attrs), where=pca_X!=0) # Avoid divide by zero
+        inv_perm = np.argsort(feat_perm)
+        integral = integral[:, inv_perm]
+        proj = fitted_model.projection.cpu().numpy()
+        # Padding to max_features in _preprocess can lead to X_query/integral being larger than projection matrix
+        attrs = integral[:, :proj.shape[1]] @ proj.T * fitted_model.X_test
+    else:
+        inv_perm = np.argsort(feat_perm)
+        # If feature subsampling is used, feat_perm will be longer than attrs, so we need to add zero attributions
+        if attrs.shape[1] < len(inv_perm):
+            attrs = np.pad(attrs, ((0, 0), (0, len(inv_perm) - attrs.shape[1])))
+        attrs = attrs[:, inv_perm]
+
+    # Add back any columns removed by SimpleImputer
+    for i in np.nonzero(np.isnan(fitted_model.imputer.statistics_))[0]:
+        attrs = np.insert(attrs, i, np.zeros_like(attrs[:, 0]), axis=1)
+
+    if fitted_model.missing_indicators and any(fitted_model.has_missing_indicator):
+        n_missing_indicators = np.sum(fitted_model.has_missing_indicator)
+        feat_attrs = attrs[:, :-n_missing_indicators]
+        feat_attrs[:, fitted_model.has_missing_indicator] += attrs[:, -n_missing_indicators:]
+        return feat_attrs
+
+    return attrs
 
 
 
@@ -2186,7 +2354,6 @@ from sklearn.base import RegressorMixin
 
 from .bar_distribution import FullPrediction
 from .estimator import TabDPTEstimator
-from .utils import generate_random_permutation, pad_x, normalize_data
 
 OutputType = Literal["mean", "full"]
 
@@ -2253,73 +2420,44 @@ class TabDPTRegressor(TabDPTEstimator, RegressorMixin):
         seed: int | None = None,
         return_logits: bool = False,
     ):
-        train_x, train_y, test_x = self._prepare_prediction(X, seed=seed)
-        num_features = torch.tensor([train_x.shape[-1]], dtype=torch.long, device=train_x.device)
+        prep = self._preprocess(X, context_size=context_size, seed=seed, normalize_y_ctx=True)
+        X_ctx, y_ctx, X_query, mean_y, std_y = prep.X_ctx, prep.y_ctx, prep.X_query, prep.mean_y, prep.std_y
 
         if context_size is None:
             context_size = np.inf
-
         if batch_size is None:
-            if self.device == "cpu":
-                batch_size = 4096
-            else:
-                batch_size = 128*1024
-
-        if seed is not None:
-            feat_perm = generate_random_permutation(train_x.shape[1], seed)
-            train_x = train_x[:, feat_perm]
-            test_x = test_x[:, feat_perm]
-
-        train_y, mean_y, std_y = normalize_data(train_y, return_mean_std=True)
+            batch_size = self._default_batch_size()
 
         pred_list = []
-        if self._uses_stacked_context(context_size):
-            X_ctx, y_ctx = self._prepare_stacked_context(train_x, train_y, context_size, seed)
-            X_test = pad_x(test_x[None, :, :], self.max_features).to(self.device)
+        for b in range(math.ceil(len(self.X_test) / batch_size)):
+            start = b * batch_size
+            end = min(len(self.X_test), (b + 1) * batch_size)
 
-            for b in range(math.ceil(len(self.X_test) / batch_size)):
-                start = b * batch_size
-                end = min(len(self.X_test), (b + 1) * batch_size)
+            if self._uses_stacked_context(context_size):
+                X_query_batch = X_query[:, start:end]
+                X_ctx_batch = X_ctx
+                y_ctx_batch = y_ctx
+            else:
+                X_query_batch = X_query[start:end]
+                X_ctx_batch = X_ctx[prep.indices_nni[start:end]]
+                y_ctx_batch = y_ctx[prep.indices_nni[start:end]]
 
-                pred = self.model(
-                    x_src=torch.cat([X_ctx, X_test[:, start:end]], dim=1),
-                    y_src=y_ctx,
-                    is_cls=False
-                )
-                logits = pred.squeeze(1)[:, self.max_num_classes:].float()
-                if return_logits:
-                    pred_list.append(logits)
-                else:
-                    y_hat = self._expectation_from_regression_logits(logits)
-                    pred_list.append(y_hat * std_y + mean_y)
-        else:
-            for b in range(math.ceil(len(self.X_test) / batch_size)):
-                start = b * batch_size
-                end = min(len(self.X_test), (b + 1) * batch_size)
+            pred = self.model(
+                x_src=torch.cat([X_ctx_batch, X_query_batch], dim=1),
+                y_src=y_ctx_batch,
+                is_cls=False
+            )
+            if self._uses_stacked_context(context_size):
+                pred = pred.squeeze(1)
+            else:
+                pred = pred.squeeze(0)
+            logits = pred[:, self.max_num_classes:].float()
 
-                indices_nni = self._get_context_indices(
-                    self.X_test[start:end], context_size=context_size, seed=seed
-                )
-                X_nni = train_x[torch.tensor(indices_nni)]
-                y_nni = train_y[torch.tensor(indices_nni)]
-
-                X_nni, y_nni = (
-                    pad_x(torch.Tensor(X_nni), self.max_features).to(self.device),
-                    torch.Tensor(y_nni).to(self.device),
-                )
-                X_eval = test_x[start:end]
-                X_eval = pad_x(X_eval.unsqueeze(1), self.max_features).to(self.device)
-                pred = self.model(
-                    x_src=torch.cat([X_nni, X_eval], dim=1),
-                    y_src=y_nni,
-                    is_cls=False
-                )
-                logits = pred.squeeze(0)[:, self.max_num_classes:].float()
-                if return_logits:
-                    pred_list.append(logits)
-                else:
-                    y_hat = self._expectation_from_regression_logits(logits)
-                    pred_list.append(y_hat * std_y + mean_y)
+            if return_logits:
+                pred_list.append(logits)
+            else:
+                y_hat = self._expectation_from_regression_logits(logits)
+                pred_list.append(y_hat * std_y + mean_y)
 
         preds = torch.cat(pred_list, dim=0)
         if return_logits:
@@ -2484,13 +2622,14 @@ def maskmean(x, mask, dim):
 
 def maskstd(x, mask, dim=0):
     num = mask.sum(dim=dim, keepdim=True)
-    mean = maskmean(x, mask, dim=0)
+    mean = maskmean(x, mask, dim=dim)
     diffs = torch.where(mask, mean - x, 0)
-    return ((diffs**2).sum(dim=0, keepdim=True) / (num - 1)) ** 0.5
+    return ((diffs**2).sum(dim=dim, keepdim=True) / (num - 1)) ** 0.5
 
 
 def normalize_data(data, eval_pos=-1, dim=0, return_mean_std: bool = False):
     X = data[:eval_pos] if eval_pos > 0 else data
+    X = X.detach()  # Allow gradient computations wrt inputs
     mask = ~torch.isnan(X)
     mean = maskmean(X, mask, dim=dim)
     std = maskstd(X, mask, dim=dim) + 1e-6
@@ -2502,6 +2641,7 @@ def normalize_data(data, eval_pos=-1, dim=0, return_mean_std: bool = False):
 
 def clip_outliers(data, eval_pos=-1, n_sigma=4, dim=0):
     X = data[:eval_pos] if eval_pos > 0 else data
+    X = X.detach()  # Allow gradient computations wrt inputs
     mask = ~torch.isnan(X)
     mean = maskmean(X, mask, dim=dim)
     cutoff = n_sigma * maskstd(X, mask, dim=dim)
@@ -3878,6 +4018,122 @@ def test_get_params_reads_every_constructor_argument():
 
 
 ================================================
+FILE: tests/test_explain.py
+================================================
+import unittest
+
+import numpy as np
+
+from tabdpt import TabDPTClassifier, TabDPTRegressor
+from tabdpt.explain import integrated_gradients
+
+from device_utils import pick_device, seed_everything
+
+DEVICE = pick_device()
+N_TRAIN = 2000
+N_TEST = 100
+N_COL = 4
+
+class TestIntegratedGradients(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        seed_everything(0)
+        cls.gen = np.random.default_rng(0)
+        cls.X_train = cls.gen.normal(size=(N_TRAIN, N_COL))
+        cls.X_test = cls.gen.normal(size=(N_TEST, N_COL))
+        # Expected attributions: feature 1 > feature 2, feature 0 and 3 uninmportant
+        cls.y_reg = cls.X_train[:,1] + 0.1*cls.X_train[:,2]
+        cls.y_cls = cls.y_reg > 0
+
+    def validate_attrs(self, attrs):
+        self.assertEqual(attrs.shape, (N_TEST, N_COL))
+        agg = np.mean(np.abs(attrs), axis=0)
+        self.assertGreater(agg[1], agg[2])
+        self.assertGreater(agg[2], agg[0])
+        self.assertGreater(agg[2], agg[3])
+        self.assertGreater(agg[1]/10, agg[0], "most important feature should be clearly above unimportant ones")
+        self.assertGreater(agg[1]/10, agg[3], "most important feature should be clearly above unimportant ones")
+
+    def test_regression(self):
+        model = TabDPTRegressor(device=DEVICE)
+        model.fit(self.X_train, self.y_reg)
+        attrs = integrated_gradients(model, self.X_test)
+        self.validate_attrs(attrs)
+
+    def test_classification(self):
+        model = TabDPTClassifier(device=DEVICE)
+        model.fit(self.X_train, self.y_cls)
+        attrs = integrated_gradients(model, self.X_test, class_index=1)
+        self.validate_attrs(attrs)
+
+    def test_no_retrieval(self):
+        model = TabDPTClassifier(context_reduction="retrieval", device=DEVICE)
+        model.fit(self.X_train, self.y_cls)
+        with self.assertRaises(NotImplementedError):
+            integrated_gradients(model, self.X_test, context_size=10)
+
+    def test_no_large_cls(self):
+        model = TabDPTClassifier(device=DEVICE)
+        n_classes = model.max_num_classes + 2
+        y = np.tile(np.arange(n_classes), len(self.y_cls) // n_classes + 1)[:len(self.y_cls)]
+        model.fit(self.X_train, y)
+        with self.assertRaises(NotImplementedError):
+            integrated_gradients(model, self.X_test)
+
+    def test_pca(self):
+        model = TabDPTRegressor(device=DEVICE)
+        n_features = model.max_features + 10
+        X_train = np.hstack((self.X_train, self.gen.normal(size=(N_TRAIN, n_features-N_COL))))
+        X_test = np.hstack((self.X_test, self.gen.normal(size=(N_TEST, n_features-N_COL))))
+        model.fit(X_train, self.y_reg)
+        attrs = integrated_gradients(model, X_test)
+        self.assertEqual(attrs.shape, (N_TEST, n_features))
+        agg = np.mean(np.abs(attrs), axis=0)
+        self.assertGreater(agg[1], agg[2])
+        self.assertGreater(agg[2], max(agg[0], np.max(agg[3:])))
+
+    def test_feature_subsample(self):
+        model = TabDPTRegressor(feature_reduction="subsample", device=DEVICE, compile=False, verbose=False)
+        n_features = model.max_features + 10
+        X_train = np.hstack((self.X_train, self.gen.normal(size=(N_TRAIN, n_features-N_COL))))
+        X_test = np.hstack((self.X_test, self.gen.normal(size=(N_TEST, n_features-N_COL))))
+        model.fit(X_train, self.y_reg)
+        attrs = integrated_gradients(model, X_test)
+        self.assertEqual(attrs.shape, (N_TEST, n_features))
+        # Can't assert feature ordering because relevant features might not have been sampled
+
+    def test_missing_indicators(self):
+        model = TabDPTRegressor(missing_indicators=True, device=DEVICE)
+        X_train = self.X_train.copy()
+        X_train[self.gen.uniform(size=X_train.shape[0]) > 0.9, 1] = np.nan
+        X_train[self.gen.uniform(size=X_train.shape[0]) > 0.5, 3] = np.nan
+        X_test = self.X_test.copy()
+        X_test[self.gen.uniform(size=X_test.shape[0]) > 0.9, 1] = np.nan
+        X_test[self.gen.uniform(size=X_test.shape[0]) > 0.5, 3] = np.nan
+        model.fit(X_train, self.y_reg)
+        attrs = integrated_gradients(model, X_test)
+        self.validate_attrs(attrs)
+
+    def test_batching(self):
+        model = TabDPTRegressor(device=DEVICE)
+        model.fit(self.X_train, self.y_reg)
+        attrs = integrated_gradients(model, self.X_test, batch_size=N_TEST // 10)
+        self.validate_attrs(attrs)
+
+    def test_nan_cols(self):
+        model = TabDPTClassifier(device=DEVICE)
+        X_train = self.X_train.copy()
+        X_train[:, 0] = np.nan
+        X_train[:, N_COL-1] = np.nan
+        model.fit(X_train, self.y_cls)
+        attrs = integrated_gradients(model, self.X_test)
+        self.assertEqual(attrs.shape, (N_TEST, N_COL))
+        self.assertTrue(np.all(attrs[:, 0] == 0))
+        self.assertTrue(np.all(attrs[:, N_COL-1] == 0))
+
+
+
+================================================
 FILE: tests/test_inference.py
 ================================================
 """Integration tests exercising the inference code paths on small synthetic data."""
@@ -3908,10 +4164,19 @@ class TestClassifier(unittest.TestCase):
         self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
         np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
 
-    def test_retrieval_path(self):
-        p = self.model.predict_proba(self.X, context_size=20)
+    def test_batching(self):
+        p = self.model.predict_proba(self.X, batch_size=N_TRAIN//4)
         self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
         np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
+
+    def test_context_reduction(self):
+        for context_reduction in ("retrieval", "subsample", "subsample-balanced"):
+            model = TabDPTClassifier(device=DEVICE, context_reduction=context_reduction)
+            model.fit(self.X, self.y)
+            for batch_size in (None, N_TRAIN//4):
+                p = model.predict_proba(self.X, context_size=20, batch_size=batch_size)
+                self.assertEqual(p.shape, (N_TRAIN, N_CLASSES))
+                np.testing.assert_allclose(p.sum(axis=1), 1.0, atol=1e-4)
 
     def test_return_logits(self):
         logits = self.model.predict_proba(self.X, context_size=2048, return_logits=True)
@@ -3979,9 +4244,13 @@ class TestRegressor(unittest.TestCase):
         pred = self.model.predict(self.X, n_ensembles=1, context_size=2048)
         self.assertEqual(pred.shape, (N_TRAIN,))
 
-    def test_retrieval_path(self):
-        pred = self.model.predict(self.X, n_ensembles=1, context_size=20)
-        self.assertEqual(pred.shape, (N_TRAIN,))
+    def test_context_reduction(self):
+        for context_reduction in ("retrieval", "subsample"):
+            model = TabDPTRegressor(device=DEVICE, verbose=False)
+            model.fit(self.X, self.y)
+            for batch_size in (None, N_TRAIN//4):
+                pred = model.predict(self.X, n_ensembles=1, context_size=20, batch_size=batch_size)
+                self.assertEqual(pred.shape, (N_TRAIN,))
 
     def test_ensemble(self):
         pred = self.model.predict(self.X, n_ensembles=3, context_size=2048, seed=0)

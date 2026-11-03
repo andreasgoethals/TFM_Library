@@ -1,0 +1,911 @@
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+Xuhong LI 1 Yves GRANDV ALET1 Franck DA VOINE1
+Abstract
+In inductive transfer learning, ﬁne-tuning pre-
+trained convolutional networks substantially out-
+performs training from scratch. When using ﬁne-
+tuning, the underlying assumption is that the pre-
+trained model extracts generic features, which
+are at least partially relevant for solving the tar-
+get task, but would be difﬁcult to extract from
+the limited amount of data available on the target
+task. However, besides the initialization with the
+pre-trained model and the early stopping, there
+is no mechanism in ﬁne-tuning for retaining the
+features learned on the source task. In this pa-
+per, we investigate several regularization schemes
+that explicitly promote the similarity of the ﬁnal
+solution with the initial model. We show the ben-
+eﬁt of having an explicit inductive bias towards
+the initial model, and we eventually recommend
+a simple L2 penalty with the pre-trained model
+being a reference as the baseline of penalty for
+transfer learning tasks.
+1. Introduction
+It is now well known that modern convolutional neural net-
+works (e.g. Krizhevsky et al. 2012, Simonyan & Zisserman
+2015, He et al. 2016, Szegedy et al. 2016) can achieve re-
+markable performance on large-scale image databases, e.g.
+ImageNet (Deng et al. 2009) and Places 365 (Zhou et al.
+2017), but it is really dissatisfying to see the vast amounts
+of data, computing time and power consumption that are
+necessary to train deep networks. Fortunately, such convo-
+lutional networks, once trained on a large database, can be
+reﬁned to solve related but different visual tasks by means
+of transfer learning, using ﬁne-tuning (Yosinski et al. 2014,
+Simonyan & Zisserman 2015).
+Some form of knowledge is believed to be extracted by
+1Sorbonne universit ´es, Universit ´e de technologie de
+Compi`egne, CNRS, Heudiasyc, UMR 7253, Compi`egne, France.
+Correspondence to: Xuhong LI<xuhong.li@hds.utc.fr>.
+Proceedings of the 35 th International Conference on Machine
+Learning, Stockholm, Sweden, PMLR 80, 2018. Copyright 2018
+by the author(s).
+learning from the large-scale database of the source task
+and this knowledge is then transferred to the target task
+by initializing the network with the pre-trained parameters.
+However, we will show in the experimental section that
+some parameters may be driven far away from their initial
+values during ﬁne-tuning. This leads to important losses of
+the initial knowledge that is assumed to be relevant for the
+targeted problem.
+In order to help preserve the knowledge embedded in the
+initial network, we consider a series of other parameter reg-
+ularization methods during ﬁne-tuning. We argue that the
+standardL2 regularization, which drives the parameters to-
+wards the origin, is not adequate in the framework of transfer
+learning, where the initial values provide a more sensible
+reference point than the origin. This simple modiﬁcation
+keeps the original control of overﬁtting, by constraining the
+effective search space around the initial solution, while en-
+couraging committing to the acquired knowledge. We show
+that it has noticeable effects in inductive transfer learning
+scenarios.
+This paper copes with the inconsistency that still prevails in
+transfer learning scenarios, where the model is initialized
+with some parameters, while the abuse ofL2 regularization
+encourages departing from these initial values. We thus
+advocate for a coherent parameter regularization approach,
+where the pre-trained model is both used as the starting
+point of the optimization process and as the reference in the
+penalty that encodes an explicit inductive bias. This type
+of penalty will be designated with SP to recall that they en-
+courage similarity with the starting point of the ﬁne-tuning
+process. We evaluate regularizers based on the L2, Lasso
+and Group-Lasso penalties, which can freeze some individ-
+ual parameters, or groups of parameters, to the pre-trained
+parameters. Fisher information is also taken into account
+when we testL2-SP and Group-Lasso-SP approaches. Our
+experiments indicate that all tested parameter regularization
+methods using the pre-trained parameters as a reference get
+an edge over the standardL2 weight decay approach. We
+eventually recommend usingL2-SP as the standard baseline
+for solving transfer learning tasks and benchmarking new
+algorithms.
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+2. Related Work
+In this section, we recall the approaches to inductive transfer
+learning in convolutional networks. We focus on approaches
+that also encourage similarity (of features or parameters) on
+different models. Our proposal departs either by the goal
+pursued or by the type of model used.
+2.1. Shrinking Toward Chosen Parameters
+Regularization has been a means to build shrinkage estima-
+tors for decades. Shrinking towards zero is the most com-
+mon form of shrinkage, but shrinking towards adaptively
+chosen targets has been around for some time, starting with
+Stein shrinkage (see e.g. Lehmann & Casella 1998, chap-
+ter 5), where it can be related to empirical Bayes arguments.
+In transfer learning, it has been used in maximum entropy
+models (Chelba & Acero 2006) or SVM (Yang et al. 2007,
+Aytar & Zisserman 2011, Tommasi et al. 2014). These
+approaches were shown to outperform standardL2 regular-
+ization with limited labeled data in the target task (Aytar &
+Zisserman 2011, Tommasi et al. 2014).
+These relatives differ from the application to deep networks
+in several respects, the more important one being that they
+consider a ﬁxed representation, where transfer learning aims
+at producing similar classiﬁcation parameters in that space,
+that is, similar classiﬁcation rules. For deep networks, trans-
+fer usually aims at learning similar representations upon
+which classiﬁcation parameters will be learned from scratch.
+Hence, even though the techniques we discuss here are very
+similar regarding the analytical form of the regularizers,
+they operate on parameters having a very different role.
+2.2. Transfer Learning for Deep Networks
+Regarding transfer learning, we follow here the nomencla-
+ture of Pan & Yang (2010), who categorized several types
+of transfer learning according to domain and task settings
+during the transfer. A domain corresponds to the feature
+space and its distribution, whereas a task corresponds to
+the label space and its conditional distribution with respect
+to features. The initial learning problem is deﬁned on the
+source domain and source task, whereas the new learning
+problem is deﬁned on the target domain and the target task.
+In the typology of Pan & Yang, we consider the inductive
+transfer learning setting, where the target domain is identical
+to the source domain, and the target task is different from the
+source task. We furthermore focus on the case where a vast
+amount of data was available for training on the source prob-
+lem, and some limited amount of labeled data is available
+for solving the target problem. Under this setting, we aim at
+improving the performance on the target problem through
+parameter regularization methods that explicitly encourage
+the similarity of the solutions to the target and source prob-
+lems. Note that, though we refer here to problems that were
+formalized or popularized after (Pan & Yang 2010), such as
+lifelong learning, Pan & Yang’s typology remains valid.
+2.2.1. R EPRESENTATION TRANSFER
+Donahue et al. (2014) repurposed features extracted from
+different layers of the pre-trained AlexNet of Krizhevsky
+et al. (2012) and plugged them into an SVM or a logistic
+regression classiﬁer. This approach outperformed the state
+of the art of that time on the Caltech-101 database (Fei-Fei
+et al. 2006). Later, Yosinski et al. (2014) showed that ﬁne-
+tuning the whole AlexNet resulted in better performance
+than using the network as a static feature extractor. Fine-
+tuning pre-trained VGG (Simonyan & Zisserman 2015) on
+the image classiﬁcation task of VOC-2012 (Everingham
+et al. 2010) and Caltech 256 (Grifﬁn et al. 2007) achieved
+the best results of that time.
+Ge & Yu (2017) proposed a scheme for selecting a subset
+of images from the source problem that have similar local
+features to those in the target problem and then jointly ﬁne-
+tuned a pre-trained convolutional network. Besides image
+classiﬁcation, many procedures for object detection (Gir-
+shick et al. 2014, Redmon et al. 2016, Ren et al. 2015) and
+image segmentation (Long et al. 2015a, Chen et al. 2017,
+Zhao et al. 2017) have been proposed relying on ﬁne-tuning
+to improve over training from scratch. These approaches
+showed promising results in a challenging transfer learning
+setup, as going from classiﬁcation to object detection or
+image segmentation requires rather heavy modiﬁcations of
+the architecture of the network.
+The success of transfer learning with convolutional networks
+relies on the generality of the learned representations that
+have been constructed from a large database like ImageNet.
+Yosinski et al. (2014) also quantiﬁed the transferability of
+these pieces of information in different layers, e.g. the ﬁrst
+layers learn general features, the middle layers learn high-
+level semantic features and the last layers learn the features
+that are very speciﬁc to a particular task. That can be also
+noticed by the visualization of features (Zeiler & Fergus
+2014). Overall, the learned representations can be conveyed
+to related but different domains and the parameters in the
+network are reusable for different tasks.
+2.2.2. R EGULARIZERS IN RELATED LEARNING SETUPS
+In lifelong learning (Thrun & Mitchell 1995, Pentina &
+Lampert 2015), where a series of tasks is learned sequen-
+tially by a single model, the knowledge extracted from the
+previous tasks may be lost as new tasks are learned, result-
+ing in what is known as catastrophic forgetting. In order
+to achieve a good performance on all tasks, Li & Hoiem
+(2017) proposed to use the outputs of the target examples,
+computed by the original network on the source task, to de-
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+ﬁne a learning scheme preserving the memory of the source
+tasks when training on the target task. They also tried to
+preserve the pre-trained parameters instead of the outputs
+of examples but they did not obtain interesting results.
+Kirkpatrick et al. (2017) developed a similar approach with
+success. They get sensible improvements by measuring the
+sensitivity of the parameters of the network learned on the
+source data thanks to the Fisher information. The Fisher
+information matrix deﬁnes a metric in parameter space that
+is used in their regularizer to preserve the representation
+learned on the source data, thereby retaining the knowledge
+acquired on the previous tasks. This scheme, named elastic
+weight consolidation, was shown to avoid forgetting, but
+ﬁne-tuning with plain stochastic gradient descent was more
+effective than elastic weight consolidation for learning new
+tasks. Hence, elastic weight consolidation may be thought as
+being inadequate for transfer learning, where performance
+is only measured on the target task. We will show that this
+conclusion is not appropriate in typical transfer learning
+scenarios with few target examples.
+In domain adaptation (Long et al. 2015b), where the target
+domain differs from the source domain whereas the target
+task is identical to the source task and no (or few) target
+examples are labeled, most approaches are searching for a
+common representation space for source and target domains
+to reduce domain shift. Rozantsev et al. (2016) proposed a
+parameter regularization scheme for encouraging the sim-
+ilarity of the representations of the source and the target
+domains. Their regularizer encourages similar source and
+target parameters, up to a linear transformation. Still in
+domain adaptation, besides vision, encouraging similar pa-
+rameters in deep networks has been proposed in speaker
+adaptation problems (Liao 2013, Ochiai et al. 2014) and
+neural machine translation (Barone et al. 2017), where it
+proved to be helpful.
+TheL2-SP regularizer was used independently by Grachten
+& Chac ´on (2017) for transfer in vision application, but
+where they used a random reinitialization of parameters.
+For convex optimization problems, this is equivalent to ﬁne-
+tuning withL2-SP, but we are obviously not in that situation.
+Grachten & Chac´on (2017) conclude that their strategy be-
+haves similarly to learning from scratch. We will show that
+using the starting point as an initialization of the ﬁne-tuning
+process and as the reference in the regularizer improves
+results consistently upon the standard ﬁne-tuning process.
+3. Regularizers for Fine-Tuning
+In this section, we detail the penalties we consider for ﬁne-
+tuning. Parameter regularization is critical when learning
+from small databases. When learning from scratch, regu-
+larization is aimed at facilitating optimization and avoiding
+overﬁtting, by implicitly restricting the capacity of the net-
+work, that is, the effective size of the search space. In
+transfer learning, the role of regularization is similar, but the
+starting point of the ﬁne-tuning process conveys informa-
+tion that pertains to the source problem (domain and task).
+Hence, the network capacity has not to be restricted blindly:
+the pre-trained model sets a reference that can be used to
+deﬁne the functional space effectively explored during ﬁne-
+tuning.
+Since we are using early stopping, ﬁne-tuning a pre-trained
+model is an implicit form of inductive bias towards the
+initial solution. We explore here how a coherent explicit
+inductive bias, encoded by a regularization term, affects the
+training process. Section 4 shows that all such schemes
+get an edge over the standard approaches that either use
+weight decay or freeze part of the network for preserving
+the low-level representations that are built in the ﬁrst layers
+of the network.
+Let w ∈ Rn be the parameter vector containing all the
+network parameters that are to be adapted to the target task.
+The regularized objective function ˜J that is to be optimized
+is the sum of the standard objective function J and the
+regularizer Ω(w). In our experiments, J is the negative
+log-likelihood, so that the criterion ˜J could be interpreted
+in terms of maximum a posteriori estimation, where the
+regularizer Ω(w) would act as the log prior of w. More
+generally, the minimizer of ˜J is a trade-off between the
+data-ﬁtting term and the regularization term.
+L2 penalty The current baseline penalty for transfer learn-
+ing is the usual L2 penalty, also known as weight decay,
+since it drives the weights of the network to zero:
+Ω(w) = α
+2‖w‖2
+2 , (1)
+whereα is the regularization parameter setting the strength
+of the penalty and‖·‖p is thep-norm of a vector.
+L2-SP Let w0 be the parameter vector of the model pre-
+trained on the source problem, acting as the starting point
+(-SP) in ﬁne-tuning. Using this initial vector as the reference
+in theL2 penalty, we get:
+Ω(w) = α
+2
+‖‖w− w0‖‖2
+2 . (2)
+Typically, the transfer to a target task requires some mod-
+iﬁcations of the network architecture used for the source
+task, such as on the last layer used for predicting the out-
+puts. Then, there is no one-to-one mapping between w and
+w0, and we use two penalties: one for the part of the target
+network that shares the architecture of the source network,
+denoted wS, the other one for the novel part, denoted w ¯S.
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+The compound penalty then becomes:
+Ω(w) = α
+2
+‖‖wS− w0
+S
+‖‖2
+2 + β
+2‖w ¯S‖2
+2 . (3)
+L2-SP-Fisher Elastic weight consolidation (Kirkpatrick
+et al. 2017) was proposed to avoid catastrophic forgetting
+in the setup of lifelong learning, where several tasks should
+be learned sequentially. In addition to preserving the ini-
+tial parameter vector w0, it consists in using the estimated
+Fisher information to deﬁne the distance between wS and
+w0
+S. More precisely, it relies on the diagonal of the Fisher
+information matrix, resulting in the following penalty:
+Ω(w) = α
+2
+∑
+j∈S
+ˆFjj
+(
+wj−w0
+j
+)2
++ β
+2‖w ¯S‖2
+2 , (4)
+where ˆFjj is the estimate of thejth diagonal element of the
+Fisher information matrix. It is computed as the average of
+the squared Fisher’s score on the source problem, using the
+inputs of the source data:
+ˆFjj = 1
+m
+m∑
+i=1
+K∑
+k=1
+fk(x(i); w0)
+( ∂
+∂wj
+logfk(x(i); w0)
+)2
+,
+where the outer average estimates the expectation with re-
+spect to inputs x and the inner weighted sum is the estimate
+of the conditional expectation of outputs given input x(i),
+with outputs drawn from a categorical distribution of param-
+eters (f1(x(i); w),...,f k(x(i); w),...,f K(x(i); w)).
+L1-SP We also experiment theL1 variant ofL2-SP:
+Ω(w) =α
+‖‖wS− w0
+S
+‖‖
+1 + β
+2‖w ¯S‖2
+2 . (5)
+The usualL1 penalty encourages sparsity; here, by using
+w0
+S as a reference in the penalty,L1-SP encourages some
+components of the parameter vector to be frozen, equal
+to the pre-trained initial values. The penalty can thus be
+thought as intermediate betweenL2-SP (3) and the strate-
+gies consisting in freezing a part of the initial network. We
+explore below other ways of doing so.
+Group-Lasso-SP (GL-SP) Instead of freezing some indi-
+vidual parameters, we may encourage freezing some groups
+of parameters corresponding to channels of convolution
+kernels. Formally, we endow the set of parameters with a
+group structure, deﬁned by a ﬁxed partition of the index set
+I ={1,...,p }, that is, I = ⋃G
+g=0Gg, with Gg∩G h =
+∅ for g⁄= h. In our setup,G0 = ¯S, and for g >0,Gg is
+the set of fan-in parameters of channel g. Let pg denote
+the cardinality of group g, and wGg∈ Rpg be the vector
+(wj)j∈Gg. Then, the GL-SP penalty is:
+Ω(w) =α
+G∑
+g=1
+sg
+‖‖‖wGg− w0
+Gg
+‖‖‖
+2
++ β
+2‖w ¯S‖2
+2 , (6)
+where w0
+G0 = w0
+¯S
+∆
+= 0, and, forg >0,sg is a predeﬁned
+constant that may be used to balance the different cardinali-
+ties of groups. In our experiments, we usedsg =p1/2
+g .
+Our implementation of Group-Lasso-SP can freeze feature
+extractors at any depth of the convolutional network, to
+preserve the pre-trained feature extractors as a whole in-
+stead of isolated pre-trained parameters. The groupGg of
+size pg = hg× wg×dg gathers all the parameters of a
+convolution kernel of height hg, width wg, and depth dg.
+This grouping is done at each layer of the network, for each
+output channel, so that the group index g corresponds to
+two indexes in the network architecture: the layer index l
+and the output channel index at layerl. If we havecl such
+channels at layerl, we have a total ofG =∑
+lcl groups.
+Group-Lasso-SP-Fisher (GL-SP-Fisher) Following the
+idea ofL2-SP-Fisher, the Fisher version of GL-SP is:
+Ω(w) =α
+G∑
+g=1
+sg
+(∑
+j∈Gg
+ˆFjj
+(
+wj−w0
+j
+)2)1/2
++β
+2‖wG0‖2
+2 .
+4. Experiments
+We evaluate the aforementioned parameter regularizers on
+several pairs of source and target tasks. We use ResNet
+(He et al. 2016) as our base network, since it has proven its
+wide applicability on transfer learning tasks. Conventionally,
+if the target task is also a classiﬁcation task, the training
+process starts by replacing the last layer with a new one,
+randomly generated, whose size depends on the number of
+classes in the target task.
+4.1. Source and Target Databases
+For comparing the effect of similarity between the source
+problem and the target problem on transfer learning, we
+chose two source databases: ImageNet (Deng et al. 2009) for
+generic object recognition and Places 365 (Zhou et al. 2017)
+for scene classiﬁcation. Likewise, we have three different
+databases related to three target problems: Caltech 256
+(Grifﬁn et al. 2007) contains different objects for generic
+object recognition; MIT Indoors 67 (Quattoni & Torralba
+2009) consists of 67 indoor scene categories; Stanford Dogs
+120 (Khosla et al. 2011) contains images of 120 breeds of
+dogs; Each target database is split into training and testing
+sets following the suggestion of their creators (see Table 1
+for details). In addition, we consider two conﬁgurations for
+Caltech 256: 30 or 60 examples randomly drawn from each
+category for training, and 20 remaining examples for test.
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+Table 1. Characteristics of the target databases: name and type, numbers of training and test images per class, and number of classes.
+Database task category # training # test # classes
+MIT Indoors 67 scene classiﬁcation 80 20 67
+Stanford Dogs 120 speciﬁc object recog. 100 ∼ 72 120
+Caltech 256 – 30 generic object recog. 30 20 257
+Caltech 256 – 60 generic object recog. 60 20 257
+0 10−4 10−3 10−2 10−1
+79
+81
+83
+85
+β
+accuracy
+α = 0
+α = 10−3
+α = 10−2
+α = 10−1
+α = 1
+Figure 1. Classiﬁcation accuracy (in %) on Stanford Dogs 120 forL2-SP, according to the two regularization hyperparametersα andβ
+respectively applied to the layers inherited from the source task and the last classiﬁcation layer (see Equation 3).
+4.2. Training Details
+Most images in those databases are color images. If not,
+we create a three-channel image by duplicating the gray-
+scale data. All images are pre-processed: we resize images
+to 256×256 and subtract the mean activity computed over
+the training set from each channel, then we adopt random
+blur, random mirror and random crop to 224×224 for data
+augmentation. The network parameters are regularized as
+described in Section 3. Cross validation is used for searching
+the best regularization hyperparametersα andβ:α differs
+across experiments, and β = 0.01 is consistently picked
+by cross-validation for regularizing the last layer. Figure 1
+illustrates that the test accuracy varies smoothly according
+to the regularization strength, and that there is a sensible
+beneﬁt in penalizing the last layer (that is, β≥ 0) for the
+best α values. When applicable, the Fisher information
+matrix is estimated on the source database. The two source
+databases (ImageNet or Places 365) yield different estimates.
+Regarding testing, we use central crops as inputs to compute
+the classiﬁcation accuracy.
+Stochastic gradient descent with momentum 0.9 is used for
+optimization. We run 9000 iterations and divide the learning
+rate by 10 after 6000 iterations. The initial learning rates are
+0.005, 0.01 or 0.02, depending on the tasks. Batch size is 64.
+Then, under the best conﬁguration, we repeat ﬁve times the
+learning process to obtain an average classiﬁcation accuracy
+and standard deviation. All the experiments are performed
+with Tensorﬂow (Abadi et al. 2015).
+4.3. Results
+4.3.1. F INE -T UNING FROM A SIMILAR SOURCE
+Table 2 displays the results of ﬁne-tuning withL2-SP and
+L2-SP-Fisher, which are compared to the current baseline
+of ﬁne-tuning with L2. We report the average accuracies
+and their standard deviations on 5 different runs. Since
+we use the same data and the same starting point, runs
+differ only due to the randomness of stochastic gradient
+descent and to the weight initialization of the last layer. We
+can observe thatL2-SP andL2-SP-Fisher always improve
+overL2, and that when less training data are available for
+the target problem, the improvement ofL2-SP andL2-SP-
+Fisher compared to L2 are more important. Meanwhile,
+no large difference is observed betweenL2-SP andL2-SP-
+Fisher.
+We can boost the performance and outperform the state of
+the art (Ge & Yu 2017) in some cases by exploiting more
+training techniques and post-processing methods, which are
+described in the supplementary material.
+4.3.2. B EHAVIOR ACROSS PENALTIES , S OURCE AND
+TARGET DATABASES
+A comprehensive view of our experimental results is given
+in Figure 2. Each plot corresponds to one of the four target
+databases listed in Table 1. The light red points mark the
+accuracies of transfer learning when using Places 365 as the
+source database, whereas the dark blue points correspond to
+the results obtained with ImageNet. As expected, the results
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+Table 2. Average classiﬁcation accuracies (in %) ofL2,L2-SP andL2-SP-Fisher on 5 different runs. The source database is Places 365
+for MIT Indoors 67 and ImageNet for Stanford Dogs 120 and Caltech 256.
+MIT Indoors 67 Stanford Dogs 120 Caltech 256 – 30 Caltech 256 – 60
+L2 79.6±0.5 81.4±0.2 81.5±0.2 85.3±0.2
+L2-SP 84.2±0.3 85.1±0.2 83.5±0.1 86.4±0.2
+L2-SP-Fisher 84.0±0.4 85.1±0.2 83.3±0.1 86.0±0.1
+L2
+L2 -SP
+L2 -SP-FL1 -SP GL-SPGL-SP-F
+75
+80
+85
+MIT Indoor 67
+L2
+L2 -SP
+L2 -SP-FL1 -SP GL-SPGL-SP-F
+74
+78
+82
+86
+Stanford Dogs 120
+L2
+L2 -SP
+L2 -SP-FL1 -SP GL-SPGL-SP-F
+78
+81
+84
+Caltech 256 – 30
+L2
+L2 -SP
+L2 -SP-FL1 -SP GL-SPGL-SP-F
+82
+84
+86
+Caltech 256 – 60
+Figure 2. Classiﬁcation accuracies (in %) of the tested ﬁne-tuning
+approaches on the four target databases, using ImageNet (dark
+blue dots) or Places 365 (light red dots) as source databases. MIT
+Indoor 67 is more similar to Places 365 than to ImageNet; Stanford
+Dogs 120 and Caltech 256 are more similar to ImageNet than to
+Places 365.
+of transfer learning are much better when source and target
+are alike: the scene classiﬁcation target task MIT Indoor 67
+(top left) is better transferred from the scene classiﬁcation
+source task Places 365, whereas the object recognition target
+tasks beneﬁt more from the object recognition source task
+ImageNet. It is however interesting to note that the trends
+are similar for the two source databases: all the ﬁne-tuning
+strategies based on penalties using the starting point -SP as
+a reference perform consistently better than standard ﬁne-
+tuning (L2). There is thus a beneﬁt in having an explicit
+bias towards the starting point, even when the target task is
+not too similar to the source task.
+This beneﬁt is comparable for L2-SP and L2-SP-Fisher
+penalties; the strategies based onL1 and Group-Lasso penal-
+ties behave rather poorly in comparison. They are even less
+accurate than the plain L2 strategy on Caltech 256 – 60
+when the source problem is Places 365. Stochastic gradient
+Table 3. Classiﬁcation accuracy drops (in %) on the source tasks
+due to ﬁne-tuning based onL2,L2-SP andL2-SP-Fisher regular-
+izers. The source database is Places 365 for MIT Indoors 67 and
+ImageNet for Stanford Dogs 120 and Caltech 256. The classiﬁca-
+tion accuracies of the pre-trained models are 54.7% and 76.7% on
+Places 365 and ImageNet respectively.
+L2 L2-SP L2-SP-Fisher
+MIT Indoors 67 -24.1 -5.3 -4.9
+Stanford Dogs 120 -14.1 -4.7 -4.2
+Caltech 256 – 30 -15.4 -4.2 -3.6
+Caltech 256 – 60 -16.9 -3.6 -3.2
+descent does not handle well these penalties whose gradient
+is discontinuous at the starting point where the optimization
+starts. The stochastic forward-backward splitting algorithm
+of Duchi & Singer (2009), which is related to proximal
+methods, leads to substandard results, presumably due to
+the absence of a momentum term. In the end, we used plain
+stochastic gradient descent on a smoothed version of the
+penalties eliminating the discontinuities of their gradients,
+but some instability remains.
+Finally, the variants using the Fisher information matrix
+behave like the simpler variants using a Euclidean metric
+on parameters. We believe that this is due to the fact that,
+contrary to lifelong learning, our objective does not favor
+solutions that retain accuracy on the source task. The metric
+deﬁned by the Fisher information matrix may thus be less
+relevant for our actual objective that only relates to the
+target task. Table 3 conﬁrms thatL2-SP-Fisher is indeed a
+better approach in the situation of lifelong learning, where
+accuracies on the source tasks matter. It reports the drop in
+performance when the ﬁne-tuned models are applied on the
+source task, without any retraining, simply using the original
+classiﬁcation layer instead of the classiﬁcation layer learned
+for the target task. The performance drop is smaller forL2-
+SP-Fisher than for L2-SP. In comparison, L2 ﬁne-tuning
+results in catastrophic forgetting: the performance on the
+source task is considerably affected by ﬁne-tuning.
+4.3.3. F INE -T UNING vs. FREEZING THE NETWORK
+Freezing the ﬁrst layers of a network during transfer learn-
+ing is another way to ensure a very strong inductive bias,
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+1 10 22 34 46 58 70 82 91 100
+81.4
+(L2)
+85.1
+(L2-SP)
+Stanford Dogs 120
+L2-SP
+L2
+1 10 22 34 46 58 70 82 91 100
+81.5
+(L2)
+83.5
+(L2-SP)
+Index up to which layers are frozen
+Caltech 256 – 30
+Figure 3. Classiﬁcation accuracies (in %) of ﬁne-tuning with L2
+andL2-SP on Stanford Dogs 120 (top) and Caltech 256–30 (bot-
+tom) when freezing the ﬁrst layers of ResNet-101. The dashed
+lines represent the accuracies reported in Table 2, where no layers
+are frozen. ResNet-101 begins with one convolutional layer, then
+stacks 3-layer blocks. The three layers in one block are either
+frozen or trained altogether.
+letting less degrees of freedom to transfer learning. Figure 3
+shows that this strategy, which is costly to implement if
+one looks for the optimal number of layers to be frozen, can
+improveL2 ﬁne-tuning considerably, but that it is a rather in-
+efﬁcient strategy forL2-SP ﬁne-tuning. Among all possible
+choices,L2 ﬁne-tuning with partial freezing is dominated
+by the plainL2-SP ﬁne-tuning. Note that L2-SP-Fisher (not
+displayed) behaves similarly toL2-SP.
+4.4. Analysis and Discussion
+Among all -SP methods,L2-SP andL2-SP-Fisher always
+reach a better accuracy on the target task. We expectedL2-
+SP-Fisher to outperformL2-SP, since Fisher information
+helps in lifelong learning, but there is no signiﬁcant differ-
+ence between the two options. SinceL2-SP is simpler than
+L2-SP-Fisher, we recommend the former, and we focus on
+the analysis ofL2-SP, although most of the analysis and the
+discussion would also apply toL2-SP-Fisher.
+4.4.1. C OMPUTATIONAL EFFICIENCY
+The -SP penalties introduce no extra parameters, and they
+only increase slightly the computational burden. L2-SP
+increases the number of ﬂoating point operations required
+for a learning step of ResNet-101 by less than 1%. Hence,
+at a negligible computational cost, we can obtain signiﬁcant
+improvements in classiﬁcation accuracy, and no additional
+cost is experienced at test time.
+4.4.2. T HEORETICAL INSIGHTS
+Analytical results are very difﬁcult to obtain in the deep
+learning framework. Under some (highly) simplifying as-
+sumptions, we show in supplementary material that the
+optimum of the regularized objective function withL2-SP
+is a compromise between the optimum of the unregular-
+ized objective function and the pre-trained parameter vector,
+precisely an afﬁne combination along the directions of eigen-
+vectors of the Hessian matrix of the unregularized objective
+function. This contrasts with L2 that leads to a compro-
+mise between the optimum of the unregularized objective
+function and the origin. Clearly, searching for a solution
+in the vicinity of the pre-trained parameters is intuitively
+much more appealing, since it is the actual motivation for
+using the pre-trained parameters as the starting point of the
+ﬁne-tuning process.
+Using L2-SP instead of L2 can also be motivated by an
+analogy with shrinkage estimation (see e.g. Lehmann &
+Casella 1998, chapter 5). Although it is known that shrink-
+ing toward any reference is better than raw ﬁtting, it is also
+known that shrinking towards a value that is close to the
+“true parameters” is more effective. The notion of “true pa-
+rameters” is not readily applicable to deep networks, but the
+connection with Stein shrinking effect may be inspiring by
+surveying the literature considering shrinkage towards other
+references, such as linear subspaces. In particular, it is likely
+that manifolds of parameters deﬁned from the pre-trained
+network would provide a more relevant reference than the
+single parameter value provided by the pre-trained network.
+4.4.3. L AYER-WISE ANALYSIS
+We complement our experimental results by an analysis rely-
+ing on the activations of the hidden units of the network, to
+provide another view on the differences betweenL2 andL2-
+SP ﬁne-tuning. Activation similarities are easier to interpret
+than parameter similarities, and they provide a view of the
+network that is closer to the functional perspective we are
+actually pursuing. Matching individual activations makes
+sense, provided that the networks slightly differ before and
+after tuning so that few roles are switched between units or
+feature maps.
+The dependency between the pre-trained and the ﬁne-tuned
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+1 4 7 10 13 22 25 37 49 61 76 91 100
+0
+0.2
+0.4
+0.6
+0.8
+1
+Layer index
+R2
+L2
+L2-SP
+L2-SP-Fisher
+Figure 4.R2 coefﬁcients of determination with L2 andL2-SP regularizations for Stanford Dogs 120. Each boxplot summarizes the
+distribution of theR2 coefﬁcients of the activations after ﬁne-tuning with respect to the activations of the pre-trained network, for all the
+units in one layer. ResNet-101 begins with one convolutional layer, then stacks 3-layer blocks. For legibility, we only display here theR2
+at the ﬁrst layer and at the outputs of some 3-layer blocks.
+activations throughout the network is displayed in Figure 4,
+with boxplots of the R2 coefﬁcients, gathered layer-wise,
+of the ﬁne-tuned activations with respect to the original
+activations. This ﬁgure shows that, indeed, the roles of units
+or feature maps have not changed much afterL2-SP andL2-
+SP-Fisher ﬁne-tuning. The R2 coefﬁcients are very close
+to 1 on the ﬁrst layers, and smoothly decrease throughout
+the network, staying quite high, around 0.6, forL2-SP and
+L2-SP-Fisher at the greatest depth. In contrast, for L2
+regularization, some important changes are already visible
+in the ﬁrst layers, and theR2 coefﬁcients eventually reach
+quite low values at the greatest depth. This illustrates in
+details how the roles of the network units is remarkably
+retained withL2-SP andL2-SP-Fisher ﬁne-tuning, not only
+for the ﬁrst layers of the networks, but also for the last
+high-level representations before classiﬁcation.
+5. Conclusion
+We described and tested simple regularization techniques
+for inductive transfer learning. They all encode an explicit
+bias towards the solution learned on the source task, result-
+ing in a compromise with the pre-trained parameter that is
+coherent with the original motivation for ﬁne-tuning. All
+the regularizers evaluated here have been already used for
+other purposes or in other contexts, but we demonstrated
+their relevance for inductive transfer learning with deep
+convolutional networks.
+We show that a simpleL2 penalty using the starting point as
+a reference,L2-SP, is useful, even if early stopping is used.
+This penalty is much more effective than the standard L2
+penalty that is commonly used in ﬁne-tuning. It is also more
+effective and simpler to implement than the strategy con-
+sisting in freezing the ﬁrst layers of a network. We provide
+theoretical hints and strong experimental evidence showing
+thatL2-SP retains the memory of the features learned on
+the source database. We thus believe that this simpleL2-SP
+scheme should be considered as the standard baseline in
+inductive transfer learning, and that future improvements of
+transfer learning should rely on this baseline.
+Besides, we tested the effect of more elaborate penalties,
+based onL1 or Group-L1 norms, or based on Fisher infor-
+mation. None of the L1 or Group-L1 options seem to be
+valuable in the context of inductive transfer learning that we
+considered here, and using the Fisher information withL2-
+SP does not improve accuracy on the target task. Different
+approaches, which implement an implicit bias at the func-
+tional level, alike Li & Hoiem (2017), remain to be tested:
+being based on a different principle, their value should be
+assessed in the framework of inductive transfer learning.
+Acknowledgments
+This work was carried out with the supports of the China
+Scholarship Council and of a PEPS grant through the
+DESSTOPT project jointly managed by the National In-
+stitute of Mathematical Sciences and their Interactions (IN-
+SMI) and the Institute of Information Science and their
+Interactions (INS2I) of the CNRS, France. We acknowledge
+the support of NVIDIA Corporation with the donation of
+GPUs used for this research.
+References
+Abadi, M., Agarwal, A., Barham, P., Brevdo, E., Chen, Z.,
+Citro, C., Corrado, G. S., Davis, A., Dean, J., Devin, M.,
+Ghemawat, S., Goodfellow, I., Harp, A., Irving, G., Is-
+ard, M., Jia, Y ., Jozefowicz, R., Kaiser, L., Kudlur, M.,
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+Levenberg, J., Man ´e, D., Monga, R., Moore, S., Mur-
+ray, D., Olah, C., Schuster, M., Shlens, J., Steiner, B.,
+Sutskever, I., Talwar, K., Tucker, P., Vanhoucke, V ., Va-
+sudevan, V ., Vi´egas, F., Vinyals, O., Warden, P., Watten-
+berg, M., Wicke, M., Yu, Y ., and Zheng, X. TensorFlow:
+Large-scale machine learning on heterogeneous systems,
+2015. URL http://tensorflow.org/. Software
+available from tensorﬂow.org.
+Aytar, Y . and Zisserman, A. Tabula rasa: Model transfer for
+object category detection. In ICCV, 2011.
+Barone, A. V . M., Haddow, B., Germann, U., and Sennrich,
+R. Regularization techniques for ﬁne-tuning in neural
+machine translation. arXiv preprint arXiv:1707.09920,
+2017.
+Chelba, C. and Acero, A. Adaptation of maximum entropy
+capitalizer: Little data can help a lot. Computer Speech
+& Language, 20(4):382–399, 2006.
+Chen, L.-C., Papandreou, G., Kokkinos, I., Murphy, K., and
+Yuille, A. L. Deeplab: Semantic image segmentation
+with deep convolutional nets, atrous convolution, and
+fully connected CRFs. IEEE Trans. Pattern Anal. Mach.
+Intell., 2017.
+Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., and Fei-Fei,
+L. Imagenet: A large-scale hierarchical image database.
+In CVPR, 2009.
+Donahue, J., Jia, Y ., Vinyals, O., Hoffman, J., Zhang, N.,
+Tzeng, E., and Darrell, T. Decaf: A deep convolutional
+activation feature for generic visual recognition. InICML,
+2014.
+Duchi, J. and Singer, Y . Efﬁcient online and batch learning
+using forward backward splitting. J. Mach. Learn. Res.,
+10:2899–2934, 2009.
+Everingham, M., Van Gool, L., Williams, C. K., Winn, J.,
+and Zisserman, A. The Pascal visual object classes (VOC)
+challenge. International Journal of Computer Vision, 88
+(2):303–338, 2010.
+Fei-Fei, L., Fergus, R., and Perona, P. One-shot learning
+of object categories. IEEE Trans. Pattern Anal. Mach.
+Intell., 28(4):594–611, 2006.
+Ge, W. and Yu, Y . Borrowing treasures from the wealthy:
+Deep transfer learning through selective joint ﬁne-tuning.
+In CVPR, 2017.
+Girshick, R., Donahue, J., Darrell, T., and Malik, J. Rich
+feature hierarchies for accurate object detection and se-
+mantic segmentation. In CVPR, 2014.
+Grachten, M. and Chac´on, C. E. C. Strategies for conceptual
+change in convolutional neural networks. arXiv preprint
+arXiv:1711.01634, 2017.
+Grifﬁn, G., Holub, A., and Perona, P. Caltech-256 object
+category dataset. Technical report, California Institute of
+Technology, 2007.
+He, K., Zhang, X., Ren, S., and Sun, J. Deep residual
+learning for image recognition. In CVPR, 2016.
+Khosla, A., Jayadevaprakash, N., Yao, B., and Li, F.-F.
+Novel dataset for ﬁne-grained image categorization: Stan-
+ford dogs. In Proc. CVPR Workshop on Fine-Grained
+Visual Categorization (FGVC), 2011.
+Kirkpatrick, J., Pascanu, R., Rabinowitz, N., Veness, J.,
+Desjardins, G., Rusu, A. A., Milan, K., Quan, J., Ra-
+malho, T., Grabska-Barwinska, A., et al. Overcoming
+catastrophic forgetting in neural networks. Proc. Natl.
+Acad. Sci. U.S.A., 2017.
+Krizhevsky, A., Sutskever, I., and Hinton, G. E. Imagenet
+classiﬁcation with deep convolutional neural networks.
+In NIPS, 2012.
+Lehmann, E. L. and Casella, G. Theory of point estimation .
+Springer, 2 edition, 1998.
+Li, Z. and Hoiem, D. Learning without forgetting. IEEE
+Trans. Pattern Anal. Mach. Intell., 2017. doi: 10.1109/
+TPAMI.2017.2773081.
+Liao, H. Speaker adaptation of context dependent deep
+neural networks. In ICASSP, 2013.
+Long, J., Shelhamer, E., and Darrell, T. Fully convolutional
+networks for semantic segmentation. In CVPR, 2015a.
+Long, M., Cao, Y ., Wang, J., and Jordan, M. Learning
+transferable features with deep adaptation networks. In
+ICML, 2015b.
+Ochiai, T., Matsuda, S., Lu, X., Hori, C., and Katagiri, S.
+Speaker adaptive training using deep neural networks. In
+ICASSP, 2014.
+Pan, S. J. and Yang, Q. A survey on transfer learning. IEEE
+T. Knowl. Data En., 22(10):1345–1359, 2010.
+Pentina, A. and Lampert, C. H. Lifelong learning with
+non-iid tasks. In NIPS, 2015.
+Quattoni, A. and Torralba, A. Recognizing indoor scenes.
+In CVPR, 2009.
+Redmon, J., Divvala, S., Girshick, R., and Farhadi, A. You
+only look once: Uniﬁed, real-time object detection. In
+CVPR, 2016.
+
+Explicit Inductive Bias for Transfer Learning with Convolutional Networks
+Ren, S., He, K., Girshick, R., and Sun, J. Faster r-cnn:
+Towards real-time object detection with region proposal
+networks. In NIPS, 2015.
+Rozantsev, A., Salzmann, M., and Fua, P. Beyond shar-
+ing weights for deep domain adaptation. arXiv preprint
+arXiv:1603.06432, 2016.
+Simonyan, K. and Zisserman, A. Very deep convolutional
+networks for large-scale image recognition. In ICLR,
+2015.
+Szegedy, C., Vanhoucke, V ., Ioffe, S., Shlens, J., and Wojna,
+Z. Rethinking the inception architecture for computer
+vision. In CVPR, 2016.
+Thrun, S. and Mitchell, T. M. Lifelong robot learning.Robot.
+Auton. Syst., 15(1-2):25–46, 1995.
+Tommasi, T., Orabona, F., and Caputo, B. Learning cate-
+gories from few examples with multi model knowledge
+transfer. IEEE Trans. Pattern Anal. Mach. Intell., 2014.
+Yang, J., Yan, R., and Hauptmann, A. G. Adapting svm
+classiﬁers to data with shifted distributions. In ICDM
+Workshops, 2007.
+Yosinski, J., Clune, J., Bengio, Y ., and Lipson, H. How
+transferable are features in deep neural networks? In
+NIPS, 2014.
+Zeiler, M. D. and Fergus, R. Visualizing and understanding
+convolutional networks. In ECCV, 2014.
+Zhao, H., Shi, J., Qi, X., Wang, X., and Jia, J. Pyramid
+scene parsing network. In CVPR, 2017.
+Zhou, B., Lapedriza, A., Khosla, A., Oliva, A., and Tor-
+ralba, A. Places: A 10 million image database for scene
+recognition. IEEE Trans. Pattern Anal. Mach. Intell. ,
+2017.

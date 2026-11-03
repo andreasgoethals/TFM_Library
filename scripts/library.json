@@ -63,6 +63,13 @@
         "symbols",
         "docs"
       ]
+    },
+    "supporting": {
+      "command": [
+        "scripts/papers/extract_supporting_text.py",
+        "--check"
+      ],
+      "description": "verify supporting-reference PDF and generated-text hashes"
     }
   }
 }

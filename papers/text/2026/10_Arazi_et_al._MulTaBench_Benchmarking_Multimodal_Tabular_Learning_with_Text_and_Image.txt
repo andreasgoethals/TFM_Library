@@ -40,7 +40,7 @@ Yet, in many high-impact domains, tabular problems are multimodal: e-commerce li
 social media feeds [70, 74, 5], and medical health records [49, 16, 19, 26] combine image and text
 1https://github.com/alanarazi7/MulTaBench.
 40th Conference on Neural Information Processing Systems (NeurIPS 2026). Track on Evaluations and Datasets.
-arXiv:2605.10616v2  [cs.LG]  27 Sep 2026
+arXiv:2605.10616v3  [cs.LG]  30 Oct 2026
 
 S
 t r u
@@ -603,11 +603,13 @@ from ANR via grant TaFoMo (ANR-25-CE23-1822). This work is partly supported by H
 and ANR/France 2030 program (ANR-23-IACL-0005). FH acknowledges the financial support of
 the Hector Foundation. LP acknowledges funding by the Deutsche Forschungsgemeinschaft (DFG,
 German Research Foundation) under SFB 1597 (SmallData), grant number 499552394. Funded by
-the European Union. Views and opinions expressed are however those of the author(s) only and
-do not necessarily reflect those of the European Union or the European Commission. Neither the
-European Union nor the European Commission can be held responsible for them. This work was
-supported by the European Union’s Horizon Europe research and innovation programme under grant
-agreement No 101214398 (ELLIOT).
+the European Union. Views and opinions expressed are however those of the author(s) only and do not
+necessarily reflect those of the European Union or the European Commission. Neither the European
+Union nor the European Commission can be held responsible for them. This work was supported by
+the European Union’s Horizon Europe research and innovation programme under grant agreement No
+101214398 (ELLIOT). We acknowledge the EuroHPC Joint Undertaking for awarding this project
+access to the EuroHPC supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium
+through a EuroHPC AI Factory Large Scale Access call (project EHPC-AIF-2025LS17-014).
 10
 
 Competing interests.AA, ES, and RR are the developers of TabSTAR. DH is one of the authors

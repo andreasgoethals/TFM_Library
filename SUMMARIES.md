@@ -1,7 +1,7 @@
 # Literature on Tabular Foundation Models
 
-A chronological tour of the **71 papers** in this folder (1 from 2021, 3 from 2023, 8 from
-2024, 22 from 2025 and 37 from 2026, dated by the filed version), following the owner's
+A chronological tour of the **72 papers** in this folder (1 from 2021, 3 from 2023, 8 from
+2024, 22 from 2025 and 38 from 2026, dated by the filed version), following the owner's
 `Tabular Foundation Models` Zotero collection. The arc: PFNs (in-context Bayesian inference for
 arbitrary priors) → TabPFN (PFNs with a tabular prior) → TabPFN v2 (the first production-grade
 release) → a wave of variants and competitors (continued pretraining, drift, fairness, causal
@@ -52,8 +52,8 @@ this folder and write them there.
 | 2024-10 | den Breejen et al. | **TabForestPFN** — Fine-tuned In-Context Learning Transformers are Excellent Tabular Data Classifiers | Mixes TabPFN's prior with an unrealistic *forest* generator of complex decision boundaries and fine-tunes per dataset; fine-tuned TabForestPFN ties tuned GBDTs on TabZilla (0.840 vs CatBoost 0.842) and leads ICL variants on WhyTrees. Early tree-prior precursor cited by Mitra. | [pdf](papers/2024/10_Breejen_et_al._Fine_tuned_In_Context_Learning_Transformers_are_Excellent_Tabular_Data_Classifiers.pdf) |
 | 2024-11 | Helli et al. | Drift-Resilient TabPFN | TabPFN v1 prior in which a 2nd-order SCM shifts causal edge weights over a temporal domain index, so ICL extrapolates drift; OOD accuracy 0.688→0.744 and ROC AUC 0.786→0.832 on 18 datasets, gains mostly on synthetic ones. | [pdf](papers/2024/11_Helli_et_al._Drift_Resilient_TabPFN_In_Context_Learning_Temporal_Distribution_Shifts_on_Tabular_Data_1.pdf) |
 | 2024-12 | Hoo et al. | The Tabular Foundation Model TabPFN Outperforms Specialized Time Series Forecasting Models | TabPFN-TS (workshop): each series becomes a regression table of timestamp features (index + sin/cos calendar, no lags); frozen 11M-param TabPFN gets the best relative MASE on 24 AutoGluon-TS datasets (0.759), ahead of Chronos-Mini and Chronos-Large. | [pdf](papers/2024/12_Hoo_et_al._The_Tabular_Foundation_Model_TabPFN_Outperforms_Specialized_Time_Series_Forecasting_Models_Based_on.pdf) |
-| 2024-12 | Thomas et al. | **LoCalPFN** — Retrieval & Fine-Tuning for In-Context Tabular Models | Uses each query's k nearest neighbours as TabPFN's context (TabPFN-kNN) and fine-tunes end-to-end with approximate shared local contexts; mean AUC 0.908 vs 0.892 tuned XGBoost and 0.867 TabPFN on 95 TabZilla datasets. Ancestor of TabDPT's retrieval. | [pdf](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) |
 | 2024-12 | Feuer et al. | **TuneTables** — Context Optimization for Scalable Prior-Data Fitted Networks | Prompt tuning for PFNs: distils a large dataset into a small learned context for frozen TabPFN v1 (<5% of parameters tuned); best mean accuracy/rank among 19 tuned algorithms on 98 TabZilla datasets, though not significantly ahead of CatBoost/XGBoost; also tunes for fairness. | [pdf](papers/2024/12_Feuer_et_al._TuneTables_Context_Optimization_for_Scalable_Prior_Data_Fitted_Networks.pdf) |
+| 2024-12 | Thomas et al. | **LoCalPFN** — Retrieval & Fine-Tuning for In-Context Tabular Models | Uses each query's k nearest neighbours as TabPFN's context (TabPFN-kNN) and fine-tunes end-to-end with approximate shared local contexts; mean AUC 0.908 vs 0.892 tuned XGBoost and 0.867 TabPFN on 95 TabZilla datasets. Ancestor of TabDPT's retrieval. | [pdf](papers/2024/12_Thomas_et_al._Retrieval_Fine_Tuning_for_In_Context_Tabular_Models.pdf) |
 | 2025-01 | Hollmann et al. | Accurate predictions on small data with a tabular foundation model | The TabPFN v2 paper (Nature): new SCM prior, per-cell feature-then-sample attention, regression via bar distribution, up to 10K rows × 500 features; default model in 2.8 s beats baselines and AutoGluon tuned for 4 h (normalised ROC AUC 0.939 vs default CatBoost 0.752). | [pdf](papers/2025/01_Hollmann_et_al._Accurate_predictions_on_small_data_with_a_tabular_foundation_model.pdf) |
 | 2025-02 | Liu and Ye | TabPFN Unleashed — A Scalable and Effective Solution to Tabular Classification Problems | BETA: frozen TabPFN v1 behind fine-tuned lightweight Batch-Ensemble encoders, bootstrapped 1,000-row contexts and ECOC, reducing bias and variance; untuned, best critical-difference rank on 186 TALENT datasets vs tuned baselines. | [pdf](papers/2025/02_Liu_and_Ye_TabPFN_Unleashed_A_Scalable_and_Effective_Solution_to_Tabular_Classification_Problems.pdf) |
 | 2025-02 | McCarter | **What exactly has TabPFN learned to do?** | Black-box toy probes of v1 expose duplication oddities, no periodicity detection and reliance on ensembling (then ~1-NN behaviour); the v2 appendix finds bumpier toy surfaces but >99% accuracy on 10-bit parity from 127 rows. | [pdf](papers/2025/02_McCarter_What_exactly_has_TabPFN_learned_to_do.pdf) |
@@ -72,9 +72,9 @@ this folder and write them there.
 | 2025-11 | Zhang et al. | LimiX: Unleashing Structured-Data Modeling Capability for Generalist Intelligence | Context-conditional masked modelling on hierarchical-SCM data unifies prediction, imputation and generation in LimiX-16M/2M; LimiX-16M has the best averaged reciprocal rank on classification (0.302) and regression (0.292) across 11 benchmarks. | [pdf](papers/2025/11_Zhang_et_al._LimiX_Unleashing_Structured_Data_Modeling_Capability_for_Generalist_Intelligence.pdf) |
 | 2025-12 | Pfefferle et al. | nanoTabPFN — A Lightweight and Educational Reimplementation of TabPFN | Under-500-line educational reimplementation of v2's architecture and training loop on pre-generated TabICL-prior data; a one-minute pretrain beats sklearn baselines and TabPFN without ensembling/preprocessing on tiny binary tasks. | [pdf](papers/2025/12_Pfefferle_et_al._nanoTabPFN_A_Lightweight_and_Educational_Reimplementation_of_TabPFN.pdf) |
 | 2025-12 | Tanna et al. | TabTune — A Unified Library for Inference and Fine-Tuning Tabular Foundation Models | Scikit-learn-style library running zero-shot, episodic meta-learning, full SFT and LoRA across seven TFMs with calibration/fairness metrics; adaptation is model-dependent (SFT: TabPFN best within-group rank 1.97, TabICL collapses 0.873→0.567 on TabZilla). | [pdf](papers/2025/12_Tanna_et_al._TabTune_A_Unified_Library_for_Inference_and_Fine_Tuning_Tabular_Foundation_Models.pdf) |
-| 2025-12 | Spinaci et al. | **ConTextTab** — A Semantics-Aware Tabular In-Context Learner | TabPFN-style backbone with per-modality (text/date/number/column-name) embeddings, pretrained on 2.18M real T4 tables; best rank on the semantic CARTE benchmark (1.55), on par but not first on non-semantic benchmarks. | [pdf](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf) |
-| 2025-12 | Arazi et al. | **TabSTAR** — A Tabular Foundation Model for Tabular Data with Text Fields | Verbalised features plus target-value tokens through a partly unfrozen e5 encoder, then per-task LoRA fine-tuning; best text-tabular classification (0.83 vs TabM-Tuned 0.73, ≤10K rows), behind GBDTs on regression. | [pdf](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) |
 | 2025-12 | Balazadeh Meresht et al. | **CausalPFN** — Amortized Causal Effect Estimation via In-Context Learning | ~20M-parameter PFN trained on ignorable DGPs built from real/synthetic base tables outputs CEPO posteriors; best average CATE rank (2.30) over 310 IHDP/ACIC/Lalonde tasks, ATE only competitive; OOD intervals need temperature scaling. | [pdf](papers/2025/12_Balazadeh_Meresht_et_al._CausalPFN_Amortized_Causal_Effect_Estimation_via_In_Context_Learning.pdf) |
+| 2025-12 | Arazi et al. | **TabSTAR** — A Tabular Foundation Model for Tabular Data with Text Fields | Verbalised features plus target-value tokens through a partly unfrozen e5 encoder, then per-task LoRA fine-tuning; best text-tabular classification (0.83 vs TabM-Tuned 0.73, ≤10K rows), behind GBDTs on regression. | [pdf](papers/2025/12_Arazi_et_al._TabSTAR_A_Tabular_Foundation_Model_for_Tabular_Data_with_Text_Fields.pdf) |
+| 2025-12 | Spinaci et al. | **ConTextTab** — A Semantics-Aware Tabular In-Context Learner | TabPFN-style backbone with per-modality (text/date/number/column-name) embeddings, pretrained on 2.18M real T4 tables; best rank on the semantic CARTE benchmark (1.55), on par but not first on non-semantic benchmarks. | [pdf](papers/2025/12_Spinaci_et_al._ConTextTab_A_Semantics_Aware_Tabular_In_Context_Learner.pdf) |
 | 2025-12 | Arbel et al. | **EquiTabPFN** — A Target-Permutation Equivariant Prior Fitted Network | Proves non-target-equivariant PFNs pay a non-negative "equivariance gap"; per-class target tokens, two-axis attention and an attention decoder make predictions class-order invariant and give the best median accuracy on 10 TabZilla tasks with >10 classes. | [pdf](papers/2025/12_Arbel_et_al._EquiTabPFN_A_Target_Permutation_Equivariant_Prior_Fitted_Network.pdf) |
 | 2026-01 | Hoo et al. | From Tables to Time — Extending TabPFN-v2 to Time Series Forecasting | Recasts forecasting as tabular regression on timestamp-derived features (index, calendar, seasonal) fed to frozen TabPFN-v2; strongest overall on 28 fev-bench covariate tasks and close behind TiRex, Toto and Moirai-2 on GIFT-Eval, at ~30× Chronos-Bolt's inference time. | [pdf](papers/2026/01_Hoo_et_al._From_Tables_to_Time_Extending_TabPFN_v2_to_Time_Series_Forecasting.pdf) |
 | 2026-01 | Klein and Hoffart | Position — Foundation Models for Tabular Data within Systemic Contexts Need Grounding | SAP position paper with no experiments: TFMs trained on isolated tables miss the operational context (business rules, code, data models) behind enterprise data; proposes Semantically Linked Tables, an FMSLT model class and an "Operational Turing Test". | [pdf](papers/2026/01_Klein_and_Hoffart_Position_Foundation_Models_for_Tabular_Data_within_Systemic_Contexts_Need_Grounding.pdf) |
@@ -86,11 +86,10 @@ this folder and write them there.
 | 2026-04 | Tanna et al. | **Exploring Fine-Tuning for Tabular Foundation Models** | Six TFMs × four adaptation strategies (zero-shot, episodic meta-learning, full SFT, LoRA) on TALENT, CC18 and TabZilla: zero-shot is hard to beat and best calibrated; SFT degrades most models (TabICL TabZilla accuracy 0.87 → 0.57) but not TabPFN; lightly tuned recipes, classification only. | [pdf](papers/2026/04_Tanna_et_al._Exploring_Fine_Tuning_for_Tabular_Foundation_Models.pdf) |
 | 2026-04 | Bouadi et al. | **Orion-BiX** — Bi-Axial Attention for Tabular In-Context Learning | TabICL with a biaxial row encoder (standard, grouped, hierarchical and relational attention, multi-CLS pooling) and episodic meta-training; best mean rank on Medical and Finance subsets and +2–4 points at ≤32 shots; no ablations. | [pdf](papers/2026/04_Bouadi_et_al._Orion_Bix_Bi_Axial_Attention_for_Tabular_In_Context_Learning.pdf) |
 | 2026-04 | Hudovernik et al. | **KumoRFM-2**: Scaling Foundation Models for Relational Learning | Closed relational foundation model: task-conditioned table attention plus foreign-key and cross-sample attention over temporal database subgraphs, ≤10k context examples; 79.60 AUROC on RelBenchV1 classification (RelGNN 78.06), 0.83 SALT MRR; rel-f1 regime disputed. | [pdf](papers/2026/04_Hudovernik_et_al._KumoRFM_2_Scaling_Foundation_Models_for_Relational_Learning.pdf) |
-| 2026-05 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The May 2026 TabPFN generation.** TabICL-style column→row→ICL architecture with retrieval many-class decoder, row-chunking to 1M rows on one H100, synthetic-only prior and API-only "Thinking" mode; one forward pass beats tuned+ensembled models on TabArena (+72 Elo over Real-TabPFN-2.5), Thinking >200 Elo over non-TabPFN models. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
 | 2026-05 | Tanna et al. | **Data Presentation Over Architecture** — Resampling Strategies for Credit Risk Prediction with TFMs | Seven context-construction strategies × five TFMs on Home Credit and Lending Club: class-balanced contexts add ~3 AUC points on Home Credit (~1 on Lending Club) over uniform sampling, more than the inter-TFM gap, and restore default recall; baselines untuned and unweighted. | [pdf](papers/2026/05_Tanna_et_al._Data_Presentation_Over_Architecture_Resampling_Strategies_for_Credit_Risk_Prediction_with_Tabular_Foundation_Models.pdf) |
 | 2026-05 | Hosseinzadeh et al. | **TabDPT-Turbo** — Efficient In-Context Learning for Tabular Prediction | Drops TabDPT's retrieval for **long-context pretraining**, stays row-based, scales the real corpus to 1,445 tables; fourth on TabArena-Lite Elo and ≈2.4× faster total time than TabPFN-3 (≈13× than TabICLv2) on shared hardware. Shipped as TabDPT v1.2. | [pdf](papers/2026/05_Hosseinzadeh_et_al._TabDPT_Turbo_Efficient_In_Context_Learning_for_Tabular_Prediction.pdf) |
+| 2026-05 | Grinsztajn et al. | **TabPFN-3** — Technical Report | **The May 2026 TabPFN generation.** TabICL-style column→row→ICL architecture with retrieval many-class decoder, row-chunking to 1M rows on one H100, synthetic-only prior and API-only "Thinking" mode; one forward pass beats tuned+ensembled models on TabArena (+72 Elo over Real-TabPFN-2.5), Thinking >200 Elo over non-TabPFN models. | [pdf](papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf) |
 | 2026-05 | Schambach et al. | **Benchmarking Attention for Tabular Foundation Models** | H100 microbenchmarks of five attention backends on tabular shapes: cuDNN SDPA wins feature-axis attention (2.5–3× efficient SDPA for 128–2,048 features), FlashAttention-3 wins sample-axis attention (up to 3.5×) by avoiding tensor copies. | [pdf](papers/2026/05_Schambach_et_al._Benchmarking_Attention_for_Tabular_Foundation_Models.pdf) |
-| 2026-06 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets; IID, temporal, grouped splits; 11 models): TFM in-context learning wins tiny/small IID data, but tuned+ensembled RealMLP leads temporal, grouped and large data and CatBoost high-cardinality data; the GBDT advantage grows with rows (ρ = 0.60). Fine-tuning untested. | [pdf](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-07 | Luo et al. | **Memory Efficient Tabular Foundation Models** | Post-training INT4 quantization (GPTQ, AWQ, K-Means) of TabPFN v2.5/2.6 shrinks BZIP2-compressed checkpoints 6.06–7.65× with ≤0.005 accuracy loss on 30 OpenML datasets; inference memory (~4.7 GB) and runtime are unchanged. | [pdf](papers/2026/07_Luo_et_al._Memory_Efficient_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Shaheen et al. | **Understanding the Surprising Generalization Properties of Tabular Foundation Models** | Single-real-table pretraining (88 models, 107 held-out datasets) transfers broadly; feature and task count, not row count, drive transfer (meta-model R² 0.67); column cleaning helps, ≥30-feature filtering hurts; argues for **retrieval-and-aggregation** over prior-fitted Bayesian inference. | [pdf](papers/2026/08_Shaheen_et_al._Understanding_the_Surprising_Generalization_Properties_of_Tabular_Foundation_Models.pdf) |
 | 2026-08 | Eo et al. | **EXAONE Tabular 1.0** — Technical Report | CAST interleaves feature- and item-axis attention via summary tokens, with no row compression; the 20.8M synthetic-only classifier ranks first on TabArena untuned, ties TabFM's 1.64B June checkpoint at ~1.3% of its size, leads BCCO/TALENT regression and ScoringBench; non-commercial weights, no ablations. | [pdf](papers/2026/08_Eo_et_al._EXAONE_Tabular_1.0_Technical_Report.pdf) |
@@ -101,18 +100,20 @@ this folder and write them there.
 | 2026-09 | Xiaomi-TabLDM Team | **Xiaomi-TabLDM** — A Tabular Foundation Model | TabICLv2-style model with dual-stream feature grouping, attention residuals and the collection's first **sparse Mixture-of-Experts** ICL layers (~70M total, ~62M active); 1st on OpenML-CTR23 and 2nd to TabFM on TabArena, TALENT and BCCO regression; no ablations. | [pdf](papers/2026/09_Team_et_al._Xiaomi_TabLDM_A_Tabular_Foundation_Model_Technical_Report.pdf) |
 | 2026-09 | Zhang et al. | **LimiX-2** — A Contextual Mechanism Network Towards General Structured-Data Intelligence | Cell-level dual-axis model pretrained on target prediction plus masked-feature reconstruction (CCMM); the 406M model ranks 1st on TabArena (Elo 1,935), TALENT and BCCO with log-linear capacity scaling; feature attention recovers causal skeletons (F1 0.80), not effects. | [pdf](papers/2026/09_Zhang_et_al._LimiX_2_A_Contextual_Mechanism_Network_Towards_General_Structured_Data_Intelligence.pdf) |
 | 2026-09 | Cho et al. | **Causilo** — Technical Report | 36M-parameter model that refines cells across rows and features before row compression, with summary-token attention linear in feature count; 1,785 TabArena Elo at 0.10 s per 1K rows, beating TabPFN-3.5-Fast with 31.6% less inference time; weak on BeyondArena grouped splits. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
-| 2026-09 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | Benchmark of 40 text/image-tabular datasets curated so both modalities add signal and target-tuned (LoRA) encoders beat frozen embeddings; the gain generalises to new learners (significant on 37/40 when pooling all learners) and encoder sizes; 40 further candidates released. | [pdf](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
 | 2026-09 | Wang et al. | LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models | Radial-basis cell embeddings (RaBEL) fix early low-rank collapse and sample→FFN→feature attention feeds the readout; the 1.92M model beats TabPFN v2 on 9 of 11 suites and TabICL v1 on all comparable ones, ~2× faster than v2 on GPU. ICML 2026. | [pdf](papers/2026/09_Wang_et_al._LimiX_2M_Mitigating_Low_Rank_Collapse_and_Attention_Bottlenecks_in_Tabular_Foundation_Models.pdf) |
-| 2026-09 | Hayler et al. | Advancing Open and Reproducible Relational Learning: **RelArena-α**, **TabPFN-Rel** and RPI | Prior Labs' audit of non-comparable RelBench practice, a standardised relational benchmark (21 tasks) and a deep-feature-synthesis + TabPFN-3 harness: TabPFN-Rel tops the model board (Elo 1,821 with text), RT-PluRel tops with systems; reruns cut RelGNN by ~450 Elo. | [pdf](papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf) |
 | 2026-09 | Kong et al. (Google) | **TabFM**: A Zero-Shot Foundation Model for Tabular Data | 408.7M row-compression TFM (learned Fourier cell embeddings, two column-ISAB/row-SAB stages, 24-layer ICL predictor) pretrained on SCM tables up to 16,384 × 100; zero-shot first among default TFMs in its TabArena pool (1,769 classification / 2,055 regression Elo), raised further by frozen-weight ensembling (TabFM+) and Gemini-driven program search (TabFM-Auto); no ablations, and the pool omits TabPFN-3.5, LimiX-2 and Causilo; non-commercial weights. | [pdf](papers/2026/09_Kong_et_al._TabFM_A_Zero_Shot_Foundation_Model_for_Tabular_Data.pdf) |
+| 2026-10 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets; IID, temporal, grouped splits; 11 models): TFM in-context learning wins tiny/small IID data, but tuned+ensembled RealMLP leads temporal, grouped and large data and CatBoost high-cardinality data; the GBDT advantage grows with rows (ρ = 0.60). Fine-tuning untested. | [pdf](papers/2026/10_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
+| 2026-10 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | Benchmark of 40 text/image-tabular datasets curated so both modalities add signal and target-tuned (LoRA) encoders beat frozen embeddings; the gain generalises to new learners (significant on 37/40 when pooling all learners) and encoder sizes; 40 further candidates released. | [pdf](papers/2026/10_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
+| 2026-10 | Hayler et al. | Advancing Open and Reproducible Relational Learning: **RelArena-α**, **TabPFN-Rel** and RPI | Prior Labs' audit of non-comparable RelBench practice, a standardised relational benchmark (21 tasks) and a deep-feature-synthesis + TabPFN-3 harness: TabPFN-Rel tops the model board (Elo 1,821 with text), RT-PluRel tops with systems; reruns cut RelGNN by ~450 Elo. | [pdf](papers/2026/10_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf) |
 | 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | Factorises test-time compute into adaptation, aggregation and context: DiagScale (0.003–0.03% of parameters) matches full finetuning on three backbones (+26/+82/+20 Elo); greedy selection over 96 configurations cuts TabPFN-3 error 2.4% where averaging hurts; retrieval helps or fails; combined +93 Elo costs 253 GPU-hours. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
 | 2026-10 | Zhao et al. | **TabReliBench** — Evaluating Tabular Foundation Models Beyond Predictive Accuracy | Reliability benchmark (160 classification + 81 regression OpenML datasets, 11 TFMs vs BART/RealMLP/XGBoost): rankings shift across metrics; near-nominal marginal coverage but heterogeneous **worst-slab (subgroup) coverage**; ensembling and nine conformal methods do not reliably fix calibration or subgroup gaps. | [pdf](papers/2026/10_Zhao_et_al._TabReliBench_Evaluating_Tabular_Foundation_Models_Beyond_Predictive_Accuracy.pdf) |
 | 2026-10 | Cannistraci and Vogt | **Tabular Foundation Models Are Effectively Shallow** | Closed-form, label-free affine maps replace contiguous transformer blocks: half-depth costs ≤0.002 median AUROC across 8 TFMs on 171 datasets and is near-lossless in regression; up to 96% of blocks removable for classification (one-block TabPFN-3 2.4× faster, 6× less memory), but single blocks hurt regression. | [pdf](papers/2026/10_Cannistraci_and_Vogt_Tabular_Foundation_Models_Are_Effectively_Shallow.pdf) |
 | 2026-10 | Alberge et al. | **SurvICL**: a Foundation Model for in-context Survival Analysis | TabICLv2 backbone pretrained on a proportional-odds survival prior to output 999 latent event-time quantiles from censored contexts; 82.9% pairwise IBS win rate on 63 held-out datasets (Cox 71.3%), first to rank above Cox on small cohorts; boosting stays stronger above 1,000 samples. | [pdf](papers/2026/10_Alberge_et_al._SurvICL_a_Foundation_Model_for_in_context_Survival_Analysis.pdf) |
 | 2026-10 | Deprez et al. | Is TabPFN the Silver Bullet for Insurance Pricing? | Default TabPFN v2.6/v3 vs GLM and fixed XGBoost on two motor-liability datasets: GLMs win claim frequency (Poisson deviance), TabPFN is competitive on scarcer severity data, inference is much slower, and missing offsets/weights handicap the actuarial set-up. | [pdf](papers/2026/10_Deprez_et_al._Is_TabPFN_the_Silver_Bullet_for_Insurance_Pricing.pdf) |
-| 2026-10 | Lefebvre et al. | **TILE**: Bridging LLMs and Table Foundation Models for Tabular Learning with Strings | Frozen-LLM interface for string columns: row serialisation, middle-layer extraction, per-column pooling plus numeric/categorical by-passes feed any TFM; +333 Elo over the best of 30 baselines on 100 string tables and the top four places on STRABLE. | [pdf](papers/2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf) |
+| 2026-10 | Lefebvre et al. | **TILE**: Bridging LLMs and Table Foundation Models for Tabular Learning with Strings | Frozen row-context LLM features, intermediate-layer column pooling and exact-feature by-passes lift all tested TFMs: +342 Elo and 89.9% split wins over the strongest baseline; five variants lead STRABLE. Public source is now linked in v2. | [pdf](papers/2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf) |
 | 2026-10 | Baesens et al. | **Tabular Foundation Models for Credit Risk Prediction: A Dedicated Review and Empirical Comparison** (v1/v2 title: *Foundation Models for Credit Risk Prediction: A Game Changer?*) | PFN review plus a re-run benchmark of untuned TFMs against tuned baselines on 14 PD and 7 LGD credit datasets (33/27 methods, TFMs included): TabPFN-3 first on both tasks (AUC 0.764 vs CatBoost 0.750; R² 0.537 vs 0.487), gains largest at small samples and rare defaults, but mean PD underpredicted on all 14 datasets. | [pdf](papers/2026/10_Baesens_et_al._Tabular_Foundation_Models_for_Credit_Risk_Prediction_A_Dedicated_Review_and_Empirical_Comparison.pdf) |
 | 2026-10 | Bouadi et al. | **O'Prior** — Shaping the Prior: How Synthetic Task Distributions Determine TFM Quality (v2; first released May) | **Controlled prior study** on nanoTabPFN: architecture, optimiser and budget fixed, only the synthetic task distribution varied. Mechanism diversity drives transfer most (Hybrid SCM alone: TabArena ROC-AUC 0.834 vs 0.791 for the TabICL-v2 prior); the full curriculum does not beat the best single components. | [pdf](papers/2026/10_Bouadi_et_al._Shaping_the_Prior_How_Synthetic_Task_Distributions_Determine_Tabular_Foundation_Model_Quality.pdf) |
+| 2026-11 | Xu et al. | Why Tabular Foundation Models Excel on Relational Data They Have Never Seen | Relational encoders plus frozen TFMs are competitive across six settings; locality and expressivity arguments explain possible transfer without RDB pretraining. | [pdf](papers/2026/11_Xu_et_al._Why_Tabular_Foundation_Models_Excel_on_Relational_Data_They_Have_Never_Seen.pdf) |
 
 ---
 
@@ -3101,71 +3102,6 @@ same ranking on A100/B200, with causal masks, or for staged architectures.
 
 ---
 
-<a id="beyond-iid"></a>
-
-## 2026-06 — Purucker et al. — Beyond IID: How General Are Tabular Foundation Models, Really?
-
-**Provenance.** arXiv preprint · arXiv [2606.30410v1](https://arxiv.org/abs/2606.30410v1) (filed
-version, 29 June 2026) · TabArena team (Prior Labs, University of Freiburg, University of
-Mannheim, INRIA Saclay, Technion, ELLIS Tübingen, Probabl) · benchmark integrated into TabArena
-([code](https://tabarena.ai/code)); curation framework and data at
-[TabArena/data-foundry](https://github.com/TabArena/data-foundry) · **PDF:**
-[open](papers/2026/06_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf)
-
-**Citation key:** `2026.PURUCKER.iidhowgeneralaretabularfoundationmodelsreally`.
-
-**Where it fits.** The most systematic test so far of whether TFM "generality" survives outside
-the IID benchmark regime in which TFMs were developed. Co-authored by TabPFN developers, which
-gives the negative findings weight. It is the evaluation axis later targeted by [Jäger 2026,
-*TabPFN-3.5*](#tabpfn-3-5), whose prior was retuned for grouped, wide and high-cardinality data,
-and it complements the temporal-shift concerns of [Helli 2024, *Drift-Resilient
-TabPFN*](#drift-resilient-tabpfn).
-
-**What it contains.** **BeyondArena**: 142 datasets hand-curated from 1,128 candidates with the
-released **DataFoundry** framework and metadata schema (§4). Datasets span IID (103), temporal
-(21) and grouped (18) tasks, 100 to 1M training rows, low/high dimensionality and text or
-high-cardinality features, organised into 12 sub-benchmarks. Eleven models are compared (§5):
-three TFMs evaluated **only by in-context learning** (TabPFN-2.6, TabICLv2, TabDPT) against
-default, tuned (25 random configurations) and tuned+post-hoc-ensembled CatBoost, LightGBM,
-XGBoost, RealMLP, TabM, random forest, extra trees and linear models. Outer splits respect the
-task (group-based CV; application-specific rolling temporal splits) and so do inner validation
-splits. TabPFN-2.6 and TabDPT are run only up to 100k training rows; their larger-data results
-are imputed with a default random forest. Text is embedded with Qwen3-Embedding-8B (32 dims);
-metrics are ROC AUC, log-loss and RMSE, aggregated by Elo and Improvability. Cost about $50k.
-
-**Key results.**
-
-* **Where TFMs win (§6, Figs. 1, 4–5).** TFM in-context learning is best on tiny, small, IID and
-  low-dimensional data, and best on average by Improvability and among default models.
-* **Where they lose.** Tuned+ensembled RealMLP leads the temporal, grouped, medium, large,
-  high-dimensional and text sub-benchmarks; tuned CatBoost leads high-cardinality data (Appendix
-  E.5, Table E.4). The grouped ranking is uncertain: only 5.1% of pairwise comparisons survive
-  Holm correction there.
-* **Drivers (Table E.3).** The best-GBDT-over-best-TFM advantage grows with row count
-  (Spearman ρ = +0.60) and number of high-cardinality categoricals (ρ = +0.47).
-* **Peak performance (Fig. 6).** TFMs significantly beat all other models on 49% of datasets and
-  tie the best non-TFM on a further 21% (70% in total); TabICLv2 ranks first on 19%, TabPFN-2.6
-  on 10.5%. TFMs are clearly outperformed on 42 datasets.
-* **Ablations (Table 1, Appendix F).** IID outer splits on two grouped datasets distort rankings
-  (Kendall τ = 0.49 and 0.60); 5×5 inner CV beats 8-fold CV on small data; TabPFN-2.6 improves
-  when the grouped-data preprocessing is disabled, so its grouped results are negatively biased;
-  post-hoc calibration helps most models but worsens TabPFN-2.6 and RealMLP.
-* **Cost.** TFM training cost stays far below tuned competitors, but inference cost is large.
-
-**Strengths.** Application-appropriate outer and inner splits, Friedman/Holm-corrected Wilcoxon
-testing, a released curation framework, explicit ablations of its own protocol choices, and
-per-regime recommendations. BeyondArena-Core offers a cheaper split subset with more stable
-per-dataset rankings than TabArena-Lite.
-
-**Limitations.** Author-stated (§7): TFM fine-tuning and continued pretraining are not tested;
-only 25 tuning configurations; only three open TFMs; unbalanced sub-benchmarks; validation and
-preprocessing best practices for non-IID and text data remain open. Reviewer reading: the
-temporal and grouped sub-benchmarks are small (21 and 18 datasets), sub-benchmarks overlap (a
-large dataset may also be temporal), and imputing TabPFN-2.6/TabDPT beyond 100k rows with a
-random forest affects the large-data comparison.
-
----
-
 <a id="memory-efficient-tfms"></a>
 
 ## 2026-07 — Luo et al. — Memory Efficient Tabular Foundation Models
@@ -3955,78 +3891,6 @@ licensed for commercial use.
 
 ---
 
-<a id="multabench-benchmarking-multimodal"></a>
-
-## 2026-09 — Arazi et al. — MulTaBench: Benchmarking Multimodal Tabular Learning with Text and Image
-
-**Provenance.** NeurIPS 2026, Evaluations and Datasets track (stated on the filed PDF; Zotero
-records the arXiv preprint) · arXiv [2605.10616v2](https://arxiv.org/abs/2605.10616v2) (filed
-version, 27 September 2026) · Technion with Prior Labs, NVIDIA, Inria SODA, Freiburg, Probabl
-and ELLIS Tübingen · code on [GitHub](https://github.com/alanarazi7/MulTaBench), datasets on
-Kaggle · **PDF:**
-[open](papers/2026/09_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf)
-
-**Citation key:** `2026.ARAZI.multabenchbenchmarkingmultimodaltabularlearningtextimage`.
-
-**Where it fits.** An evaluation paper in the mirrored collection, not a new TFM. It turns the
-representation argument of [Arazi 2025, *TabSTAR: A Tabular Foundation Model for Tabular Data
-with Text Fields*](#2025-12--arazi-et-al--tabstar) into a benchmark for both text and images,
-and asks where the frozen embeddings that [Spinaci 2025, *ConTextTab: A Semantics-Aware Tabular
-In-Context Learner*](#2025-12--spinaci-et-al--contexttab) relies on lose target-relevant
-information. Like [Purucker 2026, *Beyond IID*](#beyond-iid), it qualifies what a benchmark win
-implies, here through modality and representation rather than split design. [Lefebvre 2026,
-*TILE*](#tile-bridging-llms) answers the same gap from the opposite side, with a frozen,
-label-free LLM interface.
-
-**What it contains.** A curation pipeline and the benchmark it produces (§3–4, Appendix A):
-
-* **Four conditions per dataset**: structured-only, unstructured-only, joint frozen, and joint
-  **target-aware representations (TAR)**. Embeddings come from e5-small-v2 (text) and
-  DINOv3-small (images), reduced to 30 PCA components. TAR fine-tunes the encoder's top three
-  layers with LoRA on the target, on the training split only (90/10 checkpoint selection),
-  **without the structured features**, as a preprocessing step shared by all learners.
-  Regression targets are binned into 20 equal-frequency classes for this step.
-* **Acceptance rule**: a dataset enters if, for at least three of five curation learners
-  (LightGBM, CatBoost, TabM, TabPFNv2, TabPFN-2.5), joint frozen beats both unimodal conditions
-  (**Joint Signal**) *and* TAR beats joint frozen (**Task-awareness**), each by at least 0.001
-  in rounded mean AUC/R². Five seeds, training capped at 10,000 rows, default hyperparameters.
-* **Benchmark**: **40 datasets, 20 text-tabular and 20 image-tabular**, 400–114,000 rows and
-  1–245 structured features, plus **40 further candidates** that pass Joint Signal only (80
-  released in total). Of 56 existing text-tabular datasets, about 41% pass both criteria; of 16
-  existing image-tabular datasets, 5 do, so most image tasks were newly collected from Kaggle.
-
-**Key results.**
-
-* **TAR generalises beyond the curation panel (§5, Fig. 4).** XGBoost, RandomForest, RealMLP,
-  TabDPT and TabICLv2 also gain from TAR; GBDTs gain most. A paired, Benjamini–Hochberg-corrected
-  test finds significant TAR gains on **37/40 datasets** (Appendix G.1), but it pools all
-  learners with both conditions, *including* the five curation models.
-* **Not an artefact of size or compression.** TAR-small beats frozen-large encoders (Fig. 5);
-  the gain holds at 15, 30 and 60 PCA components and without PCA in a reduced run (Fig. 6,
-  Appendix G.5). Re-curating with other 5-learner panels leaves the accepted set largely
-  unchanged (Appendix G.6).
-* **ConTextTab**, state of the art on CARTE, scores below every TAR variant on the text subset
-  and is significantly outperformed by AutoGluon-Multimodal and TabSTAR.
-* **Trimodality is rare**: of nine image-tabular datasets that also contain text, only two pass
-  the strict trimodal criterion (PetFinder: TAR on both modalities gives the best AUC for every
-  learner, Table 2).
-
-**Strengths.** Makes complementary modality signal and representation adaptation separately
-testable, with unimodal controls, extra learners, encoder-size and dimension checks, and
-sensitivity analyses for the learner panel and thresholds. The authors state the selection
-bias openly (§7) and release the broader candidate set so methods can also be checked where
-frozen embeddings suffice. Attention maps (Fig. 7) show what TAR changes in the image encoder.
-
-**Limitations.** Selection deliberately keeps tasks where this TAR recipe helps (author-stated),
-so neither the model ranking nor the prevalence of TAR gains estimates general multimodal
-performance, and the curation models cannot be ranked fairly. No per-dataset tuning of
-learners or TAR; fine-tuning cost can dominate (Appendix G.3). TAR must be redone inside each
-evaluation fold, since a globally target-tuned embedding cache would leak labels. Adaptation is
-supervised and ignores the structured features, so the results motivate, but do not
-demonstrate, a jointly conditioned or ICL-only multimodal TFM; none is proposed.
-
----
-
 <a id="limix-2m-mitigating"></a>
 
 ## 2026-09 — Wang et al. — LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models
@@ -4100,85 +3964,6 @@ AutoGluon often rank better (e.g. BCCO-REG, CTR23, TALENT-REG). Baselines are ea
 generations (TabPFN v2, TabICL v1, Mitra), not TabPFN-2.5/3, TabICLv2 or LimiX-2. Reduced
 training cost is claimed but not measured, and the timing uses one small synthetic task. The
 shared LimiX repository evolves, so exact checkpoint configuration needs separate checking.
-
----
-
-<a id="advancing-open-and"></a>
-
-## 2026-09 — Hayler et al. — Advancing Open and Reproducible Relational Learning: RelArena-α, TabPFN-Rel and RPI
-
-**Provenance.** α-release report, arXiv preprint (not peer reviewed) · arXiv
-[2608.16319v2](https://arxiv.org/abs/2608.16319v2) (filed version, 7 September 2026; first
-posted in August) · Prior Labs, with Stanford University and NVIDIA co-authors · official code
-in [PriorLabs/relarena](https://github.com/PriorLabs/relarena) and the split-out
-[PriorLabs/tabpfn-rel](https://github.com/PriorLabs/tabpfn-rel) (local snapshots: [repository
-guide](REPOSITORIES.md#relarena-code)) · **PDF:**
-[open](papers/2026/09_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf)
-
-**Citation key:** `2026.HAYLER.advancingopenreproduciblerelationallearningrelarenaatabpfnrelrpi`.
-
-**Where it fits.** Prior Labs' entry into relational learning and the flattening counterpart to
-[Hudovernik 2026, *KumoRFM-2: Scaling Foundation Models for Relational
-Learning*](#kumorfm-2-scaling): where KumoRFM-2 argues for a database-native model, this report
-packages the opposite bet (deep feature synthesis into one flat table, then a single-table TFM)
-as **TabPFN-Rel**, a harness around [Grinsztajn 2026, *TabPFN-3*](#tabpfn-3). The benchmark
-half, **RelArena-α**, brings TabArena's model/system distinction, standardised tuning and Elo
-aggregation (the machinery behind [Purucker 2026, *Beyond IID*](#beyond-iid)) to relational
-learning; [Jäger 2026, *TabPFN-3.5*](#tabpfn-3-5) later reports on it. Its text-column finding
-connects to [Arazi 2026, *MulTaBench*](#multabench-benchmarking-multimodal).
-
-**What it contains.**
-
-* **An audit of RelBench v1 practice (§1, Table 1).** Missing training code; undocumented
-  per-task configurations (KumoRFM-2's released configurations imply a grid of 384, RelGNN's
-  checkpoints one of over 25,000); baselines copied rather than rerun; results not recomputed
-  after a RelBench leakage fix (rel-event/user-ignore scores fall 2–6 AUROC points); and
-  incompatible regression aggregates. Above all, **two evaluation regimes**: RelBench freezes
-  the database at the test cut-off, while some methods (KumoRFM-2 and relational-transformer
-  derivatives, by the authors' reading) let each rel-f1 test entity see data up to its own
-  timestamp, years of extra signal. Under RelBench's regime the same model loses over ten
-  AUROC points on the two rel-f1 classification tasks and its MAE rises by over 40% (§1.2).
-* **RelArena-α (§2.1).** A harness for the 21 entity-level RelBench v1 tasks with one enforced
-  data state. *Model* submissions declare a search space and are tuned by the framework under
-  approximately compute-matched budgets (Appendix B); *system* submissions bring their own
-  tuning. Elo is anchored at a global constant predictor (1,000) via TabArena's library.
-* **TabPFN-Rel (§2.2).** Extends RDBLearn's deep-feature-synthesis + TFM recipe: tunes only
-  aggregation depth (2, 3 or 4), gives TabPFN-3 an order of magnitude more context rows,
-  fixes tuning-time data drift, uses recency/diversity-aware context selection, reuses
-  validation rows as test-time context, and (API variant only, via TabPFN-3-Plus) re-attaches
-  entity-table text.
-* **RPI (§2.3).** A YAML-declared, model-agnostic interface for defining entity-level
-  forecasting tasks on one's own database.
-
-**Key results** (§3, single seed):
-
-* TabPFN-Rel ranks first on the model leaderboard, ahead of GraphSAGE, RelGT, RDBLearn and
-  RelGNN: Elo 1,821 for the API variant and 1,706 for the open-source, text-free variant
-  (Fig. 2). Including systems, the fine-tuned relational transformer **RT-PluRel ranks first
-  overall**, at about 5× the run time of TabPFN-Rel (API) and 30× that of the open-source
-  variant, excluding TabPFN-Rel's CPU feature-synthesis pass.
-* **Text matters locally**: the 115-point drop without text comes mainly from two tasks
-  (rel-event/user-ignore, rel-avito/user-clicks).
-* **Constant predictors are not trivially beaten**: a per-entity constant beats RelGNN and RelGT
-  on four tasks each; only TabPFN-Rel and RT-PluRel beat it on all 21.
-* **Self-reported vs rerun (Appendix C, Table 3)**: RelGNN drops by nearly 450 Elo and RelGT by
-  about 200. Tuning clearly helps RelGNN but gives no reliable gain for most methods (§3.3,
-  Fig. 3); TabPFN-Rel's default depth 2 is already competitive.
-
-**Strengths.** The most careful account in this collection of why relational-learning numbers
-are not comparable, with specific, checkable causes. Code, search spaces, cache-generation
-scripts and per-task raw scores are public, and the report names its own conflict of interest
-(a benchmark released together with a competing model). The constant-predictor and
-self-reported-versus-rerun comparisons are unusually useful baselines.
-
-**Limitations.** Vendor report, single seed, RelBench v1 entity forecasting only. The authors
-list open problems (§4): compute budgets only approximately matched, preprocessing time not
-tracked, flattening methods possibly disadvantaged by timestamp-boundary handling, RDBLearn run
-without its LimiX backbone. KumoRFM-2, RT-J and automated-feature-engineering + GBDT baselines
-are absent. The best TabPFN-Rel variant depends on the hosted API. RelGNN was re-implemented,
-so part of its Elo drop may be implementation rather than tuning (author-stated). The code has
-since moved on (separate TabPFN-Rel package, TabPFN-3.5 variants), so the numbers describe the
-release state, not the live leaderboard.
 
 ---
 
@@ -4296,6 +4081,220 @@ encoded; only single flat tables are handled. Reviewer reading:
   the other folds' test rows, so its Elo is not a strictly held-out estimate. Neither TabFM+ nor
   TabFM-Auto is single-pass zero-shot, and the paper reports no inference cost for any tier.
 * Unreviewed vendor report; weights are not licensed for commercial use.
+
+---
+
+<a id="beyond-iid"></a>
+
+## 2026-10 — Purucker et al. — Beyond IID: How General Are Tabular Foundation Models, Really?
+
+**Provenance.** arXiv preprint · arXiv [2606.30410v2](https://arxiv.org/abs/2606.30410v2) (filed version, 2026-10-30) · TabArena team (Prior Labs, University of Freiburg, University of
+Mannheim, INRIA Saclay, Technion, ELLIS Tübingen, Probabl) · benchmark integrated into TabArena
+([code](https://tabarena.ai/code)); curation framework and data at
+[TabArena/data-foundry](https://github.com/TabArena/data-foundry) · **PDF:**
+[open](papers/2026/10_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf)
+
+**Citation key:** `2026.PURUCKER.iidhowgeneralaretabularfoundationmodelsreally`.
+
+**Where it fits.** The most systematic test so far of whether TFM "generality" survives outside
+the IID benchmark regime in which TFMs were developed. Co-authored by TabPFN developers, which
+gives the negative findings weight. It is the evaluation axis later targeted by [Jäger 2026,
+*TabPFN-3.5*](#tabpfn-3-5), whose prior was retuned for grouped, wide and high-cardinality data,
+and it complements the temporal-shift concerns of [Helli 2024, *Drift-Resilient
+TabPFN*](#drift-resilient-tabpfn).
+
+**What it contains.** **BeyondArena**: 142 datasets hand-curated from 1,128 candidates with the
+released **DataFoundry** framework and metadata schema (§4). Datasets span IID (103), temporal
+(21) and grouped (18) tasks, 100 to 1M training rows, low/high dimensionality and text or
+high-cardinality features, organised into 12 sub-benchmarks. Eleven models are compared (§5):
+three TFMs evaluated **only by in-context learning** (TabPFN-2.6, TabICLv2, TabDPT) against
+default, tuned (25 random configurations) and tuned+post-hoc-ensembled CatBoost, LightGBM,
+XGBoost, RealMLP, TabM, random forest, extra trees and linear models. Outer splits respect the
+task (group-based CV; application-specific rolling temporal splits) and so do inner validation
+splits. TabPFN-2.6 and TabDPT are run only up to 100k training rows; their larger-data results
+are imputed with a default random forest. Text is embedded with Qwen3-Embedding-8B (32 dims);
+metrics are ROC AUC, log-loss and RMSE, aggregated by Elo and Improvability. Cost about $50k.
+
+**Key results.**
+
+* **Where TFMs win (§6, Figs. 1, 4–5).** TFM in-context learning is best on tiny, small, IID and
+  low-dimensional data, and best on average by Improvability and among default models.
+* **Where they lose.** Tuned+ensembled RealMLP leads the temporal, grouped, medium, large,
+  high-dimensional and text sub-benchmarks; tuned CatBoost leads high-cardinality data (Appendix
+  E.5, Table E.4). The grouped ranking is uncertain: only 5.1% of pairwise comparisons survive
+  Holm correction there.
+* **Drivers (Table E.3).** The best-GBDT-over-best-TFM advantage grows with row count
+  (Spearman ρ = +0.60) and number of high-cardinality categoricals (ρ = +0.47).
+* **Peak performance (Fig. 6).** TFMs significantly beat all other models on 49% of datasets and
+  tie the best non-TFM on a further 21% (70% in total); TabICLv2 ranks first on 19%, TabPFN-2.6
+  on 10.5%. TFMs are clearly outperformed on 42 datasets.
+* **Ablations (Table 1, Appendix F).** IID outer splits on two grouped datasets distort rankings
+  (Kendall τ = 0.49 and 0.60); 5×5 inner CV beats 8-fold CV on small data; TabPFN-2.6 improves
+  when the grouped-data preprocessing is disabled, so its grouped results are negatively biased;
+  post-hoc calibration helps most models but worsens TabPFN-2.6 and RealMLP.
+* **Cost.** TFM training cost stays far below tuned competitors, but inference cost is large.
+
+**Strengths.** Application-appropriate outer and inner splits, Friedman/Holm-corrected Wilcoxon
+testing, a released curation framework, explicit ablations of its own protocol choices, and
+per-regime recommendations. BeyondArena-Core offers a cheaper split subset with more stable
+per-dataset rankings than TabArena-Lite.
+
+**Limitations.** Author-stated (§7): TFM fine-tuning and continued pretraining are not tested;
+only 25 tuning configurations; only three open TFMs; unbalanced sub-benchmarks; validation and
+preprocessing best practices for non-IID and text data remain open. Reviewer reading: the
+temporal and grouped sub-benchmarks are small (21 and 18 datasets), sub-benchmarks overlap (a
+large dataset may also be temporal), and imputing TabPFN-2.6/TabDPT beyond 100k rows with a
+random forest affects the large-data comparison.
+
+---
+
+<a id="multabench-benchmarking-multimodal"></a>
+
+## 2026-10 — Arazi et al. — MulTaBench: Benchmarking Multimodal Tabular Learning with Text and Image
+
+**Provenance.** NeurIPS 2026, Evaluations and Datasets track (stated on the filed PDF; Zotero
+records the arXiv preprint) · arXiv [2605.10616v3](https://arxiv.org/abs/2605.10616v3) (filed version, 2026-10-30) · Technion with Prior Labs, NVIDIA, Inria SODA, Freiburg, Probabl
+and ELLIS Tübingen · code on [GitHub](https://github.com/alanarazi7/MulTaBench), datasets on
+Kaggle · **PDF:**
+[open](papers/2026/10_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf)
+
+**Citation key:** `2026.ARAZI.multabenchbenchmarkingmultimodaltabularlearningtextimage`.
+
+**Where it fits.** An evaluation paper in the mirrored collection, not a new TFM. It turns the
+representation argument of [Arazi 2025, *TabSTAR: A Tabular Foundation Model for Tabular Data
+with Text Fields*](#2025-12--arazi-et-al--tabstar) into a benchmark for both text and images,
+and asks where the frozen embeddings that [Spinaci 2025, *ConTextTab: A Semantics-Aware Tabular
+In-Context Learner*](#2025-12--spinaci-et-al--contexttab) relies on lose target-relevant
+information. Like [Purucker 2026, *Beyond IID*](#beyond-iid), it qualifies what a benchmark win
+implies, here through modality and representation rather than split design. [Lefebvre 2026,
+*TILE*](#tile-bridging-llms) answers the same gap from the opposite side, with a frozen,
+label-free LLM interface.
+
+**What it contains.** A curation pipeline and the benchmark it produces (§3–4, Appendix A):
+
+* **Four conditions per dataset**: structured-only, unstructured-only, joint frozen, and joint
+  **target-aware representations (TAR)**. Embeddings come from e5-small-v2 (text) and
+  DINOv3-small (images), reduced to 30 PCA components. TAR fine-tunes the encoder's top three
+  layers with LoRA on the target, on the training split only (90/10 checkpoint selection),
+  **without the structured features**, as a preprocessing step shared by all learners.
+  Regression targets are binned into 20 equal-frequency classes for this step.
+* **Acceptance rule**: a dataset enters if, for at least three of five curation learners
+  (LightGBM, CatBoost, TabM, TabPFNv2, TabPFN-2.5), joint frozen beats both unimodal conditions
+  (**Joint Signal**) *and* TAR beats joint frozen (**Task-awareness**), each by at least 0.001
+  in rounded mean AUC/R². Five seeds, training capped at 10,000 rows, default hyperparameters.
+* **Benchmark**: **40 datasets, 20 text-tabular and 20 image-tabular**, 400–114,000 rows and
+  1–245 structured features, plus **40 further candidates** that pass Joint Signal only (80
+  released in total). Of 56 existing text-tabular datasets, about 41% pass both criteria; of 16
+  existing image-tabular datasets, 5 do, so most image tasks were newly collected from Kaggle.
+
+**Key results.**
+
+* **TAR generalises beyond the curation panel (§5, Fig. 4).** XGBoost, RandomForest, RealMLP,
+  TabDPT and TabICLv2 also gain from TAR; GBDTs gain most. A paired, Benjamini–Hochberg-corrected
+  test finds significant TAR gains on **37/40 datasets** (Appendix G.1), but it pools all
+  learners with both conditions, *including* the five curation models.
+* **Not an artefact of size or compression.** TAR-small beats frozen-large encoders (Fig. 5);
+  the gain holds at 15, 30 and 60 PCA components and without PCA in a reduced run (Fig. 6,
+  Appendix G.5). Re-curating with other 5-learner panels leaves the accepted set largely
+  unchanged (Appendix G.6).
+* **ConTextTab**, state of the art on CARTE, scores below every TAR variant on the text subset
+  and is significantly outperformed by AutoGluon-Multimodal and TabSTAR.
+* **Trimodality is rare**: of nine image-tabular datasets that also contain text, only two pass
+  the strict trimodal criterion (PetFinder: TAR on both modalities gives the best AUC for every
+  learner, Table 2).
+
+**Strengths.** Makes complementary modality signal and representation adaptation separately
+testable, with unimodal controls, extra learners, encoder-size and dimension checks, and
+sensitivity analyses for the learner panel and thresholds. The authors state the selection
+bias openly (§7) and release the broader candidate set so methods can also be checked where
+frozen embeddings suffice. Attention maps (Fig. 7) show what TAR changes in the image encoder.
+
+**Limitations.** Selection deliberately keeps tasks where this TAR recipe helps (author-stated),
+so neither the model ranking nor the prevalence of TAR gains estimates general multimodal
+performance, and the curation models cannot be ranked fairly. No per-dataset tuning of
+learners or TAR; fine-tuning cost can dominate (Appendix G.3). TAR must be redone inside each
+evaluation fold, since a globally target-tuned embedding cache would leak labels. Adaptation is
+supervised and ignores the structured features, so the results motivate, but do not
+demonstrate, a jointly conditioned or ICL-only multimodal TFM; none is proposed.
+
+---
+
+<a id="advancing-open-and"></a>
+
+## 2026-10 — Hayler et al. — Advancing Open and Reproducible Relational Learning: RelArena-α, TabPFN-Rel and RPI
+
+**Provenance.** α-release report, arXiv preprint (not peer reviewed) · arXiv
+[2608.16319v3](https://arxiv.org/abs/2608.16319v3) (filed version, 2026-10-30; first
+posted in August) · Prior Labs, with Stanford University and NVIDIA co-authors · official code
+in [PriorLabs/relarena](https://github.com/PriorLabs/relarena) and the split-out
+[PriorLabs/tabpfn-rel](https://github.com/PriorLabs/tabpfn-rel) (local snapshots: [repository
+guide](REPOSITORIES.md#relarena-code)) · **PDF:**
+[open](papers/2026/10_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf)
+
+**Citation key:** `2026.HAYLER.advancingopenreproduciblerelationallearningrelarenaatabpfnrelrpi`.
+
+**Where it fits.** Prior Labs' entry into relational learning and the flattening counterpart to
+[Hudovernik 2026, *KumoRFM-2: Scaling Foundation Models for Relational
+Learning*](#kumorfm-2-scaling): where KumoRFM-2 argues for a database-native model, this report
+packages the opposite bet (deep feature synthesis into one flat table, then a single-table TFM)
+as **TabPFN-Rel**, a harness around [Grinsztajn 2026, *TabPFN-3*](#tabpfn-3). The benchmark
+half, **RelArena-α**, brings TabArena's model/system distinction, standardised tuning and Elo
+aggregation (the machinery behind [Purucker 2026, *Beyond IID*](#beyond-iid)) to relational
+learning; [Jäger 2026, *TabPFN-3.5*](#tabpfn-3-5) later reports on it. Its text-column finding
+connects to [Arazi 2026, *MulTaBench*](#multabench-benchmarking-multimodal).
+
+**What it contains.**
+
+* **An audit of RelBench v1 practice (§1, Table 1).** Missing training code; undocumented
+  per-task configurations (KumoRFM-2's released configurations imply a grid of 384, RelGNN's
+  checkpoints one of over 25,000); baselines copied rather than rerun; results not recomputed
+  after a RelBench leakage fix (rel-event/user-ignore scores fall 2–6 AUROC points); and
+  incompatible regression aggregates. Above all, **two evaluation regimes**: RelBench freezes
+  the database at the test cut-off, while some methods (KumoRFM-2 and relational-transformer
+  derivatives, by the authors' reading) let each rel-f1 test entity see data up to its own
+  timestamp, years of extra signal. Under RelBench's regime the same model loses over ten
+  AUROC points on the two rel-f1 classification tasks and its MAE rises by over 40% (§1.2).
+* **RelArena-α (§2.1).** A harness for the 21 entity-level RelBench v1 tasks with one enforced
+  data state. *Model* submissions declare a search space and are tuned by the framework under
+  approximately compute-matched budgets (Appendix B); *system* submissions bring their own
+  tuning. Elo is anchored at a global constant predictor (1,000) via TabArena's library.
+* **TabPFN-Rel (§2.2).** Extends RDBLearn's deep-feature-synthesis + TFM recipe: tunes only
+  aggregation depth (2, 3 or 4), gives TabPFN-3 an order of magnitude more context rows,
+  fixes tuning-time data drift, uses recency/diversity-aware context selection, reuses
+  validation rows as test-time context, and (API variant only, via TabPFN-3-Plus) re-attaches
+  entity-table text.
+* **RPI (§2.3).** A YAML-declared, model-agnostic interface for defining entity-level
+  forecasting tasks on one's own database.
+
+**Key results** (§3, single seed):
+
+* TabPFN-Rel ranks first on the model leaderboard, ahead of GraphSAGE, RelGT, RDBLearn and
+  RelGNN: Elo 1,821 for the API variant and 1,706 for the open-source, text-free variant
+  (Fig. 2). Including systems, the fine-tuned relational transformer **RT-PluRel ranks first
+  overall**, at about 5× the run time of TabPFN-Rel (API) and 30× that of the open-source
+  variant, excluding TabPFN-Rel's CPU feature-synthesis pass.
+* **Text matters locally**: the 115-point drop without text comes mainly from two tasks
+  (rel-event/user-ignore, rel-avito/user-clicks).
+* **Constant predictors are not trivially beaten**: a per-entity constant beats RelGNN and RelGT
+  on four tasks each; only TabPFN-Rel and RT-PluRel beat it on all 21.
+* **Self-reported vs rerun (Appendix C, Table 3)**: RelGNN drops by nearly 450 Elo and RelGT by
+  about 200. Tuning clearly helps RelGNN but gives no reliable gain for most methods (§3.3,
+  Fig. 3); TabPFN-Rel's default depth 2 is already competitive.
+
+**Strengths.** The most careful account in this collection of why relational-learning numbers
+are not comparable, with specific, checkable causes. Code, search spaces, cache-generation
+scripts and per-task raw scores are public, and the report names its own conflict of interest
+(a benchmark released together with a competing model). The constant-predictor and
+self-reported-versus-rerun comparisons are unusually useful baselines.
+
+**Limitations.** Vendor report, single seed, RelBench v1 entity forecasting only. The authors
+list open problems (§4): compute budgets only approximately matched, preprocessing time not
+tracked, flattening methods possibly disadvantaged by timestamp-boundary handling, RDBLearn run
+without its LimiX backbone. KumoRFM-2, RT-J and automated-feature-engineering + GBDT baselines
+are absent. The best TabPFN-Rel variant depends on the hosted API. RelGNN was re-implemented,
+so part of its Elo drop may be implementation rather than tuning (author-stated). The code has
+since moved on (separate TabPFN-Rel package, TabPFN-3.5 variants), so the numbers describe the
+release state, not the live leaderboard.
 
 ---
 
@@ -4727,9 +4726,9 @@ v2.6 and v3 at the time of writing) describes those releases, not every future v
 
 ## 2026-10 — Lefebvre et al. — TILE: Bridging LLMs and Table Foundation Models for Tabular Learning with Strings
 
-**Provenance.** arXiv preprint · arXiv [2610.17065v1](https://arxiv.org/abs/2610.17065v1)
-(filed version, 12 October 2026) · SODA team, Inria Saclay (with SAP SE and Probabl
-affiliations) · no official code repository found · **PDF:**
+**Provenance.** arXiv preprint · arXiv [2610.17065v2](https://arxiv.org/abs/2610.17065v2)
+(filed version, 2026-10-30) · SODA team, Inria Saclay (with SAP SE and Probabl
+affiliations) · official [code](https://github.com/soda-inria/tile), BSD-3-Clause · **PDF:**
 [open](papers/2026/10_Lefebvre_et_al._TILE_Bridging_LLMs_and_Table_Foundation_Models_for_Tabular_Learning_with_Strings.pdf)
 
 **Citation key:** `2026.LEFEBVRE.tilebridgingllmstablefoundationmodelstabularlearningstrings`.
@@ -4767,27 +4766,28 @@ string-aware models (ConTextTab, TabSTAR, TabLLM, CASE).
 
 **Key results.**
 
-At 1,024 training rows, TILE with Causilo scores 91.6 (regression) and
-90.4 (classification) normalised points against 77.8 and 81.0 for the best Table 1
-baseline, the same LLM applied cell-wise + Causilo. In Elo it leads the strongest
-baseline (cell-wise LLM + EXAONE-Tabular) by **+333** and wins 88.6% of the 500 shared
-splits (Appendix B). The regression gap narrows with more data (13.8 → 9.1 → 7.3 points).
-TF-IDF features fed to a TFM roughly match the cell-wise 8B LLM and beat end-to-end
-ConTextTab, TabSTAR and TabLLM.
+At 1,024 training rows, TILE + Causilo scores 91.76 normalized regression and
+89.97 normalized classification points, against 77.44 and 80.57 for the best
+Table 1 baseline, cell-wise Llama-3.1-8B + Causilo. These are within-column
+comparisons; the dataset pool changes at 10k and 50k rows. In the full 1,024-row
+comparison it leads the strongest baseline (cell-wise LLM + EXAONE-Tabular) by
+**342 Elo**, winning **89.9% of 500 shared splits** (Figure 1; Appendix B).
+The regression gap over the best Table 1 baseline shrinks from 14.3 to 9.2 to
+7.0 points with increasing training size (§4.2).
 
-On the separately assembled **STRABLE** benchmark (108 tables, 51 baselines; Blayer 2026,
-*STRABLE: Benchmarking tabular machine learning with strings*, not held here), the four
-TILE variants take the top four places. TILE + Causilo scores 1.024, i.e. above choosing
-the best baseline per dataset (§4.3, Fig. 3). With row context, larger LLMs help. TILE's
-lead over the cell-wise encoder grows from 4.2 points with Qwen3-0.6B to 16.7 with
-Qwen3-8B, whereas cell-wise Qwen3-0.6B beats Qwen3-8B (§5.1, Fig. 4).
+On the separately assembled **STRABLE** benchmark (108 tables; 63 baselines),
+the five TILE variants take the first five places. TILE + Causilo scores 1.022
+and TILE + TabPFN-3.5 scores 1.006, exceeding the per-dataset best-baseline
+normalization of 1 (§4.3; Figure 3). The 70B variants improve these to 1.057 and
+1.042 (Appendix H.1). With row context, the gain over cell-wise Qwen3 grows from
+5.3 points at 0.6B to 17.8 points at 8B (§5.1); a larger cell-wise model alone
+does not improve representations.
 
-Ablations (§5.4, Table 2) attribute most of the gain to the numerical by-pass (removing it
-costs 11–15 points) and inter-column attention (3–9 points). Reading the last rather than
-the middle layer costs up to 3.6 points; adding the target name to the prompt, repeating
-the row, uninformative column names and mirrored column order all hurt. TILE runs at a
-median 26–45 s per dataset and peaks at 8.7 GB GPU memory against 16.0 GB for the
-cell-wise encoder (Appendix G).
+Ablations (§5.4; Table 2) identify the numerical by-pass (11–16-point loss when
+removed) and inter-column attention (about 3–10 points) as the largest effects.
+The default 8B pipeline takes a median 15–37 s per dataset across variants;
+its extraction peaks at 17.7 GB with the speed-oriented batching, reducible to
+about 8.7 GB with smaller batches (Appendices G.2–G.3).
 
 **Strengths.** Turns a vague practice ("use an LLM to embed strings") into a controlled
 design space with ablations for each choice, two LLM families across two orders of
@@ -4796,20 +4796,20 @@ authors. Its gains survive across TFM generations rather than being tied to one 
 The cell-wise LLM baseline shares the same backbone, isolating the interface. The
 TF-IDF result is an honest, useful baseline for anyone adding semantics to a TFM.
 
-**Limitations.** No official code repository is linked from the paper or its arXiv
-record, and none was found under the authors' GitHub organisation on 2026-10-26. Results
-therefore rest on the paper's description of a pipeline built from public components
-(Appendix I). The extraction layer, feature-count window and cardinality threshold were
-chosen on the main benchmark. STRABLE provides partial independent confirmation, but 15
-of its tables share sources with the main benchmark. Possible LLM memorisation of
-Wikidata- or web-derived entities is not audited, which matters for a method whose gains
-come from world knowledge. The decoder's causal mask makes features depend on column
-order. A GPU is required for the LLM stage, and very wide or text-heavy rows need
-chunking beyond the context window. End-to-end baselines run with package defaults.
-CASE uses a fallback backbone because its tuned checkpoint is unreleased. Gains are
-largest at small training sizes.
+**Limitations.** Author-stated (§6): the method targets string-bearing tables;
+purely numerical tables need no LLM stage. Embedding extraction needs a GPU;
+very wide or text-heavy rows may exceed the LLM context and require chunking.
+The decoder's causal mask makes features depend on column order. Reviewer
+reading: layer and feature-window selection uses 27 probing datasets; STRABLE
+adds independent evidence but 15 tables share source datasets with the main
+benchmark. LLM memorization of web-derived entities is not audited. CASE uses
+a fallback backbone because its tuned checkpoint is unavailable. The strongest
+cell-wise EXAONE baseline was run only at 1,024 training rows, and larger-data
+columns include fewer tasks. Public code is now linked from v2; its availability
+does not establish that every experimental result has been independently reproduced.
 
 ---
+
 
 <a id="credit-risk-benchmark"></a>
 
@@ -5019,5 +5019,25 @@ or intervals, although several gaps are under one point. The stress module is me
 under shift, but the benchmarks are i.i.d.; the authors acknowledge that its benefit is
 untested. Baseline generators were designed for other architectures and budgets. *Authorship:*
 the winning prior is the authors' own (Lexsi Labs), so independent replication matters.
+
+---
+
+<a id="why-tabular-foundation"></a>
+
+## 2026-11 — Xu et al. — Why Tabular Foundation Models Excel on Relational Data They Have Never Seen
+
+**Venue / provenance.** arXiv preprint [2611.02936v1](https://arxiv.org/abs/2611.02936v1), filed version 2 November 2026; University of Hong Kong and Shanghai X-Lab. No peer-reviewed venue confirmed. **PDF:** [open](papers/2026/11_Xu_et_al._Why_Tabular_Foundation_Models_Excel_on_Relational_Data_They_Have_Never_Seen.pdf); [generated text](papers/text/2026/11_Xu_et_al._Why_Tabular_Foundation_Models_Excel_on_Relational_Data_They_Have_Never_Seen.txt).
+
+**Citation key:** `2026.XU.whytabularfoundationmodelsexcelrelationaldatatheyhaveneverseen`.
+
+**Where it fits.** Xu et al. (2026), *Why Tabular Foundation Models Excel on Relational Data They Have Never Seen*, extend [Hayler et al., *Advancing Open and Reproducible Relational Learning: RelArena-α, TabPFN-Rel and RPI*](#advancing-open-and) beyond one benchmark and connect relational flattening to [Nagler, *Statistical Foundations of Prior-Data Fitted Networks*](#nagler-theory). They explain a route that competes with database-native [Hudovernik et al., *KumoRFM-2: Scaling Foundation Models for Relational Learning*](#kumorfm-2-scaling), rather than introducing another pretrained backbone.
+
+**What it contains.** A comparison across six benchmark settings (SALT, RelBench v2 classification/regression, 4DBInfer, and RelBench v1/RelArena-α classification/regression) combines parameter-free relational encoders with frozen single-table TFMs. A construction induces relational schemas from ordinary temporal tables, testing whether extra relations distract the predictor. The theoretical sections study locality under an expanding-database generative process, feature-preserving aggregation, expressivity and integration with agentic systems (§§3–7).
+
+**Key results.** Figure 1 places a TFM-based method first among the compared relational foundation models in every benchmark setting; this is a normalized average-rank comparison, not a common pooled accuracy score. Figure 2 shows RDBLearn handling induced relational context while retaining the single-table baseline's behavior. Proposition 5.2 gives a necessary locality condition under the stated distributional and encoder-sufficiency assumptions; the discussion argues why uniform context sampling and parameter-free encoders may align with single-table pretraining. This is not a finite-sample guarantee for an arbitrary deployed TFM.
+
+**Strengths.** Makes relational flattening a serious baseline and expands evaluation beyond RelBench v1. It connects empirical observations with an explicit generative setup rather than relying only on a leaderboard claim. Time-aware neighborhood sampling is stated explicitly.
+
+**Limitations.** Comparators do not all cover the same tasks, and some results come from published reports with author-specific tuning; Figure 1 is not a uniform rerun of every model. Closed variants have undisclosed changes. The asymptotic reasoning relies on strong sufficiency/distribution assumptions and does not ensure that a particular finite encoder retains every useful cross-row interaction. The filed first version contains an unresolved proposition cross-reference. Agentic-system integration is an argument, not an end-to-end agent benchmark.
 
 ---

@@ -34,7 +34,7 @@ open-source, model-agnostic interface that enables early adopters to easily defi
 problems on new databases and apply any model implemented in RelArena-α,
 including TabPFN-Rel, to these problems.
 /githubhttps://github.com/PriorLabs/relarena
-arXiv:2608.16319v2  [cs.LG]  7 Sep 2026
+arXiv:2608.16319v3  [cs.LG]  30 Oct 2026
 
 1 The Current State of Relational Learning
 Relational learning has attracted increased interest and research output in recent years. Nevertheless,
@@ -1161,8 +1161,9 @@ Retrieval route.RelBench states that its users obtain therel-avito,rel-hmandrel-
 data from Kaggle themselves, and identifies accepting the competition terms as part of that step [1].
 H Acknowledgements
 We acknowledge the EuroHPC Joint Undertaking for awarding this project access to the EuroHPC
-supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium through a EuroHPC
-Regular Access call.
+supercomputers LUMI, hosted by CSC (Finland) and the LUMI consortium, and MareNostrum 5,
+hosted by the Barcelona Supercomputing Center (Spain), through EuroHPC AI Factory Large Scale
+Access calls (projects EHPC-AIF-2025LS17-014 and EHPC-AIF-2025LS14-031).
 This work was supported by European Union’s Horizon Europe research and innovation programme
 under grant agreement number 101214398 (ELLIOT).
 Disclaimer:Funded by the European Union. Views and opinions expressed are however those

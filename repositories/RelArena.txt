@@ -2,10 +2,10 @@ TFM Library source snapshot
 Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/PriorLabs/relarena",
-  "revision": "87ce6e749dcd48ab829855bb0c17437e6f1a803f",
-  "revision_date": "2026-10-21T18:53:53+02:00",
+  "revision": "0c55ff2e11132bd028771aa73ecb63d7b167d792",
+  "revision_date": "2026-10-28T17:31:28+01:00",
   "slug": "PriorLabs/relarena",
-  "retrieved_utc": "2026-10-26T10:45:41+00:00",
+  "retrieved_utc": "2026-11-03T15:51:47+00:00",
   "identity_source": "https://arxiv.org/abs/2608.16319",
   "included_files": 260,
   "excluded_files": 14,
@@ -47,8 +47,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "README.md",
-      "bytes": 40627,
-      "sha256": "714df279e7d54b31b50be2e43f32b34b8602e1958e1282c625c5c5ff2d508172"
+      "bytes": 40866,
+      "sha256": "2f7fd2bab6673d6b18ee14b80932edc8110686de5147a81d89996110ac313543"
     },
     {
       "path": "baseline_results/README.md",
@@ -67,8 +67,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "docs/licensing.md",
-      "bytes": 1479,
-      "sha256": "84450e63f56a76c66de75ce8a4420c819c61fa25d143aa43e3a63fc27b6f0d84"
+      "bytes": 1800,
+      "sha256": "d73c5677ed71ac6cd03829cd1e125d7a6120475fe761ed215caae174a3b51944"
     },
     {
       "path": "docs/models/kurversc.md",
@@ -137,8 +137,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena-core/pyproject.toml",
-      "bytes": 669,
-      "sha256": "118c37f671024f7cd4c9c23396083e25a94223919f6e5c97919defa292aa9fd0"
+      "bytes": 901,
+      "sha256": "3900ff7a408ea46acb7dc569f11bf94b6fba9d82bf1874d4b4f776630151528f"
     },
     {
       "path": "packages/relarena-core/src/relarena_core/__init__.py",
@@ -617,8 +617,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/src/relarena/models/rdblearn/tfm.py",
-      "bytes": 1866,
-      "sha256": "90a3ea79ab520437b6f9dc5c18b944fd6723c6040fbab64dceb261f2c1073bbc"
+      "bytes": 1832,
+      "sha256": "1d891174e82e1d4448a3c16b5d7b4ac10dab9dd8cde8ba2d2a46a32585417674"
     },
     {
       "path": "packages/relarena/src/relarena/models/relgnn/__init__.py",
@@ -1267,8 +1267,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "workflows/audit_licenses.py",
-      "bytes": 22712,
-      "sha256": "ac70182dc9cb940f3cd8c27e448a6e052b2edbbbae45fbb78459e6cec932e0f4"
+      "bytes": 22236,
+      "sha256": "9c156542ea58e591252255a9c503692ebc900c8e6c48a2c08f9a5ec8293cc5c1"
     },
     {
       "path": "workflows/check_package_split.py",
@@ -2011,10 +2011,12 @@ relarena/
 Apache-2.0 ([`LICENSE`](LICENSE), [`NOTICE`](NOTICE)). Two things the license on this code does
 not settle, both worth reading before you rely on relarena:
 
-- `tabpfn` is not Apache-2.0. It ships the Prior Labs License, an Apache-2.0 derivative whose
-  added paragraph 10 requires anyone distributing a product built on it to display "Built with
-  PriorLabs-TabPFN". It is confined to the `rdblearn` and `tabpfn-rel-*` extras, so a plain
-  install does not pull it.
+- `tabpfn` and its model weights carry their own licenses. The code is Apache-2.0 from 9.0.0;
+  earlier releases, which the `rdblearn` extra still allows, ship the Prior Labs License. The
+  weights it downloads are licensed separately: TabPFN-2 weights under the Prior Labs License,
+  which requires anyone distributing a product built on them to display "Built with
+  PriorLabs-TabPFN", and TabPFN-2.5 weights under a non-commercial license. `tabpfn` is
+  confined to the `rdblearn` and `tabpfn-rel-*` extras, so a plain install does not pull it.
 - Datasets are not ours to license. RelArena-α redistributes no data, retrieving all databases
   at runtime through `relbench` under their respective upstream terms.
 
@@ -3355,10 +3357,15 @@ Two things it does **not** cover:
 
 ## Dependency licenses
 
-`tabpfn` is not Apache-2.0 — it ships the Prior Labs License, which adds an
-attribution requirement. It is confined to the `rdblearn` and `tabpfn-rel-*`
-extras, so a plain install does not acquire it. Read the license itself for what
-it obliges; the README summarizes it for anyone installing those extras.
+`tabpfn` is Apache-2.0 from 9.0.0, the version `uv.lock` pins. The `rdblearn`
+extra also allows 8.x, which ships the Prior Labs License, an Apache-2.0
+derivative with an attribution requirement. The model weights it downloads at
+runtime are licensed separately: TabPFN-2 weights
+under the Prior Labs License, which adds an attribution requirement, and
+TabPFN-2.5 weights under a non-commercial license. `tabpfn` is confined to the
+`rdblearn` and `tabpfn-rel-*` extras, so a plain install does not acquire it.
+Read the weight licenses themselves for what they oblige; the README summarizes
+them for anyone installing those extras.
 
 `workflows/audit_licenses.py --check` fails if a dependency that reaches users is
 copyleft, non-commercial, or declares a license it does not recognize. It runs in
@@ -10437,9 +10444,9 @@ def _make_tabpfn(
     `**overrides` (device, random_state, ignore_pretraining_limits, ...) pass through
     to the constructor.
 
-    Lazy import — tabpfn lives in the rdblearn extra, and it is the one dependency
-    under the Prior Labs License rather than a plain permissive one, so a core
-    install stays clear of its attribution obligation (see `docs/licensing.md`).
+    Lazy import — tabpfn lives in the rdblearn extra. Its code is Apache-2.0 from
+    9.0.0 (8.x ships the Prior Labs License); the weights it downloads carry their
+    own licenses (see `docs/licensing.md`).
     """
     from tabpfn import TabPFNClassifier, TabPFNRegressor
     from tabpfn.constants import ModelVersion
@@ -24710,7 +24717,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dfs = ["fastdfs>=1.2", "setuptools<82"]
+# fastdfs leaves boto3 unpinned. Without a floor, python-dateutil 3 (which every
+# current botocore excludes) makes resolvers backtrack to boto3 0.0.x and six 1.7,
+# whose missing `six.moves` breaks importing pandas.
+dfs = ["fastdfs>=1.2", "setuptools<82", "boto3>=1.34"]
 
 
 
@@ -32021,11 +32031,6 @@ BLOCKED_CLAUSE_PATTERNS = (
 #: alone: rows are sorted, so a note deferring to another ("same reasoning as ...")
 #: can be numbered before the one it points at.
 ACCEPTED: dict[str, str] = {
-    "tabpfn": (
-        "Prior Labs License v1.2 — Apache-2.0 plus paragraph 10 (enhanced "
-        "attribution). Not plain Apache-2.0; confined to the rdblearn extra so a "
-        "core install does not acquire its attribution obligation"
-    ),
     "certifi": (
         "MPL-2.0 — file-level weak copyleft; used unmodified, so no source "
         "obligation reaches relarena's own code"
@@ -32397,9 +32402,7 @@ def render(rows: list[dict]) -> str:
         "No core package carries a strong copyleft or a non-commercial clause. The",
         "entries that are not plain-permissive are all ACCEPTED with a reason below:",
         "MPL-2.0 (file-level, used unmodified) and the NVIDIA CUDA wheels that `torch`",
-        "pulls on Linux. `tabpfn` — the one dependency under the Prior Labs License,",
-        "whose paragraph 10 obliges downstream attribution — is deliberately *not*",
-        "here; it sits in the `rdblearn` extra (see `docs/licensing.md`).",
+        "pulls on Linux.",
         "",
         *table(tiers["core"]),
         "",
