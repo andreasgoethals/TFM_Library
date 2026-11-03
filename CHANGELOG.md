@@ -6,6 +6,7 @@ One line per change; one dated section per day.
 
 ## 2026-11-03
 
+- Completed the Beyond IID v2 evidence review: updated peak-performance shares (50% wins plus 20% ties), figure pointers and NeurIPS track provenance, and integrated the added size-controlled/no-imputation analysis. Large and grouped data remain significant weaknesses; aggregate temporal/feature effects are confounded with size.
 - Added Xu et al., *Why Tabular Foundation Models Excel on Relational Data They Have Never Seen* (arXiv 2611.02936v1), with its PDF, generated text, source-grounded summary and synthesis integration separating locality theory from incomplete relational comparisons. The mirrored core now has 72 papers.
 - Refreshed Beyond IID to v2, MulTaBench to v3, RelArena to v3 and TILE to v2 (all 30 October); retained old hashes and paths in the version history, regenerated text and repaired chronology and links. Updated TILE's changed numerical results and newly public code provenance.
 - Added five owner-selected supporting references: TabM, McCloskey and Cohen, French, Kirkpatrick et al. (author-accepted manuscript), and Li et al. (L2-SP). Fourteen supporting sources now have exact PDF/text hashes; these remain outside the mirrored TFM collection and core counts. Maintenance now checks their manifest.

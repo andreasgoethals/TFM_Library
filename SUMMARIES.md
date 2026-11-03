@@ -102,7 +102,7 @@ this folder and write them there.
 | 2026-09 | Cho et al. | **Causilo** — Technical Report | 36M-parameter model that refines cells across rows and features before row compression, with summary-token attention linear in feature count; 1,785 TabArena Elo at 0.10 s per 1K rows, beating TabPFN-3.5-Fast with 31.6% less inference time; weak on BeyondArena grouped splits. | [pdf](papers/2026/09_Cho_et_al._Causilo_Technical_Report.pdf) |
 | 2026-09 | Wang et al. | LimiX-2M: Mitigating Low-Rank Collapse and Attention Bottlenecks in Tabular Foundation Models | Radial-basis cell embeddings (RaBEL) fix early low-rank collapse and sample→FFN→feature attention feeds the readout; the 1.92M model beats TabPFN v2 on 9 of 11 suites and TabICL v1 on all comparable ones, ~2× faster than v2 on GPU. ICML 2026. | [pdf](papers/2026/09_Wang_et_al._LimiX_2M_Mitigating_Low_Rank_Collapse_and_Attention_Bottlenecks_in_Tabular_Foundation_Models.pdf) |
 | 2026-09 | Kong et al. (Google) | **TabFM**: A Zero-Shot Foundation Model for Tabular Data | 408.7M row-compression TFM (learned Fourier cell embeddings, two column-ISAB/row-SAB stages, 24-layer ICL predictor) pretrained on SCM tables up to 16,384 × 100; zero-shot first among default TFMs in its TabArena pool (1,769 classification / 2,055 regression Elo), raised further by frozen-weight ensembling (TabFM+) and Gemini-driven program search (TabFM-Auto); no ablations, and the pool omits TabPFN-3.5, LimiX-2 and Causilo; non-commercial weights. | [pdf](papers/2026/09_Kong_et_al._TabFM_A_Zero_Shot_Foundation_Model_for_Tabular_Data.pdf) |
-| 2026-10 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 curated datasets; IID, temporal, grouped splits; 11 models): TFM in-context learning wins tiny/small IID data, but tuned+ensembled RealMLP leads temporal, grouped and large data and CatBoost high-cardinality data; the GBDT advantage grows with rows (ρ = 0.60). Fine-tuning untested. | [pdf](papers/2026/10_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
+| 2026-10 | Purucker et al. | **Beyond IID: How General Are Tabular Foundation Models, Really?** | BeyondArena (142 datasets, 11 main models): TFMs excel on small/IID tables. v2 separates correlated regime effects: after controlling for size, >100k rows and grouped splits remain significant weaknesses; temporal structure, dimensionality and high cardinality do not. Fine-tuning untested. | [pdf](papers/2026/10_Purucker_et_al._Beyond_IID_How_General_Are_Tabular_Foundation_Models_Really.pdf) |
 | 2026-10 | Arazi et al. | **MulTaBench**: Benchmarking Multimodal Tabular Learning with Text and Image | Benchmark of 40 text/image-tabular datasets curated so both modalities add signal and target-tuned (LoRA) encoders beat frozen embeddings; the gain generalises to new learners (significant on 37/40 when pooling all learners) and encoder sizes; 40 further candidates released. | [pdf](papers/2026/10_Arazi_et_al._MulTaBench_Benchmarking_Multimodal_Tabular_Learning_with_Text_and_Image.pdf) |
 | 2026-10 | Hayler et al. | Advancing Open and Reproducible Relational Learning: **RelArena-α**, **TabPFN-Rel** and RPI | Prior Labs' audit of non-comparable RelBench practice, a standardised relational benchmark (21 tasks) and a deep-feature-synthesis + TabPFN-3 harness: TabPFN-Rel tops the model board (Elo 1,821 with text), RT-PluRel tops with systems; reruns cut RelGNN by ~450 Elo. | [pdf](papers/2026/10_Hayler_et_al._Advancing_Open_and_Reproducible_Relational_Learning_RelArena_alpha_TabPFN_Rel_and_RPI.pdf) |
 | 2026-10 | Ning et al. | **Test-Time Compute for Tabular Foundation Models: Mechanisms, Gains, and Limits** | Factorises test-time compute into adaptation, aggregation and context: DiagScale (0.003–0.03% of parameters) matches full finetuning on three backbones (+26/+82/+20 Elo); greedy selection over 96 configurations cuts TabPFN-3 error 2.4% where averaging hurts; retrieval helps or fails; combined +93 Elo costs 253 GPU-hours. | [pdf](papers/2026/10_Ning_et_al._Test_Time_Compute_for_Tabular_Foundation_Models_Mechanisms_Gains_and_Limits.pdf) |
@@ -4088,7 +4088,7 @@ encoded; only single flat tables are handled. Reviewer reading:
 
 ## 2026-10 — Purucker et al. — Beyond IID: How General Are Tabular Foundation Models, Really?
 
-**Provenance.** arXiv preprint · arXiv [2606.30410v2](https://arxiv.org/abs/2606.30410v2) (filed version, 2026-10-30) · TabArena team (Prior Labs, University of Freiburg, University of
+**Provenance.** NeurIPS 2026 Evaluations and Datasets track (stated on the filed PDF; Zotero retains the preprint record) · arXiv [2606.30410v2](https://arxiv.org/abs/2606.30410v2) (filed version, 2026-10-30) · TabArena team (Prior Labs, University of Freiburg, University of
 Mannheim, INRIA Saclay, Technion, ELLIS Tübingen, Probabl) · benchmark integrated into TabArena
 ([code](https://tabarena.ai/code)); curation framework and data at
 [TabArena/data-foundry](https://github.com/TabArena/data-foundry) · **PDF:**
@@ -4113,20 +4113,27 @@ XGBoost, RealMLP, TabM, random forest, extra trees and linear models. Outer spli
 task (group-based CV; application-specific rolling temporal splits) and so do inner validation
 splits. TabPFN-2.6 and TabDPT are run only up to 100k training rows; their larger-data results
 are imputed with a default random forest. Text is embedded with Qwen3-Embedding-8B (32 dims);
-metrics are ROC AUC, log-loss and RMSE, aggregated by Elo and Improvability. Cost about $50k.
+metrics are ROC AUC, log-loss and RMSE, aggregated by Elo and Improvability. The v2 controlled analysis adds TabPFN-3 on large data without imputation and
+fits a multivariate model separating size from split and feature characteristics.
 
 **Key results.**
 
-* **Where TFMs win (§6, Figs. 1, 4–5).** TFM in-context learning is best on tiny, small, IID and
+* **Where TFMs win (§6, Figs. 1, 4–6).** TFM in-context learning is best on tiny, small, IID and
   low-dimensional data, and best on average by Improvability and among default models.
 * **Where they lose.** Tuned+ensembled RealMLP leads the temporal, grouped, medium, large,
   high-dimensional and text sub-benchmarks; tuned CatBoost leads high-cardinality data (Appendix
   E.5, Table E.4). The grouped ranking is uncertain: only 5.1% of pairwise comparisons survive
-  Holm correction there.
+  Holm correction there. These are full-benchmark aggregates, not isolated effects of temporal
+  structure or dimensionality.
 * **Drivers (Table E.3).** The best-GBDT-over-best-TFM advantage grows with row count
-  (Spearman ρ = +0.60) and number of high-cardinality categoricals (ρ = +0.47).
-* **Peak performance (Fig. 6).** TFMs significantly beat all other models on 49% of datasets and
-  tie the best non-TFM on a further 21% (70% in total); TabICLv2 ranks first on 19%, TabPFN-2.6
+  (Spearman ρ = +0.60) and number of high-cardinality categoricals (ρ = +0.47). These are
+  correlated univariate signals. In v2's size-controlled analysis (§6.1, Fig. 6; Appendix D.4),
+  only **more than 100k training rows and grouped splits** remain significant; temporal
+  structure, high dimensionality and high cardinality do not. Restricting to 120 datasets
+  below the size cap closes several apparent gaps; unimputed TabPFN-3 and TabICLv2 still
+  trail on the 22 large datasets.
+* **Peak performance (Fig. 7).** TFMs significantly beat all other models on 50% of datasets and
+  tie the best non-TFM on a further 20% (70% in total); TabICLv2 ranks first on 19%, TabPFN-2.6
   on 10.5%. TFMs are clearly outperformed on 42 datasets.
 * **Ablations (Table 1, Appendix F).** IID outer splits on two grouped datasets distort rankings
   (Kendall τ = 0.49 and 0.60); 5×5 inner CV beats 8-fold CV on small data; TabPFN-2.6 improves
@@ -4136,11 +4143,13 @@ metrics are ROC AUC, log-loss and RMSE, aggregated by Elo and Improvability. Cos
 
 **Strengths.** Application-appropriate outer and inner splits, Friedman/Holm-corrected Wilcoxon
 testing, a released curation framework, explicit ablations of its own protocol choices, and
-per-regime recommendations. BeyondArena-Core offers a cheaper split subset with more stable
+per-regime recommendations. The v2 multivariate and no-imputation analyses distinguish
+large-data effects from correlated task characteristics. BeyondArena-Core offers a cheaper split subset with more stable
 per-dataset rankings than TabArena-Lite.
 
 **Limitations.** Author-stated (§7): TFM fine-tuning and continued pretraining are not tested;
-only 25 tuning configurations; only three open TFMs; unbalanced sub-benchmarks; validation and
+only 25 tuning configurations; three open TFMs in the main benchmark plus TabPFN-3 in
+the added large-data analysis; unbalanced sub-benchmarks; validation and
 preprocessing best practices for non-IID and text data remain open. Reviewer reading: the
 temporal and grouped sub-benchmarks are small (21 and 18 datasets), sub-benchmarks overlap (a
 large dataset may also be temporal), and imputing TabPFN-2.6/TabDPT beyond 100k rows with a

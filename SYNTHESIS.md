@@ -32,7 +32,7 @@ A **tabular foundation model (TFM)** is a network — almost always a transforme
 - **Adaptation is backbone-dependent.** Full fine-tuning was best for TabPFN v2 (Rubachev 2025), collapses some other architectures (Tanna 2026), and is approached by compact query–key scaling on newer backbones (Ning 2026). Frozen ICL is the baseline to beat; keep frozen and full-FT controls and compare total compute.
 - **Context construction is a hidden hyperparameter.** How the context is sampled, retrieved or balanced can matter as much as which TFM is used (Tanna 2026's resampling study, with dataset-dependent gains), and attention-based retrieval can fail badly under matched controls (Ning 2026).
 - **Calibration holds on average, not locally.** TabReliBench (Zhao 2026) finds near-nominal marginal coverage and strong proper scores out of the box, but poor and heterogeneous subgroup coverage that neither ensembling nor conformal methods reliably repair. Naive fine-tuning can damage calibration (Tanna 2026).
-- **Generality is regime-bound, and the boundary is moving.** Beyond IID (Purucker 2026) showed TFMs losing to tuned RealMLP/CatBoost on temporal, grouped, large and high-cardinality data. TabPFN-3.5 reports first place on that benchmark after retuning its prior for those regimes, a developer-reported, unablated result.
+- **Generality is regime-bound, and the boundary is moving.** Beyond IID (Purucker 2026) shows full-benchmark deficits on several regimes, but its v2 size-controlled analysis isolates large data (>100k rows) and grouped splits as the significant weaknesses; temporal structure, dimensionality and high cardinality are confounded with size. TabPFN-3.5 reports first place on that benchmark after retuning its prior for those regimes, a developer-reported, unablated result.
 - **The recipe extends by rewriting the prior.** Drift, causal effects, fairness, survival, Bayesian optimisation and time series are all handled by changing what the prior simulates or how the task is framed. Relational databases are handled either natively (KumoRFM-2) or by flattening into a TFM (TabPFN-Rel); broader comparisons now support the flattening route, but common-protocol evaluation remains incomplete.
 - **Semantics is a separate axis that synthetic priors cannot supply.** String and text columns need external knowledge (CARTE, ConTextTab, TabSTAR, MulTaBench). TILE shows a frozen LLM with the right interface lifts every TFM tested on string tables.
 - **The frontier is becoming less open.** Strongest checkpoints increasingly ship with restrictive weight licences, API-only variants and undisclosed priors. The open middle of the field — TabICLv2, TabDPT, Mitra-v2, nanoTabPFN and the independent benchmarks — carries most reproducible evidence.
@@ -103,7 +103,7 @@ The trunk runs from PFN theory (2021) through TabPFN v1 (2023) and v2 (2025) to 
 | 2026-09 | Cho 2026 (Causilo) | Cell refinement across features and context before compression | TabICLv2 |
 | 2026-09 | Wang 2026 (LimiX-2M) | Localised scalar embeddings and sample-first attention in a small TFM | LimiX |
 | 2026-09 | Kong 2026 (TabFM) | Google's 408.7M row-compression model: Fourier cell embeddings, deep ICL predictor; frozen-weight ensembling and LLM program search | TabICL; TabICLv2; TabPFN-3 |
-| 2026-10 | Purucker 2026 (*Beyond IID*) | Non-IID benchmark on which TFM ICL trails tuned baselines | TabArena; TabReD |
+| 2026-10 | Purucker 2026 (*Beyond IID*) | Broad benchmark; v2 controls for size and isolates large/grouped-data weaknesses | TabArena; TabReD |
 | 2026-10 | Arazi 2026 (MulTaBench) | Text/image-tabular benchmark selecting for joint signal and target-aware gains | TabSTAR; ConTextTab |
 | 2026-10 | Hayler 2026 (RelArena-α / TabPFN-Rel) | Reproducible relational benchmark; flattened TabPFN-3 tops tuned models | TabPFN-3; TabArena |
 | 2026-10 | Ning 2026 (*Test-Time Compute for Tabular Foundation Models*) | Compact query–key adaptation, selective aggregation and matched retrieval controls | Rubachev 2025; LoCalPFN |
@@ -360,6 +360,16 @@ From 2026 the frontier is documented mainly by technical reports from the labs t
 **Reproducibility.** Strongest numbers often come from API-only variants (TabPFN-3-Plus/Thinking, TabPFN-3.5-Plus/Thinking) or closed systems (KumoRFM-2), and frontier priors are undisclosed. TabFM gained a paper three months after release, with an architecture table and tabulated results, but its prior is described only qualitatively, and its strongest variant depends on a proprietary LLM, with method details in a companion paper not in the collection.
 
 **Openness.** Weights licences have tightened: TabPFN-2.5 and TabPFN-3 restrict use to research and internal evaluation; TabPFN-3.5 weights are downloadable under a licence excluding commercial and production use; EXAONE's and TabFM's weights are non-commercial (TabFM's code is Apache-2.0). The open middle — TabICLv2 (fully open), Mitra-v2 (Apache-2.0 weights and code), TabDPT, nanoTabPFN, Luo's quantisation — carries most reproducible evidence. *Reading:* as the paradigm becomes commercially valuable, documentation quality at the frontier is declining, and independent benchmarks (Beyond IID, TabReliBench, RelArena, MulTaBench, STRABLE) are becoming the field's main check.
+
+Purucker 2026 (*Beyond IID: How General Are Tabular Foundation Models, Really?*)
+adds an important qualification in v2 (§6.1; Appendix D.4): temporal, wide and
+high-cardinality subsets contain disproportionately many large datasets. In the
+multivariate analysis, only more than 100k training rows and grouped splits remain
+significant. The 120-dataset no-imputation analysis closes several aggregate gaps,
+while TabICLv2 and the added TabPFN-3 still trail on the 22 large datasets.
+*Reading:* an aggregate temporal deficit should not be treated as an independent
+temporal-shift effect; application-appropriate splits and competitive baselines
+remain necessary.
 
 ## Evidence table
 
