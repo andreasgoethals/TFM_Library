@@ -2,12 +2,12 @@ TFM Library source snapshot
 Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/PriorLabs/relarena",
-  "revision": "0c55ff2e11132bd028771aa73ecb63d7b167d792",
-  "revision_date": "2026-10-28T17:31:28+01:00",
+  "revision": "19be08dd5494a48d935eaf2c14ee22f0c51150a9",
+  "revision_date": "2026-11-06T10:59:55+01:00",
   "slug": "PriorLabs/relarena",
-  "retrieved_utc": "2026-11-03T15:51:47+00:00",
+  "retrieved_utc": "2026-11-10T09:31:47+00:00",
   "identity_source": "https://arxiv.org/abs/2608.16319",
-  "included_files": 260,
+  "included_files": 267,
   "excluded_files": 14,
   "file_sha256": [
     {
@@ -42,18 +42,18 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "NOTICE",
-      "bytes": 3441,
-      "sha256": "310a4a921588ab531234bf55e1a64b22d8cc0d9dd061a9ce3656d56d2f266d08"
+      "bytes": 4149,
+      "sha256": "212b1018a356e4f4acb1c8dbcf5f71d04ba83fad264d56e4b13bb41c95f35008"
     },
     {
       "path": "README.md",
-      "bytes": 40866,
-      "sha256": "2f7fd2bab6673d6b18ee14b80932edc8110686de5147a81d89996110ac313543"
+      "bytes": 41440,
+      "sha256": "f4662cf43d2d6a836db51c05735240df5289146704fd71ed447e598c0d000b11"
     },
     {
       "path": "baseline_results/README.md",
-      "bytes": 5566,
-      "sha256": "1f3b45f8dd2bdb4d378ab804aa90b4069b95f75dfa4c0cf34756560b83f9c97c"
+      "bytes": 6009,
+      "sha256": "8df9050207f52fa1d56d70a22b1f25685cbf61757376edf9fb062ad0558178ac"
     },
     {
       "path": "baseline_results/SOURCES.md",
@@ -71,9 +71,24 @@ Do not edit: regenerate with the registered source refresh command.
       "sha256": "d73c5677ed71ac6cd03829cd1e125d7a6120475fe761ed215caae174a3b51944"
     },
     {
+      "path": "docs/models/kurversc-staged-resources.md",
+      "bytes": 3083,
+      "sha256": "8eaea8d4707e946afc7ac2c1a3eadc71541d03fd9139d85b973e30522480b259"
+    },
+    {
+      "path": "docs/models/kurversc-staged.md",
+      "bytes": 4166,
+      "sha256": "07ec297e5f6a3a8edfde79c4aab921d6e9c1498be0dde7ec06839830c1f27634"
+    },
+    {
       "path": "docs/models/kurversc.md",
-      "bytes": 2824,
-      "sha256": "a89ec8fdc01e185b424384f0518c970f8ecc4eddc022365426ab77bfdaf8d566"
+      "bytes": 3022,
+      "sha256": "9e2f129e18ba3bfe5cd8e5ac730a8633d89ef210355b5ccc84dcff67240ebe1b"
+    },
+    {
+      "path": "docs/models/rt.md",
+      "bytes": 4628,
+      "sha256": "eee808ee6ce39e64e158f320f261c22a879c3756fa916e4dc490499ef1fc8b43"
     },
     {
       "path": "docs/predictive-task.md",
@@ -137,8 +152,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena-core/pyproject.toml",
-      "bytes": 901,
-      "sha256": "3900ff7a408ea46acb7dc569f11bf94b6fba9d82bf1874d4b4f776630151528f"
+      "bytes": 1076,
+      "sha256": "8be6026c91f43a2d2505c9a6d12926e39e54bd89e08145ae6b4530a8c6f9cf7f"
     },
     {
       "path": "packages/relarena-core/src/relarena_core/__init__.py",
@@ -397,8 +412,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/NOTICE",
-      "bytes": 3299,
-      "sha256": "17f6736c313ae6573faf69606b39fee7adc3a34f1f5d35f2a5343af30970564f"
+      "bytes": 3971,
+      "sha256": "6ad5ba811ccb0af2311878fcf586c60ef058e3c1081f62ed2f60d59961a4fa92"
     },
     {
       "path": "packages/relarena/README.md",
@@ -407,8 +422,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/pyproject.toml",
-      "bytes": 5821,
-      "sha256": "0c5ed196d94e07446b26a25c6903b0191a9a0e42211a476e73590782729f09c0"
+      "bytes": 5853,
+      "sha256": "69d0cd3fb30353005bc418fc54cbd7e4a1a56fe99b2d04fe4a169402eb29fc40"
     },
     {
       "path": "packages/relarena/src/relarena/__init__.py",
@@ -487,8 +502,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/src/relarena/models/VENDORED-LICENSES",
-      "bytes": 4546,
-      "sha256": "05ed6fd9d758593c6791d1d85a4927e9d00c4d97fad5235b122e9f70af12b2ea"
+      "bytes": 4697,
+      "sha256": "5855582ad1f9e5c21c193dd31210f6db7cfa0b97403caed6951fb9959069fd74"
     },
     {
       "path": "packages/relarena/src/relarena/models/__init__.py",
@@ -526,9 +541,14 @@ Do not edit: regenerate with the registered source refresh command.
       "sha256": "7e3f0c2136a56ae724ec831c89760bba51194d2f0983a26851cc1beb8888e978"
     },
     {
+      "path": "packages/relarena/src/relarena/models/_shared/gnn/_vendor/graph.py",
+      "bytes": 6948,
+      "sha256": "4c1c8fa80287a6716d57686b63ecab65a213ba6f8c0b17e6a4fed36b97c0ad10"
+    },
+    {
       "path": "packages/relarena/src/relarena/models/_shared/gnn/graph.py",
-      "bytes": 1425,
-      "sha256": "99900c5ad955bd958ef92c244bde3860d5437995b657ca1e756fc86c6240d3bf"
+      "bytes": 3066,
+      "sha256": "d723be5b05f31d0e19138c2873f083c3aaa7de16951aa40941ed5367992d9a90"
     },
     {
       "path": "packages/relarena/src/relarena/models/_shared/gnn/graph_cache.py",
@@ -557,18 +577,23 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/src/relarena/models/graphsage/model.py",
-      "bytes": 15627,
-      "sha256": "5fd247d5bd84c86ad6bfa2c1b05d27d0b6d2eef51fcdf376bdbfa7e51f4f4b0b"
+      "bytes": 16100,
+      "sha256": "7195b93da3ea8d34f9174a2d431b207a9b634e09cd6cd76d139a915f2da2f466"
     },
     {
       "path": "packages/relarena/src/relarena/models/kurversc/__init__.py",
-      "bytes": 173,
-      "sha256": "35cf57366ccf410fb1404c10a342aaa7d69b6c0a92e236072f712b4fb0666bdd"
+      "bytes": 266,
+      "sha256": "375de15b7ddd02627641d1d9a980c6899310e758fce373d485d1a62a37aa3aac"
     },
     {
       "path": "packages/relarena/src/relarena/models/kurversc/model.py",
-      "bytes": 7757,
-      "sha256": "bb90668fde3dfc53084675a3966174821bcf1c590b485381a50808470b13549c"
+      "bytes": 7779,
+      "sha256": "09811a7460b0112e5c16ff3744aaac3c8811083c4f0aa7788c8287e0e59b79ba"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/kurversc/staged.py",
+      "bytes": 2383,
+      "sha256": "a0f3de53d9584a5634814476382fc144321f77f353b184e09998c0daaacc7268"
     },
     {
       "path": "packages/relarena/src/relarena/models/lightgbm/__init__.py",
@@ -707,8 +732,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/src/relarena/models/relgt/model.py",
-      "bytes": 14361,
-      "sha256": "a69e99b97524290f1d2bde5dcc6ae56104eb1f55ad023647b4299b0960528450"
+      "bytes": 14866,
+      "sha256": "4be330f63556ad2607cba8d6c3f4f0844a229b28b4587f1c9f5eea9107992cc9"
     },
     {
       "path": "packages/relarena/src/relarena/models/relgt/tokenize.py",
@@ -1046,6 +1071,11 @@ Do not edit: regenerate with the registered source refresh command.
       "sha256": "16dbe1d159f06c9430493104524e4483fea0d8ffe4adf14a2e15d2d2f8e9b472"
     },
     {
+      "path": "packages/relarena/tests/models/_shared/gnn/test_graph.py",
+      "bytes": 7660,
+      "sha256": "da52b700a36ffd7405c5327cc1bb3e9fd683052683552f70a4b500669b7a2fd8"
+    },
+    {
       "path": "packages/relarena/tests/models/_shared/gnn/test_graph_cache.py",
       "bytes": 2304,
       "sha256": "7e9e4cd89f681bbd21c8e013df4f79d873170782ad85d55951252f0eb2df4df8"
@@ -1082,8 +1112,13 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/tests/models/kurversc/test_model.py",
-      "bytes": 5970,
-      "sha256": "1f0aa7b578ef70ad6bb50f51c2d6b791408f5f8e09b0911cea91313d0a2476c8"
+      "bytes": 6003,
+      "sha256": "21a2f0c24dcb253bab6681517908fb354e0c3fba22d564189b0ac46b04d47446"
+    },
+    {
+      "path": "packages/relarena/tests/models/kurversc/test_staged.py",
+      "bytes": 4414,
+      "sha256": "0520eb1d34f53e7bafa7058a4178bb817cbed576ddc6aed4bc50cb91061ef943"
     },
     {
       "path": "packages/relarena/tests/models/lightgbm/__init__.py",
@@ -1157,8 +1192,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/tests/models/relgt/test_model.py",
-      "bytes": 7252,
-      "sha256": "52622e801c6afe6fb7a301a9c5fc69f4b6b63948055a07f6d6da418dff814e9c"
+      "bytes": 7257,
+      "sha256": "b4c88a0d97ac52d16b801ebaa308d890ef26f5f6863f8d51929d03ee4a64869c"
     },
     {
       "path": "packages/relarena/tests/models/relgt/test_tokenize.py",
@@ -1182,8 +1217,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/tests/models/test_discovery.py",
-      "bytes": 3526,
-      "sha256": "6bd9604ed46f8831d585c1c3e3c09698c80d1129f54d18e52fda8e76badb0ac1"
+      "bytes": 3575,
+      "sha256": "1e29c6be785fed30ed40fe7b3507fb58cc58665e0c4bd02a48299bd1443a8158"
     },
     {
       "path": "packages/relarena/tests/test_cache_extension.py",
@@ -1257,18 +1292,18 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/tests/workflows/test_update_leaderboards.py",
-      "bytes": 5271,
-      "sha256": "ed2635301e7af07e6a057b0f26e0ee045c2cb2737ddcd6cebcbfa00410237b16"
+      "bytes": 5282,
+      "sha256": "c58e4dd87a1da81032f984be05489462ee7097c62a6c5242c17d3bf9b814877a"
     },
     {
       "path": "pyproject.toml",
-      "bytes": 3581,
-      "sha256": "ac5e62d11579c6a232cc9262e835cfc0a1c78788b66a5eb1f51de0f0ef1dfb19"
+      "bytes": 3613,
+      "sha256": "19375b3214109e0cc94073e6f033ad2f1c4d6c56bb39e347f6fbc5462b8c6abc"
     },
     {
       "path": "workflows/audit_licenses.py",
-      "bytes": 22236,
-      "sha256": "9c156542ea58e591252255a9c503692ebc900c8e6c48a2c08f9a5ec8293cc5c1"
+      "bytes": 22419,
+      "sha256": "183f22803cc4c56a2da377be445d990715b8cd9dda689cede30835aad4f5305f"
     },
     {
       "path": "workflows/check_package_split.py",
@@ -1407,21 +1442,22 @@ they do not measure variation across training seeds. The plots and tables show t
 
 | Rank | Method | Kind | Elo | 95% bootstrap interval |
 |---:|---|---|---:|---:|
-| 1 | tabpfn-rel-client-latest | Model | 1937.1 | 1865.8–2049.0 |
-| 2 | tabpfn-rel-local-latest | Model | 1892.9 | 1832.2–1983.2 |
-| 3 | rt-j | System | 1839.1 | 1718.7–1998.2 |
-| 4 | tabpfn-rel-client-2026-08-15 | Model | 1795.2 | 1739.4–1875.2 |
-| 5 | rt-plurel | System | 1786.0 | 1690.7–1895.1 |
-| 6 | kurversc | System | 1773.9 | 1707.9–1850.5 |
-| 7 | nori-rel | Model | 1732.2 | 1659.0–1842.1 |
-| 8 | tabpfn-rel-local-2026-08-15 | Model | 1702.7 | 1617.3–1779.5 |
-| 9 | graphsage | Model | 1652.6 | 1551.3–1737.4 |
-| 10 | relgt | Model | 1562.2 | 1437.6–1667.5 |
-| 11 | rdblearn | Model | 1528.0 | 1436.1–1607.3 |
-| 12 | relgnn-es | Model | 1516.3 | 1422.6–1622.6 |
-| 13 | lightgbm | Model | 1361.3 | 1171.5–1490.8 |
-| 14 | constant-per-entity | Model | 1267.5 | 1086.9–1411.2 |
-| 15 | constant-global | Model | 1000.0 | 841.1–1076.7 |
+| 1 | tabpfn-rel-client-latest | Model | 1933.6 | 1864.7–2033.5 |
+| 2 | kurversc-latest | System | 1913.4 | 1832.3–2050.6 |
+| 3 | tabpfn-rel-local-latest | Model | 1887.7 | 1831.3–1974.8 |
+| 4 | rt-j | System | 1842.2 | 1721.9–1997.8 |
+| 5 | tabpfn-rel-client-2026-08-15 | Model | 1799.0 | 1740.7–1886.9 |
+| 6 | rt-plurel | System | 1787.7 | 1695.9–1889.4 |
+| 7 | kurversc-2026-09-03 | System | 1773.8 | 1709.9–1849.6 |
+| 8 | nori-rel | Model | 1732.3 | 1660.5–1844.7 |
+| 9 | tabpfn-rel-local-2026-08-15 | Model | 1702.0 | 1613.7–1771.7 |
+| 10 | graphsage | Model | 1660.3 | 1550.8–1747.2 |
+| 11 | relgt | Model | 1562.7 | 1430.3–1664.5 |
+| 12 | rdblearn | Model | 1529.8 | 1437.8–1610.5 |
+| 13 | relgnn-es | Model | 1525.0 | 1421.2–1636.6 |
+| 14 | lightgbm | Model | 1363.9 | 1168.9–1501.1 |
+| 15 | constant-per-entity | Model | 1266.5 | 1082.8–1408.5 |
+| 16 | constant-global | Model | 1000.0 | 838.5–1076.9 |
 
 </details>
 
@@ -1832,7 +1868,7 @@ registering a method works without its extra installed.
 | `tabpfn-rel-local` | TabPFN-Rel (OSS) | installs `tabpfn-rel[local]`, text-free |
 | `tabpfn-rel-api` | TabPFN-Rel (API) | DFS locally, fit and predict server-side; no GPU needed |
 | `graphsage`, `relgnn`, `relgt` | GraphSAGE, RelGNN, RelGT | need PyG sampling wheels, see below |
-| `rt` | RT-PluRel, RT-J | Linux x86-64 wheel, see below |
+| `rt` | [RT-PluRel, RT-J](docs/models/rt.md) | Linux x86-64 wheel, see below |
 | `leaderboard`, `plots` | (reporting only) | source checkout only, `bencheval` comes from git |
 
 **GNN baselines: the PyG sampling wheels are not in the extras.** `graphsage`, `relgnn`, and
@@ -1944,7 +1980,8 @@ as an experimental final-fit variant.
 | `constant-global` | Constant (global) | global constant | model | report | train + val | core |
 | `constant-per-entity` | Constant (per-entity) | entity-wise constant | model | report | train + val | core |
 | `lightgbm` | LightGBM | entity-only tabular | model | report | train + val | `lightgbm` |
-| `kurversc` | [KurveRSC](docs/models/kurversc.md) | learned GraphReduce feature plan + CatBoost | **system** | experimental | train + val | `kurversc` |
+| `kurversc-2026-09-03` | [KurveRSC](docs/models/kurversc.md) | learned GraphReduce feature plan + CatBoost | **system** | experimental | train + val | `kurversc` |
+| `kurversc-2026-10-22` | [KurveRSC staged](docs/models/kurversc-staged.md) | generic staged GraphReduce search + CatBoost | **system** | 21 tasks | train + val | `kurversc` |
 | `rdblearn` | RDBLearn | DFS + tabular foundation model | model | report | train; val retained | `rdblearn` |
 | `tabpfn-rel-local-2026-08-15` | TabPFN-Rel (OSS) | DFS + TabPFN-3 | model | report | train + val | `tabpfn-rel-local` |
 | `tabpfn-rel-client-2026-08-15` | TabPFN-Rel (API) | DFS + hosted TabPFN-3 with text | model | report | train + val | `tabpfn-rel-api` |
@@ -1955,18 +1992,21 @@ as an experimental final-fit variant.
 | `relgnn-es` | RelGNN | relational GNN | model | report | best-validation checkpoint | `relgnn` |
 | `relgnn` | RelGNN full-data refit | relational GNN | model | experimental variant | train + val | `relgnn` |
 | `relgt` | RelGT | relational transformer | model | report | best-validation checkpoint | `relgt` |
-| `rt-plurel` | RT-PluRel | pretrained relational transformer, fine-tuned per task | **system** | report | train + val | `rt` |
-| `rt-j` | RT-J | pretrained relational transformer, fine-tuned per task | **system** | 21 tasks | train + val | `rt` |
+| `rt-plurel` | [RT-PluRel](docs/models/rt.md) | pretrained relational transformer, fine-tuned per task | **system** | report | train + val | `rt` |
+| `rt-j` | [RT-J](docs/models/rt.md) | pretrained relational transformer, fine-tuned per task | **system** | 21 tasks | train + val | `rt` |
 
 The report presents `relgnn-es` simply as **RelGNN**, because that published-style
 best-validation-checkpoint regime performed better in our runs. The regular `relgnn` identifier
 remains available for experiments but is excluded from the default release leaderboard.
 
-RT-PluRel, RT-J, and KurveRSC are registered **systems**. RT-PluRel and RT-J are the relational
-transformer fine-tuned on the given task with a sequential tuning regime; they differ only in the
-published checkpoint they warm-start from (`stanford-star/rt-plurel`, pretrained on
-PluRel-generated synthetic data, and `stanford-star/rt-j`, pretrained at scale on the Join
-corpus). KurveRSC jointly selects a GraphReduce feature program and downstream
+RT-PluRel, RT-J, and KurveRSC are registered **systems**. RT-PluRel and RT-J are the
+[Relational Transformer](https://github.com/stanford-star/relational-transformer) fine-tuned on
+the given task with the published
+[`examples/finetune`](https://github.com/stanford-star/relational-transformer/tree/main/examples/finetune)
+recipe; they differ only in the published checkpoint they warm-start from
+(`stanford-star/rt-plurel`, pretrained on PluRel-generated synthetic data, and
+`stanford-star/rt-j`, pretrained at scale on the Join corpus). See
+[RT-PluRel and RT-J](docs/models/rt.md) for the recipe's source and the papers to cite. KurveRSC jointly selects a GraphReduce feature program and downstream
 learner on the inner split, then freezes and replays that exact operation plan in its reporting
 arm. Their protocols and configured values are documented in
 [`models/rt/model.py`](packages/relarena/src/relarena/models/rt/model.py) and
@@ -2344,6 +2384,11 @@ retained alongside the code in this package:
     https://github.com/snap-stanford/relbench
     packages/relarena/src/relarena/models/_shared/gnn/_vendor/gnn.py
 
+  * RelBench stype proposal and primary-foreign key graph construction
+    Copyright (c) 2023 RelBench Team
+    https://github.com/snap-stanford/relbench
+    packages/relarena/src/relarena/models/_shared/gnn/_vendor/graph.py
+
   * RelGNN composite-message-passing GNN
     Copyright (c) 2023 RelBench Team
     https://github.com/snap-stanford/RelGNN
@@ -2382,6 +2427,14 @@ https://github.com/snap-stanford/relbench at commit 74d4c37
 into `packages/relarena/src/relarena/models/_shared/gnn/_vendor/gnn.py`; only Ruff formatting was
 otherwise normalized. The GNN layers themselves are imported from the installed
 `relbench.modeling.nn` package and are not copied.
+
+RelBench's `get_stype_proposal` (`relbench/modeling/utils.py`) and
+`make_pkey_fkey_graph` (`relbench/modeling/graph.py`) were copied from
+the relbench 2.1.2 release (https://pypi.org/project/relbench/2.1.2/) into
+`packages/relarena/src/relarena/models/_shared/gnn/_vendor/graph.py`. The stype proposal
+samples its rows with a fixed seed, as in snap-stanford/relbench#431, and the
+graph construction can materialize with given column stats; imports were moved
+inside the functions.
 
 RelGNN model building blocks were copied from
 https://github.com/snap-stanford/RelGNN at commit cffdb8b. The upstream example
@@ -2431,7 +2484,7 @@ dev = [
 # Focused adapter tests exercise the public optional-package boundary. kurversc
 # caps numpy<2, so it sits in its own group rather than in `dev`: extras whose
 # runtime needs numpy>=2 cannot otherwise be installed alongside the test tools.
-kurversc = ["kurversc==0.1.1"]
+kurversc = ["kurversc[staged]==0.2.0", "graphreduce==1.10.18"]
 cuda = []
 # The CPU-only build avoids downloading CUDA when not required.
 cpu = ["torch"]
@@ -2644,6 +2697,15 @@ runs the frozen public Nori 30M checkpoint (Hugging Face revision
 `818433f8af12c1137b96d9ff47e109b4eef5818d4e52a9656b2e573dbf13b74d`) with
 synthefy-nori 0.20.1, without quantization or context subsampling. Its DFS
 cache was built with fastdfs 1.2.
+
+## KurveRSC 2026-10-22
+
+`kurversc-2026-10-22` (alias `kurversc-latest`) covers all 21 entity tasks at
+seed 0 in the native system schema. It is the maintainer's reproduction with
+kurversc 0.2.0 and graphreduce 1.10.18 from PyPI, one task per CPU host. See
+[KurveRSC staged](../docs/models/kurversc-staged.md) for the procedure and
+[resource planning](../docs/models/kurversc-staged-resources.md) for the
+measured runtime and memory per task.
 
 
 
@@ -4171,9 +4233,164 @@ operator choices. Five caveats on reading them:
 
 
 ================================================
+FILE: docs/models/kurversc-staged-resources.md
+================================================
+# KurveRSC resource planning
+
+## Maintainer reproduction
+
+The 21-task reproduction ran one task per host with kurversc 0.2.0. Eight tasks
+ran on 96-vCPU, 739 GB hosts with `KURVERSC_DUCKDB_MEMORY_LIMIT=160GiB` and
+`KURVERSC_DUCKDB_MAX_TEMP_DIRECTORY_SIZE=100GiB`. The other 13 ran on 48-core,
+190 GB hosts with `48GiB` and `20GiB`. Peak RSS is the Slurm `MaxRSS` of the
+job; it grows with the DuckDB limit, so it is an observation under these
+limits, not a lower bound.
+
+| Task | Host RAM, GB | Wall time, h | Peak RSS, GiB |
+|---|---:|---:|---:|
+| rel-amazon/item-churn | 739 | 3.32 | 364 |
+| rel-amazon/item-ltv | 739 | 6.48 | 202 |
+| rel-amazon/user-churn | 739 | 4.98 | 262 |
+| rel-amazon/user-ltv | 739 | 8.86 | 327 |
+| rel-avito/ad-ctr | 190 | 0.71 | 34 |
+| rel-avito/user-clicks | 190 | 1.21 | 51 |
+| rel-avito/user-visits | 190 | 1.14 | 64 |
+| rel-event/user-attendance | 190 | 3.35 | 46 |
+| rel-event/user-ignore | 739 | 1.83 | 283 |
+| rel-event/user-repeat | 190 | 1.72 | 44 |
+| rel-f1/driver-dnf | 190 | 5.88 | 6 |
+| rel-f1/driver-position | 190 | 4.88 | 4 |
+| rel-f1/driver-top3 | 190 | 3.93 | 4 |
+| rel-hm/item-sales | 190 | 3.47 | 27 |
+| rel-hm/user-churn | 190 | 1.64 | 21 |
+| rel-stack/post-votes | 739 | 10.60 | 257 |
+| rel-stack/user-badge | 739 | 10.38 | 370 |
+| rel-stack/user-engagement | 739 | 4.36 | 219 |
+| rel-trial/site-success | 190 | 1.73 | 89 |
+| rel-trial/study-adverse | 190 | 6.36 | 30 |
+| rel-trial/study-outcome | 190 | 2.27 | 23 |
+
+rel-event/user-ignore and rel-stack/user-engagement ran out of memory on the
+190 GB hosts with the 48GiB DuckDB limit, and rel-stack/post-votes reached
+140 GiB there before it was moved; all three completed on the 739 GB hosts.
+
+## Author measurements
+
+The following author measurements are planning context from explicitly older
+source revisions, not resource guarantees for the new all-task S2 check.
+
+| Source | Task | Sampled peak process-tree RSS, GiB |
+|---|---|---:|
+| `f5bf98a` | rel-f1/driver-top3 | 11.44 |
+| `f5bf98a` | rel-f1/driver-position | 10.03 |
+| `b2cbeea` | rel-f1/driver-dnf | 8.84 |
+| `b2cbeea` | rel-avito/user-clicks | 20.76 |
+| `b2cbeea` | rel-trial/study-adverse | 21.71 |
+| `b2cbeea` | rel-trial/study-outcome | 18.38 |
+| `b2cbeea` | rel-stack/user-engagement | 32.18 |
+
+These tasks ran on a 48 GiB Mac, sequentially with an 8 GiB reserve. The two
+`f5bf98a` tasks took 2.71/3.14 hours. The earlier pilot included host sleep and
+documented repairs, so its wall times are not controlled runtime estimates.
+Complete source receipts remain in the prior PR history and KurveRSC evidence.
+
+DuckDB working-memory limits control spilling; they do not bound total task
+memory. The per-task prediction procedure keeps its original deadline below
+24 hours and raises on incomplete execution. Use separate output/scratch/cache
+directories for concurrent tasks, retain system headroom, and preserve the
+submitted internal worker/thread settings. A large host may parallelize tasks
+based on measured whole-process demand; these seven observations do not
+establish peak requirements for the other tasks.
+
+
+
+================================================
+FILE: docs/models/kurversc-staged.md
+================================================
+# KurveRSC: generic staged system
+
+`kurversc-2026-10-22` is the versioned system; `kurversc-latest` resolves to it.
+The earlier native `kurversc-2026-09-03` registration remains distinct. The thin adapter
+passes caller-owned censored inner/outer splits to
+`kurversc.protocol_runner.run_protocol_task`; RelArena owns hidden-label scoring.
+
+## Procedure
+
+1. Schema-derived graph search with bounded 10K/50K screening and full-frame
+   finalist evaluation, including CDF/base representations and peer context.
+2. A bounded production-faithful finalist comparison for **both binary
+   classification and regression**, followed by frozen operation-plan replay.
+   The same 1% relative-loss cap uses `1 - AUC` or MAE for candidate screening
+   and every seed/fold. At most one graph with at most half the incumbent's
+   columns is compared. Replacement requires unanimous native-selector
+   decisions across seeds 0/1/2 on two or three temporal origins.
+3. Historical temporal-training-policy selection on up to three origins and
+   seeds 0/1/2; deployment seed 0.
+4. One optional menu: generic parent text, three/five-frame ensembles,
+   target-domain projection, zero-aware readout and object breadth. Applicable
+   candidates use the same incumbent and `select_temporal_policy` gate;
+   eligibility is independent of previous admissions.
+5. Validation-locked fitting and keyed prediction.
+
+The source graph supplies the repeated-table bounds offered by its candidate
+menu. Frozen replay restores and verifies source limits, aliases, keys, clocks
+and relationships. Source event timestamps are strictly before each query;
+availability and label-maturity clocks retain their declared semantics.
+Masked forecast requests keep their original keys and order, including requests
+whose root payload is unavailable at a strict cutoff.
+
+Exposure-role reconstruction, recurrence/semantic corrections, conditional-count
+recovery, production-sequence recovery, bounded views and test-win campaign gates
+are excluded from the packaged procedure.
+
+## Installation and execution
+
+The workspace installs exact PyPI releases: `kurversc[staged]==0.2.0` and
+`graphreduce==1.10.18`. Neither package uses a Git dependency override.
+
+```bash
+pip install "kurversc[staged]==0.2.0" "graphreduce==1.10.18"
+```
+
+```bash
+uv sync --all-packages --group cpu --extra kurversc --python 3.12
+KURVERSC_DUCKDB_MEMORY_LIMIT=6GiB KURVERSC_DUCKDB_MAX_TEMP_DIRECTORY_SIZE=128GiB OMP_NUM_THREADS=1 uv run --no-sync relarena --model kurversc-latest --datasets rel-f1 --tasks driver-dnf --seed 0 --output kurversc_driver_dnf.csv
+```
+
+The entire procedure shares a deadline below 24 hours, retained across resumes.
+Incomplete stages raise rather than returning partial/native predictions.
+Independent tasks can run concurrently with separate output, scratch and cache
+directories and RAM headroom; preserve the internal worker/thread settings.
+See [resource planning](kurversc-staged-resources.md).
+
+## Reproduction and provenance
+
+The maintainer's 21-task reproduction through this registered adapter is the
+reference result. It ran at seed 0 with kurversc 0.2.0 and graphreduce 1.10.18
+from PyPI, one task per CPU host, and its rows are the `kurversc-2026-10-22`
+rows in [`baseline_results/results.csv`](../../baseline_results/results.csv).
+Historical author results and large evidence bundles are kept outside this
+submission's working tree; they remain available in the prior PR history and
+the KurveRSC repository.
+
+The [component definitions and global defaults](https://github.com/kurveai/kurversc/blob/cf6599bd7de21f32b299c3cdce75f611ad050a06/docs/generic-staged-review.md)
+and [source/package qualification](https://github.com/kurveai/kurversc/blob/cf6599bd7de21f32b299c3cdce75f611ad050a06/docs/generic-staged-validation.json)
+are documented in [KurveRSC #5](https://github.com/kurveai/kurversc/pull/5).
+Qualification: 727 source tests passed with one skip; 19 adapter/discovery checks
+passed; installed-wheel classification/regression runs each completed the whole
+registered procedure on a fresh 48-request schema. The submitted pin keeps
+ongoing experimental feature work outside this reproduction.
+
+
+
+================================================
 FILE: docs/models/kurversc.md
 ================================================
 # KurveRSC
+
+For the versioned complete staged candidate, see
+[KurveRSC staged](kurversc-staged.md). This page describes the original
+native graph-only `kurversc-2026-09-03` registration.
 
 KurveRSC is a CPU-only native RelArena system that jointly selects a GraphReduce relational
 feature program and a CatBoost learner. It does not require or use a GPU.
@@ -4192,7 +4409,7 @@ Run one task through the ordinary RelArena CLI:
 
 ```bash
 OMP_NUM_THREADS=1 uv run --all-packages --group cpu --extra kurversc relarena \
-    --model kurversc \
+    --model kurversc-2026-09-03 \
     --datasets rel-stack \
     --tasks user-badge \
     --output kurversc_user_badge.csv
@@ -4203,7 +4420,7 @@ Run all 21 RelBench v1 entity classification and regression tasks by omitting `-
 
 ```bash
 OMP_NUM_THREADS=1 uv run --all-packages --group cpu --extra kurversc relarena \
-    --model kurversc \
+    --model kurversc-2026-09-03 \
     --output kurversc_all_tasks.csv
 ```
 
@@ -4239,6 +4456,105 @@ For the default sequential sweep, use a Linux CPU host with 96–128 GiB RAM and
 of free fast local SSD or NVMe scratch space. A 64 GiB host may work by spilling to disk but is
 closer to the limit on the largest tasks. Cluster schedulers can execute independent RelArena
 tasks on separate CPU nodes when greater throughput is required.
+
+
+
+================================================
+FILE: docs/models/rt.md
+================================================
+# RT-PluRel and RT-J
+
+`rt-plurel` and `rt-j` are the [Relational Transformer (RT)](https://github.com/stanford-star/relational-transformer),
+a relational foundation model from the [Stanford Tabular and Relational (STAR) project](https://star-project.stanford.edu),
+fine-tuned per task from a published checkpoint. The two registered systems share everything but
+the warm start:
+
+| Registered identifier | Warm start | Pretraining data |
+|---|---|---|
+| `rt-plurel` | [`stanford-star/rt-plurel`](https://huggingface.co/stanford-star/rt-plurel) | [PluRel](https://github.com/stanford-star/plurel) synthetic databases |
+| `rt-j` | [`stanford-star/rt-j`](https://huggingface.co/stanford-star/rt-j) | the Join corpus of real databases |
+
+## Source of the fine-tuning recipe
+
+RelArena's RT integration transcribes the published fine-tuning recipe from
+[`examples/finetune`](https://github.com/stanford-star/relational-transformer/tree/main/examples/finetune)
+in [stanford-star/relational-transformer](https://github.com/stanford-star/relational-transformer):
+a delta fine-tune on frozen weights with
+Muon, batch 256, a constant learning rate of 5e-4, weight decay 0.1, and an EMA of the weights,
+run in four stages — a selection run on `train` with the step picked on `val`, a context search
+on `val` by inference alone, a refit on `train + val` at the chosen step rescaled by the row
+ratio, and an 8-seed test ensemble. Those are the recipes behind the fine-tuned RT-J and
+RT-PluRel entries on the [RelBench leaderboard](https://github.com/stanford-star/relational-transformer/blob/main/examples/finetune/README.md).
+
+The values RelArena runs under, and the few places its protocol has to differ from upstream
+(the harness scores test, the scored split is placed past the context cutoff), are written at
+the call they belong to in
+[`packages/relarena/src/relarena/models/rt/config.py`](../../packages/relarena/src/relarena/models/rt/config.py)
+and
+[`packages/relarena/src/relarena/models/rt/model.py`](../../packages/relarena/src/relarena/models/rt/model.py).
+There is no harness search space: the step and context are selected internally, so each system
+produces one row with real test metrics and complete runtime.
+
+## Installation
+
+The pinned `relational-transformer` package provides a stable-ABI wheel for Linux x86-64, the
+platform currently supported by RelArena's RT integration. A GPU is strongly recommended.
+
+```bash
+uv sync --all-packages --extra rt                 # from a source checkout
+pip install "relarena[rt]"         # from a release
+```
+
+## Running RT-PluRel and RT-J
+
+Run one task through the ordinary RelArena CLI:
+
+```bash
+uv run --all-packages --extra rt relarena \
+    --model rt-j \
+    --datasets rel-f1 \
+    --tasks driver-dnf \
+    --output rt_j_driver_dnf.csv
+```
+
+Run all 21 RelBench v1 entity classification and regression tasks by omitting `--datasets` and
+`--tasks`. Substitute `--model rt-plurel` for the PluRel warm start. The model-only `--n-trials`
+option does not alter the internal step and context selection.
+
+## Citation
+
+If you use `rt-j` or `rt-plurel`, please cite the RT-J and RT papers:
+
+```bibtex
+@inproceedings{ranjan2026rtj,
+    title={{RT-J}: Large-Scale Pretraining of Relational Transformers for Context-Efficient Predictions},
+    author={Rishabh Ranjan and Vignesh Kothapalli and Harshvardhan Agarwal and Charilaos Kanatsoulis and Roshan Upendra and Tom Palczewski and Carlos Guestrin and Jure Leskovec},
+    booktitle={The Fortieth Annual Conference on Neural Information Processing Systems},
+    year={2026}
+}
+
+@inproceedings{ranjan2026relational,
+    title={Relational Transformer: Toward Zero-Shot Foundation Models for Relational Data},
+    author={Rishabh Ranjan and Valter Hudovernik and Mark Znidar and Charilaos Kanatsoulis and Roshan Upendra and Mahmoud Mohammadi and Joe Meyer and Tom Palczewski and Carlos Guestrin and Jure Leskovec},
+    booktitle={The Fourteenth International Conference on Learning Representations},
+    year={2026}
+}
+```
+
+If you use `rt-plurel`, please also cite PluRel:
+
+```bibtex
+@inproceedings{kothapalli2026plurel,
+    title={{PluRel}: Synthetic Data unlocks Scaling Laws for Relational Foundation Models},
+    author={Vignesh Kothapalli and Rishabh Ranjan and Valter Hudovernik and Vijay Prakash Dwivedi and Johannes Hoffart and Carlos Guestrin and Jure Leskovec},
+    booktitle={Forty-third International Conference on Machine Learning},
+    year={2026}
+}
+```
+
+Papers: [RT-J](https://arxiv.org/abs/2610.17867) (NeurIPS 2026),
+[RT](https://arxiv.org/abs/2510.06377) (ICLR 2026),
+[PluRel](https://arxiv.org/abs/2602.04029) (ICML 2026).
 
 
 
@@ -5086,6 +5402,11 @@ retained alongside the code in this package:
     https://github.com/snap-stanford/relbench
     src/relarena/models/_shared/gnn/_vendor/gnn.py
 
+  * RelBench stype proposal and primary-foreign key graph construction
+    Copyright (c) 2023 RelBench Team
+    https://github.com/snap-stanford/relbench
+    src/relarena/models/_shared/gnn/_vendor/graph.py
+
   * RelGNN composite-message-passing GNN
     Copyright (c) 2023 RelBench Team
     https://github.com/snap-stanford/RelGNN
@@ -5124,6 +5445,14 @@ https://github.com/snap-stanford/relbench at commit 74d4c37
 into `src/relarena/models/_shared/gnn/_vendor/gnn.py`; only Ruff formatting was
 otherwise normalized. The GNN layers themselves are imported from the installed
 `relbench.modeling.nn` package and are not copied.
+
+RelBench's `get_stype_proposal` (`relbench/modeling/utils.py`) and
+`make_pkey_fkey_graph` (`relbench/modeling/graph.py`) were copied from
+the relbench 2.1.2 release (https://pypi.org/project/relbench/2.1.2/) into
+`src/relarena/models/_shared/gnn/_vendor/graph.py`. The stype proposal
+samples its rows with a fixed seed, as in snap-stanford/relbench#431, and the
+graph construction can materialize with given column stats; imports were moved
+inside the functions.
 
 RelGNN model building blocks were copied from
 https://github.com/snap-stanford/RelGNN at commit cffdb8b. The upstream example
@@ -5221,7 +5550,7 @@ relarena = "relarena.cli:main"
 lightgbm = ["lightgbm>=4.0,<4.7"]
 # KurveRSC owns GraphReduce configuration search and CatBoost fitting. It is a
 # native system entry because selection happens inside its end-to-end run.
-kurversc = ["kurversc==0.1.1"]
+kurversc = ["kurversc[staged]==0.2.0", "graphreduce==1.10.18"]
 # rdblearn: DFS features + a tabular foundation model. Carries the local TFM
 # (tabpfn>=8 for the create_default_for_version API, lazily imported in relarena.models.rdblearn.tfm)
 # plus the DFS featurization deps.
@@ -8005,8 +8334,10 @@ vendored file with no directory of its own, and RelBench and RelGNN ship the
 identical MIT text, so per-directory copies would duplicate and drift.
 
 
-relbench -- src/relarena/models/_shared/gnn/_vendor/gnn.py
-Taken from snap-stanford/relbench at commit 74d4c37
+relbench -- src/relarena/models/_shared/gnn/_vendor/gnn.py,
+            src/relarena/models/_shared/gnn/_vendor/graph.py
+Taken from snap-stanford/relbench at commit 74d4c37 (gnn.py) and the 2.1.2
+release on PyPI (graph.py); the license text is the same at both.
 ---------------------------------------------------------------------------
 
 The MIT License (MIT)
@@ -8253,38 +8584,75 @@ payloads differ, so the caches are deliberately separate instances.
 
 Heavy imports (PyG, PyTorch Frame) stay inside the function so importing a GNN
 model to register it does not need the `rdl` extra.
+
+Column stypes come from `propose_stypes`, which is deterministic, and every graph
+records the stypes it was materialized with (`graph_col_to_stype`). A model that
+materializes a second graph at predict time (the RPI path predicts on a database
+censored at the query anchor, a different object from the fit database) passes its
+fit graph's stypes and column stats to `build_graph`, so its column encoders see the
+layout and category indices they were trained on.
 """
 
 from __future__ import annotations
 
+import copy
 from typing import Any
 
 from relbench.base import Database
 
+from relarena.models._shared.gnn._vendor.graph import (
+    make_pkey_fkey_graph,
+    propose_stypes,
+)
 from relarena.models._shared.gnn.graph_cache import DBGraphCache
 
 #: Minibatch size for the GloVe text embedder while materializing the graph.
 TEXT_EMBED_BATCH_SIZE = 256
 
+#: Instance attribute on a built graph holding the stypes it was materialized with.
+_STYPES_ATTR = "_relarena_col_to_stype"
+
 GRAPH_CACHE = DBGraphCache()
 
 
-def build_graph(db: Database, device: str) -> tuple[Any, dict[str, Any]]:
-    """Materialize `db` into a PyG hetero graph (text columns embedded with GloVe)."""
-    from relbench.modeling.graph import make_pkey_fkey_graph
-    from relbench.modeling.utils import get_stype_proposal
+def graph_col_to_stype(data: Any) -> dict[str, dict[str, Any]] | None:
+    """Return the stypes `data` was materialized with by `build_graph`, else None."""
+    return getattr(data, _STYPES_ATTR, None)
+
+
+def build_graph(
+    db: Database,
+    device: str,
+    col_to_stype_dict: dict[str, dict[str, Any]] | None = None,
+    col_stats_dict: dict[str, dict[str, Any]] | None = None,
+) -> tuple[Any, dict[str, Any]]:
+    """Materialize `db` into a PyG hetero graph (text columns embedded with GloVe).
+
+    `col_to_stype_dict` defaults to `propose_stypes(db)`, and the column stats are
+    computed from `db` unless `col_stats_dict` is given. When materializing a
+    different database for prediction, pass the fit graph's `graph_col_to_stype` and
+    column stats.
+    """
     from torch_frame.config.text_embedder import TextEmbedderConfig
 
     from relarena.models._shared.gnn._vendor.gnn import GloveTextEmbedding
 
-    return make_pkey_fkey_graph(
+    if col_to_stype_dict is None:
+        col_to_stype_dict = propose_stypes(db)
+    # `make_pkey_fkey_graph` pops key columns from the dict it is given; keep ours.
+    stypes = copy.deepcopy(col_to_stype_dict)
+    data, graph_col_stats = make_pkey_fkey_graph(
         db,
-        col_to_stype_dict=get_stype_proposal(db),
+        col_to_stype_dict=copy.deepcopy(col_to_stype_dict),
         text_embedder_cfg=TextEmbedderConfig(
             text_embedder=GloveTextEmbedding(device=device),
             batch_size=TEXT_EMBED_BATCH_SIZE,
         ),
+        col_stats_dict=col_stats_dict,
     )
+    # A plain instance attribute, not a PyG store entry: loaders and `.to()` skip it.
+    object.__setattr__(data, _STYPES_ATTR, stypes)
+    return data, graph_col_stats
 
 
 
@@ -8676,6 +9044,180 @@ class Model(torch.nn.Module):
 
 
 ================================================
+FILE: packages/relarena/src/relarena/models/_shared/gnn/_vendor/graph.py
+================================================
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2023 RelBench Team
+# Vendored from the relbench 2.1.2 release on PyPI; full license text in
+# models/VENDORED-LICENSES.
+"""Vendored RelBench stype proposal and pkey-fkey graph construction.
+
+STATUS: vendored from upstream with two semantic changes.
+  * Source: relbench 2.1.2 (https://pypi.org/project/relbench/2.1.2/)
+    * ``propose_stypes``       <- ``relbench/modeling/utils.py::get_stype_proposal``
+    * ``make_pkey_fkey_graph`` <- ``relbench/modeling/graph.py::make_pkey_fkey_graph``
+  * Modified:
+    * ``propose_stypes`` samples the rows with a fixed seed (``STYPE_SAMPLE_SEED``),
+      as in snap-stanford/relbench#431, which is not in 2.1.2.
+    * ``make_pkey_fkey_graph`` takes an optional ``col_stats_dict`` and materializes
+      each table with a copy of it instead of computing the stats from the table.
+    * Heavy imports (PyTorch Frame, PyG) moved inside the functions, so importing a
+      GNN model to register it does not need the ``rdl`` extra. Type annotations use
+      builtin generics.
+
+To re-sync: re-copy from the pinned files, redo the changes above, and bump the
+pinned version above.
+"""
+
+from __future__ import annotations
+
+import copy
+import os
+from typing import TYPE_CHECKING, Any
+
+from relbench.base import Database
+
+if TYPE_CHECKING:
+    from torch_frame.config.text_embedder import TextEmbedderConfig
+
+#: Rows sampled per table for stype inference, and the sample's fixed seed.
+STYPE_SAMPLE_SIZE = 1_000
+STYPE_SAMPLE_SEED = 0
+
+
+def propose_stypes(db: Database) -> dict[str, dict[str, Any]]:
+    """Infer each table's column stypes from a seeded row sample.
+
+    Adapted from `relbench.modeling.utils.get_stype_proposal` (RelBench 2.1.2, MIT),
+    which samples the rows with an unseeded `df.sample`: the same database can then
+    get a different proposal on every call (e.g. a low-cardinality integer column
+    flips between categorical and numerical).
+    """
+    from torch_frame import stype
+    from torch_frame.utils import infer_df_stype
+
+    proposal: dict[str, dict[str, Any]] = {}
+    for table_name, table in db.table_dict.items():
+        df = table.df.sample(
+            min(STYPE_SAMPLE_SIZE, len(table.df)), random_state=STYPE_SAMPLE_SEED
+        )
+        col_to_stype = infer_df_stype(df)
+        # As upstream: RelBench's encoders have no embedding stype (rel-amazon).
+        for col, col_stype in col_to_stype.items():
+            if col_stype == stype.embedding:
+                col_to_stype[col] = stype.multicategorical
+        proposal[table_name] = col_to_stype
+    return proposal
+
+
+def make_pkey_fkey_graph(
+    db: Database,
+    col_to_stype_dict: dict[str, dict[str, Any]],
+    text_embedder_cfg: TextEmbedderConfig | None = None,
+    cache_dir: str | None = None,
+    col_stats_dict: dict[str, dict[str, Any]] | None = None,
+) -> tuple[Any, dict[str, Any]]:
+    """Build a hetero graph with primary-foreign key edges, plus each table's stats.
+
+    Adapted from `relbench.modeling.graph.make_pkey_fkey_graph` (RelBench 2.1.2, MIT),
+    which always computes the column stats from the tables it is given. Pass
+    `col_stats_dict` to materialize with existing stats instead: torch_frame indexes
+    categories by frequency, so a later snapshot's own stats renumber them, and the
+    encoders trained on the fit graph would read the wrong category behind an index.
+    Categories unseen at fit get torch_frame's missing value (-1). Like upstream, this
+    pops the key columns from `col_to_stype_dict`.
+    """
+    import numpy as np
+    import pandas as pd
+    import torch
+    from relbench.modeling.utils import remove_pkey_fkey, to_unix_time
+    from torch_frame import stype
+    from torch_frame.data import Dataset
+    from torch_geometric.data import HeteroData
+    from torch_geometric.utils import sort_edge_index
+
+    data = HeteroData()
+    graph_col_stats = {}
+    if cache_dir is not None:
+        os.makedirs(cache_dir, exist_ok=True)
+
+    for table_name, table in db.table_dict.items():
+        # Materialize the tables into tensor frames:
+        df = table.df
+        # Ensure that pkey is consecutive.
+        if table.pkey_col is not None:
+            assert (df[table.pkey_col].values == np.arange(len(df))).all()
+
+        col_to_stype = col_to_stype_dict[table_name]
+
+        # Remove pkey, fkey columns since they will not be used as input
+        # feature.
+        remove_pkey_fkey(col_to_stype, table)
+
+        if len(col_to_stype) == 0:  # Add constant feature in case df is empty:
+            col_to_stype = {"__const__": stype.numerical}
+            # We need to add edges later, so we need to also keep the fkeys
+            fkey_dict = {key: df[key] for key in table.fkey_col_to_pkey_table}
+            df = pd.DataFrame({"__const__": np.ones(len(table.df)), **fkey_dict})
+
+        path = (
+            None if cache_dir is None else os.path.join(cache_dir, f"{table_name}.pt")
+        )
+
+        # `materialize` keeps the stats dict it is given and writes `EMB_DIM` into it
+        # for text columns, so it gets a copy.
+        dataset = Dataset(
+            df=df,
+            col_to_stype=col_to_stype,
+            col_to_text_embedder_cfg=text_embedder_cfg,
+        ).materialize(
+            path=path,
+            col_stats=(
+                None
+                if col_stats_dict is None
+                else copy.deepcopy(col_stats_dict[table_name])
+            ),
+        )
+
+        data[table_name].tf = dataset.tensor_frame
+        graph_col_stats[table_name] = dataset.col_stats
+
+        # Add time attribute:
+        if table.time_col is not None:
+            data[table_name].time = torch.from_numpy(
+                to_unix_time(table.df[table.time_col])
+            )
+
+        # Add edges:
+        for fkey_name, pkey_table_name in table.fkey_col_to_pkey_table.items():
+            pkey_index = df[fkey_name]
+            # Filter out dangling foreign keys
+            mask = ~pkey_index.isna()
+            fkey_index = torch.arange(len(pkey_index))
+            # Filter dangling foreign keys:
+            pkey_index = torch.from_numpy(pkey_index[mask].astype(int).values)
+            fkey_index = fkey_index[torch.from_numpy(mask.values)]
+            # Ensure no dangling fkeys
+            assert (pkey_index < len(db.table_dict[pkey_table_name])).all()
+
+            # fkey -> pkey edges
+            edge_index = torch.stack([fkey_index, pkey_index], dim=0)
+            edge_type = (table_name, f"f2p_{fkey_name}", pkey_table_name)
+            data[edge_type].edge_index = sort_edge_index(edge_index)
+
+            # pkey -> fkey edges.
+            # "rev_" is added so that PyG loader recognizes the reverse edges
+            edge_index = torch.stack([pkey_index, fkey_index], dim=0)
+            edge_type = (pkey_table_name, f"rev_f2p_{fkey_name}", table_name)
+            data[edge_type].edge_index = sort_edge_index(edge_index)
+
+    data.validate()
+
+    return data, graph_col_stats
+
+
+
+================================================
 FILE: packages/relarena/src/relarena/models/dummy/__init__.py
 ================================================
 """Constant prediction baselines."""
@@ -8903,7 +9445,11 @@ import torch
 from ConfigSpace import Categorical, ConfigurationSpace, Float
 from relbench.base import Database, EntityTask, Table, TaskType
 
-from relarena.models._shared.gnn.graph import GRAPH_CACHE, build_graph
+from relarena.models._shared.gnn.graph import (
+    GRAPH_CACHE,
+    build_graph,
+    graph_col_to_stype,
+)
 from relarena.models._shared.gnn.training import (
     default_device,
     infer,
@@ -9200,10 +9746,22 @@ class GraphSAGEModel(RelArenaModel):
         self._num_neighbors = num_neighbors
         self._num_layers = num_layers
         self._batch_size = batch_size
+        # Predict may materialize a different (later-censored) database; reuse the
+        # column layout and stats the encoders were trained on.
+        self._col_to_stype = graph_col_to_stype(data)
+        self._col_stats_dict = col_stats_dict
 
     def predict(self, task: EntityTask, db: Database, table: Table) -> np.ndarray:
         """Run GraphSAGE over `table`; return the evaluate-contract array."""
-        data, _ = GRAPH_CACHE.get(db, lambda: build_graph(db, self._device))
+        data, _ = GRAPH_CACHE.get(
+            db,
+            lambda: build_graph(
+                db,
+                self._device,
+                col_to_stype_dict=self._col_to_stype,
+                col_stats_dict=self._col_stats_dict,
+            ),
+        )
 
         def attempt(batch_size: int) -> np.ndarray:
             loader = _make_loader(
@@ -9237,15 +9795,16 @@ FILE: packages/relarena/src/relarena/models/kurversc/__init__.py
 """Validation-guided GraphReduce system."""
 
 from relarena.models.kurversc.model import KURVERSC_DEFAULTS, KurveRSCSystem
+from relarena.models.kurversc.staged import KurveRSC20261022System
 
-__all__ = ["KURVERSC_DEFAULTS", "KurveRSCSystem"]
+__all__ = ["KURVERSC_DEFAULTS", "KurveRSCSystem", "KurveRSC20261022System"]
 
 
 
 ================================================
 FILE: packages/relarena/src/relarena/models/kurversc/model.py
 ================================================
-"""`kurversc` — validation-guided relational signal compression.
+"""`kurversc-2026-09-03` — validation-guided relational signal compression.
 
 KurveRSC owns its complete prediction procedure, so it implements RelArena's
 system contract rather than presenting its internal GraphReduce candidates as
@@ -9319,7 +9878,7 @@ class _SelectedGraph:
 class KurveRSCSystem(RelArenaSystem):
     """GraphReduce configuration search plus a CatBoost downstream learner."""
 
-    name = "kurversc"
+    name = "kurversc-2026-09-03"
     schema_depth = 3
 
     def run(
@@ -9470,6 +10029,82 @@ class KurveRSCSystem(RelArenaSystem):
 
 
 __all__ = ["KURVERSC_DEFAULTS", "KurveRSCSystem"]
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/kurversc/staged.py
+================================================
+"""Register the complete staged KurveRSC system for benchmark and user data.
+
+The optional KurveRSC package owns search, selection and final fitting. This
+adapter passes the caller's censored splits unchanged and returns predictions;
+the harness alone owns hidden-label scoring.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import numpy as np
+from relbench.base import EntityTask, TaskType
+
+from relarena_core import InnerSplit, OuterSplit, RelArenaSystem, register_system
+from relarena_core.registry import registry
+
+
+@register_system
+class KurveRSC20261022System(RelArenaSystem):
+    """The versioned, complete staged KurveRSC prediction procedure."""
+
+    name = "kurversc-2026-10-22"
+    supported_task_types = frozenset(
+        {TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION}
+    )
+    complete_pipeline_output: Path | None = None
+
+    def run(
+        self,
+        task: EntityTask,
+        *,
+        inner_split: InnerSplit,
+        outer_split: OuterSplit,
+        seed: int,
+        time_limit: float | None = None,
+    ) -> np.ndarray:
+        """Run the packaged recipe on the supplied, target-unseen protocol."""
+        if seed != 0:
+            raise ValueError(
+                "The complete staged KurveRSC recipe uses deployment seed 0; "
+                "other seeds are not silently substituted."
+            )
+        try:
+            from kurversc.protocol_runner import run_protocol_task
+        except ImportError as exc:
+            raise ImportError(
+                "Install the candidate relarena[kurversc] extra: the complete "
+                "procedure requires kurversc[staged]>=0.2.0."
+            ) from exc
+
+        identity = self.run_identity
+        result = run_protocol_task(
+            task,
+            inner_split=inner_split,
+            outer_split=outer_split,
+            dataset_name=identity.dataset if identity else "database",
+            task_name=identity.task if identity and identity.task else "prediction",
+            seed=seed,
+            time_limit=time_limit,
+            cache_directory=self.cache.directory,
+            run_identity=identity,
+        )
+        self.complete_pipeline_output = result.output
+        return result.predictions["prediction"].to_numpy(dtype=float)
+
+
+registry.register_alias("kurversc-latest", KurveRSC20261022System.name)
+
+__all__ = ["KurveRSC20261022System"]
 
 
 
@@ -11885,7 +12520,11 @@ class RelGTModel(RelArenaModel):
         """
         from torch_geometric.seed import seed_everything
 
-        from relarena.models._shared.gnn.graph import GRAPH_CACHE, build_graph
+        from relarena.models._shared.gnn.graph import (
+            GRAPH_CACHE,
+            build_graph,
+            graph_col_to_stype,
+        )
         from relarena.models._shared.gnn.training import default_device, task_setup
         from relarena.models.relgt._vendor import RelGT
         from relarena.models.relgt.tokenize import MAX_NEIGHBOR_HOP, RelGTTokens
@@ -11986,13 +12625,25 @@ class RelGTModel(RelArenaModel):
         self._device = device
         self._clamp = clamp
         self._batch_size = batch_size
+        # Predict may materialize a different (later-censored) database; reuse the
+        # column layout and stats the encoders were trained on.
+        self._col_to_stype = graph_col_to_stype(data)
+        self._col_stats_dict = col_stats_dict
 
     def predict(self, task: EntityTask, db: Database, table: Table) -> np.ndarray:
         """Run RelGT over `table`; return the evaluate-contract array."""
         from relarena.models._shared.gnn.graph import GRAPH_CACHE, build_graph
         from relarena.models.relgt.tokenize import RelGTTokens
 
-        data, _ = GRAPH_CACHE.get(db, lambda: build_graph(db, self._device))
+        data, _ = GRAPH_CACHE.get(
+            db,
+            lambda: build_graph(
+                db,
+                self._device,
+                col_to_stype_dict=self._col_to_stype,
+                col_stats_dict=self._col_stats_dict,
+            ),
+        )
         tokens = RelGTTokens(
             data,
             task,
@@ -19885,7 +20536,8 @@ _BASELINES = {
     "constant-global",
     "constant-per-entity",
     "graphsage",
-    "kurversc",
+    "kurversc-2026-09-03",
+    "kurversc-2026-10-22",
     "lightgbm",
     "nori-rel",
     "rdblearn",
@@ -19917,7 +20569,7 @@ from relarena_core.registry import registry
 assert not registry.names()
 import relarena.models
 assert set(registry.names()) == {_BASELINES!r}
-assert registry.kind('kurversc') == registry.kind('rt-plurel') == 'system'
+assert registry.kind('kurversc-2026-09-03') == registry.kind('rt-plurel') == 'system'
 before = list(registry)
 relarena.models._register_builtin_models()
 assert list(registry) == before
@@ -19959,7 +20611,7 @@ assert registry.get('extra-model') is ExtraModel
 assert registry.search_space('extra-model').default_overrides == {{}}
 relarena.models._register_builtin_models()
 assert registry.get('extra-model') is ExtraModel
-assert len(registry) == 13
+assert len(registry) == 14
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -20075,6 +20727,223 @@ def test_feature_names_are_positional_for_lightgbm(monkeypatch: Any) -> None:
 FILE: packages/relarena/tests/models/_shared/gnn/__init__.py
 ================================================
 """Tests for the shared GNN internals."""
+
+
+
+================================================
+FILE: packages/relarena/tests/models/_shared/gnn/test_graph.py
+================================================
+"""Tests for relarena.models._shared.gnn.graph.
+
+Covers deterministic stype proposals, graphs recording the stypes they were built
+with, and GNN models materializing their predict-time graph with their fit graph's
+stypes and column stats. Most tests stub graph materialization out; the snapshot test
+materializes two small graphs for real on CPU (no GloVe, no training).
+"""
+
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import numpy as np
+import pandas as pd
+import pytest
+from relbench.base import Database, Table, TaskType
+
+pytest.importorskip("torch_frame")
+
+from relarena.models._shared.gnn._vendor.graph import (  # noqa: E402
+    STYPE_SAMPLE_SIZE,
+    propose_stypes,
+)
+from relarena.models._shared.gnn.graph import (  # noqa: E402
+    build_graph,
+    graph_col_to_stype,
+)
+from relarena.models._shared.gnn.graph_cache import DBGraphCache  # noqa: E402
+
+
+def _db(num_rows: int = 5_000) -> Database:
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame(
+        {
+            "id": np.arange(num_rows),
+            # Low-cardinality integers with a long tail: depending on which rows a
+            # sample hits, inference can call this categorical or numerical.
+            "code": np.where(
+                rng.random(num_rows) < 0.97,
+                rng.integers(0, 5, num_rows),
+                rng.integers(5, 400, num_rows),
+            ),
+            "amount": rng.normal(size=num_rows),
+        }
+    )
+    return Database({"t": Table(df=df, fkey_col_to_pkey_table={}, pkey_col="id")})
+
+
+def test__propose_stypes__same_db__samples_the_same_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each call infers from the same seeded sample, so the proposal is reproducible."""
+    import torch_frame.utils
+
+    sampled: list[tuple[int, ...]] = []
+
+    def fake_infer(df: pd.DataFrame) -> dict[str, object]:
+        sampled.append(tuple(df.index))
+        return {col: torch_frame.stype.numerical for col in df.columns}
+
+    monkeypatch.setattr(torch_frame.utils, "infer_df_stype", fake_infer)
+    db = _db()
+
+    propose_stypes(db)
+    propose_stypes(db)
+
+    assert len(sampled[0]) == STYPE_SAMPLE_SIZE
+    assert sampled[0] == sampled[1]
+
+
+def test__propose_stypes__same_db__same_proposal() -> None:
+    db = _db()
+    first = propose_stypes(db)
+    assert all(propose_stypes(db) == first for _ in range(5))
+
+
+def test__propose_stypes__small_table__uses_every_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import torch_frame.utils
+
+    sizes: list[int] = []
+    monkeypatch.setattr(
+        torch_frame.utils, "infer_df_stype", lambda df: sizes.append(len(df)) or {}
+    )
+
+    propose_stypes(_db(num_rows=20))
+
+    assert sizes == [20]
+
+
+def test__build_graph__records_the_stypes_it_used(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The recorded stypes survive `make_pkey_fkey_graph` popping key columns."""
+    pytest.importorskip("torch_geometric")
+    from relarena.models._shared.gnn import graph as shared_graph
+    from relarena.models._shared.gnn._vendor import gnn as vendor_gnn
+
+    def fake_make_pkey_fkey_graph(
+        db: Database, col_to_stype_dict: dict, **kwargs: object
+    ) -> tuple[SimpleNamespace, dict]:
+        col_to_stype_dict["t"].pop("id")  # what upstream does to key columns
+        return SimpleNamespace(), {}
+
+    monkeypatch.setattr(shared_graph, "make_pkey_fkey_graph", fake_make_pkey_fkey_graph)
+    monkeypatch.setattr(vendor_gnn, "GloveTextEmbedding", lambda device: None)
+    stypes = {"t": {"id": "numerical", "code": "categorical"}}
+
+    data, _ = build_graph(_db(), "cpu", col_to_stype_dict=stypes)
+
+    assert graph_col_to_stype(data) == {"t": {"id": "numerical", "code": "categorical"}}
+    assert stypes == {"t": {"id": "numerical", "code": "categorical"}}  # untouched
+
+
+def test__graph_col_to_stype__foreign_graph__is_none() -> None:
+    assert graph_col_to_stype(SimpleNamespace()) is None
+
+
+def test__graphsage_predict__materializes_with_fit_time_stypes_and_stats(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Predict reuses the fit-time stypes and column stats when it rebuilds the graph.
+
+    A predict-time database is a different object from the fit database (the RPI path
+    censors it at the query anchor), so its graph is rebuilt; re-proposing stypes there
+    can hand the trained column encoders a different column layout.
+    """
+    from relarena.models.graphsage import model as graphsage_mod
+    from relarena.models.graphsage.model import GraphSAGEModel
+
+    built_with: list[tuple[object, object]] = []
+
+    def fake_build_graph(
+        db: object,
+        device: str,
+        col_to_stype_dict: object = None,
+        col_stats_dict: object = None,
+    ) -> tuple[str, dict]:
+        built_with.append((col_to_stype_dict, col_stats_dict))
+        return "graph", {}
+
+    monkeypatch.setattr(graphsage_mod, "GRAPH_CACHE", DBGraphCache())
+    monkeypatch.setattr(graphsage_mod, "build_graph", fake_build_graph)
+    monkeypatch.setattr(
+        graphsage_mod,
+        "_run_with_oom_retry",
+        lambda attempt, *, start_batch_size, device, what: (
+            np.zeros(3),
+            start_batch_size,
+        ),
+    )
+    model = GraphSAGEModel({})
+    model._device, model._batch_size = "cpu", 8
+    model._col_to_stype = {"t": {"code": "fit-time stype"}}
+    model._col_stats_dict = {"t": {"code": "fit-time stats"}}
+
+    model.predict(task=None, db=object(), table=None)
+
+    assert built_with == [(model._col_to_stype, model._col_stats_dict)]
+
+
+def test__graphsage__fit_early_predict_later__keeps_fit_category_indices(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A later snapshot is encoded with the category indices the model was fit on.
+
+    torch_frame indexes categories by frequency. After the fit cutoff EF overtakes AB
+    and YZ, and a new category QQ becomes the most frequent, so the later snapshot's
+    own stats would give the trained encoders AB=2, YZ=3, EF=1, QQ=0.
+    """
+    pytest.importorskip("torch_geometric")
+    from torch_frame import stype
+
+    from relarena.models._shared.gnn._vendor import gnn as vendor_gnn
+    from relarena.models.graphsage import model as graphsage_mod
+
+    fit_codes = ["AB"] * 50 + ["YZ"] * 30 + ["EF"] * 20
+    codes = fit_codes + ["EF"] * 70 + ["QQ"] * 120
+    df = pd.DataFrame(
+        {
+            "id": np.arange(len(codes)),
+            "ts": pd.date_range("2020-01-01", periods=len(codes), freq="D"),
+            "code": codes,
+        }
+    )
+    db = Database(
+        {"t": Table(df=df, fkey_col_to_pkey_table={}, pkey_col="id", time_col="ts")}
+    )
+    graph_cache = DBGraphCache()
+    monkeypatch.setattr(graphsage_mod, "GRAPH_CACHE", graph_cache)
+    monkeypatch.setattr(vendor_gnn, "GloveTextEmbedding", lambda device: None)
+    # Skip training and inference: only the graphs fit and predict build matter here.
+    monkeypatch.setattr(
+        graphsage_mod,
+        "_run_with_oom_retry",
+        lambda attempt, *, start_batch_size, device, what: (None, start_batch_size),
+    )
+    model = graphsage_mod.GraphSAGEModel(dict(graphsage_mod._DEFAULT_CONFIG))
+    task = SimpleNamespace(task_type=TaskType.BINARY_CLASSIFICATION)
+
+    model.fit(task, db.upto(df["ts"][len(fit_codes) - 1]), None, None, seed=0)
+    model.predict(task, db, None)
+
+    data, _ = graph_cache.get(db, lambda: pytest.fail("predict built no graph"))
+    tf = data["t"].tf
+    code_col = tf.col_names_dict[stype.categorical].index("code")
+    fit_index = {"AB": 0, "YZ": 1, "EF": 2}  # QQ is unseen at fit: missing (-1)
+    assert tf.feat_dict[stype.categorical][:, code_col].tolist() == [
+        fit_index.get(code, -1) for code in codes
+    ]
 
 
 
@@ -20656,10 +21525,10 @@ def _label_table(*, masked: bool = False) -> Table:
 
 def test__kurversc__is_registered_as_a_native_system() -> None:
 
-    assert registry.get("kurversc") is KurveRSCSystem
-    assert registry.kind("kurversc") == "system"
+    assert registry.get("kurversc-2026-09-03") is KurveRSCSystem
+    assert registry.kind("kurversc-2026-09-03") == "system"
     with pytest.raises(TypeError, match="no harness search space"):
-        registry.search_space("kurversc")
+        registry.search_space("kurversc-2026-09-03")
 
 
 def test__kurversc__report_facing_defaults_are_explicit() -> None:
@@ -20790,6 +21659,130 @@ def test__fit_arm__outer_requires_inner_selection() -> None:
 def test__system__does_not_expose_model_fit_predict_contract() -> None:
     assert not hasattr(KurveRSCSystem, "fit")
     assert not hasattr(KurveRSCSystem, "predict")
+
+
+
+================================================
+FILE: packages/relarena/tests/models/kurversc/test_staged.py
+================================================
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import pytest
+from relbench.base import TaskType
+
+from relarena.models.kurversc import KurveRSC20261022System, KurveRSCSystem
+from relarena_core import CacheConfig, RunIdentity
+from relarena_core.registry import registry
+
+
+def test__staged__has_distinct_versioned_registration_and_latest_alias() -> None:
+    assert registry.get("kurversc-2026-09-03") is KurveRSCSystem
+    assert registry.get("kurversc-2026-10-22") is KurveRSC20261022System
+    assert registry.get("kurversc-latest") is KurveRSC20261022System
+    assert registry.kind("kurversc-latest") == "system"
+    with pytest.raises(TypeError, match="no harness search space"):
+        registry.search_space("kurversc-latest")
+    assert KurveRSC20261022System.supported_task_types == frozenset(
+        {TaskType.BINARY_CLASSIFICATION, TaskType.REGRESSION}
+    )
+
+
+@pytest.mark.parametrize("seed", [1, 7, -1])
+def test__staged__unsupported_seed_fails_before_optional_import(seed: int) -> None:
+    with pytest.raises(ValueError, match="deployment seed 0"):
+        KurveRSC20261022System().run(
+            SimpleNamespace(),
+            inner_split=SimpleNamespace(),
+            outer_split=SimpleNamespace(),
+            seed=seed,
+        )
+
+
+@pytest.mark.parametrize("identified", [True, False])
+def test__staged__forwards_original_splits_budget_and_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, identified: bool
+) -> None:
+    train = object()
+    query = pd.DataFrame({"entity": [7, 3], "at": pd.to_datetime(["2020-02-01"] * 2)})
+    inner = SimpleNamespace(train_table=train)
+    outer = SimpleNamespace(eval_table=SimpleNamespace(df=query))
+    task = SimpleNamespace(target_col="response")
+    identity = (
+        RunIdentity("new-schema", "source-v1", "new-task", "task-v1")
+        if identified
+        else None
+    )
+    output = tmp_path / "owned-complete-run"
+    calls = []
+
+    def run_protocol_task(actual_task: Any, **kwargs: Any) -> SimpleNamespace:
+        calls.append(kwargs)
+        assert actual_task is task
+        assert kwargs["inner_split"] is inner and kwargs["outer_split"] is outer
+        assert "response" not in kwargs["outer_split"].eval_table.df
+        assert kwargs["time_limit"] == 600
+        assert kwargs["seed"] == 0
+        assert kwargs["cache_directory"] == tmp_path
+        assert kwargs["run_identity"] is identity
+        return SimpleNamespace(
+            output=output, predictions=pd.DataFrame({"prediction": [0.8, 0.2]})
+        )
+
+    monkeypatch.setitem(
+        sys.modules,
+        "kurversc.protocol_runner",
+        SimpleNamespace(run_protocol_task=run_protocol_task),
+    )
+    system = KurveRSC20261022System(
+        cache=CacheConfig(directory=tmp_path, on_miss="compute"), run_identity=identity
+    )
+    prediction = system.run(
+        task, inner_split=inner, outer_split=outer, seed=0, time_limit=600
+    )
+    np.testing.assert_array_equal(prediction, [0.8, 0.2])
+    assert prediction.dtype == float and prediction.shape == (len(query),)
+    assert system.complete_pipeline_output == output
+    assert calls[0]["dataset_name"] == ("new-schema" if identified else "database")
+    assert calls[0]["task_name"] == ("new-task" if identified else "prediction")
+
+
+def test__staged__registration_does_not_import_optional_pipeline() -> None:
+    code = """
+import sys
+from relarena.models.kurversc import KurveRSC20261022System
+assert 'kurversc.protocol_runner' not in sys.modules
+assert 'kurversc.staged' not in sys.modules
+assert KurveRSC20261022System.name == 'kurversc-2026-10-22'
+"""
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test__staged__pipeline_errors_are_not_replaced_with_native_predictions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def failed(*args: Any, **kwargs: Any) -> None:
+        raise RuntimeError("Incomplete full-fidelity stage")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "kurversc.protocol_runner",
+        SimpleNamespace(run_protocol_task=failed),
+    )
+    with pytest.raises(RuntimeError, match="Incomplete full-fidelity"):
+        KurveRSC20261022System().run(
+            SimpleNamespace(),
+            inner_split=SimpleNamespace(),
+            outer_split=SimpleNamespace(),
+            seed=0,
+        )
 
 
 
@@ -22172,7 +23165,7 @@ def test__relgt_model__fit_predict__synthetic_end_to_end(
     # Patch graph materialization (no download/GloVe) and shrink the architecture +
     # schedule so the real fit/predict path runs in a couple of seconds on CPU.
     monkeypatch.setattr(
-        shared_graph, "build_graph", lambda db, device: (data, col_stats)
+        shared_graph, "build_graph", lambda db, device, **_: (data, col_stats)
     )
     monkeypatch.setattr(shared_graph, "GRAPH_CACHE", DBGraphCache())
     monkeypatch.setattr(relgt, "_CHANNELS", 16)
@@ -24362,7 +25355,7 @@ def test__generate__separate_boards_and_preserve_surrounding_text(
         "<summary><b>Models + systems leaderboard table</b></summary>"
     )
     assert "| System |" not in models
-    for system in ("rt-plurel", "kurversc"):
+    for system in ("rt-plurel", "kurversc-2026-09-03"):
         assert system not in models
         assert f"| {system} | System |" in combined
     assert models.count("| Model |") == combined.count("| Model |")
@@ -24709,6 +25702,9 @@ dependencies = [
     "datasets>=4",
     "numpy>=1.24",
     "pandas>=2.3.3,<3.0",
+    # pandas/dateutil import six.moves. Older six import hooks do not support
+    # Python 3.12; unconstrained plugin dependencies can otherwise select them.
+    "six>=1.16",
     "scikit-learn>=1.3",
     "configspace>=1.0",
     "pyyaml>=6.0",
@@ -32100,6 +33096,9 @@ MANUAL_LICENSES: dict[str, str] = {
     # The KurveRSC 0.1.1 wheel ships an MIT LICENSE and declares
     # `License-Expression: MIT`; PyPI's JSON API does not expose that PEP 639 field.
     "kurversc": "MIT",
+    # The pinned GraphReduce Git source (21aff2e) ships the plain MIT LICENSE;
+    # Git dependencies have no PyPI release metadata for this audit to query.
+    "graphreduce": "MIT",
     # The kditransform 1.2.0 wheel ships plain Apache-2.0 in
     # dist-info/licenses/LICENSE while its metadata only says "OSI Approved".
     "kditransform": "Apache-2.0",

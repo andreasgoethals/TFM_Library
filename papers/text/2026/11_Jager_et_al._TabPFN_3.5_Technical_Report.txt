@@ -29,12 +29,12 @@ TALENT1of 37 TabICLv280% CatBoost91%
 ScoringBench1of 52 EXAONE78% RealMLP91%
 Mean1 78% 89%
 Table 1. TabPFN-3.5 against the strongest non-TabPFN competitor on each benchmark.Rank is
-the position of the bestTabPFN-3.5member (TabPFN-3.5-Thinking on the first four benchmarks, TabPFN-Rel
+the position of the bestTabPFN-3.5 member (TabPFN-3.5-Thinking on the first four benchmarks, TabPFN-Rel
 (3.5) on RelArena-α, TabPFN-3.5 on TALENT and ScoringBench) among the methods on the benchmark’s
 leaderboard. Win rates are the share of splits won against the best other Tabular Foundation Model (TFM) and
 the best non-foundation model, datasets weighted equally. Details in Section C.8.
 1
-arXiv:2609.17895v2  [cs.LG]  22 Sep 2026
+arXiv:2609.17895v3  [cs.LG]  3 Nov 2026
 
 Contents
 1 Introduction 3
@@ -54,8 +54,8 @@ Contents
 4.1 Distribution . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
 A Contributors 17
 B Acknowledgements 17
-C More Experimental Results 17
-C.1 Additional details on TabArena . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 17
+C More Experimental Results 18
+C.1 Additional details on TabArena . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
 C.2 Additional results on BeyondArena . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 25
 C.3 Additional Results on STRABLE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 26
 C.4 Additional Results on MulTaBench . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 28
@@ -152,12 +152,12 @@ T abPFN-3.We report the per-dataset scores on
 TabArena [2]. The normalized score is based on a per-fold
 min-max normalization as explained in [1].
 Figure 1. Evolution and performance of the TabPFN model family.(a) Supported input shapes and
-model size across releases.TabPFN-3.5raises the recommended feature limit and can simultaneously handle 1M
+model size across releases.TabPFN-3.5 raises the recommended feature limit and can simultaneously handle 1M
 data points and 6k features. (b) Per-dataset scores on TabArena. Points below the diagonal indicate stronger
 TabPFN-3.5 performance; a Wilcoxon signed-rank test confirms the improvement is significant (p <0.0001).
-to million-row tables, and text and high-cardinality features,TabPFN-3.5ranks first overall, and
+to million-row tables, and text and high-cardinality features,TabPFN-3.5 ranks first overall, and
 for every subset of non-large (<100K rows) datasets (Section 2.2).
-• Multimodal data. TabPFN-3.5ranks first on STRABLE, where tables carry string fields such as
+• Multimodal data. TabPFN-3.5 ranks first on STRABLE, where tables carry string fields such as
 names, addresses and free-text notes (Section 2.3), and on MulTaBench, where tabular columns are
 paired with text and image fields (Section 2.4).TabPFN-3.5-Plus, which processes text columns
 natively, and TabPFN-3.5-Thinking extend the lead further on both benchmarks (Section 3.4).
@@ -166,7 +166,7 @@ distributions, ranking first on ScoringBench, which scores the full predicted di
 models with proper scoring rules (Section C.7).
 • Task-specific harnesses.The gains carry over to task-specific harnesses: TabPFN-Rel built
 on TabPFN-3.5-Plus ranks first on RelArena-α for relational data (Section 2.5), and the general
-TabPFN-3.5checkpoint, with no time-series finetuning, beats the time-series-specific TabPFN-TS-3
+TabPFN-3.5 checkpoint, with no time-series finetuning, beats the time-series-specific TabPFN-TS-3
 on fev-bench (Section C.6).
 Together,TabPFN-3.5, TabPFN-3.5-Fastand TabPFN-3.5-Thinkingimprove onTabPFN-3at every time
 budget. TabPFN-3.5 itself runs up to2× slower thanTabPFN-3 on large training sets because of its
@@ -274,7 +274,7 @@ columns. STRABLE [4] is the largest benchmark of tabular learning with strings, 
 drawn from diverse application fields. We compare against the results published in the official paper,
 without re-running baselines; consequently, models released after the paper are absent from the comparison.
 Since TF-IDF was the strongest string encoding for STRABLE, we use it for models without native text
-handling, includingTabPFN-3.5and TabPFN-3.5-Fast; models with native text handling [36, 39, 40], as
+handling, includingTabPFN-3.5 and TabPFN-3.5-Fast; models with native text handling [36, 39, 40], as
 well as TabPFN-3.5-Plus and TabPFN-3.5-Thinking, receive the raw table.
 Figure 5a shows that theTabPFN-3.5 family dominates the benchmark, with all variants significantly
 outperforming prior baselines. Appendix C.3 shows the leaderboard including variants using the embedding
@@ -334,7 +334,7 @@ DINOv3-small[ 42] embeddings. Both of them are then reduced to 30 PCA [43] compo
 fair comparison, we evaluate TabPFN-3.5 and TabPFN-3.5-Fast using the same preprocessing.
 Figure 5b also includesTabPFN-3.5-Plusand TabPFN-3.5-Thinking, which process the raw text columns
 directly (Section 3.4) while relying on the frozen embeddings for image features. As shown in the figure,
-the TabPFN-3.5family significantly outperforms all prior published methods. Appendix C.4 details the
+the TabPFN-3.5 family significantly outperforms all prior published methods. Appendix C.4 details the
 text-only half of the benchmark, where the performance gap between our models and the baselines widens
 further, thanks to our improved text support.
 2.5 RelArena-α
@@ -353,7 +353,7 @@ with TabPFN-3.5-Plus, improves performance by a further 36 Elo points, as also s
 We co-developed the newer versions of the TabPFN-Rel harness with TabPFN-3.5-Plus. Results with
 open-source checkpoints and with Thinking mode are work in progress.
 2.6 Inference benchmarks
-We benchmark our new modelsTabPFN-3.5and TabPFN-3.5-Fastagainst TabPFN-3on one NVIDIA
+We benchmark our new modelsTabPFN-3.5 and TabPFN-3.5-Fastagainst TabPFN-3 on one NVIDIA
 RTX PRO 6000 Blackwell (96GB). We run a single estimator, measure the model forward time, and
 multiply by the checkpoint’s default number of estimators (8 forTabPFN-3 and TabPFN-3.5, 4 for
 7
@@ -394,7 +394,7 @@ TabPFN-3.5-Plus, however, reduces the model’s latency and only has1.25× the l
 to faster FP8 attention [53]. TabPFN-3.5-Fastis up to 3 times faster thanTabPFN-3 and the optimized
 Plus variant can run in a quarter of the time. All scale quadratically in the number of training rows for
 datasets larger than 128k rows.
-Like our previous models,TabPFN-3.5also supports cached inference for sub-second predictions. The
+Like our previous models,TabPFN-3.5 also supports cached inference for sub-second predictions. The
 expensive computations on the training rows are done only once and only the relevant tensors are cached.
 The models cache the per-block inducing states produced by the feature distribution embedder, the keys
 and values of the ICL self-attention blocks, and the inputs to the many-class decoder. For the latter,
@@ -406,7 +406,7 @@ Overall, the size of the cache remains largely unchanged betweenTabPFN-3and TabP
 the parameter count roughly quadrupled and prediction quality improved substantially. This is crucial for
 online inference, where a single test example is scored against the training context. This online use-case
 is bound by the memory bandwidth of moving the cache (and the weights). As we see in Figure 7 for
-a single test row, the cached predict times betweenTabPFN-3.5and TabPFN-3align exactly, whereas
+a single test row, the cached predict times betweenTabPFN-3.5 and TabPFN-3 align exactly, whereas
 TabPFN-3.5-Fast is around three times faster.
 3 Model Design and Inference
 This section describes the changes from TabPFN-3 to TabPFN-3.5: revised per-cell encodings, an
@@ -442,11 +442,11 @@ Training rows
 0.5
 Cached predict, default n_estimators (s)
 TabPFN-3 (8 estimators) TabPFN-3.5 (8 estimators) TabPFN-3.5-Fast (4 estimators) Plus variants (left, middle) 1 test row (right) 100 test rows (right)
-Figure 7.Inference speed at 100 columns and 1,024 test rows absolute (left) and relative toTabPFN-3(middle).
+Figure 7.Inference speed at 100 columns and 1,024 test rows absolute (left) and relative toTabPFN-3 (middle).
 Dashed lines are the same checkpoints behind TabPFN-Plus. Right: predicting 1 or 100 test rows against a KV
 cache built over the training rows. On a single test row, TabPFN-3.5 matches the speed of TabPFN-3.
 3.1 Architecture
-The architecture ofTabPFN-3.5retains TabPFN-3 ’s [1] overall design while revising several key compo-
+The architecture ofTabPFN-3.5 retains TabPFN-3 ’s [1] overall design while revising several key compo-
 nents, summarized below.
 Per-cell Encodings.Cells of the table are embedded in three stages: per-cell preprocessing, feature
 grouping, and group embedding (Figure 8). We inherit the missing/infiniteness indicators and the feature
@@ -524,11 +524,11 @@ sine and cosine terms. The two encodings are summed and layer-normalised into th
 10
 
 3.2 Preprocessing
-Unlike previous TabPFN versions,TabPFN-3.5does not rely on additional feature transformations such
+Unlike previous TabPFN versions,TabPFN-3.5 does not rely on additional feature transformations such
 as quantile transformations or robust scaling, and does not augment the dataset with singular value
 decomposition (SVD) components. The improved cell encodings, described above and shown in Figure 8,
 provide a sufficiently expressive representation of each cell for the model to handle diverse datasets
-natively. We still use multiple estimators to form a final prediction: by default,TabPFN-3.5aggregates
+natively. We still use multiple estimators to form a final prediction: by default,TabPFN-3.5 aggregates
 eight and TabPFN-3.5-Fast four estimators that operate on distinct permutations of the dataset.
 3.3 Synthetic Prior
 Our synthetic data generation pipeline closely follows TabPFN-3 [1]. We make some general improvements
@@ -546,14 +546,14 @@ While our open-source release now supports preprocessing of dates and text featu
 further improves on multimodal data. Furthermore,TabPFN-3.5-Plus provides latency-optimized in-
 ference, most notably through FP8 attention that accelerates inference on datasets with many rows
 [53].
-TabPFN-3.5-Thinkingapplies additional inference-time computation on top ofTabPFN-3.5-Plus to
+TabPFN-3.5-Thinking applies additional inference-time computation on top ofTabPFN-3.5-Plus to
 push prediction quality further. Thinking mode composes with native multimodal support, so a single call
 can handle mixed numerical, categorical, date, and text columns under the same inference-time-compute
 regime. We emphasize that our Thinking mode achieves this strong performance while relying only on
 TabPFN-3.5, without using LLMs, real data, internet search, or any other model.
 These models substantially improve onTabPFN-3-Plus andTabPFN-3-Thinking [1]. First, both benefit
 directly from the stronger base model. Second, we have significantly improved their implementation.
-Notably,TabPFN-3.5-Thinking is twelve times faster thanTabPFN-3-Thinking, andTabPFN-3.5-Plus
+Notably, TabPFN-3.5-Thinking is twelve times faster thanTabPFN-3-Thinking, andTabPFN-3.5-Plus
 now comes with inference speed optimizations. The implementation details ofTabPFN-3.5-Plus and
 TabPFN-3.5-Thinking are proprietary and are intentionally not described in this report.
 TabPFN-3.5-Plus and TabPFN-3.5-Thinking are available through our API and through enterprise
@@ -741,7 +741,7 @@ Gulin. CatBoost: unbiased boosting with categorical features.Advances in Neural 
 Processing Systems, 31, 2018.
 [40] Alan Arazi, Eilam Shapira, and Roi Reichart. TabSTAR: A Tabular Foundation Model for Tabular
 Data with Text Fields. InAdvances in Neural Information Processing Systems, volume 38, pages
-172108–172161, 2025. URLhttps://proceedings.neurips.cc/paper_files/paper/2025/file/
+172108–172161, 2025. URL https://proceedings.neurips.cc/paper_files/paper/2025/file/
 faf6e23e198314c7728eaa6ac44ae079-Paper-Conference.pdf.
 [41] Liang Wang, Nan Yang, Xiaolong Huang, Binxing Jiao, Linjun Yang, Daxin Jiang, Rangan Majumder,
 and Furu Wei. Text embeddings by weakly-supervised contrastive pre-training.arXiv preprint
@@ -842,20 +842,20 @@ Scientific Advisors:Madelon Hulsebos, Yann LeCun, Bernhard Schölkopf.
 Founders:Frank Hutter, Sauraj Gambhir, Noah Hollmann.
 B Acknowledgements
 We acknowledge the EuroHPC Joint Undertaking for awarding this project access to the EuroHPC
-supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium through a EuroHPC Regular
-Access call.
-Co-funded by the European Union. Views and opinions expressed are however those of the author(s)
+supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium through a EuroHPC AI
+Factory Large Scale Access call (project EHPC-AIF-2025LS17-014).
+Funded by the European Union. Views and opinions expressed are however those of the author(s)
 only and do not necessarily reflect those of the European Union or the European Commission. Neither
 the European Union nor the European Commission can be held responsible for them. This work was
 supported by the European Union’s Horizon Europe research and innovation programme under grant
 agreement No 101214398 (ELLIOT).
+17
+
 C More Experimental Results
 C.1 Additional details on TabArena
 C.1.1 Tuning trajectories and pairwise win rates on TabArena
 Figure 9 places theTabPFN-3.5family on TabArena’s improvability-against-time plane together with the
 tuning trajectories of the classical baselines: each connected path shows a model’s tuned-and-ensembled
-17
-
 portfolio as the number of random configurations grows from one to all, left to right, with the default
 configuration as the left-most point. Improvability is how much a model would gain by switching to the
 best model on each dataset. Figure 10 gives the pairwise win rates of the same methods over the 816
@@ -1008,10 +1008,7 @@ T abFM+
 T abPFN-3-ThinkingT abFM (default)
 AutoGluon 1.6 (extreme, 4h)
 EXAONE-T abular (default)T abPFN-3.5-Fast (1 est.)
-T abPFN-3 (default)T abICLv2 (default)T abPFN-2.6 (default)
-CatBoost (T+E)RealMLP (T+E)LightGBM (T+E)
-T abDPT-T urbo (default)
-XGBoost (T+E)T abSwift (default)
+T abPFN-3 (default)T abICLv2 (default)T abPFN-2.6 (default) CatBoost (T+E)RealMLP (T+E)LightGBM (T+E) T abDPT-T urbo (default) XGBoost (T+E)T abSwift (default)
 Model B: Loser
 T abPFN-3.5-Thinking
 T abPFN-3.5
@@ -1063,6 +1060,8 @@ Figure 12. Pairwise win rates on
 TabArena-medium(10k–100k training rows) for the
 strongest models on TabArena, over the 135 tasks. See
 Section C.1.2 for the full results.
+18
+
 C.1.2 TabArena leaderboard tables
 We present the leaderboard tables for TabArena, TabArena-small, TabArena-medium, TabArena-
 classification, and TabArena-regression below. Elo, win counts and improvability are computed over the
@@ -1070,8 +1069,6 @@ full TabArena field; the tables show the methods of the report’s figures. Trai
 medians over the datasets of each view of the time per 1,000 rows, measured as described in Section C.1.4.
 In all five views,TabPFN-3.5-Thinkingranks first in Elo.TabPFN-3.5ranks second in every view except
 TabArena-small, where TabFM+ places between the two, andTabPFN-3.5-Fastreaches the Elo of TabFM
-18
-
 on the full benchmark at a fraction of its train and predict time.
 Table 2. TabArena leaderboard using all 51 datasets with 816 total tasks.
 Model Elo (↑) #wins (↑) Improva- Train time Predict time
@@ -1489,7 +1486,7 @@ Figure 16. Comparison with recent tabular foundation models on BeyondArena.Elo s
 support (see text), reported overall and by data slice. TabPFN-3.5 leads overall and across nearly every slice.
 The group identifier is exposed to the TabPFN models and to TabFM on label-per-sample grouped datasets, not
 to EXAONE-Tabular; see Section C.2.3. The labels of the Elo scores are rounded to the nearest multiple of 10.
-(up to 100K rows), minus five datasets:asp_potassco_classification, ljubljana_primary_tumorand
+(up to 100K rows), minus five datasets:asp_potassco_classification, ljubljana_primary_tumor and
 micro_mass have more than ten classes, which TabFM does not support, andsf_permit_time (TabFM
 and EXAONE-Tabular) andpva_revenue_prediction_kddcup98 (TabFM) run out of memory on a
 96GB GPU. This leaves 116 datasets, on which every method is scored on the same splits.TabPFN-3.5
@@ -1517,7 +1514,7 @@ we only evaluate whether passing the group id helps for the default model, not t
 version, so we cannot exclude that these versions would benefit from the group id (though they arguably
 already use the group-aware validation splits).
 On grouped data without large tables, when the group id is included as input,TabPFN-3.5 moves from
-1240 to 1288 Elo (rank 6 to rank 1),TabPFN-3from 1139 to 1176, and TabFM from 1167 to 1187. On
+1240 to 1288 Elo (rank 6 to rank 1),TabPFN-3 from 1139 to 1176, and TabFM from 1167 to 1187. On
 grouped data including large tables,TabPFN-3.5 moves from 1187 to 1267 Elo (rank 9 to rank 4) and
 TabPFN-3 from 1078 to 1108.
 C.3 Additional Results on STRABLE
@@ -1566,7 +1563,7 @@ string encodings; four of these also feature variants withe5-small-v2embeddings.
 baselines that process raw text directly: CatBoost [39], ConTextTab [36], and TabSTAR [40].
 When evaluating pipelines equipped withe5-small-v2embeddings, the relative rankings remain consistent:
 TabPFN-3.5 narrowly outperforms TabPFN-2.5, albeit by a smaller margin than observed with TF-IDF.
-Crucially,TabPFN-3.5-Thinkingand TabPFN-3.5-Plus, which process the raw text directly, retain the
+Crucially, TabPFN-3.5-Thinking and TabPFN-3.5-Plus, which process the raw text directly, retain the
 first and second positions on the overall leaderboard by a substantial margin. Finally, consistent with the
 official STRABLE benchmark findings, TF-IDF generally proves to be the stronger text representation.
 This aligns with the nature of the strings in the benchmark, which are mostly short entries rather than
@@ -1823,14 +1820,14 @@ median +1.3%
 Per dataset vs TabPFN-3
 Figure 22. ScoringBench.Left: mean rank on CRPS across the 101 datasets for the top 12 of 53 methods;
 folds are averaged per dataset, methods ranked within each dataset, and ranks averaged. Lower is better;
-TabPFN-3.5 and TabPFN-3.5-Fastin plum. Right: per-dataset relative CRPS improvement ofTabPFN-3.5over
+TabPFN-3.5 and TabPFN-3.5-Fastin plum. Right: per-dataset relative CRPS improvement ofTabPFN-3.5 over
 TabPFN-3, sorted; positive bars are datasets TabPFN-3.5 wins (85 of 101, one-sided sign testp= 8×10−13,
 median+1 .3%). Published methods are ScoringBench’s own committed results;TabPFN-3re-run under the same
 code reproduces its published CRPS to within10−3 relative.
 C.8 Details on the benchmark overview table
 Table 1 summarises the seven tabular benchmarks of this report in one table. This section states how
 each column is computed.
-Family member.Each benchmark is represented by the bestTabPFN-3.5family member evaluated
+Family member.Each benchmark is represented by the bestTabPFN-3.5 family member evaluated
 on it: TabPFN-3.5-Thinking on TabArena, BeyondArena, STRABLE and MulTaBench (on STRABLE
 and MulTaBench insideTabPFN-3.5-Plus, which handles the raw text columns); TabPFN-Rel (3.5), the
 internal preview of the TabPFN-Rel harness [6] onTabPFN-3.5-Plus, on RelArena-α; andTabPFN-3.5

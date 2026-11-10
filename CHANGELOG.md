@@ -4,6 +4,14 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-11-10
+
+- Refreshed four papers from arXiv: TabPFN-3 to v3 and TabPFN-3.5 to v3 (both 3 November), Xu et al. to v2 (3 November) and Klötergens et al. to v2 (4 November). TabPFN-3, TabPFN-3.5 and Klötergens moved to `papers/2026/11_…` with `git mv`. Their text was regenerated and hashes and versions were recorded in `papers/version_updates.json`. Summary entries, overview rows and timeline rows moved to November with their anchors unchanged. Titles are unchanged, and Zotero records and attachments were not modified.
+- TabPFN-3 v3 and TabPFN-3.5 v3 change only typesetting, the LUMI funding acknowledgement and (TabPFN-3) one reference; methods, tables and numbers are unchanged. Only their provenance lines were updated.
+- Klötergens v2 is a rewrite with unchanged numbers. It derives the tests from the Kolmogorov consistency conditions and proves that every violation lower-bounds the distance to the data-generating distribution (Proposition 3). It also measures the regression discretisation floor on a consistent Gaussian process and notes a missing-value implication. The summary was rewritten, v1's evaluation-suite and post-hoc reconciliation claims were removed, and the SYNTHESIS behavioural-probe passage and timeline row now carry the error bound and its quadratic weakness.
+- Xu v2 keeps the main text and adds the appendix v1 omitted (full results, proofs and a real-world agentic experiment). The summary now gives the tabulated results. It corrects the "first on every benchmark" reading: on RelBench v1 regression, KumoRFM-2 ranks ahead of every TFM-based method. The resolved cross-reference limitation was removed, and the SYNTHESIS relational passage was qualified.
+- TFM snapshot refresh: gitingest 0.3's 5-second HTTP HEAD existence probe misreported slow GitHub responses as missing repositories. The refresher now checks existence with `git ls-remote`, with a regression test. All 25 registered snapshots were refreshed.
+
 ## 2026-11-03
 
 - Completed the Beyond IID v2 evidence review: updated peak-performance shares (50% wins plus 20% ties), figure pointers and NeurIPS track provenance, and integrated the added size-controlled/no-imputation analysis. Large and grouped data remain significant weaknesses; aggregate temporal/feature effects are confounded with size.

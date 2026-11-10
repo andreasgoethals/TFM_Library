@@ -123,6 +123,54 @@
       "previous_sha256": "6a26d5fd208685af68634ad32a1356e9630caee2d1e04cce80cfed5964d2c1c6",
       "retrieved": "2026-11-03",
       "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2605.13986",
+      "version": 3,
+      "filed_version_date": "2026-11-03",
+      "source_url": "https://arxiv.org/pdf/2605.13986v3",
+      "path": "papers/2026/11_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf",
+      "sha256": "5a249b09618318539d7cc30e919a560ae4c730635603547f99000c2e50b31b96",
+      "previous_path": "papers/2026/05_Grinsztajn_et_al._TabPFN_3_Technical_Report.pdf",
+      "previous_sha256": "68825024d264813f2f094769cbfac5ad9e887883472a50f0c73e1558c6ac4bc7",
+      "retrieved": "2026-11-10",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2608.06004",
+      "version": 2,
+      "filed_version_date": "2026-11-04",
+      "source_url": "https://arxiv.org/pdf/2608.06004v2",
+      "path": "papers/2026/11_Klotergens_et_al._Do_Tabular_Foundation_Models_Agree_with_Themselves.pdf",
+      "sha256": "c7249b80211e20845d3be9efc87e1c34d57540ab2976d5b0c483819d44f31462",
+      "previous_path": "papers/2026/08_Klotergens_et_al._Do_Tabular_Foundation_Models_Agree_with_Themselves.pdf",
+      "previous_sha256": "69e27826e6f3797a0e65c87520e82f2142b266f337ad081f0f601f6fdd1dd6a5",
+      "retrieved": "2026-11-10",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2609.17895",
+      "version": 3,
+      "filed_version_date": "2026-11-03",
+      "source_url": "https://arxiv.org/pdf/2609.17895v3",
+      "path": "papers/2026/11_Jager_et_al._TabPFN_3.5_Technical_Report.pdf",
+      "sha256": "0e50f83266778eca44e111000c74ae60edc566a66b848e9658798f407cb74317",
+      "previous_path": "papers/2026/09_Jager_et_al._TabPFN_3.5_Technical_Report.pdf",
+      "previous_sha256": "b72ca80ea1bfeeba2f66dc0a2ca695bb16ed7a50b3780a5c5483e8172700c786",
+      "retrieved": "2026-11-10",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
+    },
+    {
+      "arxiv": "2611.02936",
+      "version": 2,
+      "filed_version_date": "2026-11-03",
+      "source_url": "https://arxiv.org/pdf/2611.02936v2",
+      "path": "papers/2026/11_Xu_et_al._Why_Tabular_Foundation_Models_Excel_on_Relational_Data_They_Have_Never_Seen.pdf",
+      "sha256": "6d340b5b81ecbfa1dd6755173e22517e20654940c222729c9d490e9ee2fbf2b0",
+      "previous_path": "papers/2026/11_Xu_et_al._Why_Tabular_Foundation_Models_Excel_on_Relational_Data_They_Have_Never_Seen.pdf",
+      "previous_sha256": "23844c754c284d8e70492e334233a722fe7aa70f42289fe0073b592f030fa36e",
+      "retrieved": "2026-11-10",
+      "zotero_attachment": "Existing Zotero records and attachments preserved unchanged; repository revision refreshed from the primary arXiv source."
     }
   ]
 }

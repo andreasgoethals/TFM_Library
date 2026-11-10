@@ -32,7 +32,7 @@ new model from scratch to address each new predictive task of interest may be pr
 or expensive, which motivates a new class of foundation models (FMs) specifically tailored for RDBs.
 Among others, these vary from LLM-based approaches that digest serialized RDB content (Wydmuch
 et al., 2024), to specialized Transformers pre-trained based on in-context learning (ICL) (Fey et al.,
-2025; Hudovernik et al., 2026; Ranjan et al., 2026c; Wang et al., 2026), the common theme in each
+2025; Hudovernik et al., 2026; Ranjan et al., 2026c; Wang et al., 2026b), the common theme in each
 case being afrozenarchitecture capable of making predictions involving arbitrary unseen RDBs.
 As a robust and scalable alternative, it has recently been demonstrated thatsingle-table FMs(aka
 TFMs), when combined with suitable parameter-free subgraph encoders for capturing multi-table
@@ -47,7 +47,7 @@ explain this phenomenon and broader merits of TFMs. Specifically, we show that T
 approaches: (i) naturally handle varying degrees of relational context, forming a continuum from
 ∗Correspondence to linjiexu@hkushxlab.com and davidwipf@gmail.com.
 1
-arXiv:2611.02936v1  [cs.AI]  2 Nov 2026
+arXiv:2611.02936v2  [cs.AI]  3 Nov 2026
 
 single-tables to rich RDB schemas; (ii) transfer desirable asymptotic properties to RDB use
 cases, helping to compensate for mismatches between pre-training prior and practical deployment
@@ -58,13 +58,11 @@ The goal of an RDB foundation model is to retain applicability across unseen RDB
 retraining for each new predictive task. Beyond direct LLM-prompting approaches (Wydmuch et al.,
 2024), we now discuss recent pipelines designed to natively handle RDB/tabular data.
 2.1 PREDICTIVEMODELING WITHRELATIONALCONTEXT
-Suppose we have training data {xi, yi}n
-i=1 ={X,y} composed of instance feature rows xi ∈ X d
-along with associated instance labels yi ∈ Y for all i. The objective is to learn a parameterized
+Suppose we have training data {xi, yi}n i=1 ={X,y} composed of instance feature rows xi ∈ Xd
+along with associated instance labels yi ∈ Yfor all i. The objective is to learn a parameterized
 model fθ that achieves fθ(xtest)≈y test at any test point {xtest, ytest}, where in practice ytest is unknown.
 RDB predictive modeling generalizes this canonical ML scenario by integrating an additional set of
-auxiliary data tables T={T k}K
-k=1, where T k ∈T nk×dk denotes the k-th table associated with a
+auxiliary data tables T={T k}K k=1, where T k ∈T nk×dk denotes the k-th table associated with a
 given entity type. Each table row corresponds with a single instance of that entity (e.g., a purchased
 item), while columns reflect heterogeneous instance attributes (e.g., product information). Note that
 w.l.o.g., we also assume T 1 =X . Lastly, an RDB also includes a set of relations R expressed as
@@ -74,14 +72,13 @@ FMs leverage these auxiliary tables for making predictions.
 2.2 COMPUTINGRDB EMBEDDINGS
 To make use of relational context for predictive tasks, the basic strategy is to first convert a given
 labeled RDB D:={T,R,y} to a heterogeneous graph G. This typically involves treating each table
-T k as a node type and each row i within a given T k as a node with features tk
-i (Cvitkovic, 2020;
+T k as a node type and each row i within a given T k as a node with features tk i (Cvitkovic, 2020;
 Dwivedi et al., 2025; Fey et al., 2023; Zhang et al., 2023a;b). Directed edges can then be formed
-using each PK-FK pair within R. We next sample H-hop subgraphs or ego-networks GH(xi) from
+using each PK-FK pair within R. We next sample H-hop subgraphs or ego-networks GH (xi) from
 G that are centered at each target row xi within X. Importantly, sampling fortemporalRDBs should
 exclude nodes with time-stamps later than xi. These subgraphs form the input to an RDB encoder
 gϕ, instantiated as some form of graph neural network or Transformer architecture with (optional)
-parametersϕ. This facilitates computation offixed-lengthembeddingsz i =g ϕ[GH(xi)]∈R dz.
+parametersϕ. This facilitates computation offixed-lengthembeddingsz i =g ϕ[GH (xi)]∈R dz.
 2.3 COMBINING WITHRDB PREDICTIONHEADS
 Schema-agnostic models.Provided the encoder gϕ is designed to digest a broad spectrum of input
 RDB schema using a shared representational form, then it is possible to train a single composite
@@ -91,22 +88,21 @@ y|z test)≡q θ
 
 y|g ϕ
 
-GH(xtest)
+GH (xtest)
 
 to assign high probability to labels y=y test (or y≈y test
 for regression tasks) across a range of real-world RDBs (Ranjan et al., 2026a; Wang et al., 2025; Wu
 et al., 2025). Here xtest can be viewed as an additional unlabeled row(s) appended to X. Such models
 can in principle be applied to new unseen RDBs without further training.
 Pre-trained ICL-based models.A limitation of the schema-agnostic models from above is that the
-effective context available for making predictions is merely the subgraphGH(xtest), which in isolation
+effective context available for making predictions is merely the subgraphGH (xtest), which in isolation
 may not contain sufficient information pertaining to broader labeling patterns across a vast RDB.
 In-context learning (ICL) provides a natural workaround by granting the prediction head diverse
 samples of multiple analogous subgraphs extracted from each new RDB of interest. Specifically,
 ICL-based architectures derive predictions from the revised distribution
 qθ
 
-y|z test,S n),withS n ={z i, yi}n
-i=1,z=g ϕ[GH(x)],
+y|z test,S n),withS n ={z i, yi}n i=1,z=g ϕ[GH (x)],
 where ztest and each zi are obtained by passing unlabeled and labeled rows of X through the
 shared encoder gϕ. It is also possible to apply gϕ to revised tabular embeddings U k ←T k rather
 than original tables (Hudovernik et al., 2026). The prediction head qθ is implemented via various
@@ -217,16 +213,16 @@ versions (the latter including proprietary text handling and unknown RDB-related
 RDB-native FMs, we include a variety of both open-source and closed-source options with published
 results based on author-specific tuning. Note that most models only provide results on a subset of
 available benchmarks. Lastly, we cover a handful of supervised baselines that represent either SOTA
-performance or classical methodology as a reference point. The appendix includes all baseline model
+performance or classical methodology as a reference point. Appendix E includes all baseline model
 descriptions as well as further details of how results were obtained.
-Results.We compare across a suite of six diverse benchmarks from the appendix, each composed
+Results.We compare across a suite of six diverse benchmarks from Appendix E, each composed
 of multiple RDB predictive tasks. We remark that it is routine to only report results on RelBench-
 v1 datasets/tasks (J ¨ager et al., 2026; Hayler et al., 2026; Kothapalli et al., 2026; Ranjan et al.,
 2026a;c), which are also equivalent to recent RelArena-α task designations at the time of this writing
 (Hayler et al., 2026). But this poses greater risk of overfitting to limited benchmarking data, e.g.,
 settings/architectures suitable for RelBench-v1 need not always translate to stronger performance
-elsewhere. For the expanded benchmark set considered here, results are shown in Figure 1 and the
-appendix, where TFM-based approaches achieve the best performance among all FMs, including
+elsewhere. For the expanded benchmark set considered here, results are shown in Figure 1 and
+Appendix E.4, where TFM-based approaches achieve the best performance among all FMs, including
 even several variants that may involve pre-training with RDBs structured similarly to the benchmarks.
 We stress that RDBLearn and TabPFN-Rel-OSS were run directly from open-source repositories for
 all benchmarks with no task-specific pipeline adjustments andzero exposure to RDB data of any kind
@@ -261,24 +257,24 @@ exist, then we simply chose a numerical column and quantize intoBbins.
 categories obtained from step 1 above. Treat the lone column withinT 2 as a PK, and the original
 categorical column withinT 1 as an FK.
 3. To induce more complex schema, we may optionally repeat steps 1–2 using otherT 1 columns.
-4. Form subgraphs GH(x) seeded at any row x; provided H≥2 , these neighborhoods will include
+4. Form subgraphs GH (x) seeded at any row x; provided H≥2 , these neighborhoods will include
 multiple nodes associated with different rows of X. This is because the first hop reaches an
-induced T k (k >1 ), while any second hop returns to T 1. In doing so, cross-row relational
-dependencies are introduced via the edges withinG H(x)(Gan et al., 2024).
+induced T k (k >1), while any second hop returns to T 1. In doing so, cross-row relational
+dependencies are introduced via the edges withinG H (x)(Gan et al., 2024).
 5. Define the label generation function
 y=ψ
 
 (1−τ)f 1(x, ε1) +τ f2
 
-GH(x)\x, ε2
+GH (x)\x, ε2
 
 ,(1)
-where τ∈[0,1] represents a continuation parameter and {ε1, ε2} ∈R 2 are exogenous noise
+where τ∈[0,1] represents a continuation parameter and {ε1, ε2} ∈R2 are exogenous noise
 factors. Meanwhile, f1 and f2 are functions mapping their respective domains to a shared
 r-dimensional embedding spaceR r, after whichψ:R r → Yconverts to the final label space.
-Continuum perspective.Any possible conditional distribution p(y|G H(x)) can in principle be
+Continuum perspective.Any possible conditional distribution p(y|G H (x)) can in principle be
 obtained by generating data via step 5, subject to mild regularity conditions (Peters et al., 2017)[Propo-
-sition 4.1]; likewise for special cases p(y|x) (when τ= 0 ) and p(y|G H(x)\x) (when τ= 1 ). Hence
+sition 4.1]; likewise for special cases p(y|x) (when τ= 0 ) and p(y|G H (x)\x) (when τ= 1 ). Hence
 given any set of tabular features, we can always generate a continuum of rich label distributions with
 varying degree of relational dependency, ranging from the canonical single-table regime (τ= 0 ) to
 an interconnected multi-table structure (τ̸= 0 ). We emphasize that our point here is not to replicate
@@ -294,7 +290,7 @@ candidates for navigating relational continuums, providing a strong initial plau
 their usage on RDBs. Conversely, if an alternative RDB FM does not work well on single-tables,
 what about performance on RDBs that are minimally different from single tables, and so on? Again,
 these considerations motivate RDB FMs that explicitly handle a broad relational spectrum as TFMs
-already do. In the appendix we closely examine limitations of adopting interpolation/ensembling
+already do. In Appendix A.1 we closely examine limitations of adopting interpolation/ensembling
 4
 
 shoppers
@@ -327,17 +323,17 @@ KumoRFM-2
 RT-J
 Figure 2: Classification/Regression performance on RDBs induced from single-table temporal data.
 between single-table FMs and RDB FMs as a simplistic workaround, proving a pessimistic bound
-(Proposition ??) that occurs even with very minor modeling constraints. See also the appendix for
+(Proposition A.3) that occurs even with very minor modeling constraints. See also Appendix A.2 for
 broader benchmarking implications of the continuum perspective.
 Empirical implications.We empirically probe implications of the continuum perspective, par-
 ticularly the behavior of RDB FMs operating near single-table regimes. For this purpose, we first
 collect a set of tabular datasets (originally single table), whereby train/test splits are temporal as in
-typical RDB scenarios; see the appendix for all setup details. We then induce RDBs using steps 1–4
+typical RDB scenarios; see Appendix F for all setup details. We then induce RDBs using steps 1–4
 from above; however, we retain the original dataset labels to maintain real-world authenticity. Note
 that these datasets, designed to test non-IID temporal shifts, may already exhibit small degrees of
 cross-row dependency even without artificially inducing such dependencies via (1). We compare
 TFM-based RDBLearn against the top RDB FMs (non-TFM-based) KumoRFM-2 (Hudovernik et al.,
-2026) and RT-J (Ranjan et al., 2026b;c) in Figure 2 and the appendix. We also include TabPFN-v3
+2026) and RT-J (Ranjan et al., 2026b;c) in Figure 2 and Appendix F. We also include TabPFN-v3
 (Grinsztajn et al., 2026) as a non-relational baseline (also shared as the RDBLearn base model).
 Overall, RDBLearn shows the best performance among RDB FMs, demonstrating the ability to
 mostly discard distracting relational effects that are not necessary for making predictions. Meanwhile,
@@ -350,31 +346,29 @@ TabPFN-Rel simply take these observations one step further by dispensing with po
 RDB-specific pre-training altogether. Either way, it is our view that Figure 2-style benchmarking
 represents an informative hurdle for RDB FMs to pass. It is also worth noting that on three regression
 tasks, RDB FMs actually surpass the performance of the non-relational baseline, and the RDBLearn
-average regression performance modestly exceeds TabPFN-v3 (see the appendix).
+average regression performance modestly exceeds TabPFN-v3 (see Appendix F).
 5 LOCALITYCONSIDERATIONSFAVORTFM USAGE
 We now turn to an RDB generative process that facilitates the study of locality-based necessary
 conditions for removing bias. We then find that TFMs, with uniformly drawn ICL samples produced
 by a suitableg pf, allow us to approximately satisfy these conditions with RDB data.
 5.1 NECESSARYCONDITIONS FORUNBIASEDRDB FMS
 Definition 5.1.(continual RDB generation) Let P denote a set of RDB distribution sequences
-ρ:={p n}∞
-n=m, while Dn ∼p n is an RDB associated with ρ for any n > m≥0 . We stipulate that
-all such Dn include a table T 1 composed of labeled rows {xi, yi}n
-i=0. These labels are assumed to
+ρ:={p n}∞ n=m, while Dn ∼p n is an RDB associated with ρ for any n > m≥0. We stipulate that
+all such Dn include a table T 1 composed of labeled rows {xi, yi}n i=0. These labels are assumed to
 follow the conditional p
 
-yi|GH(xi)
+yi|GH (xi)
 
 that does not vary across n, but may vary with different ρ∈ P
 (in contrast, we do not prevent the marginal p
 
-GH(xi)
+GH (xi)
 
 from varying across n and ρ). We treat
-{GH(x0), y0} ≡ {G H(xtest), ytest}as a test sample that remains fixed acrossn.
+{GH (x0), y0} ≡ {GH (xtest), ytest}as a test sample that remains fixed acrossn.
 By design, Definition 5.1 allows us to consider distributions of RDBs whereby the overall size and
 number of ICL samples is growing indefinitely (these may extend into the past if timestamps are
-involved), but with a fixed evaluation point{GH(xtest), ytest} (akin to typical IID tabular cases). And
+involved), but with a fixed evaluation point{GH (xtest), ytest} (akin to typical IID tabular cases). And
 5
 
 even if real-world RDBs are not generated in exactly this way, with modest assumptions, the same
@@ -385,17 +379,7 @@ Consider a scenario where, as n becomes large, a given RDB FM achieves two desir
 conditioned on an encoder output, tends to zero. Mathematically, these conditions manifest as
 qθ
 
-ytest | {z i, yi}n
-i=1,z test
-
-−E Dn∼pn
-
-qθ
-
-ytest | {z i, yi}n
-i=1,z test
-
-→0(variance)
+ytest | {zi, yi}n i=1,z test  −E Dn∼pn  qθ  ytest | {zi, yi}n i=1,z test  →0(variance)
 p
 
 ytest |z test
@@ -404,16 +388,12 @@ ytest |z test
 
 qθ
 
-ytest | {z i, yi}n
-i=1,z test
+ytest | {zi, yi}n i=1,z test  →0(bias) (2)
+almost surely as asn→ ∞. We are assuming here thatz=g ϕ
 
-→0(bias) (2)
-almost surely as asn→ ∞ . We are assuming here thatz=g ϕ
+GH (x)
 
-GH(x)
-
-and that {pn}∞
-n=m represents
+and that {pn}∞ n=m represents
 a sequence of RDB distributions adhering to the generative process from Definition 5.1; likewise for
 p
 
@@ -425,28 +405,16 @@ conditions on a given{q θ, gϕ}for achieving (2), noting thatg pf is a special 
 Proposition 5.2.Given an RDB FM defined by some {qθ, gϕ}, and every ρ∈ P adhering to
 Definition 5.1, assume (2) holds and that p
 
-yi|GH(xi)
+yi|GH (xi)
 
 =p
 
 yi|zi
 
-∀i= 0, . . . , n . Then for any
+∀i= 0, . . . , n. Then for any
 ˇρ∈ P(and associated label generatorˇp) there exists a sequenceεn →0such that almost surely
-qθ
-
-ytest | {z i, yi}n
-i=1,z test
-
-−q θ
-
-ytest | {ˇzi,ˇyi}n
-i=1,z test
- n→∞
-− − − − →0,(3)
-where samples {zi, yi}n
-i=1 are extracted from Dn ∼p n, samples {ˇzi,ˇyi}n
-i=1 from ˇDn ∼ˇpn, and
+qθ  ytest | {zi, yi}n i=1,z test  −q θ  ytest | {ˇzi,ˇyi}n i=1,z test  n→∞ − − − − →0,(3)
+where samples {zi, yi}n i=1 are extracted from Dn ∼p n, samples {ˇzi,ˇyi}n i=1 from ˇDn ∼ˇpn, and
 p
 
 y|z
@@ -455,31 +423,26 @@ y|z
 
 y|z
 
-if∥z−z test∥ ≤ε n.
+if∥z−z test∥ ≤εn.
 Intuitively, this result merely indicates that if we wish to obtain unbiased estimates of the label across
 broad distributional settings within P (as required by RDB foundation models in particular), then the
 output of our decoder function qθ should depend only on ICL samples with encoder representations
 zi that arecloseto the test representationz test. Note that
-{zi, yi}n
-i=1 ={z i, yi}zi∈Ωn ∪ {zi, yi}zi̸∈Ωn withΩ n ={z:∥z−z test∥ ≤ε n},(4)
-while {ˇzi,ˇyi}n
-i=1 decomposes analogously. When n grows large, elements of the sets {zi, yi}zi∈Ωn
-and {ˇzi,ˇyi}ˇzi∈Ωn become indistinguishable as Ωn collapses around ztest, hence they may influence
-the output of qθ without conflicting with (3). In contrast, remaining samples not in Ωn must have
+{zi, yi}n i=1 ={z i, yi}zi∈Ωn ∪ {zi, yi}zi̸∈Ωn withΩ n ={z:∥z−z test∥ ≤εn},(4)
+while {ˇzi,ˇyi}n i=1 decomposes analogously. When n grows large, elements of the sets {zi, yi}zi∈Ωn
+and {ˇzi,ˇyi} ˇzi∈Ωn become indistinguishable as Ωn collapses around ztest, hence they may influence the output of qθ without conflicting with (3). In contrast, remaining samples not in Ωn must have
 negligible influence for (3) to hold. This dependency onlocalityallows the FM to differentiate RDBs
 that have similar behavior around any given test point, but increasing separation elsewhere. We next
 discuss the implications for RDB FM design types, particularly those based on TFMs.
 5.2 NATURALALIGNMENT WITHSINGLE-TABLEFMS.
 Uniform ICL sampling.When choosing ICL samples, we would like at least some associated
-with encoder representations {zi}n
-i=1 that are reasonablycloseto the test point representation ztest, as
+with encoder representations {zi}n i=1 that are reasonablycloseto the test point representation ztest, as
 required for unbiased estimation per Proposition 5.2. In the absence of domain-specific knowledge
 or strong a priori assumptions such as homophily,1 we may not know in advance where these close
 samples will be located in a given RDB. And yet FM architectures should ideally address wide-
 ranging conditions with a shared data-agnostic strategy. Along these lines, uniform sampling (from
 rows of X with historical timestamps) is reasonable for approximating the full RDB context across
-generic new tasks, leading to at least some coverage of any newztest with select elements of {zi}n
-i=1.2
+generic new tasks, leading to at least some coverage of any newztest with select elements of {zi}n i=1.2
 Moreover, in a sufficiently large RDB these uniform samples may even behave roughly as though
 they were IID, mirroring the single-table distributions for which TFMs were originally pre-trained.
 This alignment can play a critical role in achieving more robust performance as the number of ICL
@@ -494,23 +457,18 @@ can still uniformly sample across all RDB neighborhoods satisfying a time differ
 6
 
 Leveraging Single-Table PPDs.Given some RDB D drawn from ground-truth distribution pgt, sup-
-pose we extract samples {GH(xi), yi}n
-i=1 and test point {GH(xtest), ytest}={G H(x0), y0} satisfying
+pose we extract samples {GH (xi), yi}n i=1 and test point {GH (xtest), ytest}={G H (x0), y0} satisfying
 pgt
 
-{GH(xi), yi}n
-i=0
-
-≈
-nY
+{GH (xi), yi}n i=0  ≈ nY
 i=0
 pgt
 
-GH(xi), yi
+GH (xi), yi
 
 andp gt
 
-yi|GH(xi)
+yi|GH (xi)
 
 ≈p gt
 
@@ -520,7 +478,7 @@ yi|zi)
 These may be reasonable approximations if (i) uniform sampling is conducted over a sufficiently
 large RDB, and (ii) the embeddings zi adequately reflect the dominant sources of discriminative
 information within H-hop neighborhoods. Granting the assumptions from (5) hold as n grows large,
-we may directly borrow an existing prior µ oversingle-tabledistributions q∈ Q satisfying mild
+we may directly borrow an existing prior µ oversingle-tabledistributions q∈ Qsatisfying mild
 regularity conditions (Nagler, 2023). We then form a PPD that converges towards the ground-truth as
 pppd
 
@@ -568,8 +526,7 @@ satisfied in regions around ztest. In so doing we effectively align RDB neighbor
 of input data previously applied to successful TFMs, transferring similar efficacy.
 5.3 LIMITATIONS OFALTERNATIVEPOSSIBILITIES
 Bias from non-uniform sampling.The distance between local RDB neighborhoods, as arbitrated
-by encoder representations {zi}n
-i=1, determines the notion of locality upon which Proposition 5.2
+by encoder representations {zi}n i=1, determines the notion of locality upon which Proposition 5.2
 is based. But it is nonetheless useful to contrast this notion with distinct options adopted by other
 types of RDB FMs. For example, the latest SOTA relational Transformer instantiation RT-J (Ranjan
 et al., 2026b;c), based on RDB-specific pre-training with real-world RDB data, involves forming ICL
@@ -591,15 +548,15 @@ asymptotic regime, and the resulting PPD may bear little resemblance to the targ
 
 ytest|ztest
 
-.
-See the appendix for a simple example whereby random-walks stall around the test node, failing to
+. See
+Appendix C.2 for a simple example whereby random-walks stall around the test node, failing to
 capture samples that lie elsewhere in the RDB as required to produce a meaningful PPD (the core
 issue is that G is disconnected). Hence instead of having n approximately IID samples from some
-pgt(GH(x), y) (as with uniform sampling matched with a single-table prior µ), with random walk
+pgt(GH (x), y)(as with uniform sampling matched with a single-table prior µ), with random walk
 sampling we instead have justone samplefrom a much more complex, entangled joint distribution
 pgt
 
-{GH(x0), y0,}, . . . ,{G H(xn), yn}
+{GH (x0), y0,}, . . . ,{GH (xn), yn}
 
 . This dramatically increases the necessity of an accurate
 RDB-specificpre-training data prior to resolve ambiguity in the resulting PPD, as (6) need not hold
@@ -619,7 +576,7 @@ pipelines still hold some sway. Plausibly, loose IID approximations with even mo
 effects as n grows large might often generalize better in new domains than highly-complex, entangled
 priors that do not factorize over ICL sample sets
 
-{GH(x0), y0,}, . . . ,{G H(xn), yn}
+{GH (x0), y0,}, . . . ,{GH (xn), yn}
 
 .
 6 ADEQUATEENCODEREXPRESSIVITY EVEN WITHNO PARAMETERS
@@ -627,7 +584,7 @@ We next address possible expressivity limitations associated with gpf usage, the
 allows TFMs to avoid any RDB-specific training or pre-training. A natural presumption here is that
 parameter-free encoders place a potentially-burdensome restriction on the types of RDB neighborhood
 representations available for constructing ICL samples. We analyze this concern through a case study
-involving interaction terms, where we find that the added expressivity of parameterized encodersgϕ
+involving interaction terms, where we find that the added expressivity of parameterized encoders gϕ
 need not provide an unequivocal advantage over the much simplerg pf adopted by TFMs.
 Interaction terms as a case study.Prior work has noted that parameter-free encoders that process
 RDB columns individually (as mentioned in Section 3 and adopted by RDBLearn/TabPFN-Rel)
@@ -638,24 +595,22 @@ target tableT 1 =yand a child tableT 2 = [a,b]composed of two binary feature col
 A PK associated with each row of T 1 is linked by FKs to one or more rows of T 2, where Ri denotes
 the set of rows within T 2 that have FKs pointing to the PK associated with row i in T 1. Ground-truth
 labels are then constructed to satisfy
-yi = max
-j∈Ri
-[aj ∧b j]∀i.(7)
+yi = max j∈Ri [aj ∧b j]∀i.(7)
 Clearly the element-wise interactions aj ∧b j determine the label, and so the argument goes, excluding
 such interactions is disproportionately problematic within any gpf that encodes columns separately as
 advocated by Xu et al. (2026). We provide three counter-points to this concern:
 Alllossy encoding involves negative counter-examples.The labels computed via (7) involve a
 binary function over a 2|Ri|-dimensional input space, giving 22|Ri| = 4|Ri| possible input config-
 urations.But this is just one possible function sharing this input range. Assuming no permutation
-invariance across rows, there are2(4|Ri |) distinct binary functions expressible over the same input
+invariance across rows, there are 2(4|Ri |) distinct binary functions expressible over the same input
 space. Without external knowledge mandating which function is correct, an encoder that fails to
 losslessly preserve the entire input range will make it impossible to guarantee that a subsequent
 decoder can determine the correct labeling rule; a single missing bit can flip any labeling rule leading
 to errors within an arbitrary downstream classifier.
 More broadly, all lossy encoding,whether parameterized or not, opens up a set of inevitable counter-
 examples, whereby learning the correct function is infeasible; see Xu et al. (2026)[Proposition 4.2] as
-one representative scenario. This remains true even if task-specific labels are included within GH(x);
-more on this in the appendix. Consequently, the primary differentiating consideration is not whether
+one representative scenario. This remains true even if task-specific labels are included within GH (x);
+more on this in Appendix B. Consequently, the primary differentiating consideration is not whether
 counter-examples exist; rather, what matters is the relative frequency with which encoder-specific
 counter-examples appear in real-world RDBs. 3 In general, functional expressivity is likely more
 critical insupervisedscenarios, where trainable degrees-of-freedom can be mapped to task-specific
@@ -672,8 +627,8 @@ columns. Excluding all higher-order interactions, there will still exist a quadr
 number of candidate interaction terms as the number of columns grow. Without knowing in advance
 which are important, lossy encoder compression,parameterized or not, will create the potential for
 prediction errors (i.e., there will always be cases where needed interaction signal depends on missing
-information). The appendix analyzes how historical labels within GH(x) cannot generally resolve
-this ambiguity under certain settings.
+information). Appendix B analyzes how historical labels within GH (x) cannot generally resolve this
+ambiguity under certain settings.
 Parameter-free encoders can (sometimes) handle interactions.For arguments sake, the pre-
 sumption thus far in this section has been that a column-wise parameter-free gpf cannot represent
 interaction terms. But actually, this is not strictly true for the following two reasons. First, models
@@ -689,7 +644,7 @@ admittedly not practically feasible to implement), even just a single aggregatio
 of reconstructing the full set (Rubio-Madrigal & Burkholz, 2026); this conclusion follows from the
 Kolmogorov-Arnold representation theorem (Schmidt-Hieber, 2021).
 Interaction experiments.We conduct multiple tests to explore the impact of interaction terms;
-see the appendix for full details. For the first, we generalize the setup of (7) to include 4 different
+see Appendix G for full details. For the first, we generalize the setup of (7) to include 4 different
 interaction types involving columns {a,b} in T 2; we then compare TFM-based RDBLearn against
 the top non-TFM-based RDB FMs, KumoRFM-2 and RT-J. Figure 3 (left) shows the prediction
 results as the width of T 2 is increased by adding uninformative columns. These distracting columns
@@ -699,7 +654,7 @@ because the implicit graph is disconnected, which can disrupt the collection of 
 (see Section 5.3). Meanwhile, RDBLearn is consistently competitive with KumoRFM-2, and actually
 displays more stable performance across table width. This occurs because the aggregated features
 from gpf can be combined by the subsequent TFM, at times forming usable approximations despite
-not explicitly computing most interaction terms (see further details in the appendix). Although we do
+not explicitly computing most interaction terms (see further details in Appendix G). Although we do
 not pursue further here, expanding the aggregation set within gpf can in principle reduce RDBLearn
 prediction errors beyond what is shown.
 For the second test, we begin with the rel-trial dataset (Robinson et al., 2024) and compute new
@@ -713,7 +668,7 @@ to differentiate, on a task-specific basis, informative versus non-informative f
 otherwise. There are (at least) three candidate stages where such feature screening may plausibly take
 place: symbolically prior to any FM application, viareasoning agentswith access to task-dependent
 meta-data or domain expertise (stage 1); locally at the RDB encoder level using whatever context is
-available within GH(x) (stage 2); and globally at the decoder level in a purely data-driven manner,
+available within GH (x) (stage 2); and globally at the decoder level in a purely data-driven manner,
 using the full range of labeled ICL samples (stage 3). It is our assertion that TFM-based models
 are particularly adept at utilizing all three stages ascomplements, particularly because their gpf can
 reduce potential interference between stages. In support of this conjecture, we offer the following:
@@ -755,19 +710,19 @@ embeddings result from stacked Transformer layers, e.g., there is no obvious way
 if a valuable interaction term is attenuated or absent altogether.
 Empirical corroboration.Consider the hypothetical scenario whereby an agent (stage 1) with
 domain knowledge materializes a golden feature; namely, an interaction term which determines the
-downstream label is added as a new column (see the appendix). Figure 3 (right) results show that
+downstream label is added as a new column (see Appendix G). Figure 3 (right) results show that
 RDBLearn leverages this information to consistency boost performance in line with the three-stage
 perspective from above. RT-J and KumoRFM-2 experience more modest gains, and in certain cases
 do not capitalize at all on the provided golden feature (e.g., p-val ×onesided, p-val×disp-sd cases
 from the figure), suggesting that the respective pipelines have somehow attenuated or underutilized
-this golden feature. We further explore real-world implications in the appendix , whereby RDBLearn
+this golden feature. We further explore real-world implications in Appendix H, whereby RDBLearn
 with a single coding-agent prompt can match the performance of a SOTA multi-agent system (Huang
 et al., 2026) that trains numerous modelssupervisedon a per-task basis. Moving forward, we also
 emphasize that adefaultexpectation should be that any agentic system built on top of tabular base
 models will likely exceed the benchmark performance of pipelines such as RDBLearn and TabPFN-
 Rel-OSS. This is because as public open-source projects, their design choices represent an observable
 starting point with known performance upon which to calibrate any additional enhancements, albeit
-at the cost of significant leakage concerns discussed in the appendix.
+at the cost of significant leakage concerns discussed in Appendix D.
 10
 
 8 TAKE-HOMEMESSAGE
@@ -779,6 +734,8 @@ moving forward, hopefully catalyzed in part by our findings herein.
 REFERENCES
 Kazi F Akhter, Bharath Ajendla, and Manar D Samad. A fair benchmarking of deep relational
 database learning models.arXiv preprint arXiv:2607.03659, 2026.
+Tianlang Chen, Charilaos Kanatsoulis, and Jure Leskovec. RelGNN: Composite message passing for
+relational deep learning.arXiv preprint arXiv:2502.06784, 2025.
 Zhikai Chen, Junyu Yin, Jialiang Gu, Siheng Xiong, Xiaoze Liu, Ruowang Zhang, Keren Zhou, and
 Kai Guo. OpenRFM: Dissecting relational in-context learning.arXiv preprint arXiv:2606.04320,
 2026.
@@ -787,11 +744,19 @@ neighbourhood aggregation for graph nets.Advances in Neural Information Processi
 33:13260–13271, 2020.
 Milan Cvitkovic. Supervised learning on relational databases with graph neural networks.arXiv
 preprint arXiv:2002.02046, 2020.
+Amit Daniely and Eran Malach. Learning parities with neural networks.Advances in Neural
+Information Processing Systems, 33:20356–20365, 2020.
 DM Dave, B Todd, and Will Cukierski. Acquire valued shoppers challenge, 2014. URL https:
 //kaggle.com/competitions/acquire-valued-shoppers-challenge.
 Vijay Prakash Dwivedi, Sri Jaladi, Yangyi Shen, Federico L´opez, Charilaos I Kanatsoulis, Rishi Puri,
 Matthias Fey, and Jure Leskovec. Relational graph transformer.arXiv preprint arXiv:2505.10960,
 2025.
+Moonjung Eo, Min-Kook Suh, Hye-Seung Cho, Jiwon Kim, Seoyoon Kim, Sangjun Nam, and
+Soonyoung Lee. EXAONE Tabular 1.0: Technical Report.arXiv preprint arXiv:2608.25774,
+2026.
+Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzm¨uller, Prateek Desai, David Salinas,
+and Frank Hutter. TabArena: A living benchmark for machine learning on tabular data.Advances
+in Neural Information Processing Systems, 38, 2026.
 Matthias Fey, Weihua Hu, Kexin Huang, Jan Eric Lenssen, Rishabh Ranjan, Joshua Robinson, Rex
 Ying, Jiaxuan You, and Jure Leskovec. Relational deep learning: Graph representation learning on
 relational databases.arXiv preprint arXiv:2312.04615, 2023.
@@ -806,18 +771,26 @@ L´eo Grinsztajn, Klemens Fl¨oge, Oscar Key, Felix Birkel, Philipp Jund, Brenda
 Shi Bin Hoo, Magnus B¨uhler, Anurag Garg, Dominik Safaric, Jake Robertson, Benjamin J¨ager,
 Simone Alessi, Adrian Hayler, Vladyslav Moroshan, Lennart Purucker, Philipp Singer, Alan Arazi,
 Julien Siems, Jan Hendrik Metzen, Georg Grab, Nick Erickson, Siyuan Guo, Eliott Kalfon, Simon
+11
+
 Bing, David Salinas, Clara Cornu, Lilly Charlotte Wehrhahn, Diana Kriuchkova, Kursat Kaya,
 Lydia Sidhoum, Marie Salmon, Jerry Chen, Madelon Hulsebos, Yann LeCun, Samuel M ¨uller,
 Bernhard Sch¨olkopf, Sauraj Gambhir, Noah Hollmann, and Frank Hutter. TabPFN-3: Technical
 report.arXiv preprint arXiv:2605.13986, 2026.
+Prince Grover, Julia Xu, Justin Tittelfitz, Anqi Cheng, Zheng Li, Jakub Zablocki, Jianbo Liu, and
+Hao Zhou. Fraud dataset benchmark and applications.arXiv preprint arXiv:2208.14417, 2022.
+Justin Gu, Rishabh Ranjan, Charilaos Kanatsoulis, Haiming Tang, Martin Jurkovic, Valter Hudovernik,
+Mark Znidar, Pranshu Chaturvedi, Parth Shroff, Fengyu Li, et al. RelBench v2: A large-scale
+benchmark and repository for relational data.arXiv preprint arXiv:2602.12606, 2026.
+Sungwon Han, Jinsung Yoon, Sercan O Arik, and Tomas Pfister. Large language models can
+automatically engineer features for few-shot tabular learning.arXiv preprint arXiv:2404.09491,
+2024.
 Adrian Hayler, Klemens Fl¨oge, Alan Arazi, Rishabh Ranjan, Jure Leskovec, Felix Birkel, Brendan
 Roof, Anurag Garg, Kristina Collins, Lydia Sidhoum, et al. Advancing open and reproducible
 relational learning: RelArena-α, TabPFN-Rel and RPI.arXiv preprint arXiv:2608.16319, 2026.
 Noah Hollmann, Samuel M¨uller, Katharina Eggensperger, and Frank Hutter. TabPFN: A Transformer
 that solves small tabular classification problems in a second.arXiv preprint arXiv:2207.01848,
 2022.
-11
-
 Noah Hollmann, Samuel M¨uller, Lennart Purucker, Arjun Krishnakumar, Max K¨orfer, Shi Bin Hoo,
 Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data with a tabular
 foundation model.Nature, 637(8045):319–326, 2025.
@@ -839,11 +812,19 @@ arXiv preprint arXiv:2609.17895, 2026.
 QU Jingang, David Holzm ¨uller, Ga ¨el Varoquaux, and Marine Le Morvan. TabICL: A tabular
 foundation model for in-context learning on large data. InInternational Conference on Machine
 Learning, 2025.
+Kyungho Kim, Geon Lee, Juyeon Kim, Dongwon Choi, Shinhwan Kang, and Kijung Shin. ReFuGe:
+Feature generation for prediction tasks on relational databases with LLM agents. InProceedings
+of the ACM Web Conference, pp. 8501–8504, 2026.
+Tassilo Klein, Clemens Biehl, Margarida Costa, Andre Sres, Jonas Kolk, and Johannes Hoffart. SALT:
+Sales autocompletion linked business tables dataset. InNeurIPS 2024 Third Table Representation
+Learning Workshop, 2024.
 Vignesh Kothapalli, Rishabh Ranjan, Valter Hudovernik, Vijay Prakash Dwivedi, Johannes Hoffart,
 Carlos Guestrin, and Jure Leskovec. PluRel: Synthetic data unlocks scaling laws for relational
 foundation models.arXiv preprint arXiv:2602.04029, 2026.
 Jan Motl and Oliver Schulte. The CTU Prague relational learning repository.arXiv preprint
 arXiv:1511.03086, 2015.
+12
+
 Samuel M ¨uller, Noah Hollmann, Sebastian Pineda Arango, Josif Grabocka, and Frank Hutter.
 Transformers can do Bayesian inference.arXiv preprint arXiv:2112.10510, 2021.
 Thomas Nagler. Statistical foundations of prior-data fitted networks. InInternational Conference on
@@ -854,6 +835,9 @@ Natural Language Processing and the 9th International Joint Conference on Natura
 Processing, pp. 188–197, 2019.
 Jonas Peters, Dominik Janzing, and Bernhard Sch¨olkopf.Elements of Causal Inference: Foundations
 and Learning Algorithms. MIT Press, Cambridge, MA, USA, 2017.
+Lennart Purucker, Andrej Tschalzev, Nick Erickson, Gioia Blayer, David Holzm˜A1/4ller, Alan Arazi,
+Alexander Pfefferle, Mustafa Tajjar, Ga˜A Varoquaux, Frank Hutter, et al. Beyond iid: How general
+are tabular foundation models, really?arXiv preprint arXiv:2606.30410, 2026.
 Jingang Qu, David Holzm¨uller, Ga¨el Varoquaux, and Marine Le Morvan. TabICLv2: A better, faster,
 scalable, and open tabular foundation model.arXiv preprint arXiv:2602.11139, 2026.
 Rishabh Ranjan, Valter Hudovernik, Mark Znidar, Charilaos Kanatsoulis, Roshan Upendra, Mahmoud
@@ -867,8 +851,6 @@ Rishabh Ranjan, Vignesh Kothapalli, Harshvardhan Agarwal, Charilaos Kanatsoulis,
 Tom Palczewski, Carlos Guestrin, and Jure Leskovec. Large-scale pretraining unlocks few-shot
 prediction for relational data. InWorkshop on Graph Foundation Models: A New Era for Graph
 Machine Learning, 2026c.
-12
-
 Joshua Robinson, Rishabh Ranjan, Weihua Hu, Kexin Huang, Jiaqi Han, Alejandro Dobles, Matthias
 Fey, Jan Eric Lenssen, Yiwen Yuan, Zecheng Zhang, et al. RelBench: A benchmark for deep
 learning on relational databases.Advances in Neural Information Processing Systems, 37:21330–
@@ -877,16 +859,39 @@ Celia Rubio-Madrigal and Rebekka Burkholz. Fixed aggregation features can rival 
 preprint arXiv:2601.19449, 2026.
 Johannes Schmidt-Hieber. The Kolmogorov–Arnold representation theorem revisited.Neural
 networks, 137:119–126, 2021.
+Yefan Tao, Xiyuan Zhang, Xinyi Liu, Boran Han, Danielle Maddix, Haoyang Fang, Zhen Han,
+Jiading Gai, Xuanqing Liu, Michael Bohlke-Schneider, et al. Mitra-v2 technical report.arXiv
+preprint arXiv:2609.04540, 2026.
+Gemma Team, Aishwarya Kamath, Johan Ferret, Shreya Pathak, Nino Vieillard, Ramona Merhej,
+Sarah Perrin, Tatiana Matejovicova, Alexandre Ram´e, Morgane Rivi`ere, et al. Gemma 3 Technical
+Report.arXiv preprint arXiv:2503.19786, 2025.
+Joaquin Vanschoren, Jan N Van Rijn, Bernd Bischl, and Luis Torgo. Openml: networked science in
+machine learning.ACM SIGKDD Explorations Newsletter, 15(2):49–60, 2014.
+Minjie Wang, Quan Gan, David Wipf, Zhenkun Cai, Ning Li, Jianheng Tang, Yanlin Zhang, Zizhao
+Zhang, Zunyao Mao, Yakun Song, Yanbo Wang, Jiahang Li, Han Zhang, Guang Yang, Xiao Qin,
+Chuan Lei, Muhan Zhang, Weinan Zhang, Christos Faloutsos, and Zheng Zhang. 4DBInfer: A
+4D benchmarking toolbox for graph-centric predictive modeling on RDBs.Advances in Neural
+Information Processing Systems, 37:27236–27273, 2024.
+13
+
+Penghui Wang, Wei Liu, Hong Wang, Chengyue Huang, Yuxi Sun, Zirui Wang, Hongming Huang,
+Quan Wang, Chunxiao Liu, et al. Xiaomi-TabLDM: A tabular foundation model technical report.
+arXiv preprint arXiv:2609.03880, 2026a.
 Yanbo Wang, Xiyuan Wang, Quan Gan, Minjie Wang, Qibin Yang, David Wipf, and Muhan Zhang.
 Griffin: Towards a graph-centric relational database foundation model. InInternational Conference
 on Machine Learning, 2025.
 Yanbo Wang, Jiaxuan You, Chuan Shi, and Muhan Zhang. Relational in-context learning via synthetic
-pre-training with structural prior. InInternational Conference on Machine Learning, 2026.
+pre-training with structural prior. InInternational Conference on Machine Learning, 2026b.
+Yangkun Wang, Jiarui Jin, Weinan Zhang, Yongyi Yang, Jiuhai Chen, Quan Gan, Yong Yu, Zheng
+Zhang, Zengfeng Huang, and David Wipf. Why propagate alone? Parallel use of labels and
+features on graphs.International Conference on Learning Representations, 2022.
 Fang Wu, Vijay Prakash Dwivedi, and Jure Leskovec. Large language models are good relational
 learners. InProceedings of the 63rd Annual Meeting of the Association for Computational
 Linguistics (Volume 1: Long Papers), 2025.
 Marek Wydmuch, Łukasz Borchmann, and Filip Grali´nski. Tackling prediction tasks in relational
 databases with LLMs.arXiv preprint arXiv:2411.11829, 2024.
+Linjie Xu and David Wipf. Parameter-free encoders remain viable for RDB foundation models.
+ICML Workshop on Foundation Models for Structured Data, 2026.
 Linjie Xu, Yanlin Zhang, Quan Gan, Minjie Wang, and David Wipf. No need to train your RDB
 foundation model.International Conference on Machine Learning, 2026.
 Han Zhang, Quan Gan, David Wipf, and Weinan Zhang. GFS: Graph-based feature synthesis for
@@ -894,18 +899,1120 @@ prediction over relational databases.arXiv preprint arXiv:2312.02037, 2023a.
 Xingxuan Zhang, Gang Ren, Han Yu, Hao Yuan, Hui Wang, Jiansheng Li, Jiayun Wu, Lang Mo,
 Li Mao, Mingchao Hao, et al. Limix: Unleashing structured-data modeling capability for generalist
 intelligence.arXiv preprint arXiv:2509.03505, 2025a.
+Xingxuan Zhang, Gang Ren, Hao Yuan, Hao Zou, Hongze Tan, Hui Wang, Jianhao Song, Jiansheng
+Li, Jiayao Zhang, Jinghan Zhang, et al. LimiX-2: A contextual mechanism network towards
+general structured-data intelligence.arXiv preprint arXiv:2609.17488, 2026.
 Xiyuan Zhang, Danielle C Maddix, Junming Yin, Nick Erickson, Abdul Fatir Ansari, Boran Han,
 Shuai Zhang, Leman Akoglu, Christos Faloutsos, Michael W Mahoney, et al. Mitra: Mixed
 synthetic priors for enhancing tabular foundation models.arXiv preprint arXiv:2510.21204,
 2025b.
+Yanlin Zhang, Ning Li, Quan Gan, Weinan Zhang, David Wipf, and Minjie Wang. Elf-Gym:
+Evaluating large language models generated features for tabular prediction. InProceedings of the
+33rd ACM International Conference on Information and Knowledge Management, pp. 5420–5424,
+2024.
 Zizhao Zhang, Yi Yang, Lutong Zou, He Wen, Tao Feng, and Jiaxuan You. Rdbench: ML benchmark
 for relational databases.arXiv preprint arXiv:2310.16837, 2023b.
 Roman Zykov, Noskov Artem, and Anokhin Alexander. Retailrocket recommender system dataset,
 2022. URLhttps://www.kaggle.com/dsv/4471234.
-13
-
-A APPENDIX
-Because of an unforeseen issue uploading the full document to arXiv, we are temporarily deferring
-the appendices to this link. Upon resolution, we will update the arXiv version to reflect the full
-document.
 14
+
+A FURTHERANALYSIS OF THECONTINUUMPERSPECTIVE FROMSECTION4
+In this section we demonstrate that simple ensembling or interpolation strategies, designed to combine
+canonical TFMs (without gpf) and RDB-native FMs, may struggle to handle data along a continuum
+between single-tables and RDBs. Later, we discuss further benchmarking implications of the
+continuum perspective.
+A.1 ENSEMBLINGDIFFERENTFM TYPESCANNOTRESOLVE THECONTINUUM
+One candidate workaround for navigating varying relational effects on a continuum would be to
+invoke both a typical RDB FM and a single-table FM, and then simply use the validation set to either
+pick the best one or form some type of ensemble. To analyze this possibility, we define predictions
+from tabular and RDB FMs respectively as
+ˆytab test :=f tab θ  {zi, yi}n i=1,z test  s.t.z=x(8)
+ˆyrdb test :=f rdb θ  {zi, yi}n i=1,z test  s.t.z=g ϕ  GH (x) 
+for an arbitrary input RDB. The TFM from (8) only has access to T 1 information, or any tables that
+can be trivially joined to T 1 without a true encoder gpf (i.e., by design we are assuming standard
+single-table operational mode here, not a TFM equipped with gpf for handling rich relational effects).
+To formalize things further, we require precise specifications of a suitable RDB generation process.
+We must also introduce some form of practical constraint on the RDB FM encoder; otherwise, it is
+trivially a superset of the TFM listed in (8). We present these definitions first, before proceeding to
+the main result of this section.
+Definition A.1.We define Dτ as an RDB induced by a single table via the following generation
+process pτ , where continuation parameter τ∈[0,1] mitigates the significance of cross-table relational
+factors. First, we draw tabular rows xi = [xreal i ;x cat i ] from some p(xi), where xreal i ∈R d represent
+numerical features, xcat i ∈ Cκ are categorical features with |C| ≤Band i= 0, . . . , N. We assume
+that the marginal p(x real) is an absolutely continuous distribution satisfying p(x real)≤p max for all
+xreal ∈ Rd. We treat each categorical column as an FK pointing to a new auxiliary table T k (with
+k∈ {2, . . . , κ+ 1}) composed of a single PK column (the elements of which correspond with the
+unique categories in the referring FK column). And finally, we generate labels by first uniformly
+sampling d′ < dindices from {1, . . . , d}to form the reduced numerical features ex real i ∈R d′ . We
+then compute labels as
+yi =ψ
+
+(1−τ)f 1(ex real i ) +τ f2  GH (xi)\xi  ∈ Y,∀i= 0, . . . , N,(9)
+where f1 and f2 are continuous functions mapping their respective domains to a sharedr-dimensional
+embedding space Rr, after which ψ:R r → Y converts to the label space. 4 We reserve
+{GH (xi), yi}n i=1 for ICL, withn < N,5 while treating samplei= 0as{G H (xtest), ytest}.
+Definition A.2.We define a space of minimally constrained RDB encoders ¯g, elements of which
+produce fixed-length embeddings asz=g ϕ
+
+GH (x)
+
+∈R dz. Furthermore, we impose that
+inf
+gϕ∈¯g
+inf
+η
+EDτ ∼pτ
+
+∥xreal test −η  {zi, yi}n i=1,z test  ∥  >0,(10)
+with expectation over the generation process from Definition A.1 and η:R dz×(n+1) × Yn →R d as
+an arbitrary continuous mapping.
+The intuitive implication of Definition A.2 is simply that xreal test, which may be high-dimensional,
+cannot be completely reconstructed (in expectation) using all of the encoded information available
+to an ICL-based decoder qθ (namely {zi, yi}n i=1 and ztest), regardless of which gϕ is chosen. This
+is nominally a reasonable restriction to impose given that typical RDB encoders must ultimately
+4For reference, GH (x)\x represents all H-hop neighborhood information available at the timestamp associ-
+ated withx(following the newly-generated PK-FK pairs), but excluding the seed row featuresx.
+5This is effectively equivalent to uniform sampling given the original construction with IID rows.
+15
+
+compress into fixed-length embeddings, and such compression may apply to an original feature
+row x, particularly so for any high-dimensional numerical values. Moreover, (10) doesnotrule out
+complete reconstruction of d−1 elements of xreal test, indicating minimal enforced compression. Given
+these definitions, we now analyze the limitation of ensembling:
+Proposition A.3.For any ε∈(0,1) and C >0 there will always exist fixed mappings {Ψ′, f′ 1, f′ 2}
+such that the following simultaneously hold:
+min
+f tab θ
+EDτ ∼pτ
+h ytest −ˆytab test  i = 0τ= 0
+min
+f rdb θ , gϕ∈¯g
+EDτ ∼pτ
+h ytest −ˆyrdb test  i = 0τ= 1(11)
+min
+f tab θ , frdb θ , gϕ∈¯g, α∈[0,1]
+EDτ ∼pτ
+h ytest −  αˆytab test + (1−α)ˆyrdb test  i ≥C∀τ∈[ε,1−ε],
+where Dτ ∼p τ indicates an RDB sampled according to Definition A.1 with {Ψ, f1, f2}=
+{Ψ′, f′ 1, f′ 2} and n > d′, and ¯gdenotes any RDB encoder satisfying the conditions of Definition A.2.
+Even though we are optimizing separately for each τ, this relatively straightforward result shows that
+any additive combination of the two FMs (as produced by typical ensembling) can perform arbitrarily
+badly. This is despite the fact that for the purely tabular regime ( τ= 0 ), the TFM exhibits ideal
+behavior, while for the purely relational case (i.e., τ= 1 implying no dependence on the original
+target row features) the RDB FM performs perfectly.
+Admittedly, we can always try training a more complex combining function to address this scenario,
+but then we are diverging from the targeted FM regime to supervised learning. In contrast, if we
+pre-train our original FMs to consistently handle such cases, then in principle we should arrive at
+a model the operates effectively on both single and multiple tables.But of course this is the main
+point we are advocating for in the first place; namely, RDB FMs should work on single tables or
+single-table adjacent regimes as well.
+A.2 BENCHMARKINGIMPLICATIONS OF THECONTINUUMPERSPECTIVE
+If there were always a clear-cut distinction between single tables and RDBs, then benchmarking
+would be straightforward: simply partition into separate domains and evaluate accordingly, RDB
+FMs tested only on RDBs (e.g., RelArena, RelBench, 4DBInfer, etc.) and TFMs only on single tables
+(e.g., TabArena). But in light of the continuum described in Section 4, is such strict partitioning
+unequivocally warranted?
+For example, consider breaking out of this mold by applying an RDB FM to a suite of traditional
+tabular benchmarks. If performance is competitive relative to frontier TFMs that specialize on single
+tables, then our confidence in the robustness of this RDB FM justifiable grows. But now suppose
+instead that performance is notably lagging. It is tempting to simply discount such cases as the
+magisteria of single-table FMs and move on; however, the continuum perspective complicates any
+such immediate dismissal. After all, if an RDB FM does not work well on single-tables, what about
+performance on RDBs along a continuum that are minimally different from single tables? More
+broadly, it is reasonable to question how large is the multi-table relational neighborhood around
+any single-table benchmark within which unsatisfactory predictions are likely to be produced. Or
+conversely, we may ask how large along any continuum must this neighborhood grow before the RDB
+FM capabilities begin to outshine TFM alternatives by exploiting relational effects. It is precisely
+these factors that (at least partially) motivate RDB FMs based on TFMs that already perform well on
+single tables.
+B IMPLICATIONS OFENCODERLABELUSAGE
+Two counter-points challenge the efficacy of the parameter-free encoders gpf upon which TFMs
+applied to RDBs are based. Both involve the use of observable labels as inputs to a trainable gϕ, and
+the potential benefits of doing. We analyze these scenarios next, providing new insights that further
+inform foundational questions of RDB FM development.
+16
+
+B.1 LABELS ASEXTRADISCRIMINATIVEFEATURES
+Per previously-stated definitions, an RDB neighborhood subgraph GH (x) may include nodes associ-
+ated with other rows of T 1 ≡X , provided these rows are reachable within H PK-FK hops and have
+an earlier time-stamp to avoid temporal leakage. As these rows have associated labels, it is natural
+to consider including them as extra node features to improve downstream predictability. We adopt
+G∗ H (x) to reference the resulting subgraph with these labels concatenated as additional node features;
+we are assuming here that any labels included withinG∗ H (x) have time-stamps earlier than x. In more
+traditional supervised learning regimes involving graphs, this is a common practice for improving
+node classification accuracy (Wang et al., 2022) (akin to a trainable form of label propagation). More
+recently, analogous ideas have been applied to RDB foundation models, whereby trainable encoders
+are explicitly designed to process past labels of similar entities within an RDB neighborhood (Chen
+et al., 2026; Hudovernik et al., 2026; Ranjan et al., 2026a).
+But to what degree can we actually rely on such neighborhood labels as predictive features, specifically
+in the context of trainable RDB foundation model encoders gϕ applied to G∗ H (xtest) evaluated at an
+unlabeled test row of interest xtest. To begin, for an arbitrary RDB we define G∗ test as an augmented
+version of G, with xtest appended to X, known labels associated with X included as candidate node
+features, but restricted to entities with timestamps earlier than xtest. We also let eG∗ H (xtest) denote
+G∗ test\G∗ H (xtest), meaning all RDB context outside of the label-infused H-hop ego-network centered
+at test point xtest. And lastly, we adopt yH (xtest) to indicate the set of all past labels present within
+G∗ H (xtest); this of course doesnotinclude the unknown label ytest associated with xtest itself. We then
+have the following:
+Proposition B.1.Given any ego-network G∗ H (xtest) with |yH (xtest)|>0 , distributions over remaining
+RDB contentp
+ eG∗ H (xtest), ytest|G∗ H (xtest)  will always exist such that:
+1.(Foundation model setting)y test is a deterministic function of G∗ test, and yet any possible
+fixed encoder gϕ and prediction head qθ perform no better than chance estimating ytest in
+the sense that
+E
+h
+KL
+h
+p(ytest|G∗ test)||q θ  ytest |g ϕ  G∗ H (xtest) ii ≥E h KL h p(ytest|G∗ test)||Unif  ytest ii ,
+(12)
+with outer expectations overp
+ eG∗ H (xtest)|G∗ H (xtest)  .
+2.(Supervised setting) Given {G∗ H (xi), yi}n i=1 and ytest extracted from any single draw
+from p
+ eG∗ H (xtest), ytest|G∗ H (xtest)  , there exists a draw-specific fθ =q θ ◦g pf satisfying yi =
+fθ
+
+G∗ H (xi)  for all i and ytest =f θ  G∗ H (xtest)  , where gpf is a parameter-free mapping from
+anyG ∗ H (xtest)toR m andq θ is a ReLU network with finite width and depth.
+Intuition behind Proposition B.1.Neighborhood labels within G∗ H (x) can be highly discriminative
+in asupervisedsetting, where training specifically on samples {G∗ H (xi), yi}n i=1 extracted from a
+singleRDB predictive task facilitates learning a task-specific discriminative function fθ applicable
+to test points G∗ H (xtest) (part 2). And yet it is not generally possible to determine a stable predictive
+role for these labels within an encoder that must remainfixedacross varying datasets/tasks facing a
+foundation model architecture of the form qθ
+
+y|g ϕ
+
+G∗ H (xtest)  (part 1). Given this implication of
+Proposition B.1, why then are existing schema-agnostic foundation models like the original relational
+Transformer (RT) model from Ranjan et al. (2026a) capable of making successful predictions?
+A simple plausible hypothesis is that, within the handful of real-world RDBs available for pre-
+training RT models, homophily relationships dominate, so simply adopting the majority label of local
+neighbors can be a highly discriminative feature. Empirical results from Ranjan et al. (2026a)[Table
+1] support this conclusion, namely, the similar performance of a basic entity mean predictor explicitly
+predicated on homophily (66.7 avg AUROC) relative to RT (69.7 avg AUROC).
+Implications for ICL-based models.ICL provides one pathway for diversifying label usage
+effectively beyond the homophily-dominant regimes mentioned above; however, this remains true
+whether or not a parameter-free encoder gpf is adopted. This is because even without trainable
+parameters, encoder representations can include diverse label aggregations that are sensitive to both
+homophily and heterophily relationships; the subsequent ICL-prediction head then sorts which are
+17
+
+relevant for any given task. Note that canonical aggregators can trivially handle the parity check
+example constructed within the proof of Proposition B.1 (see Appendix I). Hence given evidence
+available thus far, the use of labels as discriminative features does not by itself provide a compelling
+reason to favor trainable parameterized RDB encoders gϕ within ICL-based models. And so TFMs
+equipped with gpf ultimately remain viable independently of whether or not such labels are available.
+B.2 LABELS FORADJUDICATINGFEATUREIMPORTANCE
+Analysis from Xu et al. (2026) indicates that uninformative feature columns within RDBs cannot
+generally be filtered out using a dataset-agnostic encoder, which reduces the motivation for including
+trainable encoder parameters. However, this calculus may change if the encoder is provided with local
+neighborhood labels (as in G∗ H (x)). The latter provide task-specific information, which may plausibly
+facilitate feature-column differentiation on a task-by-task basis as required by RDB foundation
+models. But is such differentiation generally possible even when GH (x) is switched to G∗ H (x)? The
+answer is negative in the following sense:
+Proposition B.2.Given any representative RDB ego-network GH (xtest) constructed from non-empty
+tabular feature columns and |yH (xtest)|>0 , there will always exist distributions over eG∗ H (xtest) and
+yH (xtest)∪y test such that:
+1. Each label in yH (xtest)∪y test is a shared deterministic function of some support set S of
+tabular column features and independent of all remaining columns.
+2. Encoder input labels yH (xtest) provide no information about the unknown generating support
+setSin the sense thatp
+
+S|G ∗ H (xtest)  =p  S|GH (xtest)  .
+Implications for ICL-based models.While not strictly ruling out any benefit of trainable encoders,
+Proposition B.2 does mute confidence in their ability to robustly screen uninformative columns
+through the use of local neighborhood labels as additional inputs. This plausibly suggests that, at
+least for RDBs with large numbers of feature columns (many of which are likely uninformative),
+trainable encoders may be unnecessary, especially given that parameter-free encoders are already
+structured to naturally handle column-wise feature screening (Xu et al., 2026). Therefore, consistent
+with our conclusions from Appendix B.1, TFMs with an appropriate gpf need not fall behind, even
+when considering encoder label usage for assessing task-specific feature importance.
+We also remark in closing that the RDB FM architecture described in Hudovernik et al. (2026)
+involves first converting each RDB table T k into revised embeddings U k dependent on task-specific
+labels, prior to formation of GH and subsequent presentation to gθ (this conversion is accomplished
+with an additional module akin to a traditional TFM applied on single tables). While certainly an
+innovative idea, and one that can be applied within purely TFM-based pipelines like RDBLearn
+as well, the extent to which uninformative columns can be resolved at this early stage may still
+have limitations (e.g., the counter-example used to prove Proposition B.2 would disallow filtering
+uninformative columns using the signal within a given U k alone). However, further treatment of
+these possibilities lies beyond the scope of this work.
+C ADDITIONALICL SAMPLINGCONSIDERATIONS
+C.1 EVALUATINGSAMPLECOMPLEXITY
+We remark that Ranjan et al. (2026b;c) emphasize the impressive sample efficiency of RT-J relative to
+TFM-based RDBLearn, ostensibly requiring many fewer labeled ICL samples to achieve competitive
+performance. But there are two key factors that merit consideration when interpreting the empirical
+comparisons upon which this claim is based:
+Different notions of sample complexity.ICL samples in Ranjan et al. (2026b;c) are only counted
+per test instance, as opposed to counting thetotalnumber of unique samples required across an entire
+test set, i.e., the union of unique samples extracted over all test instances associated with a given task.
+This distinction is critical, since RDBLearn is designed to adopt afixedICL batch that is shared over
+all test instances, while RT-J requires anewbatch for each separate inference point. Obviously then,
+18
+
+the cardinality of the fixed RDBLearn set will generally be larger than what RT-J adopts for just a
+single test instance. But if we compute the average number ofuniqueICL samples needed per test
+instance, RDBLearn may operate using far fewer depending on the RDB task. Hence RDBLearn can
+potentially be more sample efficient relative to RT-J per this alternative metric as the number of test
+points grows larger. This distinction impacts not only the required number of labeled observations,
+but also execution costs, since RDBLearn need only extract ICL samples and construct a fixed TFM
+KV cache once per task, regardless of how many test points exist.
+Model alignment.The actual per-instance empirical ICL sample complexity results reported in
+Ranjan et al. (2026b;c) are not directly based on an RDBLearn specification from either Xu et al.
+(2026) or Xu & Wipf (2026). Instead, the RDBLearn pipeline is restricted to the TFM base model
+TabICL-v2 and paired with much smaller per-instance ICL sample batches originally prepared for
+RT-J (via random-walks combined with BFS local searches). Notably, RT-J pretraining is explicitly
+aligned with this particular ICL-sampling regime, while RDBLearn is nominally designed for larger
+fixed ICL sets (per motivations from Section 5). Even so, our central point here is not to discount
+the prior comparisons between RT-J and RDBLearn from Ranjan et al. (2026b;c), which certainly
+convey a useful complementary perspective, particularly if the goal is quantifying minimal sample
+complexity costs for a single test point executing from scratch. Rather, we are simply advocating
+that additional factors provide important balance, especially when weighing diverse tasks involving a
+multiplicity of test points.
+C.2 DEGENERACYEXAMPLE FROMRANDOMWALKSAMPLING
+Assume data drawn according to Definition A.1, with original feature table T 1 =X and correspond-
+ing labels y, as well as induced auxiliary table T 2 ∈ CB composed of a single PK column. The latter
+is assumed to correspond with a categorical column in T 1 that we treat as an FK column pointing to
+the PKs in T 2. Granting this simplified setup, we observe that any random walk originating at an
+arbitrary row i of T 1 will at most reach |Ri| rows of T 1. Here Ri denotes the set of rows within T 1
+that share the same FK value as row i. There is no mechanism for longer random walks to eventually
+extend across the entire RDB; each must stall within Ri because ultimately the underlying graph G
+extracted from the RDB is not fully connected.
+The graph underlying the experiments shown in Figure 3 exhibits an analogous phenomenon. The
+only difference is that the FK column switches from (implicitly)T 1 to (explicitly) T 2 in this example,
+while the corresponding G remains disconnected. This might help explain why the RT-J model
+does not happen to work as well within the particular context of the Figure 3 experiments (note that
+RDBLearn would also not perform well here if forced to adopt the same RW sampling procedure).
+That being said, if the RT-J context budget is not filled by random-walk accessible rows, a fallback
+involving hybrid uniform sampling akin to RDBLearn could represent a potential workaround.
+D LANGUAGEMODELAGENTUSAGE
+A growing body of evidence suggests that LLM agents can play a useful role in tabular model
+development (Han et al., 2024; Huang et al., 2026; Kim et al., 2026; Zhang et al., 2024). That being
+said, their usage in the specific context of RDB predictive modeling involves notable caveats from
+a benchmarking perspective. One in particular relates to potential leakage issues that may obscure
+the degree to which we can plausibly extrapolate benchmarking results to expected performance
+within new siloed industry settings. This concern stems from the fact that existing public benchmarks
+are scarce, largely because of privacy concerns with real-world data. And yet predictive solutions
+addressing the few RDB datasets that do exist, often involving feature engineering and human
+expertise, are readily visible to frontier LLM agents during their pre-training process or during
+inference-time retrieval. Hence agent-based solutions may simply lean on problem-specific prior
+human knowledge to a degree that may not be possible on less-familiar or esoteric tasks within
+private RDB repositories. Of course this is not meant to discourage LLM-based RDB frameworks,
+and certainly TFMs equipped with gpf (e.g., RDBLearn, TabPFN-Rel-OSS, etc.) are a natural fit for
+agentic enhancements, the topic of Section 7. We only advocate that some caution is warranted when
+interpreting results, especially when extrapolating to new domains. While similar concerns have
+certainly been raised with other data modalities, we would argue that the situation is more acute in
+RDB regimes with only limited, relatively well-known benchmarking sources that are susceptible to
+memorized solutions.
+19
+
+E EXPERIMENTDETAILS ANDFULLRESULTSBEHINDFIGURE1
+E.1 DESCRIPTION OFTFM-BASEDAPPROACHES
+For TFM-based pipelines we adoptRDBLearn(version 1.1 from Xu & Wipf (2026)) andTabPFN-
+Rel(version from Hayler et al. (2026)); we useTabPFN-Rel-OSSto refer to the open-source release
+of TabPFN-Rel.6 Since our goal is to examine TFM-based approaches on a wider task set than
+original papers considered, we ran both RDBLearn and TabPFN-Rel-OSS out of the box ourselves
+from the respective public repos using default configurations.7 Both methods were run on a single
+Nvidia RTX 5090 (32G) GPU. For RDBLearn, we encountered OOM errors in some tasks when
+the TFM was LimiX or TabFM. These sweep cases were simply skipped, so RDBlearn just selects
+from the remaining healthy cases. Meanwhile, we found that TabPFN-Rel-OSS did not execute on
+the multi-class SALT benchmark in our environment; hence this is our only exclusion in terms of
+reported results.8
+In terms of architecture, RDBLearn and TabPFN-Rel-OSS are conceptually the same, with a shared
+gpf implementation, but differing primarily in which tabular base models are chosen and details of
+how ICL sample sets are constructed. For example, TabPFN-Rel-OSS includes validation samples in
+the final chosen ICL set as in Hudovernik et al. (2026), and also oversamples ICL instances with more
+recent past timestamps; the latter is consistent with benefits of recency featurization bias explored
+by Huang et al. (2026). Neither RDBLearn nor TabPFN-Rel-OSS include text-column handling
+(text columns are simply ignored), unlike the closed-source TabPFN-Rel version (see below) which
+includes a proprietary module for this purpose.
+We also remark that new crops of advanced single-table FMs are constantly being released; recent
+examples that appeared as we were finalizing this draft include TabPFN-v3.5 (J ¨ager et al., 2026),
+EXAONE (Eo et al., 2026), LimiX-2 (Zhang et al., 2026), Mitra-v2 (Tao et al., 2026), and Xiaomi-
+TabLDM (Wang et al., 2026a). These approaches can readily be combined with an encoder gpf to
+further boost performance relative to alternative RDB FM formulations. However, we do not rerun all
+experiments using these options, since our central goal herein is not to surface the best possible TFM
+configuration within RDB operational settings. The latter represents a moving target, and remains
+somewhat orthogonal to our primary objective, which the results from Figure 1 already adequately
+achieve.
+E.2 DESCRIPTION OFOTHERBASELINEMODELS
+To compare against the TFM-based approaches from above, we present evaluations across a wide
+range of alternative RDB predictive architectures, including both foundation models and more
+traditional supervised learning approaches. We emphasize though that results are not presently
+available for all models on all datasets. For example, it is frequent practice to only report results on
+RelBench-v1 datasets and tasks, or to only report results on some tasks within a given benchmark.
+Closed-Source Foundation Models.We include the original industry modelKumoRFM-1(Fey
+et al., 2025) as well as the more recent versionKumoRFM-2(Hudovernik et al., 2026) that incorpo-
+rates task-specific labels within the encoder and constituent table embeddings.9 We also compare
+withOpenRFM(Chen et al., 2026); while this model is presumably intended to be open-sourced at
+some point, the full code is not available at the time of this writing. For all of these closed-source
+approaches we rely on posted performance results from original authors for evaluation purposes, with
+one exception. We follow Grinsztajn et al. (2026), who have independently reevaluated KumoRFM-2
+performance via API calls for certain datasets using author-provided benchmarking scripts.
+6Improved configurations of both RDBLearn and TabPFN-Rel are possible, but lie outside of our scope.
+7An exception is TabPFN-Rel-OSS on RelBench-v1 tasks, whereby existing results were pulled directly from
+Hayler et al. (2026) rather than running ourselves.
+8TabPFN-Rel-OSS presently does not support class cardinalities that exceed the base TFM capability, and
+SALT tasks happen to exceed this limit for now.
+9KumoRFM-2 has generally been treated as a closed-source model and we maintain this designation here
+given that all KumoRFM-2 results in Figure 1 are based on private API calls. Moreover, the KumoRFM-2
+pre-training regime and extent of real-world RDB exposure remain undisclosed.
+20
+
+Open-Source Foundation Model Baselines.Open-source baselines include the schema-agnostic
+Griffin(Wang et al., 2025),RelLLM(Wu et al., 2025), andRT(relational transformer) (Ranjan
+et al., 2026a) models, as well as an updated RT version enhanced withPluRelsynthetic pretraining
+data (Kothapalli et al., 2026), denotedRT-P. On the open-source ICL-based side we include results
+withRT-J, also based on the RT architecture but with modifications such as random-walk sampling to
+collect ICL sets (as discussed in Section 5.3 of the main text) and pretraining with a large collection
+of real-world RDBs calledThe Join(Ranjan et al., 2026b); see also Appendix C.1 for additional
+perspective on RT-J sampling considerations and prior comparisons with RDBLearn. Furthermore,
+we compare results fromRDB-PFN(Wang et al., 2026b), with synthetic RDB pre-training, and
+RandGNN(Xu et al., 2026), which combines a random-weight GNN encoder with a TFM-based
+model. RandGNN represents a form of ablation w.r.t. RDBLearn and TabPFN-Rel-OSS, in that it
+explicitly mixes cross-column information in a manner at odds with the theoretical considerations
+upon which these models are based. And finally, for pure language model baselines, we evaluate
+LLM-A(Team et al., 2025) (as tested in Ranjan et al. (2026a)) andLLM-B(Wydmuch et al., 2024);
+both approaches are predicated on serialized RDB neighborhood representations and/or ICL samples.
+Although the underlying LLMs are not open-source, we still treat these approaches as open-source
+given that the prompts used to reproduce results are publicly available and no hidden fine-tuning
+steps are involved.
+Task-Specific Supervised Models.While our emphasis is on RDB foundation models, it is still
+useful to contextualize FM performance results w.r.t. methods benefitting from per-task supervised
+training. On this front, largely following prior work, we include the more classical standards
+LightGBM,XGBoost, andGraphSageas evaluated in Hudovernik et al. (2026). Meanwhile, for
+recent SOTA supervised architectures we selectRelGNN(Chen et al., 2025),RelGT(Dwivedi et al.,
+2025),RelAgent(Huang et al., 2026), andRT-J+fine-tuning; the latter introduces task-specific
+fine-tuning of the pre-trained RT-J architecture mentioned previously to achieve SOTA performance
+on RelArena-α(Hayler et al., 2026).
+E.3 RDB BENCHMARKS
+In producing Figure 1, we evaluate RDB predictive modeling approaches over a diverse suite of
+benchmarks, including regression and binary classification tasks from bothRelBench-v1(Robinson
+et al., 2024) andRelBench-v2(Gu et al., 2026). Note that RelBench-v1 datasets and tasks are also
+equivalent to the recently-postedRelArena- α benchmarking platform (Hayler et al., 2026) patterned
+after TabArena (Erickson et al., 2026). The primary difference is that RelArena- α enforces more
+rigid/standardized submission protocols that some published work on RelBench-v1 may not satisfy.
+That being said, RDBLearn and TabPFN-Rel-OSS already adhere to these guidelines, and it is only
+to the advantage of other models with which we compare if they do not. This means our results in
+Figure 1 are actually conservative in showcasing the abilities of TFM-based approaches to RDB
+predictive modeling.
+Beyond the above, we test over five4DBInfer(Wang et al., 2024) binary classification datasets that
+have been used in several recent works (Huang et al., 2026; Hudovernik et al., 2026), as well as the
+multi-class predictive tasks from theSALTrepository (Klein et al., 2024) as adopted by Hudovernik
+et al. (2026). Standard train/dev/test splits are used for all experiments. Note that for RelBench-v1,
+we omit only rel-f1 and rel-event datasets because of potential leakage issues mentioned in prior
+work, and we do not have results for all baseline models on these datasets.
+21
+
+E.4 EXTENDEDEMPIRICALRESULTS
+In this section we provide the full set of experimental results upon which the final rankings shown
+in Figure 1 from the main text are based. The TFM-based methods (along with their attendant
+gpf) achieve the best overall performance among RDB FMs. This follows by comparing numbers
+for RDBLearn, TabPFN-Rel-OSS, and TabPFN-Rel versus other RDB FMs in the tables below.
+Surprisingly, these frameworks even exceed the results produced by many per-task supervised
+models.
+Table 1: Results on 4DBInfer binary classification tasks (AUC↑). Bold = best per column, underline
+= second best.
+Method
+AB
+churn
+OB
+ctr RRcvr SE upvote SE churn Avg AUROC ↑ Avg Rank ↓
+Supervised
+XGBoost 50.00 50.00 50.00 49.68 50.84 50.10 9.6
+GNN 75.71 62.39 84.70 88.61 85.58 79.40 4.6
+RelAgent 79.4462.63 86.3589.4589.03 81.382.0
+Foundation model
+Closed-Source
+KumoRFM-1 75.59 61.11 84.36 88.92 87.87 79.57 5.1
+KumoRFM-2 77.06 61.97 84.36 88.50 87.92 79.96 4.9
+RDB-PFN 73.38 52.59 78.12 85.60 85.50 75.04 7.2
+Open-source
+Griffin 53.32 52.22 39.92 71.66 72.18 57.86 8.8
+RandGNN 77.42 49.29 66.21 61.06 77.41 66.28 7.6
+TabPFN-Rel-OSS 77.21 63.68 88.92 88.5989.14 81.51 2.6
+RDBLearn 78.71 63.76 89.0687.86 88.69 81.622.6
+Table 2: Results on the SALT benchmark (MRR↑). Bold = best per column; underline = second best.
+salt-item salt-salesAvg MRR Avg Rank
+Method Plant
+Shipping
+Point Incoterm Incoterm Office Group
+Payment
+Terms
+Shipping
+Condition ↑ ↓
+Supervised
+GraphSAGE 0.99 0.98 0.69 0.6210.16 0.37 0.57 0.67 3.88
+LightGBM 0.61 0.28 0.73 0.73 0.99 0.02 0.10 0.51 0.50 4.75
+Foundation model
+Closed-Source
+KumoRFM-1 0.99 0.990.79 0.81 10.38 0.38 0.78 0.77 2.56
+KumoRFM-2 0.99 0.98 0.78 0.81 10.61 0.61 0.79 0.82 2.56
+Open-source
+RDBLearn 1 0.99 0.82 0.91 1 0.69 0.79 0.84 0.88 1.25
+22
+
+Table 3: Results on Relbench v2 binary classification tasks (AUROC ↑). Bold = best per column;
+underline = second best.
+mimic ratebeer arxiv Avg AUROC Avg Rank
+Method stay beer-churn user-churn dormant citation ↑ ↓
+Supervised
+LightGBM 51.81 76.21 83.92 75.79 71.21 71.79 5.80
+GraphSAGE 55.01 78.67 94.27 80.51 82.50 78.19 3.60
+Rel-Agent† – 84.70 97.4383.3382.61 – –
+Foundation model
+Closed-Source
+KumoRFM-1 56.3375.06 91.38 77.10 80.62 76.10 4.40
+KumoRFM-2 55.28 83.84 97.43 80.65 81.71 79.78 3.00
+OpenRFM (TabICL)† – 79.60 – 77.50 81.00 – –
+OpenRFM (TabPFN)† – 80.90 – 79.10 81.00 – –
+Open-source
+TabPFN-Rel-OSS 53.10 80.15 98.28 82.32 82.69 79.31 2.40
+RDBLearn 55.36 85.15 98.4881.85 82.37 80.64 1.80
+† RelAgent and OpenRFM are excluded when calculating average AUROC and rank because results are missing
+in some cases (RelAgent: no mimic-stay; OpenRFM: no mimic-stay or ratebeer user-churn). Note also that
+public code is not available to produce results for the missing tasks at the time of this writing.
+23
+
+Table 4: Results on Relbench v1 binary classification tasks (AUROC ↑). Bold = best per column,
+underline = second best.
+avito trial amazon stack hm Avg AUROC Avg Rank
+Method click visit out user item eng badge churn ↑ ↓
+Supervised
+LightGBM 53.60 53.05 70.09 52.22 62.54 63.39 63.43 55.21 59.19 18.88
+GraphSAGE 65.90 66.20 68.60 70.42 82.81 90.59 88.86 69.88 75.41 6.38
+RelGT 68.30 66.78 68.61 70.39 82.55 90.53 86.32 69.27 75.34 6.81
+RelGNN 68.23 66.18 71.24 70.99 82.6490.7588.98 70.93 76.24 4.12
+RelAgent 68.3667.79 71.86 70.78 82.84 90.41 88.4271.07 76.44 3.50
+RT-J+fine-tuning 66.81 66.89 69.5771.46 83.1690.65 89.2170.49 76.03 4.00
+Foundation model
+Closed-Source
+KumoRFM-1 64.85 64.11 70.79 67.29 79.93 87.09 80.00 67.71 72.72 11.56
+KumoRFM-2 (orig.)* 67.4269.4172.03 69.10 82.17 89.40 87.15 69.27 75.74 6.62
+KumoRFM-2 (repro.)* 67.4269.4172.03 67.71 80.18 88.69 85.40 67.81 74.83 7.69
+TabPFN-Rel 67.52 66.8076.4770.86 82.80 90.60 88.04 70.52 76.703.88
+OpenRFM (TabICL)† 62.30 64.60 60.80 – – 88.50 86.30 68.60 – –
+OpenRFM (TabPFN)† 63.90 64.60 63.40 – – 88.40 86.40 68.90 – –
+Open-source
+LLM-A 59.80 62.70 57.40 58.10 62.10 78.00 80.00 59.80 64.74 17.69
+LLM-B 61.32 60.28 55.72 60.56 71.96 81.01 71.13 64.34 65.79 17.12
+RelLLM 62.28 56.17 59.02 60.07 64.10 69.46 62.12 55.95 61.15 18.25
+Griffin 45.90 60.70 51.00 62.30 69.00 77.50 73.50 60.20 62.51 18.62
+RT 59.50 61.80 51.80 64.00 70.90 75.70 80.10 62.80 65.83 17.19
+RT-J 51.39 64.09 64.43 67.20 78.61 86.76 81.11 65.66 69.91 14.25
+RT-P 47.90 63.40 51.80 65.00 72.50 86.20 82.00 66.00 66.85 15.69
+RDBPFN 64.46 65.82 64.50 65.92 79.59 88.04 84.52 67.21 72.51 11.75
+RandGNN 61.58 64.15 55.98 65.87 77.73 85.14 83.14 66.54 70.02 13.75
+TabPFN-Rel-OSS 61.45 66.88 73.06 70.24 82.79 90.58 86.35 70.57 75.24 6.00
+RDBLearn 67.55 66.71 72.71 69.33 82.25 89.92 85.23 68.27 75.25 7.25
+∗ Results are drawn from both the original KumoRFM-2 paper (Hudovernik et al., 2026), as well as an
+independent reproduction from Grinsztajn et al. (2026) using KumoRFM-2 API calls for some datasets. (The
+latter relies on official benchmarking scripts for setting the various KumoRFM-2 hyperparameters that may vary
+from task to task. For datasets with no available scripts, avito and trial, the reproduction value is set to the
+original.) † OpenRFM is excluded when calculating average AUROC and rank because results are not available
+for all datasets, and public code is not available to produce results for the missing tasks.
+24
+
+Table 5: Results on Relbench-v1 regression tasks (MAE ↓). Bold = best per column; underline =
+second best.
+avito trial amazon stack hm Geo Mean Avg Rank
+Method ctr adverse success user item votes sales ↓ ↓
+Base
+Global Median 0.043 57.533 0.462 16.783 64.234 0.068 0.076 1.303 14.57
+Entity Median 0.046 57.930 0.441 17.423 66.436 0.069 0.078 1.329 15.57
+Supervised
+LightGBM 0.041 44.011 0.425 16.783 60.569 0.068 0.076 1.220 12.50
+GraphSAGE 0.041 44.473 0.400 14.313 50.053 0.065 0.056 1.096 8.93
+RelGT 0.035 43.992 0.326 14.267 48.922 0.065 0.054 1.030 6.57
+RelGNN 0.037 44.4610.30114.230 48.767 0.065 0.054 1.027 6.64
+RelAgent 0.033 37.194 0.386 13.949 41.765 0.0640.035 0.934 2.57
+RT-J+fine-tuning 0.034534.90.364 13.97 42.49 0.0653 0.0375 0.937 3.86
+Foundation Model
+Closed-Source
+KumoRFM-1 0.035 58.231 0.417 16.161 55.254 0.065 0.040 1.102 9.50
+KumoRFM-2 (orig.)* 0.034 43.293 0.43313.92146.9920.064 0.034 0.986 4.86
+KumoRFM-2 (repro.)* 0.033 41.974 0.433 14.627 45.352 0.065 0.043 1.015 6.21
+TabPFN-Rel 0.031139.8 0.413 14.4 46.8 0.0679 0.0605 1.051 6.36
+Open-source
+Griffin 0.050 78.232 0.463 35.590 53.214 0.092 0.151 1.737 16.86
+RT 0.058 73.999 0.455 18.802 57.996 0.110 0.089 1.543 16.71
+RT-J 0.0402 55.377 0.4265 16.757 46.151 0.0752 0.0501 1.156 10.57
+RandGNN 0.038 53.370 0.434 17.580 66.130 0.071 0.065 1.248 14.00
+TabPFN-Rel-OSS 0.0314 42.6 0.386 14.4 47.8 0.068 0.0614 1.058 7.29
+RDBLearn 0.033 43.565 0.378 14.504 47.038 0.067 0.063 1.066 7.43
+∗ See comment from Table 4.
+25
+
+F SETUPDETAILS ANDFULLEMPIRICALRESULTS FORFIGURE2
+Setup.For our initial source of single tables, we select binary classification and regression tasks
+from BeyondArena (Purucker et al., 2026), Fraud Dataset Benchmark (FDB) (Grover et al., 2022),
+and OpenML (Vanschoren et al., 2014). The origins of specific tasks are listed in Table 6. To
+better align with realistic RDBs, we consider tasks that have temporal splits, e.g., the “Temporal”
+category within BeyondArena. Large datasets (home credit default stability) and datasets without
+categorical columns (maps router eta) are excluded. To induce RDBs from these tables, we select at
+most 5 categorical columns as FKs following steps 1–4 of the procedure described in Section 4. As
+mentioned in the main text, we retain the original dataset labels as opposed to synthetically generating
+new ones. This allows us to probe RDB FM behavior in regimes where relational structure exists, but
+is not strictly necessary for making accurate predictions.
+Extended results.In Table 6 we present the full results that contributed to Figure 2, including
+performance from TabPFN-v3 (Grinsztajn et al., 2026) applied only on the original single-table
+data as a reference point, RDBLearn (Xu et al., 2026), KumoRFM-2 (Hudovernik et al., 2026),
+and RT-J (Ranjan et al., 2026b). Because BeyondArena has no validation set, and to standardize
+comparisons, we simply execute RDBLearn under the fixed setting of hop H= 2 along with just a
+single TFM selected as TabPFN-v3. For KumoRFM-2, we also use the same default hop valueH= 2
+and leave the inference-time configuration unchanged. RT-J uses the default inference configuration
+as well. Regarding hardware, we ran each method on a single GPU. TabPFN-v3, RDBLearn, and RT-J
+were run on a single Nvidia RTX 5090 (32G). Although the dataset scale is the same, KumoRFM-2
+requires more GPU memory. To fulfill this requirement, we ran KumoRFM-2 on a single Nvidia L20
+(48G). However, there were still four tasks raising OOM errors, noted in Table 6 and Figure 2.
+Table 6: Full results corresponding to Figure 2, where we examine RDBs induced from single tables.
+Classification reports ROC-AUC (↑); regression reports R2 (↑). Best result per row inbold; second
+best underlined. Avg (excluding OOM) represents mean performance computed only over tasks/rows
+where every method reports a value; Avg (all) includes all tasks (KumoRFM-2 omitted due to OOM
+entries).
+Task Origin TabPFN-v3 RDBLearn KumoRFM-2 RT-J
+Classification (ROC-AUC↑)
+acquire valued shoppers challengeBeyondArena 0.62450.6098 OOM 0.5797
+anes voting 2026BeyondArena 0.86200.8260 OOM 0.5000
+bank marketing temporal monthOpenML 0.88560.8555 0.8568 0.3762
+electricity temporalOpenML 0.95420.9098 0.8752 0.6176
+hotel booking demandBeyondArena 0.80590.7265 0.6645 0.5755
+kickBeyondArena 0.82200.7840 0.7611 0.5949
+kickstarterBeyondArena 0.91010.9061 0.8354 0.6860
+lending clubBeyondArena 0.67670.6573 0.6311 0.5628
+sparknov temporalFDB 0.98090.9722 0.9079 0.6103
+Avg (excluding OOM) 0.86220.8302 0.7903 0.5748
+Avg (all) 0.83580.8052 — 0.5670
+Regression (R2 ↑)
+california house prices 2020BeyondArena 0.93510.9345 0.9091 0.0026
+climate model weather forecastingBeyondArena 0.83390.8293 0.7879 0.7575
+coffee rating predictionBeyondArena 0.3390 0.35150.0928 0.0769
+cooking timeBeyondArena 0.45490.4505 0.3617 0.3211
+delivery etaBeyondArena 0.43750.3435 0.4034 0.2797
+garments worker productivityBeyondArena 0.3686 0.50940.3011−0.1818
+mercedes benz greener manufacturingBeyondArena 0.55190.5446 OOM 0.0000
+rossmann store salesBeyondArena 0.8161 0.82440.5957 0.3062
+sberbank housing market forecastingBeyondArena 0.62830.5978 OOM 0.0149
+sf permit timeBeyondArena 0.0610 0.1751 0.16690.2714
+Avg (excluding OOM) 0.5308 0.55230.4523 0.2292
+Avg (all) 0.5426 0.5561— 0.1849
+26
+
+G DETAILS OFINTERACTIONEXPERIMENTS
+This section describes the detailed setup for experimenting with the interaction terms discussed in
+Sections 6 and 7, particularly as they relate to Figure 3.
+G.1 SETUPBEHINDFIGURE3 (LEFT)
+Data generation.Each synthetic RDB contains two tables, a target/parent T 1 and a child T 2. Table
+T 1 contains two columns (PK and a label) and 4000 rows (3200 for training and 800 for testing).
+Each row of T 1 is linked to l rows of T 2 via PK-FK pairs, where T 2 is composed of a single FK
+column as well as two signal columns {a,b} mixed within a variable number of uninformative
+columns. We set l∼Uniform{2, . . . ,20}. Signal columns are synthesized with Bernoulli(0.3) for
+binary variants or N(0,1) for Gaussian ones, alongside d2 −2 additional columns drawn IID from
+the same respective family, for total widthsd 2 ∈ {8,16,32,64,96}forT 2 instantiations.
+Label synthesis.We incorporate 4 labeling functions to cover both linear and nonlinear relation-
+ships. For each row in the task table where PK=i , let Ri ={j∈T 2 where FKj =i} . Labels are
+generated by aggregating the row-level interaction with different the aggregation functions:
+•mean:y i =mean j∈Ri ajbj ;
+•thresholded count:y i =count j∈Ri (ajbj >1);
+•parity:y i = L j∈Ri (aj ∧b j) ;
+•prod agg:y i =mean Ri (a)·mean Ri (b).
+We remark that prod agg is favorable to RDBLearn since gpf already computes this form of
+interaction between aggregations, as mentioned in Section 6. Meanwhile, the other aggregation
+choices are not favorable to RDBLearn since they are not computed by any single aggregation
+(although combinations thereof may approximate them). For different labeling rules, we experimented
+with different data column distributions as follows:
+•parity,mean, andprod aggwith binary columns;
+•count(ab >1)with Gaussian columns.
+Together these selections give us the four tasks listed in Figure 3 (left).
+Experiment models.We compare TFM-based RDBLearn against the top non-TFM-based RDB
+FMs, KumoRFM-2 (Hudovernik et al., 2026) and RT-J (Ranjan et al., 2026b), all in-context with
+no task-specific training or fine-tuning. RDBLearn simply uses H= 2 to match the KumoRFM-2
+default setting, run from a local deployment of the published model. RT-J uses the public zero-shot
+checkpoint for FM operational mode (i.e., no fine-tuning). For both KumoRFM-2 and RT-J we first
+validated our implementation pipeline by reproducing performance numbers from the respective
+published papers.
+G.2 QUASI-REALWORLDRDB USED INFIGURE3 (RIGHT)
+We adopt the rel-trial RDB (Robinson et al., 2024) for the quasi-real world interaction experiment. We
+do not modify the actual schema; instead, for each trial we pick two numerical or categorical columns
+{a,b} co-located in one child table of the task entity, and define each task label as the temporally-
+valid mean of the row-level product ajbj over the linked child rows, computed strictly over rows
+dated before the task timestamp. The same per-row cutoff column is consumed by all three models,
+so no model can access post-cutoff rows during labeling or inference. Column pairs touching value
+columns whose measurement unit varies across rows (param value and the confidence-interval
+limits, whose unit depends on a sibling code column) are excludeda prioriand outcome-blind,
+leaving nine child-table pairs. These pairs form the x-axis labels of Figure 3 (right).
+We repeat the above experiment, this time explicitly adding an additional child-table column formed
+from this so-called “golden feature” interaction term. This is meant to reflect a hypothetical scenario
+27
+
+whereby an informed agent has supplied this product term as an additional useful feature. We then
+explore the degree to which each RDB FM can effectively utilize this column to improve predictive
+performance in Figure 3 (right).
+H DETAILS OFREAL-WORLDAGENTICEXPERIMENT
+Following the pointer at the end of Section 7, this experiment represents a preliminary proof-of-
+concept, not an exhaustive exploration of possibilities. And certainly there are more principled ways
+of incorporating agents within a TFM-based paradigm than what we have done. We also stress one
+additional point upfront: Even as agents are often able to generate useful predictive features, this
+typically requires extensive domain knowledge and/or meta-data associated with a given RDB (this
+may also introduce new pathways for leakage and/or memorization that could artificially inflate
+performance; see Appendix D). In contrast, TFM-based models like RDBLearn and TabPFN-Rel
+can in principle operate out of the box in new domains without such knowledge, providing greater
+flexibility and privacy.
+H.1 EXPERIMENT SETUP
+TFM-based methods leverage agent-friendly SQL-based RDB harnesses, where SQL queries are
+automatically generated to aggregate features from RDBs. These queries are agent-readable and
+provide an alternative entry point for understanding the predictive modeling task and core RDB
+structure. Based on this observation, we prompt Cursor Grok 4.5 under the default Cursor 3.6.31
+harness. We provide a single prompt together with the raw training set and the corresponding features
+generated by the RDBLearn encoder gpf. Note that we do not allow the agent to iterate (e.g., by using
+a loop). Therefore, the feature generation is a single forward pass. This is substantially different
+from the SOTA RelAgent (Huang et al., 2026), which trains numerous fully-supervised models (on a
+per-task basis) across multiple iterations of a multi-agent system.
+For our experiments, the prompt for all tasks is the same except for the task name. As a representative
+example, the rel-trial prompt is as follows:
+Prompt for Cursor Grok 4.5 to generate RDB features
+If you look into what the rel-trial/study outcome tasks are, understand what the goal is, then
+look into DFS-depth 4 (including hop 1-4) SQLs. Can you analyze what features are useless
+and what new useful feature column you can add to the flattened table by SQL?”
+H.2 LEAKAGECHECK
+For our experiment, only the training set is exposed to the agent. To investigate whether there is data
+leakage, we manually look into the trace and prompt the agent to self-check. As a result, two features
+for rel-event tasks were found aggregating future (the same week) data. They aresql hist ignore rate
+andsql hist repeat rate, which calculate past-week label statistics. Although the target predictive
+entity is excluded from the calculation, when this predictive entity correlates with a mid-week date,
+same-week future label information can still be included. (For reference, performance results in
+Table 7 below exclude these two features.) Beyond this, inspecting every tool call in the agent trace,
+we did not observe any behavior that would indicate retrieval/access of validation or testing set
+information.
+H.3 RESULTS
+Table 7 presents the performance comparison between the agent-feature-enhanced RDBLearn (based
+on TabPFN-v3.5 (J¨ager et al., 2026)) and a SOTA multi-agent system, RelAgent (Huang et al., 2026).
+We note that even without domain knowledge and metadata information, RDBLearn already outper-
+forms RelAgent (Qwen3-32B). And when enhanced with agent-generated features, its performance is
+significantly boosted to be on-par with RelAgent (GPT-5.2). Critically though, all RelAgent versions
+arefully-supervised, training many per-task models, whereas RDBLearn remains a training-free FM
+enhanced with just a single batch of agent-generated features and no iterations.
+28
+
+Table 7: RDBLearn+Agent results on RelBench-v1 binary classification tasks (AUROC↑). Bold =
+best per column, underline = second best. We emphasize that RelAgent is fully-supervised, training
+numerous models per task, while RDBLearn is an FM.
+Dataset Task RelAgent (GPT-5.2) RelAgent (Qwen3-32B) RDBLearn RDBLearn+Agent
+rel-amazon item-churn 0.82840.7992 0.8270 0.8273 user-churn 0.70780.6922 0.6973 0.6968
+rel-avito user-clicks 0.6836 0.65100.70500.6994 user-visits 0.67790.6462 0.6714 0.6661
+rel-event user-ignore 0.87250.7591 0.7446 0.7873 user-repeat 0.78200.7473 0.7646 0.7753
+rel-f1 driver-dnf 0.7834 0.5767 0.72630.8351 driver-top3 0.8523 0.5804 0.79750.9204
+rel-hm user-churn 0.71070.7062 0.6895 0.6953
+rel-stack user-badge 0.88420.6530 0.8678 0.8514 user-engagement 0.9041 0.89110.90510.8982
+rel-trial study-outcome 0.7186 0.7136 0.7265 0.7569
+A VG (12 tasks)0.7838 0.7013 0.76020.7841
+I TECHNICALPROOFS
+I.1 PROOF OFPROPOSITION5.2
+Generalizing from Nagler (2023), the proof here is relatively straightforward once the RDB-
+dependent setup is specified through Definition 5.1, the assumption that (2) holds, and that
+p
+
+yi|GH (xi)
+
+=p
+
+yi|zi
+
+∀i= 0, . . . , n. The first and third assumption alone imply that a given
+label yi is independent of others when conditioned on the corresponding encoder outputs, i.e.,
+p(yi, yj|zi,z j) =p(y i|zi)p(yj|zj)∀i, j. Hence we may also infer that for any labeled sample,
+the conditional p(y|z), as opposed to merely p
+
+y|GH (x)
+
+, is stable across n, even while encoder
+representationszneed not be.
+Now consider any sequence pairs p,ˇp∈ P, along with their associated label generators p(y|z) and
+ˇp(y|z)respectively, satisfying p(y|z) = ˇp(y|z)whenever ∥ztest −z∥< ϵ for any fixed ϵ >0. For
+all such pairs, we have from (2) (bias part) that
+p(ytest|ztest)−E Dn∼pn
+
+qθ
+
+ytest | {zi, yi}n i=1,z test  (13)
+−
+
+ˇp(ytest|ztest)−E Dn∼ˇpn
+
+qθ
+
+ytest | {zi, yi}n i=1,z test  
+E ˇDn∼ˇpn
+
+qθ
+
+ytest | {ˇzi,ˇyi}n i=1,z test  −E Dn∼pn  qθ  ytest | {zi, yi}n i=1,z test  →0
+as n→ ∞, where {ztest, ytest} is treated as a fixed evaluation point. Combining with (2) (variance
+part) we then may conclude that
+qθ  ytest | {ˇzi,ˇyi}n i=1,z test  −q θ  ytest | {zi, yi}n i=1,z test  →0.(14)
+From standard diagonalization arguments, the same holds true for some ϵn →0 since no assumptions
+were placed on the originalϵ, therefore (3) is established.■
+I.2 PROOF OFPROPOSITIONA.3
+We show this result through an interpretable counter-example. Note that there is nothing particularly
+special about the configuration we introduce for this purpose; rather it merely represents a simplified
+case sufficient for illustration purposes and completing the proof. As we will see, the core ingredient
+is the existence of at least some degree of nonlinear interaction between relational effects within
+GH (x)and the original tabular featuresx.
+Basic Setup.For any ε∈(0,1) and C >0 we define mappings f ′ 1 :R d →R 2, f ′ 2 :G H →R 2,
+andΨ ′ :R 2 →Ras
+f ′ 1 :
+
+u1
+0
+
+=
+
+ω⊤ ex real
+0
+
++
+
+β
+0
+
+, f ′ 2 :
+
+0
+u2
+
+=
+
+0
+π(G H (x)\x)
+
+,(15)
+29
+
+Ψ′ :y=wv 1sign[v2] +v 1 +v 2,
+where ω∈R d′ , β∈R , and w∈R are constants in general position, and π:G H →R . For the latter,
+we chooseπsuch that underp τ we have
+Prob
+
+π
+
+GH (xtest)\xtest
+
+>0
+
+=Prob
+
+π
+
+GH (xtest)\xtest
+
+<0
+
+= 0.5.(16)
+Additionally, underpinning (15) we use GH to denote the relational neighborhood space of GH (x)\x,
+while {v1, v2} and {u1, u2} are the variables adopted to express the relevant input and output spaces,
+respectively. Combining these specifications with (9) we arrive at the label generation function
+y=w(1−τ)τ u 1sign[u2] + (1−τ)u 1 +τ u2,(17)
+where we observe nonlinear coupling between features derived from x (expressed through u1) and
+GH (x)\x(expressed throughu 2).
+Handling Equalities in (11).To establish the first equality of (11), we observe that by construction
+y=ω ⊤ ex real +βwhenτ= 0. However, we may infer that
+min
+f tab θ ∈F
+ED0∼p0
+h ytest −ˆytab test  i = min
+f tab θ ∈F
+ED0∼p0
+h ω⊤ ex real test +β−f tab θ  {xi, yi}n i=1,x test  i = 0,
+(18)
+where p0 follows Definition A.1 with τ= 0 . Given the assumption that n > d′, the equality with
+zero in (18) occurs by straightforward extension of Xu et al. (2026)[Proposition 4.2], which is not
+operationally effected by padding xtest and each xi with additional categorical elements. Meanwhile,
+the second equality in (11) stems from the fact that y=π
+
+GH (x)\x
+
+and our encoder constraint set
+¯gallows for modeling an arbitrary function π over the relational neighborhood excluding x. Hence
+whenτ= 1we trivially have that
+min
+f rdb θ ∈F, gϕ∈¯g
+ED1∼p1
+h ytest −ˆyrdb test  i (19)
+≡min
+f rdb θ ∈F, gϕ∈¯g
+ED1∼p1
+h π  GH (xtest)\xtest  −f rdb θ  {zi, yi}n i=1,z test  i = 0.
+Handling the Inequality in (11).Lastly, we handle the third line of (11), namely, the inequality
+that results for τ values bounded away from zero and one. We establish this bound via several steps
+as follows. We also remark upfront that α can be absorbed into the specifications of ˆytab test and ˆytab test
+without loss of generality.
+First, because of the constraint gϕ ∈¯g, the encoder cannot reliable reconstruct xreal test; at most we can
+guarantee reconstruction of d−1 coordinates per Definition A.2. Moreover, it is not possible to
+reconstruct the missing coordinate from the others with a continuous mapping from F, as doing so
+would violate the assumption from Definition A.1 that any p(xreal) is bounded from above (i.e., if we
+could reconstruct this coordinate with a continuous mapping, it would imply that the data lies on a
+low-dimensional manifold withinR d, which by necessity would have infinite density).
+Given these considerations, we can again invoke Xu et al. (2026)[Proposition 4.2] to infer that there
+will be non-negligible error (in expectation over the generation process) for any attempt to predict
+u1,test from available context {zi, yi}n i=1 and ztest. Intuitively, this is because the support pattern for
+extracting ex real test from xreal test varies uniformly across random draws from pτ , and so in expectation there
+will always be cases where needed information is missing. From this we may conclude that
+inf
+f rdb θ ∈F, gϕ∈¯g
+EDτ ∼pτ
+ u1,test −ˆyrdb test  ≥δ(20)
+for any τ∈[ε,1−ε] and some δ >0 . But this will also remain true when conditioning on
+the corresponding u2,test. This is because u2,test is merely a function of other rows within X, and
+conditioning on any or all rows (or functions thereof), excluding the current xtest, will not remove the
+prediction error, since these rows are generated IID by Definition A.1. And so we have that
+inf
+f rdb θ ∈F, gϕ∈¯g
+EDτ ∼pτ
+ u1,test −ˆyrdb test   u2,test ≥λ  ≥δ ′ (21)
+30
+
+for some possibly new δ′ >0 ; an analogous error term is bounded away from zero when conditioning
+on the event u2,test <0 . And therefore from the tower rule of conditional expectations, we also have
+inf
+f rdb θ , gϕ∈¯g
+EDτ ∼pτ
+ u1,testsign  u2,test  −ˆyrdb test   ≥δ ′′ >0,(22)
+a lower bound that becomes w(1−τ)τ δ ′′ once we reintroduce scale factors. If we choose w=
+C
+(1−ε)εδ′′ , then
+w(1−τ)τ δ ′′ = C(1−τ)τ (1−ε)ε ≥C∀τ∈[ε,(1−ε)].(23)
+Finally, the remaining factors(1−τ)u 1,test,τ u2,test, andˆytab test from within the last expectation of (11)
+cannot appreciably improve the lower bound of C. Note that the factor τ u2,test can be absorbed into
+ˆyrdb test without loss of generality; they share the same input range while the former is a pre-specified
+function and the latter is arbitrary.
+Analogously, w.l.o.g. (1−τ)u 1,test can be absorbed into ˆytab test. But the flexibility from ˆytab test itself is
+inconsequential to altering the bound. This is because u1,test ⊥ ⊥u2,test, given that xreal test ⊥ ⊥ GH (x)\x
+per Definition A.1, and so reducing the error approximating the interaction term u1,testsign[u2,test]
+is not possible without access to u2,test (noting that u2,test has a median of zero). And ˆytab test cannot
+generally reproduce u2,test, since the latter will depend (in expectation at least) on IID context rows
+outside of the ICL set mitigated through choice of the functionπ.■
+I.3 PROOF OFPROPOSITIONB.1
+High-Level Intuition.To illustrate the gist of this result, assume that the ground-truth label ytest for
+any xtest is given by a parity check on available labels in G∗ H (xtest). This labeling rule is impossible
+to determine from yH (xtest) alone, since for any node x′ associated with a label y′ ∈y H (xtest), the
+corresponding set yH (x′) need not be fully observed, i.e., the overlap between yH (x′) (with a known
+label for x′) and yH (xtest) (with an unknown label for xtest) is only partial. Hence the parity rule is not
+identifiable, as even a single missing label can flip the result. This disrupts inductive inference from
+the information available within G∗ H (xtest), which is all a fixed FM encoder has access too. In contrast,
+if per-dataset training is allowed over RDB instances formed via a given parity-based labeling rule,
+it is straightforward to learn the associated mapping on a dataset-by-dataset or task-by-task basis.
+We remark that, although the proof below relies on parity checks for illustrative convenience, the
+underlying phenomena is emblematic of quite broad scenarios where diverse heterophilic (as opposed
+to homophilic) relationships are dominant.
+Basic Setup.The basic proof follows from the construction of a suitable joint distribution over
+context eG∗ H (xtest) and test label ytest. Meanwhile, by assumption we have that G∗ H (xtest) is fixed and
+given. To begin, we introduce a latent indicator variable z∈ {0,1}that selects among two determin-
+istic generative processes for { eG∗ H (xtest), ytest}. In this way, all randomness in the joint distribution
+p( eG∗ H (xtest), ytest | G∗ H (xtest)) will ultimately reduce to randomness from p(z). We emphasize that this
+is not meant to exclude broader sources of randomness that naturally describe RDB content; instead,
+we are merely distilling down to a minimal design case that nonetheless still allows us to establish the
+proposition. Other latent sources of variation associated with real-world RDBs then become largely
+orthogonal to our result and need not be explicitly specified.
+Label Assumptions.We assume that all labels are binary, namely, y∈ {0,1}. While generalization
+to broader label domains Y is feasible, it introduces superfluous complexity given that the binary case
+is already sufficient for establishing the proof. For any yH (x)̸=∅ , where yH (x) indicates the set of
+all past labels present within G∗ H (x) for some arbitrary x, we define conditional label generation via
+a parity function and its negative given by
+π
+
+yH (x) ;z= 1
+
+:=
+
+ X
+y∈yH (x)
+y
+
+ mod 2
+π
+
+yH (x) ;z= 0
+
+:=¬π
+
+yH (x);z= 1
+
+,(24)
+both of which output a labely∈ {0,1}.
+31
+
+Context Assumptions.We specify a function h
+
+G∗ H (xtest);z  for context generation. To ensure no
+conflicting labels, for z= 1 we define this h such that eG∗ H (xtest) has label assignments consistent with
+both yH (xtest) and the label assignment rule π
+
+·;z= 1
+
+from (24). This will always be achievable
+by introducing new appropriately-labeled neighbors to specific nodes of G∗ H (xtest) associated with
+elements ofy H (xtest).
+To establish this possibility, assume an arbitrary trial arrangement of node features, edges, and
+labels within eG∗ H (xtest), but following the typing of G∗ H (xtest) for consistency. Then consider any
+y′ ∈y H (xtest) with corresponding x′ extracted from the associated row of X≡T K (per original
+definitions in the main text). For consistency with the labeling rule (24) with z= 1 , we require that
+y′ =π  yH (x′) ;z= 1  , which may not initially be the case since labeling assignments were thus far
+assumed arbitrary. However, for any node where this is not the case, we can add a single additional
+labeled neighbor to eG∗ H (xtest), with an earlier time-stamp and a label selected to flip the parity check,
+such that we obtain the necessary equality.
+Such a neighbor can be added in multiple ways given that H≥2 (note that if H= 1 then
+|yH (xtest)|= 0 , i.e., no labels within one hop, which is not allowed by assumption). First, assume
+H= 2 , if some table T k exists with at least two FK columns pointing to the PK column associated
+with T K ≡X , we can trivially add such a neighbor by adding a new labeled row to T K and a
+new row to T k that links the former to x′ ∈T K. Meanwhile, if such a T k does not exist, we can
+simply add such a table to eG∗ H (xtest). Moreover, when supplied with an earlier time-stamp, the added
+labeled node/row need not introduce any additional constraints vis- `a-vis (24). With regard to the
+latter, if x′′ indicates the added node, we can directly enforce yH (x′′) =∅ as no nodes with earlier
+time-steps exist, and so y′′ can be selected free of any constraint from (24), which would only apply
+if yH (x′′)̸=∅ . Lastly, because this added label will by design be two hops from x′ and three or
+more hops from any other labeled rows, it will not introduce new conflicts per (24) if H= 2 . For
+H >2 an analogous procedure can be applied pushing the new labeled node to H hops away from
+x′ so as to achieve the same effect.
+In an analogous manner we can also define h when z= 0 , handling label consistency via the
+introduction of neighboring nodes to adjust parity accordingly. Again, we are granted this flexibility
+by assumption, since onlyG ∗ H (xtest)is fixed and given.
+Finalizing Part 1.Per the assumptions stated above and the appropriate counting measure, it
+directly follows that
+R
+p(y test|G∗ test) logp(y test|G∗ test)dy test = 0 trivially establishing that ytest is a
+deterministic function of G∗ test. Furthermore, given G∗ test = n eG∗ H (xtest),G ∗ H (xtest) o by definition, we
+also have that
+Ep( eG∗ H (xtest)|G∗ H (xtest))
+h
+KL
+h
+p(ytest|G∗ test)||q θ  ytest |g ϕ  G∗ H (xtest) ii
+=
+Z
+p
+
+eG∗ H (xtest)|G∗ H (xtest)  Z p(y test|G∗ test) log p(y test|G∗ test) qθ  ytest |g ϕ  G∗ H (xtest)  dytestd eG∗ H (xtest)
+=−
+Z
+p
+
+eG∗ H (xtest)|G∗ H (xtest)  Z p  ytest| eG∗ H (xtest),G ∗ H (xtest)  logq θ  ytest |g ϕ  G∗ H (xtest)  dytestd eG∗ H (xtest)
+=−
+Z Z
+p
+
+eG∗ H (xtest), ytest|G∗ H (xtest)  logq θ  ytest |g ϕ  G∗ H (xtest)  dytestd eG∗ H (xtest)(25)
+for any fixed gϕ and qθ. By construction, p
+
+eG∗ H (xtest), ytest|G∗ H (xtest)  ̸= 0 at only two points
+associated with z= 0 and z= 1 . Let y(0) test and y(1) test denote the value of ytest at these two points.
+Moreover, if we assume that z is drawn uniformly over {0,1} , we have G∗ H (xtest)⊥ ⊥zand so we
+may conclude from (25) that
+Ep( eG∗ H (xtest)|G∗ H (xtest))
+h
+KL
+h
+p(ytest|Gtest)||q θ
+
+ytest |g ϕ
+
+G∗ H (xtest) ii
+=−p(z= 0) logq θ
+
+y(0) test |g ϕ  G∗ H (xtest)  −p(z= 1) logq θ  y(1) test |g ϕ  G∗ H (xtest) 
+≥H[z] = log 2.(26)
+This lower bound is achievable iffq θ
+
+ytest |g ϕ
+
+G∗ H (xtest)  is a uniform distribution over{0,1}.
+32
+
+Finalizing Part 2.Assume that some parameter-free encoder gpf computes the element-wise sum
+of yH (x); other arbitrary features may be computed as well, but they are are ultimately treated
+as spurious features in what follows. Given this setup, the prediction head qθ need only learn to
+differentiate even and odd sums associated with yH (x), while ignoring all other feature columns. For
+example, if z= 1 governs the generative process, then odd values of any sum over yH (x) will be
+mapped to 1, even values to 0. Such functions can be directly represented by ReLU networks, and
+while not a requirement for this proof, are even efficiently learnable with additional assumptions
+(Daniely & Malach, 2020).■
+I.4 PROOF OFPROPOSITIONB.2
+High-Level Intuition.The proof follows through modifications applied to the original parity setup
+from Appendix I.3. For illustrative simplicity, assume a single informative binary RDB feature
+column, whereby ground-truth labels are a deterministic function, akin to a parity check, on the values
+of all features from this column contained within G∗ H (xtest). All other RDB columns are also binary
+but uninformative. Inclusion of yH (xtest) within G∗ H (xtest) does not allow for differentiating which
+column is informative, for analogous reasons to those presented in establishing Proposition B.1. In
+brief, for any node x′ associated with a label y′ ∈y H (xtest), the corresponding set yH (x′) and its
+associated featuresneed not be fully observed, and so a parity function onanycolumn can produce
+an arbitrary distribution of yH (xtest). Consequently, the parity rule is not identifiable regardless of
+whether yH (xtest) is present or not as an encoder input. Note that this line of reasoning is not restricted
+to binary feature columns, as we can quantize continuous or categorical columns into binary ones in
+forming deterministic labeling functions for analysis purposes. We now turn to the actual proof.
+Basic Setup.As in the proof of Proposition B.1, all randomness is encapsulated by a bi-
+nary latent variable z that selects between two deterministic generative processes, now over
+{ eG∗ H (xtest), yH (xtest), ytest}, i.e., only GH (xtest) as opposed to G∗ H (xtest) is assumed fixed/given. When
+grantedG H (x)for some arbitraryx, we specify the conditional label generation functions
+π
+
+GH (x) ;z= 1
+
+:=
+
+ X
+{i,j,k}∈S (1) H (x)
+β
+
+tk ij 
+
+ mod 2
+π
+
+GH (x) ;z= 0
+
+:=
+
+ X
+{i,j,k}∈S (0) H (x)
+β
+
+tk ij 
+
+ mod 2,(27)
+where S(1) H (x) and S(0) H (x), associated with z= 1 and z= 0 respectively, represent distinct support
+sets over RDB column elements reachable within H hops from x following PK-FK pairs. In this way
+any{i, j, k} ∈S(1) H (x)(or analogously, withinS (0) H (x)) indicates thei-th element within a specific
+RDB column tk :j, namely column j in table k. Meanwhile β denotes a mapping from each table
+element to a binary value (this discretization is by no means necessary, but it facilitates a simplified
+exposition that is sufficient for establishing the core result). These values are then subsequently
+combined via the stated parity functions in (27) to produce binary labelsy∈ {0,1}.
+Establishing Part 1.By adopting (27) as the label generating function, we trivially achieve the
+conditions of part 1 in Proposition B.2. Specifically, with all randomness deferred to z, which
+explicitly fixes the support set, all labels default to a deterministic function of the chosen support set,
+eitherS (0) H (x)orS (1) H (x)for anyx.
+Establishing Part 2.If we stipulate that z is drawn uniformly over {0,1} independently of
+GH (xtest), then we have
+p
+
+S=S (0) H (xtest)| GH (xtest)  =p  S=S (1) H (xtest)| GH (xtest)  = 1 2 .(28)
+However, by design we also have the flexibility to select the distribution over eG∗ H (xtest) such that
+yH (xtest) is invariant to z, even while ytest still depends on z through (27) applied at xtest. To see this,
+33
+
+note that each y′ ∈y H (xtest) is computed as π[GH (x′);z] , where x′ is the target table feature row
+associated withy ′. Hence we only need enforce
+π
+
+GH (x′);z= 1  =π  GH (x′);z= 0  for eachy ′ ∈y H (xtest).(29)
+But this will always be possible per the following: Suppose the equality from (29) does not initially
+hold. We may add an additional element to either S(1) H (x′) or S(0) H (x′) (but not both) such that the
+corresponding tuple produces β(tk ij) = 1 to flip the parity and induce equality. This is achievable
+without disrupting equality elsewhere by placing the added element within eG∗ H (xtest), at a location H
+hops from x′ and greater than H hops from other elements of yH (xtest). This placement mirrors an
+analogous placement strategy applied in Appendix I.3, only here labeled nodes are not required.
+Lastly, if (29) holds, then
+p
+
+S|G ∗ H (xtest)  =p  S|GH (xtest), yH (xtest)  =p  S|GH (xtest)  ,(30)
+completing the demonstration of part 2.■
+34

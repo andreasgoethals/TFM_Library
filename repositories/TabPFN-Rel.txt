@@ -2,10 +2,10 @@ TFM Library source snapshot
 Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/PriorLabs/tabpfn-rel",
-  "revision": "86315dd164a0153bf1b0d49015a226785c06a6eb",
-  "revision_date": "2026-10-21T18:31:10+02:00",
+  "revision": "47c4c1aba71738aadd23de9b8c9b38074c482eef",
+  "revision_date": "2026-11-05T11:48:16+01:00",
   "slug": "PriorLabs/tabpfn-rel",
-  "retrieved_utc": "2026-10-26T10:45:44+00:00",
+  "retrieved_utc": "2026-11-10T09:31:51+00:00",
   "identity_source": "https://arxiv.org/abs/2608.16319",
   "included_files": 29,
   "excluded_files": 14,

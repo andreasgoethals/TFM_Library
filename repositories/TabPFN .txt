@@ -19,11 +19,17 @@ Directory structure:
     │   ├── 1339.changed.md
     │   ├── 1340.fixed.md
     │   ├── 1358.fixed.md
+    │   ├── 1361.changed.md
     │   ├── 1375.fixed.md
     │   ├── 1376.fixed.md
     │   ├── 1377.fixed.md
     │   ├── 1381.added.md
-    │   └── 1387.fixed.md
+    │   ├── 1387.fixed.md
+    │   ├── 1388.fixed.md
+    │   ├── 1389.changed.md
+    │   ├── 1395.changed.md
+    │   ├── 1396.changed.md
+    │   └── 1400.fixed.md
     ├── examples/
     │   ├── batched_classification_cv.py
     │   ├── batched_regression_m4.py
@@ -447,7 +453,7 @@ The code in this repository is licensed under the [Apache License 2.0](LICENSE).
 
 Model weights are licensed separately.
 
-The TabPFN-2.5, TabPFN-2.6, TabPFN-3 and TabPFN-3.5 model weights are released under non-commercial licenses (TabPFN-3.5 [license](https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE), TabPFN-3 [license](https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE); see the [Models page](https://docs.priorlabs.ai/models#tabpfn-model-license) for prior releases). TabPFN-3.5 is used by default.
+The TabPFN-2.5, TabPFN-2.6, TabPFN-3, TabPFN-3.5 and TabPFN-3.5-Fast model weights are released under non-commercial licenses (TabPFN-3.5 and TabPFN-3.5-Fast [license](https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/LICENSE), TabPFN-3 [license](https://huggingface.co/Prior-Labs/tabpfn_3/blob/main/LICENSE); see the [Models page](https://docs.priorlabs.ai/models#tabpfn-model-license) for prior releases). TabPFN-3.5 is used by default.
 
 The TabPFN-2 model weights are licensed under the Prior Labs License (Apache 2.0 with an additional attribution requirement): [classifier license](https://huggingface.co/Prior-Labs/TabPFN-v2-clf/blob/main/LICENSE.txt), [regressor license](https://huggingface.co/Prior-Labs/TabPFN-v2-reg/blob/main/LICENSE.txt). To use the v2 model weights, instantiate your model as follows:
 
@@ -557,7 +563,7 @@ You can read our paper explaining TabPFNv2 [here](https://doi.org/10.1038/s41586
 
 ## Usage Tips
 
-- **Use batch prediction mode**: Each `predict` call recomputes the training set. Calling `predict` on 100 samples separately is almost 100 times slower and more expensive than a single call. If the test set is very large, split it into chunks of 1000 samples each.
+- **Predict in a single call**: By default, each `predict` call recomputes the training set, so predicting 100 samples one at a time is almost 100 times slower and more expensive than a single call. Pass the whole test set at once, and only split it up if you run out of memory — the error raised then shows how. To reuse the training-set representation across repeated `predict` calls on the same training data, fit with `fit_mode="fit_with_cache"`, which also chunks large test sets automatically (see [kv_cache_fast_prediction.py](https://github.com/PriorLabs/TabPFN/tree/main/examples/kv_cache_fast_prediction.py)).
 - **Avoid data preprocessing**: Do not apply data scaling or one-hot encoding when feeding data to the model.
 - **Use a GPU**: TabPFN is slow to execute on a CPU. Ensure a GPU is available for better performance.
 - **Mind the dataset size**: TabPFN works best on datasets within its recommended size limits. **TabPFN-3.5** and **TabPFN-3.5-Fast** accept up to **1,000,000 rows** and **20,000 features**. See the [Models page](https://docs.priorlabs.ai/models) for the limits of other checkpoints.
@@ -583,7 +589,7 @@ TabPFN requires **Python 3.10+** due to newer language features. Compatible vers
 ### **Installation & Setup**
 
 <details>
-<summary><b>Q: How do I get access to TabPFN-2.5 / TabPFN-2.6 / TabPFN-3 / TabPFN-3.5?</b></summary>
+<summary><b>Q: How do I get access to TabPFN-2.5 / TabPFN-2.6 / TabPFN-3 / TabPFN-3.5 / TabPFN-3.5-Fast?</b></summary>
 
 On first use, TabPFN will automatically open a browser window where you can log in via [PriorLabs](https://ux.priorlabs.ai) and accept the license terms. Your authentication token is cached locally so you only need to do this once.
 
@@ -618,12 +624,12 @@ This script will download the main classifier and regressor models, as well as a
    - TabPFN-3.5-Fast: [tabpfn-v3.5-fast-20260909.safetensors](https://huggingface.co/Prior-Labs/tabpfn_3_5/blob/main/tabpfn-v3.5-fast-20260909.safetensors)
 
 2. Place the file in one of these locations:
-   - Specify directly: `TabPFNClassifier(model_path="/path/to/model.ckpt")`
+   - Specify directly: `TabPFNClassifier(model_path="/path/to/tabpfn-v3.5-20260909.safetensors")`. Keep the downloaded filename: the model version is inferred from it, and a name carrying no version identifier is read as TabPFN-2.
    - Set environment variable: `export TABPFN_MODEL_CACHE_DIR="/path/to/dir"` (see environment variables FAQ below)
    - Default OS cache directory:
      - Windows: `%APPDATA%\tabpfn\`
      - macOS: `~/Library/Caches/tabpfn/`
-     - Linux: `~/.cache/tabpfn/`
+     - Linux: `$XDG_CACHE_HOME/tabpfn/` when set, otherwise `~/.cache/tabpfn/`
 
 </details>
 
@@ -647,6 +653,7 @@ TabPFN uses Pydantic settings for configuration, supporting environment variable
 
 **Model Configuration:**
 - `TABPFN_MODEL_CACHE_DIR`: Custom directory for caching downloaded TabPFN models (default: platform-specific user cache directory)
+- `TABPFN_MODEL_VERSION`: Which checkpoint `TabPFNClassifier()` and `TabPFNRegressor()` download and load when no `model_path` is given (default: `v3.5`). One of `v2`, `v2.5`, `v2.6`, `v3`, `v3.5`, `v3.5-fast`. Set before importing TabPFN. An explicit `model_path`, or `create_default_for_version()`, takes precedence.
 - `TABPFN_ALLOW_CPU_LARGE_DATASET`: Allow running TabPFN on CPU above the per-model sample limit (5000 for TabPFN-3, TabPFN-3.5 and TabPFN-3.5-Fast, 1000 for older versions). Set to `true` to override the CPU limitation. Note: large datasets can still be slow on CPU!
 - `TABPFN_MPS_MEMORY_FRACTION`: Fraction of recommended max MPS memory to allow on Apple Silicon (default: `0.7`). Used to prevent macOS system crashes; set before importing TabPFN. Values above `1.0` are not recommended.
 - `TABPFN_MAX_BATCHED_TEST_ROWS`: Maximum number of test rows fed through the model in a single forward pass during cached (`fit_mode="fit_with_cache"`) inference (default: `32768`). Larger test sets are split into independent chunks of at most this size and concatenated, bounding peak memory. Test rows are conditionally independent given the KV cache, so chunking is mathematically equivalent — results may still differ slightly due to floating-point non-associativity (see [#800](https://github.com/PriorLabs/TabPFN/issues/800#issuecomment-4903444425)). Performance should be close to optimal at the default of `32768`: the hardware is already saturated at that chunk size and, since the computations are independent, larger chunks bring no speedup. Set to `0` to disable chunking.
@@ -2437,6 +2444,13 @@ Fix silently wrong predictions on MPS with 65,536 or more training rows (torch <
 
 
 ================================================
+FILE: changelog/1361.changed.md
+================================================
+Correct stale README claims: the offline-usage FAQ keeps the downloaded checkpoint filename, the Linux cache path notes `XDG_CACHE_HOME`, the prediction tip points at `fit_mode="fit_with_cache"` instead of manual test-set chunking, `TABPFN_MODEL_VERSION` is documented, and TabPFN-3.5-Fast is named in the license section and the license-acceptance FAQ.
+
+
+
+================================================
 FILE: changelog/1375.fixed.md
 ================================================
 Accept any real number in [0, 1] as a quantile in `TabPFNRegressor.predict` and `predict_batched`, including `np.float32` values and the ints 0 and 1, and report out-of-range quantiles as a range error.
@@ -2468,6 +2482,41 @@ Add optional numerical sign flipping with `PreprocessorConfig(random_sign_flip_n
 FILE: changelog/1387.fixed.md
 ================================================
 Saving a fitted model whose `model_path` is a `pathlib.Path` (or a list of them) no longer fails with "Object of type PosixPath is not JSON serializable".
+
+
+
+================================================
+FILE: changelog/1388.fixed.md
+================================================
+`TabPFNRegressor` with `inference_precision=torch.float64` now keeps float64 precision in its predictions.
+
+
+
+================================================
+FILE: changelog/1389.changed.md
+================================================
+The `inference_precision` docstrings of `TabPFNClassifier` and `TabPFNRegressor` now state that predicting a row alone or in a batch gives exactly the same result only with `torch.float64`.
+
+
+
+================================================
+FILE: changelog/1395.changed.md
+================================================
+TabPFN-3.5 uses native grouped-query attention on CPU (PyTorch 2.9+) instead of copying the shared K/V head, so predictions are faster, mainly with `fit_mode="fit_with_cache"`.
+
+
+
+================================================
+FILE: changelog/1396.changed.md
+================================================
+Attention no longer copies its inputs on CUDA and CPU. This lowers GPU memory and speeds up predictions, most for classification on large training sets. Outputs are unchanged.
+
+
+
+================================================
+FILE: changelog/1400.fixed.md
+================================================
+Fix excessive memory use on CPUs with AVX512-BF16 (AMD Zen 4 and later, Intel Sapphire Rapids and later), due to batching of estimators.
 
 
 
@@ -10173,6 +10222,11 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
                 - If `"auto"`, we determine whether to use autocast or not depending on
                   the device type.
 
+                Only `torch.float64` makes a row's prediction exactly independent of the
+                other rows predicted with it, because matrix products are summed in an
+                order that depends on the batch size. Otherwise its probabilities can
+                change by about 1e-6 (`torch.float32`) or 1e-3 (autocast).
+
             fit_mode:
                 Determine how the TabPFN model is "fitted". The mode determines how the
                 data is preprocessed and cached for inference. This is unique to an
@@ -17795,6 +17849,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
                 - If `"auto"`, we determine whether to use autocast or not depending on
                   the device type.
 
+                Only `torch.float64` makes a row's prediction exactly independent of the
+                other rows predicted with it, because matrix products are summed in an
+                order that depends on the batch size. Otherwise it can change by a
+                relative 1e-6 (`torch.float32`) or 1e-3 (autocast).
+
             fit_mode:
                 Determine how the TabPFN model is "fitted". The mode determines how the
                 data is preprocessed and cached for inference. This is unique to an
@@ -19602,7 +19661,10 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         for output, config in self.executor_.iter_outputs(
             X, autocast=self.use_autocast_, task_type="regression"
         ):
-            output = output.float()  # noqa: PLW2901
+            # Widen half-precision autocast output, but keep float64 when
+            # `inference_precision=torch.float64` asked for it.
+            if output.dtype in (torch.float16, torch.bfloat16):
+                output = output.float()  # noqa: PLW2901
             if temperature != 1:
                 output = output / temperature  # noqa: PLW2901
 
@@ -27937,7 +27999,7 @@ class TabPFNV3(Architecture):
                 highest_target=highest_target,
             )
         else:
-            test_out = self.output_projection(test_emb.transpose(0, 1))
+            test_out = self.output_projection(test_emb).transpose(0, 1)
 
         if self._nan_safe_output:
             test_out = torch.nan_to_num(test_out, nan=0.0)
@@ -30641,7 +30703,7 @@ class MultiTaskHeads(nn.Module):
         """
         if task_type == "regression":
             test_emb = self.mlp_regression(test_emb)
-            return self.output_projection(test_emb.transpose(0, 1))
+            return self.output_projection(test_emb).transpose(0, 1)
         if task_type == "multiclass":
             assert num_present_classes is not None
             assert train_keys_BNHD is not None, (
@@ -32236,29 +32298,30 @@ from __future__ import annotations
 import functools
 
 import torch
-from torch.torch_version import TorchVersion
+from packaging.version import Version
 
 
 @functools.cache
-def gqa_is_supported() -> bool:
-    """Check if PyTorch's scaled_dot_product_attention supports enable_gqa parameter.
+def gqa_is_supported(device: torch.device, dtype: torch.dtype) -> bool:
+    """Check if scaled_dot_product_attention supports enable_gqa on ``device``.
 
-    This checks whether torch.nn.functional.scaled_dot_product_attention has a
-    kwarg enable_gqa and if we have sufficient NVIDIA compute capability.
-    PyTorch 2.5+ includes enable_gqa support.
+    This checks whether the installed PyTorch has the enable_gqa kwarg and whether
+    the device has kernels that run it efficiently for the given ``dtype``.
+    CUDA needs PyTorch >=2.5, compute capability >=8.0 and fp16 or bf16.
+    CPU needs PyTorch >=2.9 and works with any dtype. Other devices return False.
     """
-    if not torch.cuda.is_available():
-        return False
-
-    has_enable_gqa = torch.__version__ >= TorchVersion("2.5")
-    if not has_enable_gqa:
-        return False
-
-    # Check compute capability only if CUDA is available
-    # We need compute capability >= 8.0 for efficient GQA
-    device = torch.cuda.current_device()
-    nvidia_compute_capability = torch.cuda.get_device_capability(device)
-    return nvidia_compute_capability[0] >= 8
+    # Only the release numbers count, so pre-releases like 2.9.0a0 count as 2.9.
+    torch_release = Version(torch.__version__).release
+    if device.type == "cpu":
+        return torch_release >= (2, 9)
+    if device.type == "cuda":
+        return (
+            torch_release >= (2, 5)
+            and dtype in {torch.float16, torch.bfloat16}
+            # We need compute capability >= 8.0 for efficient GQA
+            and torch.cuda.get_device_capability(device)[0] >= 8
+        )
+    return False
 
 
 
@@ -34056,12 +34119,15 @@ def _torch_sdpa(
     num_q_heads = q_BHSD.shape[-3]
     num_kv_heads = k_BJSD.shape[-3]
 
-    dtype_supports_gqa = q_BHSD.dtype in {torch.float16, torch.bfloat16}
     if num_q_heads == num_kv_heads:
         keys = k_BJSD
         values = v_BJSD
         enable_gqa = {}
-    elif gqa_is_supported() and dtype_supports_gqa:
+    # The TorchScript ONNX exporter cannot convert enable_gqa, so exports copy K/V.
+    # This check stays out of the cached gqa_is_supported, since it changes per call.
+    elif not torch.onnx.is_in_onnx_export() and gqa_is_supported(
+        q_BHSD.device, q_BHSD.dtype
+    ):
         keys = k_BJSD
         values = v_BJSD
         enable_gqa = {"enable_gqa": True}
@@ -34090,14 +34156,23 @@ def _torch_sdpa(
         )
     sub_batch = (q_BHSD.shape[0] + num_iterations - 1) // num_iterations
 
+    # SDPA takes the permuted views; only the last dim must be contiguous. MPS SDPA
+    # returns wrong values for permuted inputs on older torch (pytorch#181133), and
+    # ROCm runs long sequences faster on contiguous inputs, so both copy.
+    copy_inputs = q_BHSD.device.type == "mps" or torch.version.hip is not None
+
+    def batch_slice(t: torch.Tensor, i: int) -> torch.Tensor:
+        sliced = t[i * sub_batch : (i + 1) * sub_batch]
+        return sliced.contiguous() if copy_inputs else sliced
+
     with sdpa_kernel(backends=backends):
         outputs = []
         for i in range(num_iterations):
             outputs.append(
                 torch.nn.functional.scaled_dot_product_attention(
-                    q_BHSD[i * sub_batch : (i + 1) * sub_batch].contiguous(),
-                    keys[i * sub_batch : (i + 1) * sub_batch].contiguous(),
-                    values[i * sub_batch : (i + 1) * sub_batch].contiguous(),
+                    batch_slice(q_BHSD, i),
+                    batch_slice(keys, i),
+                    batch_slice(values, i),
                     attn_mask=None,
                     **enable_gqa,
                 )
@@ -54293,6 +54368,36 @@ def test__fit_preprocessors_and_low_memory_produce_equal_results(
 
 
 @pytest.mark.parametrize("model_version", list(ModelVersion))
+# Disable MPS as it doesn't support float64.
+@pytest.mark.parametrize("device", [d for d in get_pytest_devices() if d != "mps"])
+def test__predict_proba__single_row_vs_batch__equal_in_float64(
+    X_y: tuple[np.ndarray, np.ndarray], model_version: ModelVersion, device: str
+) -> None:
+    """Predicting a row alone must give the same result as predicting it in a batch.
+
+    The model treats test rows independently, but matrix products are summed in an
+    order that depends on the batch size. In float64 this changes results by about
+    1e-16, in lower precisions by up to about 1e-3, so this test forces float64.
+    """
+    X, y = X_y
+    tabpfn = TabPFNClassifier.create_default_for_version(
+        version=model_version,
+        n_estimators=2,
+        inference_precision=torch.float64,
+        random_state=0,
+        device=device,
+    )
+    tabpfn.fit(X, y)
+
+    batch_probs = tabpfn.predict_proba(X)
+    single_probs = np.concatenate(
+        [tabpfn.predict_proba(X[i : i + 1]) for i in range(len(X))]
+    )
+
+    np.testing.assert_allclose(single_probs, batch_probs, rtol=0, atol=1e-12)
+
+
+@pytest.mark.parametrize("model_version", list(ModelVersion))
 def test__fit_and_predict__on_demo_dataset__accuracy_reasonable(
     model_version: ModelVersion,
 ) -> None:
@@ -66148,6 +66253,35 @@ def test__fit_preprocessors_and_low_memory_produce_equal_results(
 
 
 @pytest.mark.parametrize("model_version", list(ModelVersion))
+# Disable MPS as it doesn't support float64.
+@pytest.mark.parametrize("device", [d for d in get_pytest_devices() if d != "mps"])
+def test__predict__single_row_vs_batch__equal_in_float64(
+    X_y: tuple[np.ndarray, np.ndarray], model_version: ModelVersion, device: str
+) -> None:
+    """Predicting a row alone must give the same result as predicting it in a batch.
+
+    The model treats test rows independently, but matrix products are summed in an
+    order that depends on the batch size. In float64 this changes results by about
+    1e-15 relative, in lower precisions by up to about 1e-3, so this test forces
+    float64. The tolerance is relative because predictions can be large.
+    """
+    X, y = X_y
+    tabpfn = TabPFNRegressor.create_default_for_version(
+        version=model_version,
+        n_estimators=2,
+        inference_precision=torch.float64,
+        random_state=0,
+        device=device,
+    )
+    tabpfn.fit(X, y)
+
+    batch_preds = tabpfn.predict(X)
+    single_preds = np.concatenate([tabpfn.predict(X[i : i + 1]) for i in range(len(X))])
+
+    np.testing.assert_allclose(single_preds, batch_preds, rtol=1e-12, atol=1e-12)
+
+
+@pytest.mark.parametrize("model_version", list(ModelVersion))
 def test__fit_and_predict__on_demo_dataset__r2_reasonable(
     model_version: ModelVersion,
 ) -> None:
@@ -75533,12 +75667,16 @@ FILE: tests/test_architectures/test_shared/test_scaled_dot_product_attention.py
 
 from __future__ import annotations
 
+import io
+import os
 from typing import Any, TypedDict
 
 import pytest
 import torch
 from torch.nn.attention import SDPBackend
+from torch.torch_version import TorchVersion
 
+from tabpfn.architectures.shared.attention_gqa_check import gqa_is_supported
 from tabpfn.architectures.shared.scaled_dot_product_attention import (
     _FLASH_BACKWARD_MAX_ELEMENTS,
     _FLASH_MIN_HEAD_DIM,
@@ -75730,6 +75868,52 @@ def test__torch_sdpa__grad_disabled__does_not_chunk(
     assert len(shapes) == 1
 
 
+def _sdpa_input_storages(
+    monkeypatch: pytest.MonkeyPatch, device: str
+) -> tuple[list[int], list[int]]:
+    """Storages SDPA receives, and the storages of the inputs to `_torch_sdpa`."""
+    received: list[int] = []
+
+    def fake_sdpa(
+        query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, **_kwargs: Any
+    ) -> torch.Tensor:
+        received.extend(t.untyped_storage().data_ptr() for t in (query, key, value))
+        return torch.empty_like(query)
+
+    monkeypatch.setattr(torch.nn.functional, "scaled_dot_product_attention", fake_sdpa)
+    q = torch.randn(2, 5, 4, 8, device=device)
+    k = torch.randn(2, 7, 4, 8, device=device)
+    v = torch.randn(2, 7, 4, 8, device=device)
+
+    _torch_sdpa(q, k, v)
+
+    return received, [t.untyped_storage().data_ptr() for t in (q, k, v)]
+
+
+def test__torch_sdpa__passes_views_of_the_inputs_without_copying(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(torch.version, "hip", None)
+    received, inputs = _sdpa_input_storages(monkeypatch, "cpu")
+    assert received == inputs
+
+
+def test__torch_sdpa__on_rocm__copies_the_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(torch.version, "hip", "6.4")
+    received, inputs = _sdpa_input_storages(monkeypatch, "cpu")
+    assert not set(received) & set(inputs)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs MPS")
+def test__torch_sdpa__on_mps__copies_the_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    received, inputs = _sdpa_input_storages(monkeypatch, "mps")
+    assert not set(received) & set(inputs)
+
+
 def _cuda_bytes_available() -> int:
     if not torch.cuda.is_available():
         return 0
@@ -75771,6 +75955,100 @@ def test__torch_sdpa__query_over_flash_index_range__backward_runs_on_cuda() -> N
     torch.cuda.synchronize()
 
     assert q.grad is not None
+
+
+@pytest.mark.skipif(
+    not gqa_is_supported(torch.device("cpu"), torch.float32),
+    reason="needs CPU GQA on Torch >=2.9",
+)
+def test__torch_sdpa__cpu_mqa__shares_kv_and_matches_copied_kv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CPU MQA passes the single K/V head to SDPA instead of copying it per head."""
+    q = torch.randn(2, 7, 4, 8)
+    k = torch.randn(2, 37, 1, 8)
+    v = torch.randn_like(k)
+    with torch.inference_mode():
+        # K/V expanded to all 4 query heads takes the path that copies K/V.
+        expected = _torch_sdpa(q, k.expand(-1, -1, 4, -1), v.expand(-1, -1, 4, -1))
+
+    original_sdpa = torch.nn.functional.scaled_dot_product_attention
+    calls: list[tuple[torch.Tensor, dict[str, Any]]] = []
+
+    def record(
+        query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, **kwargs: Any
+    ) -> torch.Tensor:
+        calls.append((key, kwargs))
+        return original_sdpa(query, key, value, **kwargs)
+
+    monkeypatch.setattr(torch.nn.functional, "scaled_dot_product_attention", record)
+    with torch.inference_mode():
+        actual = _torch_sdpa(q, k, v)
+
+    [(key, kwargs)] = calls
+    assert kwargs.get("enable_gqa") is True
+    assert key.untyped_storage().data_ptr() == k.untyped_storage().data_ptr()
+    torch.testing.assert_close(actual, expected)
+
+
+@pytest.mark.skipif(
+    not gqa_is_supported(torch.device("cpu"), torch.float32),
+    reason="needs CPU GQA on Torch >=2.9",
+)
+@pytest.mark.skipif(os.name == "nt", reason="onnx export is not tested on windows")
+def test__torch_sdpa__cpu_mqa_onnx_export__exports_without_enable_gqa() -> None:
+    """The TorchScript ONNX exporter cannot convert SDPA with enable_gqa."""
+    pytest.importorskip("onnx")
+
+    class Attention(torch.nn.Module):
+        def forward(
+            self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
+        ) -> torch.Tensor:
+            return _torch_sdpa(q, k, v)
+
+    q = torch.randn(2, 7, 4, 8)
+    k = torch.randn(2, 37, 1, 8)
+    v = torch.randn_like(k)
+
+    torch.onnx.export(Attention(), (q, k, v), io.BytesIO(), dynamo=False)
+
+
+@pytest.mark.parametrize(
+    ("device", "dtype", "version", "expected"),
+    [
+        ("cpu", torch.float32, "2.8.0", False),
+        ("cpu", torch.float32, "2.9.0", True),
+        ("cpu", torch.float32, "2.9.0a0", True),
+        ("cpu", torch.float32, "2.9.0.dev20250801+cpu", True),
+        ("cpu", torch.float64, "2.9.0", True),
+        ("cuda:0", torch.float16, "2.9.0", False),
+        ("cuda:1", torch.float16, "2.4.0", False),
+        ("cuda:1", torch.float16, "2.5.0rc1", True),
+        ("cuda:1", torch.float16, "2.9.0", True),
+        ("cuda:1", torch.bfloat16, "2.9.0", True),
+        ("cuda:1", torch.float32, "2.9.0", False),
+        ("meta", torch.float16, "2.9.0", False),
+    ],
+)
+def test__gqa_is_supported__per_device__follows_version_capability_and_dtype(
+    monkeypatch: pytest.MonkeyPatch,
+    device: str,
+    dtype: torch.dtype,
+    version: str,
+    *,
+    expected: bool,
+) -> None:
+    """CPU depends on the Torch version, CUDA also on the GPU and the dtype."""
+    capabilities = {0: (7, 5), 1: (8, 0)}
+    monkeypatch.setattr(torch, "__version__", TorchVersion(version))
+    monkeypatch.setattr(
+        torch.cuda, "get_device_capability", lambda gpu: capabilities[gpu.index]
+    )
+    gqa_is_supported.cache_clear()
+    try:
+        assert gqa_is_supported(torch.device(device), dtype) is expected
+    finally:
+        gqa_is_supported.cache_clear()
 
 
 
@@ -113298,7 +113576,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c  # v1
+        uses: anthropics/claude-code-action@d535f5172dec02b204866b393d6b20b9b2aaf98d  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
@@ -113379,7 +113657,7 @@ jobs:
         # Pinned to v1 commit SHA to mitigate moving-tag supply-chain risk.
         # When updating, resolve the new tag's underlying commit via
         #   gh api /repos/anthropics/claude-code-action/git/refs/tags/<tag>
-        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c  # v1
+        uses: anthropics/claude-code-action@d535f5172dec02b204866b393d6b20b9b2aaf98d  # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 

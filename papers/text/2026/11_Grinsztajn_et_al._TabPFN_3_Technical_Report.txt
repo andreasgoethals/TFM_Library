@@ -8,7 +8,7 @@ synthetic data from our prior,TabPFN-3 dramatically pushes the frontier of tabul
 and brings substantial gains on time series, relational, and tabular-text data.
 A new performance standard.On the standard tabular benchmark TabArena, a forward
 pass ofTabPFN-3 outperforms all other models, including tuned and ensembled baselines, by a
-significant margin, and pareto-dominates the speed/performance frontier.TabPFN-3also scales
+significant margin, and pareto-dominates the speed/performance frontier.TabPFN-3 also scales
 to more diverse datasets: it ranks first on datasets with many classes, and beats 8-hour-tuned
 gradient-boosted-tree baselines on datasets up to 1M training rows and 200 features.
 Thinking mode. TabPFN-3 introduces test-time compute scaling to tabular foundation
@@ -19,7 +19,7 @@ without using LLMs, real data, internet search or any other model besides TabPFN
 Broader capabilities.TabPFN-3 extends the capabilities of our models, enabling SOTA
 prediction on many-class datasets, relational data (new SOTA foundation model on RelBenchV1)
 and tabular-text datasets (SOTA on TabSTAR viaTabPFN-3-Plus). It also directly improves
-existing integrations of TabPFN: a specializedTabPFN-3checkpoint, TabPFN-TS-3, ranks 2nd
+existing integrations of TabPFN: a specializedTabPFN-3 checkpoint, TabPFN-TS-3, ranks 2nd
 on the time-series benchmark fev-bench, and SHAP-value computation throughshapiq is up to
 120×faster with KV caching.
 An enterprise-ready model. TabPFN-3 achieves this performance while being up to 20x
@@ -52,10 +52,10 @@ Elo
 Default T uned T uned + Ensembled T abPFN-3
 T abArena-Medium Leaderboard
 Figure 1. Performance on the TabArena benchmark [1], largest data subset (10k-100k samples).
-TabPFN-3 outperforms any other model in a forward pass.TabPFN-3-Plus(Thinking) is dramatically better yet,
+TabPFN-3 outperforms any other model in a forward pass.TabPFN-3-Plus (Thinking) is dramatically better yet,
 outperforming AutoGluon 1.5 extreme [2], a complex ensemble of models tuned for 4 hours, while being 10x faster.
 1
-arXiv:2605.13986v2  [cs.LG]  28 May 2026
+arXiv:2605.13986v3  [cs.LG]  3 Nov 2026
 
 Contents
 1 Introduction 3
@@ -119,9 +119,7 @@ model. See Appendix E.2.1 and E.2.3 for details.
 T abPFN-3-ThinkingT abPFN-3 (default)
 AutoGluon 1.5
 T abICLv2 (default)T abPFN-2.6 (default)RealT abPFN-2.5 (T+E)
-RealMLP (T+E)CatBoost (T+E)T abDPT (T+E)LightGBM (T+E)
-T abM (T+E)
-XGBoost (T+E)
+RealMLP (T+E)CatBoost (T+E)T abDPT (T+E)LightGBM (T+E) T abM (T+E) XGBoost (T+E)
 Model B: Loser
 T abPFN-3-Thinking
 T abPFN-3 (default)
@@ -235,7 +233,7 @@ significant (p <0.0001).
 TabPFN-3 comes with a new architecture (Section 2.1), including an attention-based many-class decoder
 (Section 2.2), an improved preprocessing pipeline (Section 2.3), inference-time optimizations that enable
 scaling to one million rows on a single GPU (Section 2.4), and an improved synthetic SCM prior used
-for pre-training (Section 2.5). We also introduce the API and enterprise featuresTabPFN-3-Pluswhich
+for pre-training (Section 2.5). We also introduce the API and enterprise featuresTabPFN-3-Plus which
 handles text in tables natively andTabPFN-3-Plus (Thinking) which applies test-time-compute for
 dramatically improved performance (Section 2.6).
 2.1 Architecture
@@ -309,12 +307,9 @@ For multiclass classification,TabPFN-3replaces the fixed-width MLP classificatio
 3×C×K
 C×N
 (3+3)×C
-x11 x12 · · · x1m
-x21 Inf · · · NaN
-...
-...
-. . .
-...
+x11 x12 · · ·x1m
+x21 Inf · · ·NaN
+... ... . . . ...
 InputX∈R N×C
 Mean-Imputation & Standardize
 Feature Groupingcircular shifts(0,1,3)
@@ -325,9 +320,7 @@ NaN/Inf mask
 + ←y i ∈ Y
 Label Embedding (trainable orth.)
 Feature Embedding(col-wise)
-×3Nrows
-Kinducing
-Nrows
+×3Nrows Kinducing Nrows
 chunkcolumns
 applied per column
 in parallel
@@ -340,18 +333,11 @@ in parallel
 or chunked
 (recomputing column
 embeddings)
-C C C C 4 CLS per row
-flatten→4d
+C C C C 4 CLS per row flatten→4d
 + ←y i ∈ Y
 Label Embedding (trainable orth.)
-h train
-1 h train
-2 h train
-3 h train
-4
-h test
-1 h test
-2
+htrain 1 htrain 2 htrain 3 htrain 4
+htest 1 htest 2
 train↔train
 multi-head self-attn
 test→train
@@ -359,51 +345,34 @@ multi-query cross-attn
 In-Context Learning
 ×24
 Many-Class Decoder
-h train
-1 0
-h train
-2 1
-h train
-3 2
-h train
-4 0
-h test
-1
-h test
-2
+htrain 1 0
+htrain 2 1
+htrain 3 2
+htrain 4 0
+htest 1
+htest 2
 Attention-weighted
 average of one-hot
-encoded labels(y i )
-p(y|h test
-i )
-ˆy∈R N test ×|Y| (class logits, many-class classification)
+encoded labels(y i)
+p(y|h test i )
+ˆy∈RNtest ×|Y| (class logits, many-class classification)
 Figure 5. Architecture of TabPFN-3, adapted from the TabICLv2 architecture.Changes include
 adding novel orthogonal embeddings, the many class decoder, NaN/Inf indicator variables, and the option to use
 low-memory chunked inference (dotted paths; dashed paths signal fully parallel path). C refers to number of
 colums, N to the number of rows, K is the number of inducing points, andYis the set of labels. Shown is
 TabPFN-3 for classification; the regression variant does not use the many-class decoder.
 treats class prediction as a soft nearest-neighbor retrieval, inspired by Arbel et al.[32] and Koshil et al.
-[33]: the final-layer train embeddings{htrain
-n }Ntrain
-n=1 act as keys, the corresponding one-hot label vectors
-yn ∈ {0, 1}C as values, and test embeddingshtest
-m as queries. After the usual learned linear projections
+[33]: the final-layer train embeddings{htrain n }Ntrain n=1 act as keys, the corresponding one-hot label vectors
+yn ∈ {0, 1}C as values, and test embeddingshtest m as queries. After the usual learned linear projections
 WQ, WK and a multi-head split, the decoder computes
-pm = 1
-H
+pm = 1 H
 HX
 h=1
 NX
 n=1
-α(h)
-m,n yn, α (h)
-m,n = softmax n
+α(h) m,n yn, α (h) m,n = softmaxn
 
-q(h)
-m ·k(h)
-n√Dh
-
-,
+q(h) m ·k(h) n√Dh  ,
 6
 
 that is: a (head-averaged) attention-weighted average of the in-context one-hot labels, which is then
@@ -417,7 +386,7 @@ the class indices. Second, decoding is non-parametric inC: the decoder’s param
 the embedding dimension and the number of attention heads, not on someCmax, decoupling the head’s
 capacity from the supported label cardinality.
 Class-count limit from pre-training.Although the decoder is non-parametric inC, the trained
-TabPFN-3still fixes a hard ceilingCmax = 160at pre-training time via three checkpoint-bound tensors:
+TabPFN-3 still fixes a hard ceilingCmax = 160at pre-training time via three checkpoint-bound tensors:
 the trainable orthogonal label embeddingsEcol, Eicl ∈R Cmax×D used by the column encoder and the ICL
 transformer, and the one-hot value tensor consumed by the decoder. EnlargingCmax at pre-training
 therefore costs onlyO(Cmax D)extra parameters and no extra decode-time memory.
@@ -450,7 +419,7 @@ Qu et al.[30]), or otherwise incurs substantial I/O overhead (Qu et al.[30] repo
 instead stream the row dimension in fixed-size slices and keep all activations on the GPU.
 A naive row-wise stream is not directly applicable: the distribution embedder summarizes the training
 set into a fixed-size1 set of inducing points via cross-attention over all training rows, and splitting that
-call across chunks would change its semantics.TabPFN-3resolves this with a two-phase scheme exactly
+call across chunks would change its semantics.TabPFN-3 resolves this with a two-phase scheme exactly
 equivalent to the unchunked computation: (i) the inducing states are computed once over the full training
 set, chunked along the (independent) column dimension to bound its own memory cost; (ii) rows are then
 streamed through feature distribution embedding and the feature aggregator in fixed-size chunks, each
@@ -505,18 +474,15 @@ Figure 6 highlights the different memory–compute trade-offs ofTabPFN-3 and Tab
 chunking, the peak memory ofTabPFN-3 grows steeply withntrain and nfeatures. This is because the
 model carries a pre-ICL activationnfeatures-wide through cell embedding, feature distribution embedding,
 and feature aggregation before collapsing the feature axis into a single row representation for the ICL
-transformer. By contrast,TabPFN-2.5alternates row- and column-attention layers over a representation
+transformer. By contrast,TabPFN-2.5 alternates row- and column-attention layers over a representation
 grouped into nfeatures/3tokens, and therefore never materialises a tensor wider than this. This explains
 why TabPFN-3’s unchunked peak memory exceedsTabPFN-2.5’s. Applying row-chunking toTabPFN-3
 flattens peak memory with respect tonfeatures and yields an approximately∼5× reduction at the largest
 shapes, enabling 1M-row inference, while incurring only a small wall-clock overhead of a few percent near
-ntrain ≈ 104 that becomes amortised at larger scales once then2
-train ICL row-attention dominates. At the
+ntrain ≈ 104 that becomes amortised at larger scales once then2 train ICL row-attention dominates. At the
 same time, the feature-collapsed row representation givesTabPFN-3 a substantial runtime advantage
-at large ntrain or nfeatures since its ICL row-attention scales asn2
-train independently of nfeatures, whereas
-TabPFN-2.5’s row attention retains linear dependence onnfeatures and scales withnfeatures ·n 2
-train.
+at large ntrain or nfeatures since its ICL row-attention scales asn2 train independently of nfeatures, whereas
+TabPFN-2.5’s row attention retains linear dependence onnfeatures and scales withnfeatures ·n 2 train.
 2.4.2 Fast Inference with a Small KV-cache
 Being an in-context-learning model,TabPFN-3 combines training (fit) and inference (predict) in one
 forward pass. While this allows for very fast training, it can make online or batched predictions too slow
@@ -564,9 +530,7 @@ v2.5 v3 v3 +chunked v3 +chunked +kv
 (a) Chunking eliminates the OOM frontier; the KV-cache adds memory essentially constant innfeature.
 Maximumn train that fits on one 80 GiB H100 fornfeatures ∈ {10,50,200}. Bars: TabPFN-2.5, TabPFN-3, TabPFN-3
 +chunking, TabPFN-3 +chunking+KV-cache. White labels: peak memory; “≥ 1.0M” marks bars that hit the search cap.
-x
-v2.5 fit+predict v3 fit+predict
-v3 fit (build cache)v3 cached predict
+v2.5 fit+predict v3 fit+predict v3 fit (build cache)v3 cached predict
 0
 200
 400
@@ -583,8 +547,7 @@ nfeatures = 10
 8400
 7840
 nfeatures = 100
-v2.5 fit+predict v3 fit+predict
-v3 fit (build cache)v3 cached predict
+v2.5 fit+predict v3 fit+predict v3 fit (build cache)v3 cached predict
 0
 200
 400
@@ -603,7 +566,7 @@ peak memory of (chunked) cache-predict is basically flat across feature sizes. O
 is one to three orders of magnitude faster than either theTabPFN-2.5 baseline or TabPFN-3’s own
 cold “fit+predict” path (Figure 7b), achieving between 0.1 and 3 ms/test point for batches of 100 test
 points. The fit-with-cache call costs essentially the same as the cold fit+predict at every measured shape,
-includingn train = 10 6 where both complete in∼107s (Figure 8).
+includingn train = 106 where both complete in∼107s (Figure 8).
 2.4.3 Model Distillation
 In production environments constrained by latency or memory budgets, hardware availability, or regulatory
 requirements that mandate familiar model classes,TabPFN-3 also supports distillation into dataset-
@@ -614,7 +577,7 @@ TabPFN-3’s predictive performance on the dataset it was distilled for.
 TabPFN-3 ships with two opt-in performance features that target different bottlenecks:torch.compile,
 which fuses dispatch on the non-attention hot paths, and FlashAttention-3 (FA3) [35], a Hopper-specific
 kernel for the in-context-learning attention. On MI-250x,torch.compile reaches up to1.58× speedup
-on the non-chunked forward pass; on H100, FA3 reaches1.5–1.7× at ntrain = 10 6 over the SDPA fallback.
+on the non-chunked forward pass; on H100, FA3 reaches1.5–1.7× at ntrain = 106 over the SDPA fallback.
 Both compose cleanly with row chunking and are auto-detected at runtime; see Appendix G.1 for the full
 9
 
@@ -662,8 +625,7 @@ it generates: our final TabPFN-3 model was trained on more than 8 trillion token
 Step 1: Sample Hyper-parameters Step 2: Sample DAG
 Step 3: Compute SCM
 Step 4: Extract Dataset Step 5: Post-processing
-Sample num_rows:N
-num_features:P
+Sample num_rows:N num_features:P
 num_classes:C
 . . .
 DAG Sampler
@@ -737,7 +699,7 @@ tree-based algorithms as well as most other tabular foundation models.
 2.6 TabPFN-3-Plus and Thinking mode
 On top ofTabPFN-3, which we release open-source, our API and enterprise deployments provide access
 to TabPFN-3-Plus and its thinking mode "TabPFN-3-Plus (Thinking)" (named TabPFN-3-Thinking in
-our plots) These variants are fully compatible with the open-sourceTabPFN-3interface and can be used
+our plots) These variants are fully compatible with the open-sourceTabPFN-3 interface and can be used
 as a drop-in replacement, while offering additional capabilities:
 Native text-feature support. TabPFN-3-Plus accepts string-valued columns directly, without re-
 quiring upstream featurization. Free-text fields – such as product names, insurance claim descriptions,
@@ -786,7 +748,7 @@ Elo
 Default T uned T uned + Ensembled T abPFN-3
 T abArena Leaderboard
 Figure 10. TabPFN-3 performance on the standard TabArena benchmark[1], including all 51 datasets
-(up to 100K rows). TabPFN-3 outperforms any other model in a forward pass, whileTabPFN-3-Plus(Thinking)
+(up to 100K rows). TabPFN-3 outperforms any other model in a forward pass, whileTabPFN-3-Plus (Thinking)
 strongly outperforms all existing methods, including AutoGluon 1.5 extreme [2], a complex ensemble of models
 including TabPFN v2 tuned for 4 hours, in less than a tenth of the runtime.
 101 102 103
@@ -827,8 +789,7 @@ dataset, see Appendix E.2.1.
 T abPFN-3-Thinking
 AutoGluon 1.5
 T abPFN-3 (default)T abICLv2 (default)T abPFN-2.6 (default)RealT abPFN-2.5 (T+E)
-RealMLP (T+E)T abDPT (T+E)T abM (T+E)
-LightGBM (T+E)CatBoost (T+E)XGBoost (T+E)
+RealMLP (T+E)T abDPT (T+E)T abM (T+E) LightGBM (T+E)CatBoost (T+E)XGBoost (T+E)
 Model B: Loser
 T abPFN-3-Thinking
 AutoGluon 1.5
@@ -876,7 +837,7 @@ Pushing the performance frontier on TabArena.Figure 10 shows the performance ofT
 and TabPFN-3-Plus (Thinking) on TabArena. TabPFN-3 outperforms in one forward pass all other
 models, including tuned and ensembled baselines, by a significant margin, gaining 72 Elo points over
 our previous Real-TabPFN-2.5 tuned and ensembled.TabPFN-3-Plus (Thinking), leveraging test-time
-computation, significantly outperforms open-sourceTabPFN-3on TabArena, beating any non-TabPFN
+computation, significantly outperforms open-sourceTabPFN-3 on TabArena, beating any non-TabPFN
 model (including tuned and ensembled baselines) by over 200 Elo points, and outperforming AutoGluon
 1.5 extreme, a complex ensemble of models including TabPFN v2, tuned for 4 hours, by over 100 Elo points
 while being 10x faster. Looking at the win rate matrix in Figure 12, we can see thatTabPFN-3-Plus
@@ -919,8 +880,8 @@ combined training + inference time/performance pareto-frontier on TabArena by a 
 Scaling to larger datasets. TabPFN-3 was built to scale to large datasets, andTabPFN-3-Plus
 (Thinking) benefits from this scalability. While TabArena only contains datasets up to 100k rows, we can
 still observe very strong performance on the 15 largest datasets in TabArena with between 10k and 100k
-rows, as shown in Figure 1. In particular, on this subsetTabPFN-3outperforms any other model by 100
-Elo, andTabPFN-3-Plus(Thinking) dramatically outperforms any other non-TabPFN model (including
+rows, as shown in Figure 1. In particular, on this subsetTabPFN-3 outperforms any other model by 100
+Elo, andTabPFN-3-Plus (Thinking) dramatically outperforms any other non-TabPFN model (including
 tuned and ensembled baselines) by over 420 Elo points, and beats AutoGluon 1.5 extreme (4h) by 220
 Elo points. Looking at the win rate matrix in Figure 3,TabPFN-3-Plus (Thinking) has over 99% win
 rate against tuned and ensembled LightGBM and XGBoost, 98% win rate against CatBoost tuned and
@@ -1050,7 +1011,7 @@ reach at least 1M training rows (one classification, three regression). For each
 set to 100k, 250k, 500k and 1M rows with 3 random repeats. Shaded bands are 95% bootstrap confidence
 intervals across the four datasets and 3 repeats. .
 common and representative of real-world deployment conditions.
-Results. TabPFN-3achieves state-of-the-art performance on our large-data benchmark, outperforming
+Results. TabPFN-3 achieves state-of-the-art performance on our large-data benchmark, outperforming
 default and 8-hour-tuned gradient-boosted tree baselines in a single forward pass, as shown in Figure
 15. Further, we show a preview version ofTabPFN-3-Plus (Thinking) on large data, which improves
 TabPFN-3 performance further for classification datasets (asTabPFN-3-Plus with Thinking mode does
@@ -1105,11 +1066,11 @@ corresponding Critical Difference diagram can be seen in Figure 36.
 (see Appendix F.2). On this subset, TabPFN-3 is again the best ranked model against the baselines
 provided by the TALENT benchmark, as shown in Figure 30.
 3.2.2 Many-Class Classification
-TabPFN-3introduces a many-class decoder (Section 2.2) that we trained to support up to 160 classes,
+TabPFN-3 introduces a many-class decoder (Section 2.2) that we trained to support up to 160 classes,
 a regime where most tabular foundation models fail entirely. Creating a benchmark from real-world
 datasets with naturally many classes is challenging; we therefore evaluate on a synthetic benchmark
 derived by bucketing regression targets from real regression benchmark datasets. We also confirm the
-strong performance ofTabPFN-3on the 4 datasets from the TALENT benchmark that have more than
+strong performance ofTabPFN-3 on the 4 datasets from the TALENT benchmark that have more than
 50 classes in Section E.3.3.
 Synthetic many-class benchmark.We construct a synthetic benchmark by converting the TabArena
 regression datasets into many-class classification problems via jittered quantile binning; full construction
@@ -1205,7 +1166,7 @@ head (Section C), from which arbitrary quantiles are decoded at inference by inv
 CDF — all from a single forward pass, with no retraining per quantile level. Since TabArena does not
 natively support quantile regression evaluation, we construct a dedicated benchmark by downloading the
 TabArena regression datasets and evaluating all models on pinball loss [52], averaged across 10 quantile
-levels q∈ { 0.1, 0.2, . . . ,0.9}. We compare against four baselines spanning the typical strategies for quantile
+levels q∈ {0.1, 0.2, . . . ,0.9}. We compare against four baselines spanning the typical strategies for quantile
 regression: a linear quantile regressor, which fits a separate pinball-loss model per quantile level; XGBoost
 in quantile mode, which uses a single multi-output booster but adds one tree per quantile per boosting
 round, scaling training cost roughly linearly in the number of levels; quantile random forests [53], which
@@ -1230,10 +1191,32 @@ among foundation models on both SQL and MASE skill score while being trained onl
 synthetic data.The full 18-baseline leaderboard can be found in Appendix H.
 (a) SQL (probabilistic)
 Model Win (%) Skill (%) Runtime (s) Leak. (%) # fails
-Chronos-2 91.7 47.3 0.8 0 0TabPFN-TS-3 73.6 43.1 234.6 0 0TiRex 83.4 42.6 0.2 1 0TimesFM-2.5 78.6 42.2 1.9 10 0Toto-1.0 71.6 40.7 22.1 8 0TabPFN-v2-TS 64.1 39.6 88.9 0 2Moirai-2.0 66.2 39.3 0.3 28 0Chronos-Bolt 66.2 38.9 0.2 0 0Sundial-Base 47.1 33.4 8.0 1 0TabICL-v2 53.8 30.8 64.7 0 0Stat. Ensemble 43.8 20.2 148.6 0 11Seasonal Naive 19.1 0.0 0.5 0 0
+Chronos-2 91.7 47.3 0.8 0 0
+TabPFN-TS-3 73.6 43.1 234.6 0 0
+TiRex 83.4 42.6 0.2 1 0
+TimesFM-2.5 78.6 42.2 1.9 10 0
+Toto-1.0 71.6 40.7 22.1 8 0
+TabPFN-v2-TS 64.1 39.6 88.9 0 2
+Moirai-2.0 66.2 39.3 0.3 28 0
+Chronos-Bolt 66.2 38.9 0.2 0 0
+Sundial-Base 47.1 33.4 8.0 1 0
+TabICL-v2 53.8 30.8 64.7 0 0
+Stat. Ensemble 43.8 20.2 148.6 0 11
+Seasonal Naive 19.1 0.0 0.5 0 0
 (b) MASE (point)
 Model Win (%) Skill (%) Runtime (s) Leak. (%) # fails
-Chronos-2 86.9 35.5 0.8 0 0TabPFN-TS-3 69.8 30.6 234.6 0 0TimesFM-2.5 74.9 30.2 1.9 10 0TiRex 76.9 30.0 0.2 1 0Toto-1.0 66.3 28.2 22.1 8 0TabPFN-v2-TS 58.5 27.6 88.9 0 2Moirai-2.0 61.4 27.3 0.3 28 0Chronos-Bolt 60.7 26.5 0.2 0 0Sundial-Base 53.4 24.7 8.0 1 0Stat. Ensemble 46.7 15.7 148.6 0 11TabICL-v2 33.2 7.0 64.7 0 0Seasonal Naive 20.0 0.0 0.5 0 0
+Chronos-2 86.9 35.5 0.8 0 0
+TabPFN-TS-3 69.8 30.6 234.6 0 0
+TimesFM-2.5 74.9 30.2 1.9 10 0
+TiRex 76.9 30.0 0.2 1 0
+Toto-1.0 66.3 28.2 22.1 8 0
+TabPFN-v2-TS 58.5 27.6 88.9 0 2
+Moirai-2.0 61.4 27.3 0.3 28 0
+Chronos-Bolt 60.7 26.5 0.2 0 0
+Sundial-Base 53.4 24.7 8.0 1 0
+Stat. Ensemble 46.7 15.7 148.6 0 11
+TabICL-v2 33.2 7.0 64.7 0 0
+Seasonal Naive 20.0 0.0 0.5 0 0
 0 200 400 600 800
 5000
 6000
@@ -1306,8 +1289,7 @@ Foundation model
 Supervised (per-task tuned)
 GriffinRTzero*
 GraphSAGE
-RDBLearn + v2.5KumoRFMv1*RDBLearn
-RDBLearn + v3
+RDBLearn + v2.5KumoRFMv1*RDBLearn RDBLearn + v3
 RelGT
 KumoRFMv2TabPFN-REL
 RelGNN
@@ -1389,7 +1371,7 @@ and S-Learners (Figure 27). In contrast, we observe slightly worse performance c
 on RealCause [69]. We provide a more in-depth analysis of the results and description of the QINI
 evaluation protocol in Appendix E.1.
 3.6 Embeddings
-Finally, we demonstrate thatTabPFN-3generates semantically-meaningful embeddings. We follow the
+Finally, we demonstrate thatTabPFN-3 generates semantically-meaningful embeddings. We follow the
 approach developed by Ye et al.[27] for TabPFN v2: we partition the dataset into cross-validation folds,
 and take the embeddings from the test-portion of the dataset in each fold. The embeddings we capture
 are the output of the ICL layers at the end of Stage 3 of our model (see Section /2.1 for more details).
@@ -1591,11 +1573,14 @@ abs/2501.19399.
 [32] Michael Arbel, David Salinas, and Frank Hutter. EquitabPFN: A target-permutation equivariant
 prior fitted network. InThe Thirty-ninth Annual Conference on Neural Information Processing
 Systems, 2026. URLhttps://openreview.net/forum?id=LrnZDU9g7N.
-[33] Mykhailo Koshil, Thomas Nagler, Matthias Feurer, and Katharina Eggensperger. Towards local-
-ization via data embedding for tabpfn. InNeurIPS 2024 Third Table Representation Learning
-Workshop, 2024.
+[33] Mykhailo Koshil, Matthias Feurer, and Katharina Eggensperger. In-context learning of soft nearest
+neighbor classifiers for intelligible tabular machine learning. In Shuaichen Chang, Madelon Hulsebos,
+Qian Liu, Wenhu Chen, and Huan Sun, editors,Proceedings of the 4th Table Representation Learning
 26
 
+Workshop, pages 182–191, Vienna, Austria, July 2025. Association for Computational Linguistics.
+ISBN 979-8-89176-268-8. doi: 10.18653/v1/2025.trl-1.15. URL https://aclanthology.org/2025.
+trl-1.15/.
 [34] David Holzmüller, Léo Grinsztajn, and Ingo Steinwart. Better by default: Strong pre-tuned mlps and
 boosted trees on tabular data. In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela Fan, Ul-
 rich Paquet, Jakub M. Tomczak, and Cheng Zhang, editors,Advances in Neural Information Process-
@@ -1641,12 +1626,12 @@ on Learning Representations, 2025. URLhttps://openreview.net/forum?id=JytL2MrlLT
 [45] Daniel Beaglehole, David Holzmüller, Adityanarayanan Radhakrishnan, and Mikhail Belkin. xrfm:
 Accurate, scalable, and interpretable feature learning models for tabular data, 2025. URLhttps:
 //arxiv.org/abs/2508.10053.
+27
+
 [46] Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Alex Labach, Jesse C. Cresswell, Keyvan
 Golestan, Guangwei Yu, Anthony L. Caterini, and Maksims Volkovs. Tabdpt: Scaling tabular
 foundation models on real data. InAdvances in Neural Information Processing Systems, 2025. URL
 https://openreview.net/forum?id=pIZxEOZCId.
-27
-
 [47] Xingxuan Zhang, Gang Ren, Han Yu, Hao Yuan, Hui Wang, Jiansheng Li, Jiayun Wu, Lang Mo,
 Li Mao, Mingchao Hao, Ningbo Dai, Renzhe Xu, Shuyang Li, Tianyang Zhang, Yue He, Yuanrui
 Wang, Yunjia Zhang, Zijing Xu, Dongzhe Li, Fang Gao, Hao Zou, Jiandong Liu, Jiashuo Liu,
@@ -1693,10 +1678,10 @@ and Matthias Fey. Kumorfm-2: Scaling foundation models for relational learning, 
 https://arxiv.org/abs/2604.12596.
 [59] Tianlang Chen, Charilaos Kanatsoulis, and Jure Leskovec. Relgnn: Composite message passing for
 relational deep learning, 2025. URLhttps://arxiv.org/abs/2502.06784.
-[60] William L. Hamilton, Rex Ying, and Jure Leskovec. Inductive representation learning on large
-graphs, 2018. URLhttps://arxiv.org/abs/1706.02216.
 28
 
+[60] William L. Hamilton, Rex Ying, and Jure Leskovec. Inductive representation learning on large
+graphs, 2018. URLhttps://arxiv.org/abs/1706.02216.
 [61] Vijay Prakash Dwivedi, Sri Jaladi, Yangyi Shen, Federico López, Charilaos I. Kanatsoulis, Rishi
 Puri, Matthias Fey, and Jure Leskovec. Relational graph transformer, 2026. URLhttps://arxiv.
 org/abs/2505.10960.
@@ -1742,11 +1727,11 @@ life, 22(8):242–247, 1967.
 Li, Hao Zhang, Banghua Zhu, Michael Jordan, Joseph E. Gonzalez, and Ion Stoica. Chatbot arena:
 An open platform for evaluating llms by human preference. InForty-first International Conference
 on Machine Learning, 2024.
+29
+
 [78] Maksim A. Terpilowski. scikit-posthocs: Pairwise multiple comparison tests in python.Journal
 of Open Source Software, 4(36):1169, 2019. doi: 10.21105/joss.01169. URLhttps://doi.org/10.
 21105/joss.01169.
-29
-
 [79] Dan-Ni Wu, Joey Jen, Erickson Fajiculay, Min-Fen Hsu, Ming-Chu Chang, Jen-Chen Yeh, Karen
 Sargsyan, Juozas Kupcinskas, Jurgita Skieceviciene, Ruta Steponaitiene, Egidijus Morkunas, Greta
 Gedgaudiene, Chao-Ping Hsu, Yu-Ting Chang, and Chun-Mei Hu. Panmetai - a high performance
@@ -2075,7 +2060,7 @@ mdpi.com/2077-0383/14/17/6091.
 José Roberto Ferreira Melo, Larissa Souza França, Lucia Rolim Santana de Freitas, Lívia Teixeira
 de Souza Maia, Patricia Takako Endo, and Walter Massa Ramalho. Machine learning classification
 of favorable vs unfavorable tuberculosis treatment outcomes using clinical and sociodemographic
-data from brazil’s sinan-tb (2001–2023). Research Square preprint, 2025. URLhttps://www.
+data from brazil’s sinan-tb (2001–2023). Research Square preprint, 2025. URL https://www.
 researchsquare.com/article/rs-7502054/v1.
 [156] Vinh Nguyen Dao, Nhat-Thang Tran, Ta-Son Vo, Hong-Thinh Le, Thu-Ha Thi Nguyen, Quoc-
 Huy Vu Nguyen, Minh-Thi Thi Ha, Tam Minh Le, Diem-Tuyet Thi Hoang, Khanh-Trang Nguyen
@@ -2153,7 +2138,7 @@ doi: 10.1101/2025.10.24.25338707. URL https://www.medrxiv.org/content/10.1101/20
 [172] Wen Wen, Tingrui Zhang, Haina Zhao, Jingyan Liu, Heng Jiang, Yushuang He, and Zekun Jiang.
 Multimodal model enhances qualitative diagnosis of hypervascular thyroid nodules: integrating
 radiomics and deep learning features based on b-mode and pdi images.Gland Surgery, 14(8):
-1558–1571, 2025. doi: 10.21037/gs-2025-183. URLhttps://pmc.ncbi.nlm.nih.gov/articles/
+1558–1571, 2025. doi: 10.21037/gs-2025-183. URL https://pmc.ncbi.nlm.nih.gov/articles/
 PMC12432950/.
 [173] Konstantinos Vrettos, Konstantina Kasioumi, Nikolaos Galanakis, Elias Kehagias, Nikolaos Kon-
 topodis, Nikolas Matthaiou, and Michail E. Klontzas. Radiomics enhance the prediction of
@@ -2273,7 +2258,7 @@ press / early access; uses ML including TabPFN-style approaches for Henry coeffi
 39
 
 [202] Shrinjay Sharma. Data and models for shape-selective adsorption in zeolites for long-chain alkane hy-
-droisomerization. https://doi.org/10.4233/uuid:f36da034-5cb3-42ca-a53d-d351f68a9ffa,
+droisomerization. https://doi.org/10.4233/uuid:f36da034-5cb3-42ca-a53d-d351f68a9ffa ,
 2025. Repository associated with shape-selectivity modeling in zeolites; includes TabPFN-based
 components.
 [203] Hongjian Chen, Feifei Fang, Pujun Long, Putian Yang, and Wei Guo. Coupling eur prediction with
@@ -2360,7 +2345,7 @@ of recycled aggregate concrete using mcbe and tabpfn.Materials, 18:5221, 2025. d
 ma18225221. URLhttps://doi.org/10.3390/ma18225221.
 [223] Yanjin Zhang and Zefeng Yu. Psf-net: Uncertainty-aware fusion of tabpfn and saint for 5g base-
 station electromagnetic radiation prediction. InSAE Technical Paper Series, volume 1. SAE
-International, 2025. doi: 10.4271/2025-99-0127. URLhttps://doi.org/10.4271/2025-99-0127.
+International, 2025. doi: 10.4271/2025-99-0127. URL https://doi.org/10.4271/2025-99-0127.
 [224] Wei Zhu, Na Xu, and James C. Hower. Demystifying hardgrove grindability index prediction using
 interpretable machine learning models.Fuel, 423:139297, 2026. doi: 10.1016/j.fuel.2026.139297.
 URLhttps://doi.org/10.1016/j.fuel.2026.139297.
@@ -2597,8 +2582,8 @@ Scientific Advisors.Samuel Müller, Madelon Hulsebos, Yann LeCun, Bernhard Schö
 Scientific advisors did not contribute IP.
 B Acknowledgements
 We acknowledge the EuroHPC Joint Undertaking for awarding this project access to the EuroHPC
-supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium through a EuroHPC Regular
-Access call.
+supercomputer LUMI, hosted by CSC (Finland) and the LUMI consortium through a EuroHPC AI
+Factory Large Scale Access call (project EHPC-AIF-2025LS17-014).
 C Architectural Hyperparameters
 The tables below list the architectural hyperparameters of the released TabPFN-3 classifier and regressor
 checkpoints. The two models share all hyperparameters; the only differences are in the output decoder,
@@ -2764,7 +2749,7 @@ classification, log-loss for multiclass classification, and RMSE for regression.
 Improvability: The improvability metric introduced in TabArena measures how many percent lower the
 error of the best method is than the current method on a dataset. This is then averaged over datasets.
 Formally, for a single dataset,
-Improvability := erri −best_err i
+Improvability :=erri −best_err i
 erri
 ·100%.
 Improvability is always between0%and100%.
@@ -2772,7 +2757,7 @@ Improvability is always between0%and100%.
 
 E.2.2 Experiment Details
 For all TabArena results, we run experiments using the official TabArena code and evaluation pipeline.
-We will contribute a reproducible official TabArena submission forTabPFN-3shortly after it becomes
+We will contribute a reproducible official TabArena submission forTabPFN-3 shortly after it becomes
 publicly available. While not strictly necessary to make predictions on test data, we follow TabArena’s
 fit time procedure of fitting an 8-fold bagged ensemble to generate a cross-validation score followed by
 refitting the model on the full training data at test time, as is done for the other tabular foundation
@@ -3148,52 +3133,44 @@ reevaluated by us using the evaluation scripts provided by the authors; cells ma
 with the author’s results because they were not supported in the evaluation scripts.
 Methodf1 avito event trial amazon stack hmAvg AUROC↑Rank↓
 dnf top3 click visit repeat ignore out user item eng badge churn
-RelGNN 75.29 85.69 68.23 66.1879.6186.18 71.2470.9982.6490.75 88.98 70.93 78.06 2.83
+RelGNN 75.29 85.69 68.23 66.1879.6186.18 71.2470.9982.64 90.75 88.98 70.93 78.06 2.83
 RelGT 75.87 83.52 68.30 66.78 76.09 81.57 68.61 70.39 82.55 90.53 86.32 69.27 76.65 4.50
-GraphSAGE 72.62 75.54 65.90 66.20 76.89 81.62 68.60 70.4282.8190.59 88.8669.88 75.83 5.17
+GraphSAGE 72.62 75.54 65.90 66.20 76.89 81.62 68.60 70.42 82.8190.59 88.86 69.88 75.83 5.17
 KumoRFMv1∗ 82.41 91.0764.85 64.11 76.0889.2070.79 67.29 79.93 87.09 80.00 67.71 76.71 6.75
 Griffin 57.70 82.50 45.90 60.70 71.88 83.27 51.00 62.30 69.00 77.50 73.50 60.20 66.29 9.92
-RT∗zero 81.2089.30 59.50 61.80 73.22 77.47 51.80 64.00 70.90 75.70 80.10 62.80 70.65 8.67
+RT∗ zero 81.20 89.30 59.50 61.80 73.22 77.47 51.80 64.00 70.90 75.70 80.10 62.80 70.65 8.67
 RDBLearn 70.87 79.69 69.04 65.49 75.04 82.52 71.58 67.57 82.07 89.39 85.26 68.05 75.55 6.83
-RDBLearn + v2.5 71.72 77.60 65.72 66.47 75.55 78.65 72.9069.74 82.18 90.23 82.81 70.11 75.31 6.46
+RDBLearn + v2.5 71.72 77.60 65.72 66.47 75.55 78.65 72.90 69.74 82.18 90.23 82.81 70.11 75.31 6.46
 RDBLearn + v3 71.72 82.7269.0666.76 76.81 73.70 72.89 69.35 82.46 90.59 85.98 70.06 76.01 4.83
-KumoRFMv2 72.03 82.09 67.42∗ 69.41∗ 79.3478.86 72.03∗ 67.71 80.18 88.69 85.40 67.81 75.91 5.75
-TabPFN-REL70.74 79.98 67.09 66.68 77.11 85.3876.4370.2782.8190.6685.17 70.55 76.91 4.29
+KumoRFMv2 72.03 82.09 67.42 ∗ 69.41∗ 79.34 78.86 72.03∗ 67.71 80.18 88.69 85.40 67.81 75.91 5.75
+TabPFN-REL70.74 79.98 67.09 66.68 77.11 85.3876.4370.2782.8190.66 85.17 70.55 76.91 4.29
 Table 15. RelBenchV1 entity regression: per-task MAE. Bold= best per task / column (ties bolded
 together at the displayed precision), underlined= second best. Right column: LightGBM-normalised mean
-SKumoNorm = mean t MAEt/MAELightGBM
-t . Methods marked with∗ in their name (KumoRFMv1, RTzero )
+SKumoNorm = meant MAEt/MAELightGBM t . Methods marked with∗ in their name (KumoRFMv1, RTzero )
 indicate methods that are likely following a different evaluation protocol, which overestimates model performance.
 KumoRFMv2 was reevaluated by us using the evaluation scripts provided by the authors; cells marked∗ in this
 row are imputed with the author’s results because they were not supported in the evaluation scripts. On one task
 (rel-amazon/item) marked with∗∗ we fall back to the default context size of5000, because the context exceeded
 the API’s 30MB size limits.
-Methodf1 avito event trial amazon stack hmAvgS KumoNorm↓Rank↓
+Methodf1 avito event trial amazon stack hmAvgS KumoNorm ↓Rank↓
 pos ctr attend adverse succ user item votes sales
 RelGNN 3.798 0.037 0.238 44.4610.301 14.23048.7670.0650.0540.8613.72
 RelGT 3.917 0.035 0.250 43.992 0.326 14.267 48.9220.0650.054 0.870 4.67
 GraphSAGE 4.022 0.041 0.258 44.473 0.400 14.313 50.0530.0650.056 0.918 6.39
 KumoRFMv1∗ 2.7470.035 0.264 58.231 0.417 16.161 55.2540.065 0.0400.908 6.06
 Griffin 4.460 0.050 0.461 78.232 0.463 35.590 53.214 0.092 0.151 1.471 10.56
-RT∗zero 2.901 0.058 0.379 73.999 0.455 18.802 57.996 0.110 0.089 1.240 9.44
+RT∗ zero 2.901 0.058 0.379 73.999 0.455 18.802 57.996 0.110 0.089 1.240 9.44
 RDBLearn 3.834 0.0340.23743.913 0.424 14.540 48.559 0.068 0.064 0.906 5.11
 RDBLearn + v2.5 3.930 0.034 0.243 43.409 0.429 14.463 49.053 0.068 0.066 0.913 6.28
 RDBLearn + v3 3.835 0.034 0.245 43.290 0.375 14.720 50.097 0.068 0.064 0.898 5.89
-KumoRFMv2 4.022 0.033 0.241 41.9740.433∗ 14.62745.352 0.065∗∗ 0.043 0.866 4.33
+KumoRFMv2 4.022 0.033 0.241 41.974 0.433∗ 14.62745.352 0.065 ∗∗ 0.043 0.866 4.33
 TabPFN-REL3.7570.0310.24140.2020.385 14.359 46.199 0.068 0.059 0.864 3.56
 F Additional Details on Internal Benchmarks
 F.1 Methodology
 Metric Normalization.To aggregate heterogeneous metrics across datasets, we apply a per-fold
-min–max normalization. For each (dataset, fold) pair and metricm, we rescale a model’s raw scores(b)
-m as
-˜s(b)
-m = s(b)
-m −min b′∈B s(b′)
-m
-maxb′∈B s(b′)
-m −min b′∈B s(b′)
-m
-,(1)
+min–max normalization. For each (dataset, fold) pair and metricm, we rescale a model’s raw scores(b) m as
+˜s(b) m = s(b) m −min b′∈B s(b′) m
+maxb′∈B s(b′) m −min b′∈B s(b′) m ,(1)
 where B denotes the set of models we evaluate. This allows the model scores to live on a comparable
 [0, 1]scale for each (dataset, fold) combination. We treat the tuned and default versions of a model as
 two different models. For lower-is-better metrics (e.g. RMSE, cross-entropy loss), we apply the additional
@@ -3423,7 +3400,7 @@ nfeatures grows, more tensor work becomes compile-able per call. In the non-chun
 climbs from1.04–1.15× at nfeatures = 10to1 .10–1.46× at nfeatures = 100and1 .40–1.58× at nfeatures = 500.
 The chunked series shows the same direction with a different shape: chunking already amortises some
 dispatch overhead by batching the inner loop, so compile’s marginal benefit is largest at smallntrain
-(1.21–1.43× at ntrain = 10 3) and largenfeatures and converges toward parity (0.95–1.06×) at ntrain ≥ 105
+(1.21–1.43× at ntrain = 103) and largenfeatures and converges toward parity (0.95–1.06×) at ntrain ≥ 105
 for the smaller feature counts, where the residual cost is dominated by attention itself and compile has no
 further headroom to claim.
 FlashAttention-3.FlashAttention-3 (FA3) [ 35] is a Hopper-specific attention kernel that delivers
@@ -3441,10 +3418,10 @@ a value above 1 means FA3 is faster than SDPA on that shape; each marker is anno
 absolute auto time so the magnitude being sped up is recoverable. The pattern matches the FA3 design
 profile. At small training sets (ntrain ≤ 1000) the FA3 dispatch and kernel-launch overhead exceeds the
 per-call attention work, and SDPA is 10–15% faster (Tsdpa/Tauto ≈ 0.84–0.91across feature counts). The
-cross-over arrives sooner the smallernfeatures: by ntrain = 10 4 FA3 wins atnfeatures = 10(1 .21×), is
-roughly even atnfeatures = 100(1 .07×), and at parity atnfeatures = 500(1 .02×). At the inference shapes
+cross-over arrives sooner the smallernfeatures: by ntrain = 104 FA3 wins atnfeatures = 10(1 .21×), is
+roughly even atnfeatures = 100(1.07×), and at parity atnfeatures = 500(1.02×). At the inference shapes
 we care about (ntrain ≥ 105) FA3 is the clear win across all feature counts, with the speed-up climbing
-to1 .49–1.73× at ntrain = 10 6. Chunking does not interact with the FA3-versus-SDPA comparison: the
+to1 .49–1.73× at ntrain = 106. Chunking does not interact with the FA3-versus-SDPA comparison: the
 chunked and non-chunked curves overlap to within run-to-run noise, since chunking changes the outer
 dispatch loop but leaves the underlying attention-kernel selection intact.
 G.2 Interpretability: SHAP-Value Computation
@@ -3490,10 +3467,46 @@ results were produced using thetabicl[forecast]package (v2.0.3) on fev-bench v0.
 are not currently available in the official fev-bench results repository.
 (a) SQL (probabilistic)
 Model Win (%) Skill (%) Runtime (s) Leak. (%) # fails
-Chronos-2 91.7 47.3 0.8 0 0TabPFN-TS-3 73.6 43.1 234.6 0 0TiRex 83.4 42.6 0.2 1 0TimesFM-2.5 78.6 42.2 1.9 10 0Toto-1.0 71.6 40.7 22.1 8 0TabPFN-v2-TS 64.1 39.6 88.9 0 2Moirai-2.0 66.2 39.3 0.3 28 0Chronos-Bolt 66.2 38.9 0.2 0 0Sundial-Base 47.1 33.4 8.0 1 0TabICL-v2† 53.8 30.8 64.7 0 0CatBoost (Recursive) 35.7 23.0 0.3 0 0LightGBM (Recursive) 33.4 21.7 0.3 0 0AutoARIMA 39.6 20.6 19.5 0 10Stat. Ensemble 43.8 20.2 148.6 0 11AutoTheta 27.1 5.5 3.3 0 0Seasonal Naive 19.1 0.0 0.5 0 0AutoETS 32.7 -26.8 3.5 0 3Naive 12.6 -45.4 0.5 0 0Drift 9.7 -45.8 0.5 0 0
+Chronos-2 91.7 47.3 0.8 0 0
+TabPFN-TS-3 73.6 43.1 234.6 0 0
+TiRex 83.4 42.6 0.2 1 0
+TimesFM-2.5 78.6 42.2 1.9 10 0
+Toto-1.0 71.6 40.7 22.1 8 0
+TabPFN-v2-TS 64.1 39.6 88.9 0 2
+Moirai-2.0 66.2 39.3 0.3 28 0
+Chronos-Bolt 66.2 38.9 0.2 0 0
+Sundial-Base 47.1 33.4 8.0 1 0
+TabICL-v2† 53.8 30.8 64.7 0 0
+CatBoost (Recursive) 35.7 23.0 0.3 0 0
+LightGBM (Recursive) 33.4 21.7 0.3 0 0
+AutoARIMA 39.6 20.6 19.5 0 10
+Stat. Ensemble 43.8 20.2 148.6 0 11
+AutoTheta 27.1 5.5 3.3 0 0
+Seasonal Naive 19.1 0.0 0.5 0 0
+AutoETS 32.7 -26.8 3.5 0 3
+Naive 12.6 -45.4 0.5 0 0
+Drift 9.7 -45.8 0.5 0 0
 (b) MASE (point)
 Model Win (%) Skill (%) Runtime (s) Leak. (%) # fails
-Chronos-2 86.9 35.5 0.8 0 0TabPFN-TS-3 69.8 30.6 234.6 0 0TimesFM-2.5 74.9 30.2 1.9 10 0TiRex 76.9 30.0 0.2 1 0Toto-1.0 66.3 28.2 22.1 8 0TabPFN-v2-TS 58.5 27.6 88.9 0 2Moirai-2.0 61.4 27.3 0.3 28 0Chronos-Bolt 60.7 26.5 0.2 0 0Sundial-Base 53.4 24.7 8.0 1 0CatBoost (Recursive) 54.0 23.7 0.3 0 0LightGBM (Recursive) 50.3 22.4 0.3 0 0Stat. Ensemble 46.7 15.7 148.6 0 11AutoARIMA 36.0 11.2 19.5 0 10AutoTheta 34.2 11.0 3.3 0 0TabICL-v2† 33.2 7.0 64.7 0 0AutoETS 33.5 2.3 3.5 0 3Seasonal Naive 20.0 0.0 0.5 0 0Naive 18.0 -16.7 0.5 0 0Drift 15.3 -18.1 0.5 0 0
+Chronos-2 86.9 35.5 0.8 0 0
+TabPFN-TS-3 69.8 30.6 234.6 0 0
+TimesFM-2.5 74.9 30.2 1.9 10 0
+TiRex 76.9 30.0 0.2 1 0
+Toto-1.0 66.3 28.2 22.1 8 0
+TabPFN-v2-TS 58.5 27.6 88.9 0 2
+Moirai-2.0 61.4 27.3 0.3 28 0
+Chronos-Bolt 60.7 26.5 0.2 0 0
+Sundial-Base 53.4 24.7 8.0 1 0
+CatBoost (Recursive) 54.0 23.7 0.3 0 0
+LightGBM (Recursive) 50.3 22.4 0.3 0 0
+Stat. Ensemble 46.7 15.7 148.6 0 11
+AutoARIMA 36.0 11.2 19.5 0 10
+AutoTheta 34.2 11.0 3.3 0 0
+TabICL-v2† 33.2 7.0 64.7 0 0
+AutoETS 33.5 2.3 3.5 0 3
+Seasonal Naive 20.0 0.0 0.5 0 0
+Naive 18.0 -16.7 0.5 0 0
+Drift 15.3 -18.1 0.5 0 0
 Qualitative forecast examples
 0 50k 100k 150k
 0

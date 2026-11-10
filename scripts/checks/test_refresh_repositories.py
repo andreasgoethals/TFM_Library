@@ -36,6 +36,26 @@ class RefreshTests(unittest.TestCase):
             self.assertNotIn("FILE: data/private.json", content)
             self.assertNotIn("FILE: exp/run/weights.pt", content)
 
+    def test_repo_existence_check_uses_git_ls_remote_not_http_head(self):
+        import asyncio
+        import gitingest.clone as gitingest_clone
+        original = gitingest_clone.check_repo_exists
+        try:
+            refresh._install_ls_remote_repo_check()
+            self.assertIsNot(gitingest_clone.check_repo_exists, original)
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                subprocess.run(["git", "init", "--quiet", str(root)], check=True)
+                (root / "a.txt").write_text("x\n")
+                subprocess.run(["git", "-C", str(root), "add", "a.txt"], check=True)
+                subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@t",
+                                "commit", "--quiet", "-m", "init"], check=True)
+                check = gitingest_clone.check_repo_exists
+                self.assertTrue(asyncio.run(check(root.as_uri())))
+                self.assertFalse(asyncio.run(check((root / "missing").as_uri())))
+        finally:
+            gitingest_clone.check_repo_exists = original
+
 
 if __name__ == "__main__":
     unittest.main()

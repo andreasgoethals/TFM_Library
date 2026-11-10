@@ -59,6 +59,8 @@ Dependencies
 from __future__ import annotations
 
 import argparse
+import asyncio
+import importlib
 import logging
 import os
 import sys
@@ -121,6 +123,46 @@ def _install_quiet_async_shutdown() -> None:
         category=ResourceWarning,
         message=".*unclosed.*transport.*",
     )
+
+
+# --------------------------------------------------------------------------- #
+# Repository existence probe
+# --------------------------------------------------------------------------- #
+#
+# gitingest >= 0.3 checks that a repo exists with an HTTP HEAD on the GitHub
+# page, using httpx's 5 s default timeout, and reports any timeout as
+# "Repository not found". GitHub can take 4-5 s to answer those HEADs, which
+# made most refreshes fail spuriously. `git ls-remote` asks the same server
+# question git's own clone asks, with a generous timeout, so use it instead.
+
+_LS_REMOTE_TIMEOUT_SECONDS = 60
+
+
+def _install_ls_remote_repo_check() -> None:
+    """Replace gitingest's HTTP HEAD existence check with ``git ls-remote``.
+
+    Patches the name where gitingest's modules imported it; a no-op on
+    gitingest versions that do not perform this check.
+    """
+    async def _check_repo_exists(url: str, token: str | None = None) -> bool:
+        proc = await asyncio.create_subprocess_exec(
+            "git", "ls-remote", "--exit-code", url, "HEAD",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+        )
+        try:
+            return await asyncio.wait_for(proc.wait(), _LS_REMOTE_TIMEOUT_SECONDS) == 0
+        except asyncio.TimeoutError:
+            proc.kill()
+            return False
+
+    for module_name in ("gitingest.clone", "gitingest.utils.query_parser_utils"):
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError:                                        # pragma: no cover
+            continue
+        if hasattr(module, "check_repo_exists"):
+            module.check_repo_exists = _check_repo_exists
 
 
 # --------------------------------------------------------------------------- #
@@ -736,6 +778,8 @@ def main(argv: list[str] | None = None) -> int:
     _silence_gitingest_logging()
     # Swallow cosmetic asyncio shutdown noise on Windows + Python 3.12.
     _install_quiet_async_shutdown()
+    # Avoid gitingest's 5 s HTTP HEAD probe misreporting slow GitHub as missing.
+    _install_ls_remote_repo_check()
 
     try:
         results = refresh_all(
