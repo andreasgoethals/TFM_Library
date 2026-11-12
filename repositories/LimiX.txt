@@ -2,12 +2,12 @@ TFM Library source snapshot
 Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/limix-ldm-ai/LimiX",
-  "revision": "b4d06eadca6f0cd58ae259034b02c86f4a905950",
-  "revision_date": "2026-11-06T11:04:50+08:00",
+  "revision": "fbdf012a19e10a21f2e9937585e232ac20f153e6",
+  "revision_date": "2026-11-12T15:19:44+08:00",
   "slug": "limix-ldm-ai/LimiX",
-  "retrieved_utc": "2026-11-10T09:31:21+00:00",
+  "retrieved_utc": "2026-11-12T09:45:59+00:00",
   "identity_source": "https://arxiv.org/abs/2509.03505",
-  "included_files": 77,
+  "included_files": 78,
   "excluded_files": 16,
   "file_sha256": [
     {
@@ -27,13 +27,13 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "README.md",
-      "bytes": 26975,
-      "sha256": "3ee743ad9d7d3f5a7533da81f13f7beb0a5604e900be49b42125e249735ecb41"
+      "bytes": 27153,
+      "sha256": "a9cbd1041ba0347d243c16beff4498048a8b8f387c3bec4a5354fc9b313a1d88"
     },
     {
       "path": "README_cn.md",
-      "bytes": 27525,
-      "sha256": "da6a2949bcba64bcde749be8f6a6fff8e3a5a845a111a99718301d0a8840ec42"
+      "bytes": 27707,
+      "sha256": "f94194e02c0b5191aab602563d4f94c257532ecd4db2ee98009f1dda1ceae717"
     },
     {
       "path": "config/__init__.py",
@@ -47,6 +47,11 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "config/cls_default_noretrieval_v2.json",
+      "bytes": 27354,
+      "sha256": "b05f7b99a6c39cfd21828fae837859356029200d4a5815efe752b5274e7faaa3"
+    },
+    {
+      "path": "config/cls_default_noretrieval_v2_lagacy.json",
       "bytes": 22765,
       "sha256": "e3e2b22f0c0c3c862b69372e5f6c5fe7d7984397825595dd8733d376c0abb0d3"
     },
@@ -67,6 +72,11 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "config/reg_default_noretrieval_v2.json",
+      "bytes": 27994,
+      "sha256": "d4ec257ac6ef924b3468703afd4267107cd3619b3ab20e5b83f65cee48e98c5d"
+    },
+    {
+      "path": "config/reg_default_noretrieval_v2_lagacy.json",
       "bytes": 5568,
       "sha256": "c70eb2e464d5526e314f24fe47eb0f2c666b47eab76200f375c28c19acea33bf"
     },
@@ -177,13 +187,13 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "inference/v2_0/predictor.py",
-      "bytes": 157150,
-      "sha256": "1d125fa984c80dfbd4edf72c163b7649acb1a1d96017150b68d79ae5717e380c"
+      "bytes": 158101,
+      "sha256": "ed841ca2690765c3d72de9698b6305c4496a60e10c413f7a3b16d65d65551c24"
     },
     {
       "path": "inference/v2_0/preprocess.py",
-      "bytes": 95042,
-      "sha256": "e38a4612b41cf3603623d3057e399d854f3a21dc56634f9da28f55fa7e7c6382"
+      "bytes": 100195,
+      "sha256": "c82d0d3e952ee1372eda3543b8f972b0a87349ccd88824ac531b41c97b8579c9"
     },
     {
       "path": "inference/v2_0/svd_memory.py",
@@ -282,8 +292,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "model/v2_0/encoders.py",
-      "bytes": 27469,
-      "sha256": "05c7dc0faf1684520b84fef56ebe6db42f1b9e3c5e699f232e4bb08ec30c3dc9"
+      "bytes": 27537,
+      "sha256": "e953e1cfa7f5e2cbe04d4fec771e5e2a0e2646e98393a5221e550326af104432"
     },
     {
       "path": "model/v2_0/layer.py",
@@ -332,8 +342,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "model/v2_0/transformer.py",
-      "bytes": 42494,
-      "sha256": "be317dbd2d234eb4275f81fd7e34f743e33185554e22e6ad8bc2be19a84def09"
+      "bytes": 43844,
+      "sha256": "b15405abbbd2930b60e23416423ffef0d822159624020658f7b71835d4d90923"
     },
     {
       "path": "model/v2_0/utils.py",
@@ -354,11 +364,6 @@ Do not edit: regenerate with the registered source refresh command.
       "path": "scripts/compare_eval_results.py",
       "bytes": 14850,
       "sha256": "f8851a069268df94ca8d925b3c5cf4c12f8c3d2fd73aafd87f45cd8d80b7b033"
-    },
-    {
-      "path": "scripts/convert_v20_ckpt.py",
-      "bytes": 23192,
-      "sha256": "7672a5e067ac76ff56e88e710b5515a6b4f1ac2f8e99f54dc3f0ce12cfab7ed3"
     },
     {
       "path": "scripts/run_gpu_cpu_check.py",
@@ -416,10 +421,14 @@ FILE: README.md
 [![License](https://img.shields.io/badge/StableAI-License%20v1.0-green)](./LICENSE.txt)
 
 <div align="left" style="line-height: 1;">
-  📔 English
-  &nbsp;| 
-  <a href="README_cn.md" target="_blank">中文</a>
-  &nbsp;
+  <img src="https://api.iconify.design/material-symbols/translate.svg?color=%23000000"
+       width="24"
+       height="24"
+       alt="Language"
+       style="vertical-align: middle; border: none;" />
+  &nbsp; English
+  &nbsp;|
+  <a href="README_cn.md">中文</a>
 </div>
 
 <br/>
@@ -1836,10 +1845,14 @@ FILE: README_cn.md
 [![许可证](https://img.shields.io/badge/StableAI-License%20v1.0-green)](./LICENSE.txt)
 
 <div align="left" style="line-height: 1;">
-  📔 <a href="README.md" target="_blank">English</a>
+  <img src="https://api.iconify.design/material-symbols/translate.svg?color=%23000000"
+       width="24"
+       height="24"
+       alt="Language"
+       style="vertical-align: middle; border: none;" />
+  &nbsp; English
   &nbsp;|
-  中文
-  &nbsp;
+  <a href="README_cn.md">中文</a>
 </div>
 
 <br/>
@@ -2474,6 +2487,1029 @@ FILE: config/cls_default_noretrieval.json
 
 ================================================
 FILE: config/cls_default_noretrieval_v2.json
+================================================
+{
+  "feature_view_strategy": "disabled",
+  "feature_view_multiclass_calibration": false,
+  "fixed_feature_views": {
+    "enabled": false,
+    "views": []
+  },
+  "feature_encoder_mode": "train_unknown_nan",
+  "adaptive_svd": {
+    "enabled": false,
+    "memory_fraction": 0.65,
+    "reserve_mb": 512,
+    "safety_factor": 1.25,
+    "minimum_components": 0,
+    "retry_on_cuda_resource_error": true,
+    "retry_max_components": 0
+  },
+  "pipelines": [
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_5"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_all_data"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "none"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "none"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_5"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_5"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_5"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_all_data"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "none"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_5"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "robust"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_all_data"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_strict_feature_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 10
+      }
+    }
+  ]
+}
+
+
+
+================================================
+FILE: config/cls_default_noretrieval_v2_lagacy.json
 ================================================
 {
   "feature_view_strategy": "disabled",
@@ -3995,6 +5031,1060 @@ FILE: config/reg_default_noretrieval_MVI_v2.json
 
 ================================================
 FILE: config/reg_default_noretrieval_v2.json
+================================================
+{
+  "feature_view_strategy": "disabled",
+  "feature_encoder_mode": "train_unknown_nan",
+  "adaptive_svd": {
+    "enabled": false
+  },
+  "fixed_feature_views": {
+    "enabled": false,
+    "views": []
+  },
+  "pipelines": [
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_5"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 100
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "kdi_uni"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 25
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "kdi_norm"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_5"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 100
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 25
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "kdi_norm"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_5"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 100
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 25
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_uniform_10"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "quantile_norm_5"
+        ],
+        "original_flag": true,
+        "discrete_flag": false,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal_shuffled"
+      },
+      "FeatureShuffler": {
+        "mode": "rotate"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "FingerprintFeatureEncoder": true
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "kdi_norm"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 50
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": false,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "ordinal"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": false,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "kdi_uni"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "onehot",
+        "onehot_size_fallback": false
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          "power"
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": "svd",
+        "svd_max_components": 128
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": null
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      },
+      "PolynomialInteractionGenerator": {
+        "max_interaction_features": 100
+      }
+    },
+    {
+      "RebalanceFeatureDistribution": {
+        "worker_tags": [
+          null
+        ],
+        "original_flag": false,
+        "discrete_flag": true,
+        "svd_tag": null
+      },
+      "CategoricalFeatureEncoder": {
+        "encoding_strategy": "numeric"
+      },
+      "FeatureShuffler": {
+        "mode": "shuffle"
+      },
+      "retrieval_config": {
+        "use_retrieval": false,
+        "retrieval_before_preprocessing": false,
+        "calculate_feature_attention": false,
+        "calculate_sample_attention": false,
+        "subsample_ratio": 0.7,
+        "subsample_type": "sample",
+        "use_type": "mixed"
+      },
+      "DatetimePreprocessing": {
+        "enabled": true,
+        "detection_scope": "train",
+        "fit_scope": "train"
+      }
+    }
+  ]
+}
+
+
+
+================================================
+FILE: config/reg_default_noretrieval_v2_lagacy.json
 ================================================
 {
   "feature_view_strategy": "disabled",
@@ -14828,13 +16918,16 @@ class LimiXPredictor:
             x[integer_columns] = x[integer_columns].astype(dtypes)
         return x
     
-    def convert_category2num(self, x, dtype:np.floating=np.float64, placeholder: str = NA_PLACEHOLDER,):
+    def convert_category2num(self, x, dtype:np.floating=np.float64, placeholder: str = NA_PLACEHOLDER, train_rows: int | None = None,):
         """Functionality: Ordinal-encode category/string/bool columns. Missing strings are filled with a placeholder then restored to NaN.
 
+        The encoder is fit on the training rows. Categories that appear only in the query rows become the unknown code.
+
         Input:
-            x: DataFrame with mixed dtypes.
+            x: DataFrame with mixed dtypes. When train_rows is set, the leading rows are the training rows.
             dtype: Floating dtype of the encoded output, default float64.
             placeholder: Missing-string placeholder, default NA_PLACEHOLDER.
+            train_rows: Number of leading training rows. None fits on every row of x.
 
         Output:
             2-D numpy array with categorical columns encoded as numbers.
@@ -14842,7 +16935,7 @@ class LimiXPredictor:
         ordinal_encoder = OrdinalEncoder(categories="auto",
                                         dtype=dtype,
                                         handle_unknown="use_encoded_value",
-                                        unknown_value=-1,
+                                        unknown_value=np.nan,
                                         encoded_missing_value=np.nan)
         col_encoder = ColumnTransformer(transformers=[("encoder", ordinal_encoder, make_column_selector(dtype_include=["category", "string", "bool"]))],
                                         remainder=FunctionTransformer(),
@@ -14853,8 +16946,20 @@ class LimiXPredictor:
         string_cols = x.select_dtypes(include=["string", "object"]).columns
         if len(string_cols) > 0:
             x[string_cols] = x[string_cols].fillna(placeholder)
-        
-        X_encoded = col_encoder.fit_transform(x)
+
+        if train_rows is None:
+            n_train = len(x)
+        else:
+            n_train = int(train_rows)
+            if n_train <= 0 or n_train > len(x):
+                raise ValueError(
+                    f"training row count {n_train} is outside [1, {len(x)}]"
+                )
+        if n_train == len(x):
+            X_encoded = col_encoder.fit_transform(x)
+        else:
+            col_encoder.fit(x.iloc[:n_train])
+            X_encoded = col_encoder.transform(x)
 
         string_cols_ix = [x.columns.get_loc(col) for col in string_cols]
         placeholder_mask = x[string_cols] == placeholder
@@ -14869,10 +16974,10 @@ class LimiXPredictor:
 
     
     def get_categorical_features_indices(self, x:np.ndarray):
-        """Functionality: When the sample is long enough, treat columns with too few unique values as categorical.
+        """Functionality: When the training sample is long enough, treat columns with too few unique training values as categorical.
 
         Input:
-            x: 2-D numeric array.
+            x: 2-D numeric array containing training rows only. Query rows must not be included.
 
         Output:
             list[int]: categorical column indices. Empty if the row count is below the threshold.
@@ -15076,12 +17181,15 @@ class LimiXPredictor:
                             )
                             values = np.concatenate([train_values, test_values], axis=0)
                         else:
-                            # Keep datetime-disabled regression bitwise aligned with the
-                            # historical single-matrix ordinal conversion path.
-                            values = self.convert_category2num(converted_frame.copy())
+                            values = self.convert_category2num(
+                                converted_frame.copy(),
+                                train_rows=train_size,
+                            )
                     if cast_float32:
                         values = values.astype(np.float32)
-                    categorical_indices = self.get_categorical_features_indices(values)
+                    categorical_indices = self.get_categorical_features_indices(
+                        values[:train_size]
+                    )
                     cache[enabled] = (values, categorical_indices)
 
                 values, categorical_indices = cache[enabled]
@@ -16144,7 +18252,8 @@ class LimiXPredictor:
         x_train, y_train = self.validate_data(x_train, y_train, reset=True, validate_separately=False, accept_sparse=False, dtype=None, ensure_all_finite=False)
         x_test = self.validate_data(x_test, reset=True, validate_separately=False, accept_sparse=False, dtype=None, ensure_all_finite=False)
         
-        # "Concatenate x_train and x_test to ensure the preprocessing logic is completely consistent.
+        # Keep train rows in front so preprocessing can fit on them and then transform query rows.
+        train_rows = len(x_train)
         x = np.concatenate([x_train, x_test], axis=0)
         
         # Encode y_train
@@ -16163,11 +18272,11 @@ class LimiXPredictor:
         if self.n_estimators%len(uniqs) > 0:
             self.class_permutations += [uniqs[i] for i in np_rng.choice(len(uniqs), size=cout)]
         
-        # Preprocess x
+        # Preprocess x. Category codes and unique-value counts use training rows only.
         x = self.convert_x_dtypes(x)
-        x = self.convert_category2num(x)
+        x = self.convert_category2num(x, train_rows=train_rows)
         x = x.astype(np.float32)
-        categorical_idx = self.get_categorical_features_indices(x)
+        categorical_idx = self.get_categorical_features_indices(x[:train_rows])
         mask_predictions = []
         for id_pipe in self._active_pipeline_indices():
             pipe = self.preprocess_pipelines[id_pipe]
@@ -17573,7 +19682,9 @@ def infer_random_state(
     raise ValueError(f"Invalid random_state {random_state}")
 
 class FilterValidFeatures(BasePreprocess):
-    """Functionality: Drop invalid feature columns that are constant everywhere or all-NaN on either the train or test side.
+    """Functionality: Drop feature columns that are constant on the training rows, or all-NaN on the training rows.
+
+    Query rows do not decide which columns are constant, and a column that is all-NaN only on the query side is kept.
 
     Input:
         None: State is recorded during fit.
@@ -17597,31 +19708,41 @@ class FilterValidFeatures(BasePreprocess):
 
     @override
     def fit(self, x:np.ndarray, categorical_features:list[int], seed:int, y:np.ndarray | None = None, **kwargs) -> list[int]:
-        """Functionality: Mark non-constant columns. When y is provided, also drop columns that are all-NaN on either the train or test split.
+        """Functionality: Mark columns that vary on the training rows. Drop training columns that are all-NaN.
 
         Input:
-            x: Concatenated train+test features.
+            x: Feature matrix. When y is provided, the leading len(y) rows are the training rows and the rest are query rows.
             categorical_features: Original categorical indices.
             seed: Unused.
-            y: Optional train labels used to determine eval_pos.
+            y: Train labels. Their length selects the training rows. Query values are not used.
 
         Output:
             list[int]: categorical indices that remain after filtering. Raises ValueError if every column is invalid.
         """
         self.categorical_idx = categorical_features
-        self.valid_features = ((x[0:1, :] == x).mean(axis=0) < 1.0).tolist()
-        self.invalid_indices = ((x[0:1, :] == x).mean(axis=0) == 1.0).tolist()
-
-        if y is not None:
-            eval_pos = len(y)
-            nan_train = np.isnan(x[:eval_pos, :])
-            all_nan_train = np.all(nan_train, axis=0)
-            nan_test = np.isnan(x[eval_pos:, :])
-            all_nan_test = np.all(nan_test, axis=0)
-            
-            features_nan = all_nan_train | all_nan_test
-            self.valid_features = self.valid_features & ~features_nan
-            self.invalid_indices = self.invalid_indices | features_nan
+        if y is None:
+            n_train = x.shape[0]
+        else:
+            n_train = len(y)
+            if n_train <= 0 or n_train > x.shape[0]:
+                raise ValueError(
+                    f"training row count {n_train} is outside [1, {x.shape[0]}]"
+                )
+        reference = x[:n_train]
+        n_features = x.shape[1]
+        if reference.shape[0] >= 2 and n_features:
+            constant = (reference[:1] == reference).mean(axis=0) == 1.0
+        else:
+            # A single training row cannot show variation. Do not consult query rows.
+            constant = np.zeros(n_features, dtype=bool)
+        valid = ~np.asarray(constant, dtype=bool)
+        invalid = np.asarray(constant, dtype=bool)
+        if y is not None and n_train > 0 and n_features:
+            all_nan_train = np.all(np.isnan(reference), axis=0)
+            valid = valid & ~all_nan_train
+            invalid = invalid | all_nan_train
+        self.valid_features = valid
+        self.invalid_indices = invalid
 
         if not any(self.valid_features):
             raise ValueError("All features are constant! Please check your data.")
@@ -17766,48 +19887,98 @@ class CategoricalFeatureEncoder(BasePreprocess):
         self.onehot_output_shape = None
 
     @override
-    def fit_transform(self, x:np.ndarray, categorical_features:list[int], seed:int, **kwargs) -> tuple[np.ndarray, list[int]]:
+    def fit_transform(self, x:np.ndarray, categorical_features:list[int], seed:int, y:np.ndarray | None = None, **kwargs) -> tuple[np.ndarray, list[int]]:
         """Functionality: Record the random seed and run encoding.
 
         Input:
-            x: 2-D features.
+            x: 2-D features. When y is provided, the leading len(y) rows are training rows.
             categorical_features: Categorical column indices.
             seed: Random seed used for ordinal shuffling.
+            y: Train labels. Their length selects the rows used to fit encoders.
 
         Output:
             tuple[np.ndarray, list[int]]: (encoded features, new categorical indices).
         """
         self.random_seed = seed
-        return self._fit_transform(x, categorical_features)
+        return self._fit_transform(x, categorical_features, y=y)
+
+    @staticmethod
+    def _training_view(X: np.ndarray, y: np.ndarray | None) -> tuple[np.ndarray, np.ndarray]:
+        """Functionality: Split a concatenated matrix into training rows and query rows.
+
+        Input:
+            X: 2-D features.
+            y: Train labels, or None when X itself is the training matrix.
+
+        Output:
+            tuple[np.ndarray, np.ndarray]: (training rows, query rows). Query rows may have length 0.
+        """
+        if y is None:
+            return X, X[:0]
+        n_train = len(y)
+        if n_train <= 0 or n_train > len(X):
+            raise ValueError(
+                f"training row count {n_train} is outside [1, {len(X)}]"
+            )
+        return X[:n_train], X[n_train:]
+
+    @staticmethod
+    def _transform_train_and_query(transformer, X_train: np.ndarray, X_query: np.ndarray) -> np.ndarray:
+        """Functionality: Transform training and query rows with one fitted encoder and stack them.
+
+        Input:
+            transformer: Fitted sklearn transformer.
+            X_train: Training rows.
+            X_query: Query rows. Empty when there is no query split.
+
+        Output:
+            np.ndarray: transformed training rows followed by transformed query rows.
+        """
+        transformed_train = np.asarray(transformer.transform(X_train))
+        if len(X_query) == 0:
+            return transformed_train
+        transformed_query = np.asarray(transformer.transform(X_query))
+        if transformed_train.ndim == 1:
+            transformed_train = transformed_train.reshape(-1, 1)
+            transformed_query = transformed_query.reshape(-1, 1)
+        return np.concatenate([transformed_train, transformed_query], axis=0)
 
     def _fit_transform(
         self,
         X: np.ndarray,
         categorical_features: list[int],
+        y: np.ndarray | None = None,
     ) -> tuple[np.ndarray, list[int]]:
-        # print(f"encoding_strategy: {self.encoding_strategy}")
-        """Functionality: Build a ColumnTransformer and fit_transform. One-hot may fall back when the result is too large.
+        """Functionality: Fit ordinal or one-hot encoding on training rows, then transform every row.
+
+        Category counts, ordinal codes, and one-hot columns come from the training rows.
+        Query categories absent from training become missing (ordinal) or ignored (one-hot).
+        The one-hot size guard still looks at the full transformed matrix, because that is the array the model receives.
 
         Input:
             X: 2-D features.
             categorical_features: Categorical column indices.
+            y: Train labels used to locate the training rows.
 
         Output:
             tuple[np.ndarray, list[int]].
         """
-        ct, categorical_features = self._create_transformer(X, categorical_features)
+        X_train, X_query = self._training_view(X, y)
+        ct, categorical_features = self._create_transformer(X_train, categorical_features)
         if ct is None:
             self.transformer = None
             return X, categorical_features
 
         _, rng = infer_random_state(self.random_seed)
 
-        if self.encoding_strategy.startswith("ordinal"):       
-            Xt = ct.fit_transform(X)
+        if self.encoding_strategy.startswith("ordinal"):
+            ct.fit(X_train)
+            Xt = self._transform_train_and_query(ct, X_train, X_query)
             categorical_features = list(range(len(categorical_features)))
 
             if self.encoding_strategy.endswith("_shuffled"):
                 self.category_mappings = {}
+                Xt = np.array(Xt, copy=True)
                 for col_ix in categorical_features:
                     col_cats = len(
                         ct.named_transformers_["ordinal_encoder"].categories_[col_ix],
@@ -17822,7 +19993,8 @@ class CategoricalFeatureEncoder(BasePreprocess):
         elif self.encoding_strategy == "onehot":
             self.onehot_fallback_triggered = False
             self.onehot_input_shape = tuple(X.shape)
-            Xt = ct.fit_transform(X)
+            ct.fit(X_train)
+            Xt = self._transform_train_and_query(ct, X_train, X_query)
             self.onehot_output_shape = tuple(Xt.shape)
             if self.onehot_size_fallback and Xt.size >= 1_000_000:
                 self.onehot_fallback_triggered = True
@@ -18555,7 +20727,7 @@ def float_hash_arr(input_array: np.ndarray) -> float:
 
 
 class FingerprintFeatureEncoder(BasePreprocess):
-    """Functionality: Append a per-row hash fingerprint column. Train resolves collisions by rehashing; test uses the first hash.
+    """Functionality: Append a per-row hash fingerprint column. Collisions are resolved across training rows only; each query row is hashed against that frozen state.
 
     Input:
         rng_seed: Historical argument, currently unused. The salt is generated from seed at fit.
@@ -18594,58 +20766,46 @@ class FingerprintFeatureEncoder(BasePreprocess):
         self.salt_value = int(rng.integers(0, 65536))  # 2^16 range
         self.categorical_features = categorical_features
         return categorical_features.copy()
-    
-    @override
-    def transform(self, x:np.ndarray, is_test:bool=False, **kwargs) -> tuple[np.ndarray, list[int]]:
-        """Functionality: Append a fingerprint column on the right.
+
+    @staticmethod
+    def _fingerprint_row(
+        current_row: np.ndarray,
+        existing_hashes: set[float],
+        next_increment_by_row: dict[bytes, int],
+        *,
+        record: bool,
+    ) -> float:
+        """Functionality: Hash one salted row, rehashing while that hash is already taken.
 
         Input:
-            x: 2-D features.
-            is_test: If True, resolve collisions against a copy of the state left by the train transform,
-                so test rows get the same hashes as when appended after train in one matrix.
+            current_row: One salted feature row.
+            existing_hashes: Hashes occupied by training rows.
+            next_increment_by_row: Next collision increment keyed by salted row bytes.
+            record: If True, occupy the returned hash and advance the increment. Query rows pass False.
 
         Output:
-            tuple[np.ndarray, list[int]]: (matrix with fingerprint column, original categorical indices).
+            float: fingerprint in [0, 1).
         """
-        # print(f"add finger")
-        if self.salt_value is None:
-            raise RuntimeError("Must call fit() before transform()")
-        
-        n_samples = x.shape[0]
-        fingerprint_col = np.zeros(n_samples, dtype=x.dtype)
-        
-        # Apply salt to input data
-        salted_data = x + self.salt_value
-        
-        if is_test:
-            existing_hashes = set(self.train_hashes_)
-            next_increment_by_row: dict[bytes, int] = dict(self.train_increments_)
-        else:
-            existing_hashes = set()
-            next_increment_by_row = {}
-        for idx in range(n_samples):
-            current_row = salted_data[idx]
-            row_key = current_row.tobytes()
-            increment = next_increment_by_row.get(row_key, 0)
-            hash_val = float_hash_arr(current_row if increment == 0 else current_row + increment)
-            rehash_useless = False
-            
-            # Handle collisions by incrementing and rehashing.
-            # Guard: for a row that is entirely non-finite (all NaN/inf),
-            # `current_row + increment` leaves the bytes unchanged, so the
-            # rehash is constant and this loop would spin forever. Break as
-            # soon as the rehash stops changing. Rows with any finite value
-            # keep the original behavior exactly, so results are unchanged
-            # for every dataset that previously completed.
-            while hash_val in existing_hashes:
-                increment += 1
-                new_hash = float_hash_arr(current_row + increment)
-                if new_hash == hash_val:
-                    rehash_useless = True
-                    break
-                hash_val = new_hash
-            
-            fingerprint_col[idx] = hash_val
+        row_key = current_row.tobytes()
+        increment = next_increment_by_row.get(row_key, 0)
+        hash_val = float_hash_arr(current_row if increment == 0 else current_row + increment)
+        rehash_useless = False
+
+        # Handle collisions by incrementing and rehashing.
+        # Guard: for a row that is entirely non-finite (all NaN/inf),
+        # `current_row + increment` leaves the bytes unchanged, so the
+        # rehash is constant and this loop would spin forever. Break as
+        # soon as the rehash stops changing. A row with any finite value
+        # still changes under the increment, so its rehash proceeds.
+        while hash_val in existing_hashes:
+            increment += 1
+            new_hash = float_hash_arr(current_row + increment)
+            if new_hash == hash_val:
+                rehash_useless = True
+                break
+            hash_val = new_hash
+
+        if record:
             existing_hashes.add(hash_val)
             if rehash_useless:
                 # NOTE: The 1st all-NaN/inf row creates a {row_key, hash} dict item
@@ -18654,10 +20814,61 @@ class FingerprintFeatureEncoder(BasePreprocess):
                 next_increment_by_row.pop(row_key, None)
             else:
                 next_increment_by_row[row_key] = increment + 1
+        return hash_val
+    
+    @override
+    def transform(self, x:np.ndarray, is_test:bool=False, y:np.ndarray | None = None, **kwargs) -> tuple[np.ndarray, list[int]]:
+        """Functionality: Append a fingerprint column on the right. Training rows resolve collisions among themselves; each query row is hashed independently against the frozen training state.
+
+        Input:
+            x: 2-D features. When y is provided and is_test is False, the leading len(y) rows are training rows and the rest are query rows.
+            is_test: If True, every row is a query row and is hashed against the training state saved by a previous transform.
+            y: Train labels. Their length selects the training prefix. Ignored when is_test is True.
+
+        Output:
+            tuple[np.ndarray, list[int]]: (matrix with fingerprint column, original categorical indices).
+        """
+        if self.salt_value is None:
+            raise RuntimeError("Must call fit() before transform()")
+
+        n_samples = x.shape[0]
+        if is_test:
+            if getattr(self, "train_hashes_", None) is None or getattr(self, "train_increments_", None) is None:
+                raise RuntimeError("Must transform training rows before transforming query rows")
+            n_train = 0
+        elif y is None:
+            n_train = n_samples
+        else:
+            n_train = len(y)
+            if n_train <= 0 or n_train > n_samples:
+                raise ValueError(
+                    f"training row count {n_train} is outside [1, {n_samples}]"
+                )
+
+        fingerprint_col = np.zeros(n_samples, dtype=x.dtype)
+        salted_data = x + self.salt_value
+
         if not is_test:
+            existing_hashes: set[float] = set()
+            next_increment_by_row: dict[bytes, int] = {}
+            for idx in range(n_train):
+                fingerprint_col[idx] = self._fingerprint_row(
+                    salted_data[idx],
+                    existing_hashes,
+                    next_increment_by_row,
+                    record=True,
+                )
             self.train_hashes_ = existing_hashes
             self.train_increments_ = next_increment_by_row
-        
+
+        for idx in range(n_train, n_samples):
+            fingerprint_col[idx] = self._fingerprint_row(
+                salted_data[idx],
+                self.train_hashes_,
+                self.train_increments_,
+                record=False,
+            )
+
         # Append fingerprint column and update categorical indices
         transformed = np.column_stack([x, fingerprint_col.reshape(-1, 1)])
         # cat_indices_updated = list(range(x.shape[1]))  # Original features remain categorical
@@ -18719,13 +20930,14 @@ class PolynomialInteractionGenerator(BasePreprocess):
         self.runtime_interactions_enabled = bool(enabled)
 
     @override
-    def fit(self, x:np.ndarray, categorical_features:list[int], seed:int, **kwargs) -> list[int]:
-        """Functionality: Fit StandardScaler and sample factor pairs. Factor indices are empty when runtime generation is disabled.
+    def fit(self, x:np.ndarray, categorical_features:list[int], seed:int, y:np.ndarray | None = None, **kwargs) -> list[int]:
+        """Functionality: Fit StandardScaler on training rows and sample factor pairs. Factor indices are empty when runtime generation is disabled.
 
         Input:
-            x: 2-D features.
+            x: 2-D features. When y is provided, the leading len(y) rows are the training rows.
             categorical_features: Categorical indices, kept as-is.
             seed: Random seed used to sample factor pairs.
+            y: Train labels. Their length selects the rows used to fit the scaler. Query rows are transformed later with that scaler.
 
         Output:
             list[int]: categorical indices.
@@ -18751,8 +20963,16 @@ class PolynomialInteractionGenerator(BasePreprocess):
             else max_possible_combinations
         )
         
-        # Fit only here; transform() materializes the standardized values once.
-        self.feature_normalizer.fit(x)
+        if y is None:
+            n_train = x.shape[0]
+        else:
+            n_train = len(y)
+            if n_train <= 0 or n_train > x.shape[0]:
+                raise ValueError(
+                    f"training row count {n_train} is outside [1, {x.shape[0]}]"
+                )
+        # Fit only here; transform() standardizes every row with the training scaler.
+        self.feature_normalizer.fit(x[:n_train])
 
         if not getattr(self, "runtime_interactions_enabled", True):
             self.primary_factor_indices = np.empty(0, dtype=np.int64)
@@ -24644,7 +26864,8 @@ class ValidFeatureEncoder(nn.Module):
 
     def forward(self, input: dict[str, torch.Tensor | int]) -> dict[str, torch.Tensor]:
         x: torch.Tensor = input[self.in_keys[0]]  # type: ignore
-        valid_feature = ~torch.all(x == x[:, 0:1, :], dim=1)
+        x_train = x[:, :input['eval_pos']]
+        valid_feature = ~torch.all(x_train == x_train[:, 0:1, :], dim=1)
         self.valid_feature_num = torch.clip(valid_feature.sum(-1).unsqueeze(-1),
                                             min=1)
 
@@ -24656,7 +26877,7 @@ class ValidFeatureEncoder(nn.Module):
             if self.sqrt_normalize:
                 x = x * torch.sqrt(self.num_features / self.valid_feature_num).unsqueeze(1).expand_as(x)
             else:
-                x = x * (self.num_features / self.valid_feature_num)
+                x = x * (self.num_features / self.valid_feature_num).unsqueeze(1)
 
         zeros = torch.zeros(
             *x.shape[:-1],
@@ -27564,7 +29785,38 @@ class FeaturesTransformer(nn.Module):
         x_input = torch.where(mask==1, float('nan'), x_input)
         x_input = torch.where(mask==2, x_feature_mean, x_input)
         x_input = torch.where(mask==3, x_input, x_input)
-        x_input = torch.where(mask==4, x_input + torch.randn_like(x_input)*0.01, x_input)
+        # One randn over the whole sequence consumes a global-RNG offset proportional
+        # to train+test rows, so later global draws change when only the test set
+        # changes. Draw two fixed seeds, then sample each side from its own generator.
+        # Skip the draw entirely when mask 4 is absent; the seed count must not
+        # depend on how many cells are masked.
+        if (mask == 4).any():
+            eval_pos = int(data['eval_pos'])
+            seeds = torch.randint(
+                0,
+                2**31 - 1,
+                (2,),
+                dtype=torch.int64,
+                device=x_input.device,
+            )
+            train_seed, test_seed = (int(seed) for seed in seeds.tolist())
+            generator = torch.Generator(device=x_input.device)
+            generator.manual_seed(train_seed)
+            train_noise = torch.randn(
+                x_input[:, :eval_pos].shape,
+                device=x_input.device,
+                dtype=x_input.dtype,
+                generator=generator,
+            )
+            generator.manual_seed(test_seed)
+            test_noise = torch.randn(
+                x_input[:, eval_pos:].shape,
+                device=x_input.device,
+                dtype=x_input.dtype,
+                generator=generator,
+            )
+            noise = torch.cat((train_noise, test_noise), dim=1)
+            x_input = torch.where(mask == 4, x_input + noise * 0.01, x_input)
 
         if x_categorical_mask is not None:
             x_input = torch.where(x_categorical_mask.unsqueeze(1) & (mask==2), float('nan'), x_input)
@@ -28925,581 +31177,6 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
-
-================================================
-FILE: scripts/convert_v20_ckpt.py
-================================================
-#!/usr/bin/env python3
-"""Convert a V2.0 training checkpoint into the slim inference checkpoint.
-
-This script is self-contained. It must not import model.v2_0 (that package
-may be slimmed later and would break a dependent converter).
-
-Typical usage:
-
-    python script/convert_v20_ckpt.py \\
-        --src /path/to/checkpoint_epoch_1000.ckpt \\
-        --dst /mnt/datagen/rg/05内部开源模型优化版/LimiX-V2.0-400M_preOpen.ckpt
-"""
-
-from __future__ import annotations
-
-import argparse
-import random
-from fractions import Fraction
-from pathlib import Path
-
-import torch
-
-
-DEFAULT_SRC = (
-    "/mnt/public/zhangruiji/models/"
-    "rex_rl_0830_cls_cauchyslim_reg_cauchybase_sv6_lt0p03_ht0p01_rep0p4_"
-    "tl0p2_th1p0_clw0p9_rlw0p2_0831_0225/checkpoint_epoch_1000.ckpt"
-)
-DEFAULT_DST = "/mnt/datagen/rg/05内部开源模型优化版/LimiX-V2.0-400M_preOpen.ckpt"
-
-CONFIG_KEY_ALIAS = {
-    "emsize": "embed_dim",
-}
-
-NONE_DEFAULT_KEYS = {
-    "yemb_freeze_type",
-    "yemb_type",
-    "model_structure_config",
-    "x_induced_ffn_hidden_dim",
-    "tf_mlp_y_hidden_size_ratio",
-}
-
-# Old training key fragments -> inference module names.
-STATE_KEY_REPLACEMENTS = (
-    ("encoder.0.", "encoder_x.0."),
-    (
-        "feature_positional_embedding_embeddings.",
-        "feature_positional_embedding.",
-    ),
-)
-
-CRITERION_RENAMES = {
-    "reg_criterion.borders": "reg_borders",
-    "reg_criterion.bucket_widths": "reg_bucket_widths",
-    "reg_criterion._borders": "_reg_borders",
-    "reg_criterion.log_widths": "reg_log_widths",
-    "reg_criterion.min_border": "reg_min_border",
-    "mask_feature_criterion.borders": "mask_feature_border",
-    "mask_feature_criterion.bucket_widths": "mask_feature_bucket_widths",
-}
-
-DROP_STATE_KEYS = {
-    "criterion",
-    "cls_criterion.weight",
-    "reg_criterion.losses_per_bucket",
-    "dynamic_weight_4_loss.params",
-    "mask_feature_criterion._borders",
-    "mask_feature_criterion.log_widths",
-    "reg_mse_criterion._borders",
-    "reg_mse_criterion.log_widths",
-}
-
-
-def flatten_dict(input_dict: dict) -> dict:
-    result = {}
-
-    def flatten(node: dict) -> None:
-        for key, value in node.items():
-            if isinstance(value, dict):
-                flatten(value)
-            elif key not in result:
-                result[key] = value
-
-    flatten(input_dict)
-    return result
-
-
-def generate_init_seed(model_seed: int) -> dict:
-    py_rng_state = random.getstate()
-    random.seed(model_seed)
-    max_seed = 2 ** 32 - 1
-    seed_dict = {
-        "decoder_cls_y_seed": random.randint(0, max_seed),
-        "decoder_reg_y_seed": random.randint(0, max_seed),
-        "decoder_feature_seed": random.randint(0, max_seed),
-        "decoder_mask_indicator_seed": random.randint(0, max_seed),
-        "feature_positional_embedding_seed": random.randint(0, max_seed),
-        "decoder_feature_indicator_reinit_seed": random.randint(0, max_seed),
-        "transformer_encoder_output_layernor_seed": random.randint(0, max_seed),
-        "encoder_cls_y_seed": random.randint(0, max_seed),
-        "encoder_reg_y_seed": random.randint(0, max_seed),
-    }
-    for layer_idx in range(32):
-        for idx in range(16):
-            seed_dict[f"layer{layer_idx}_FA{idx}_seed"] = random.randint(0, max_seed)
-            seed_dict[f"layer{layer_idx}_SA{idx}_seed"] = random.randint(0, max_seed)
-        for midx in range(8):
-            for idx in range(32):
-                seed_dict[f"layer{layer_idx}_MLP{midx}_{idx}_seed"] = random.randint(
-                    0, max_seed
-                )
-    seed_dict["reg_cls_embedding_projection_seed"] = random.randint(0, max_seed)
-    seed_dict["encoder_uniform"] = random.randint(0, max_seed)
-    seed_dict["add_task_info_seed"] = random.randint(0, max_seed)
-    seed_dict["x_induced_distribution_seed"] = random.randint(0, max_seed)
-    random.setstate(py_rng_state)
-    return seed_dict
-
-
-def lookup_config(key: str, sources: list[dict], default=None, *, required=False):
-    for source in sources:
-        if key in source:
-            return _normalize_value(source[key])
-        alias = CONFIG_KEY_ALIAS.get(key)
-        if alias is not None and alias in source:
-            return _normalize_value(source[alias])
-    if required and default is None and key not in NONE_DEFAULT_KEYS:
-        raise KeyError(f"missing checkpoint config key: {key}")
-    if default is None and key in NONE_DEFAULT_KEYS:
-        return None
-    return _normalize_value(default)
-
-
-def _normalize_value(value):
-    if isinstance(value, Fraction):
-        return float(value)
-    return value
-
-
-def collect_sources(ckpt: dict) -> list[dict]:
-    sources = []
-    if isinstance(ckpt.get("config"), dict):
-        sources.append(ckpt["config"])
-        sources.append(flatten_dict(ckpt["config"]))
-    info = ckpt.get("config_info")
-    if isinstance(info, dict):
-        if isinstance(info.get("model_config"), dict):
-            sources.append(info["model_config"])
-        if isinstance(info.get("train_config"), dict):
-            sources.append(info["train_config"])
-        sources.append(flatten_dict(info))
-    return sources
-
-
-def parse_model_structure_config(
-    nlayers: int,
-    embed_dim: int,
-    nhead: int,
-    nhid_factor: float,
-    layer_arch: str,
-    *,
-    activation: str,
-    dropout: float,
-    pre_norm: bool,
-    all_norm: bool,
-) -> dict:
-    hid_dim = int(embed_dim * nhid_factor)
-    layers = []
-    for idx in range(nlayers):
-        layers.append(
-            {
-                "layer_idx": idx,
-                "arch": layer_arch,
-                "emsize": embed_dim,
-                "nhead": nhead,
-                "nhid_factor": nhid_factor,
-                "hid_dim": hid_dim,
-                "activation": activation,
-                "dropout": dropout,
-                "pre_norm": pre_norm,
-                "all_norm": all_norm,
-            }
-        )
-    return {
-        "global_defaults": {
-            "nhead": nhead,
-            "nhid_factor": nhid_factor,
-            "arch": layer_arch,
-            "activation": activation,
-            "dropout": dropout,
-            "pre_norm": pre_norm,
-            "all_norm": all_norm,
-        },
-        "layers": layers,
-        "emsize": embed_dim,
-        "nlayers": nlayers,
-    }
-
-
-def build_inference_config(ckpt: dict) -> dict:
-    raw = ckpt.get("config") if isinstance(ckpt.get("config"), dict) else {}
-    if "encoder_config_x" in raw:
-        config = dict(raw)
-        config.pop("optimizer", None)
-        config.pop("scheduler", None)
-        return config
-
-    sources = collect_sources(ckpt)
-    g = lambda key, default=None, required=False: lookup_config(
-        key, sources, default, required=required
-    )
-
-    emsize = g("emsize", required=True)
-    nlayers = g("nlayers", required=True)
-    nhead = g("nhead", required=True)
-    nhid_factor = g("nhid_factor", 4)
-    layer_arch = g("layer_arch", "smf")
-    pre_norm = g("pre_norm", False)
-    all_norm = g("all_norm", False)
-    activation = g("activation", "gelu")
-    # Inference always disables dropout / attention recompute.
-    dropout = 0.0
-    recompute_attn = g("recompute_attn", False) or False
-    features_per_group = g("features_per_group", required=True)
-    seed_dict = generate_init_seed(g("fixmodelseed", 3407))
-    model_structure_config = g("model_structure_config")
-    if model_structure_config is None:
-        model_structure_config = parse_model_structure_config(
-            nlayers=nlayers,
-            embed_dim=emsize,
-            nhead=nhead,
-            nhid_factor=nhid_factor,
-            layer_arch=layer_arch,
-            activation=activation,
-            dropout=dropout,
-            pre_norm=pre_norm,
-            all_norm=all_norm,
-        )
-
-    numeric_embed_type = g("numeric_embed_type", "linear")
-    if numeric_embed_type == "original":
-        numeric_embed_type = "linear"
-
-    config = {
-        "preprocess_config_x": {
-            "num_features": features_per_group,
-            "nan_handling_enabled": g("nan_handling_enabled", True),
-            "normalize_on_train_only": g("normalize_on_train_only", True),
-            "normalize_x": g("normalize_x", True),
-            "remove_outliers": g("remove_outliers", False),
-            "normalize_by_used_features": g("normalize_by_used_features", True),
-        },
-        "encoder_config_x": {
-            "num_features": features_per_group,
-            "embedding_size": emsize,
-            "mask_embedding_size": g("mask_embedding_size", emsize),
-            "encoder_use_bias": g("encoder_use_bias", True),
-            "feature_embedding_type": g(
-                "mask_feature_embedding_type", "mask_embedding"
-            ),
-            "numeric_embed_type": numeric_embed_type,
-            "use_feature_group_encoder": g("use_feature_group_encoder", True),
-            "feature_group_encoder_hidden_dim": g(
-                "feature_group_encoder_hidden_dim", 192
-            ),
-            "feature_fusion_network_type": g(
-                "feature_fusion_network_type", "original"
-            ),
-            "use_feature_mask_indicator": g("use_feature_mask_indicator", False),
-            "mask_indicator_embed_dim": g("mask_indicator_embed_dim", 192),
-            "emb_mlp_hidden_dim_ratio": g("emb_mlp_hidden_dim_ratio", 0.5),
-            "mask_token_emb_type": g("mask_token_emb_type", "mask_emb"),
-            "init_seed_dict": seed_dict,
-        },
-        "encoder_config_y": {
-            "num_inputs": 1,
-            "embedding_size": emsize,
-            "nan_handling_y_encoder": g("nan_handling_y_encoder", True),
-            "max_num_classes": g("max_num_classes", 10),
-            "yemb_freeze_type": g("yemb_freeze_type", None),
-            "cls_y_encoder_type": g("cls_y_encoder_type", "emby_embedding"),
-            "y_encoder_type": g("RBF_reg_y_encoder_type", "linear"),
-            "reg_y_numeric_embed_type": g("reg_y_numeric_embed_type", "linear"),
-            "cls_emb_learning_scalar": g("cls_emb_learning_scalar", False),
-            "cls_y_numeric_embed_type": g("cls_y_numeric_embed_type", "linear"),
-            "emb_mlp_hidden_dim_ratio": g("emb_mlp_hidden_dim_ratio", 0.5),
-            "mask_indicator_embed_dim": g("mask_indicator_embed_dim", 192),
-            "reg_y_mask_indicator_type": g("reg_y_mask_indicator_type", "linear"),
-            "mask_token_emb_type": g("mask_token_emb_type", "mask_emb"),
-            "cls_random_mapping": g("cls_random_mapping", False),
-            "num_features": features_per_group,
-            "init_seed_dict": seed_dict,
-        },
-        "decoder_config": {"num_classes": g("max_num_classes", 10)},
-        "feature_positional_embedding_type": g(
-            "feature_positional_embedding_type", "subspace"
-        ),
-        "nlayers": nlayers,
-        "nhead": nhead,
-        "embed_dim": emsize,
-        "hid_dim": int(emsize * nhid_factor),
-        "tf_mlp_layer_type": g("tf_mlp_layer_type", "gated"),
-        "tf_mlp_activation_fuction": g("tf_mlp_activation_fuction", "silu"),
-        "use_gated_norm": g("use_gated_norm", False),
-        "tf_mlp_use_bias": g("tf_mlp_use_bias", True),
-        "tf_attention_layer_type": g("tf_attention_layer_type", "bert"),
-        "tf_attention_use_bias": g("tf_attention_use_bias", True),
-        "output_proj_w_init_type": g("output_proj_w_init_type", "original"),
-        "tf_norm_type": g("tf_norm_type", "rmsnorm"),
-        "rmsnorm_impl": g("rmsnorm_impl", "triton"),
-        "tf_layer_norm_use_elementwise_affine": g(
-            "tf_layer_norm_use_elementwise_affine", False
-        ),
-        "mask_feature_embedding_type": g(
-            "mask_feature_embedding_type", "mask_embedding"
-        ),
-        "enable_mask_feature_pred": g("enable_mask_feature_pred", True),
-        "enable_mask_indicator_pred": g("enable_mask_indicator_pred", False),
-        "mask_prediction": False,
-        "features_per_group": features_per_group,
-        "dropout": dropout,
-        "tf_mlp_dropout": 0.0,
-        "decoder_dropout": 0.0,
-        "pre_norm": pre_norm,
-        "all_norm": all_norm,
-        "activation": activation,
-        "recompute_attn": recompute_attn,
-        "layer_recompute": g("layer_recompute", False),
-        "layer_recompute_start_layer": g("layer_recompute_start_layer", 0),
-        "layer_arch": layer_arch,
-        "use_separate_attention": g("use_separate_attention", False),
-        "separate_attn_kv_combined": g("separate_attn_kv_combined", False),
-        "sample_attention_cls_token_merge": g(
-            "sample_attention_cls_token_merge", "reshape"
-        ),
-        "scale_y_sample_attention_heads": g("scale_y_sample_attention_heads", False),
-        "cls_sample_attention_num_heads": g("cls_sample_attention_num_heads", 0),
-        "cls_only_sample_attention_num_heads": g(
-            "cls_only_sample_attention_num_heads", 0
-        ),
-        "feature_attention_cls_token_merge": g(
-            "feature_attention_cls_token_merge", "none"
-        ),
-        "num_cls_tokens": g("num_cls_tokens", 1),
-        "cls_only_start_layer": g("cls_only_start_layer", -1),
-        "seq_att_use_softmax_scaling_mlp_for_q": g(
-            "seq_att_use_softmax_scaling_mlp_for_q", False
-        ),
-        "fea_att_use_softmax_scaling_mlp_for_q": g(
-            "fea_att_use_softmax_scaling_mlp_for_q", False
-        ),
-        "sa_temp_upper_bound": g("sa_temp_upper_bound", 0.5),
-        "sa_temp_lower_bound": g("sa_temp_lower_bound", 0.0),
-        "fa_temp_upper_bound": g("fa_temp_upper_bound", 0.4),
-        "fa_temp_lower_bound": g("fa_temp_lower_bound", 0.0),
-        "sa_scale_base_bound": g("sa_scale_base_bound", 5.0),
-        "fa_scale_base_bound": g("fa_scale_base_bound", 1.0),
-        "seq_att_use_q_norm": g("seq_att_use_q_norm", False),
-        "fea_att_use_q_norm": g("fea_att_use_q_norm", False),
-        "seq_att_use_k_norm": g("seq_att_use_k_norm", False),
-        "fea_att_use_k_norm": g("fea_att_use_k_norm", False),
-        "seq_att_q_norm_use_elementwise_affine": g(
-            "seq_att_q_norm_use_elementwise_affine", False
-        ),
-        "fea_att_q_norm_use_elementwise_affine": g(
-            "fea_att_q_norm_use_elementwise_affine", False
-        ),
-        "seq_att_k_norm_use_elementwise_affine": g(
-            "seq_att_k_norm_use_elementwise_affine", False
-        ),
-        "fea_att_k_norm_use_elementwise_affine": g(
-            "fea_att_k_norm_use_elementwise_affine", False
-        ),
-        "self_share_all_kv_heads": g("self_share_all_kv_heads", False),
-        "cross_share_all_kv_heads": g("cross_share_all_kv_heads", True),
-        "seq_attn_isolated": g("seq_attn_isolated", False),
-        "seq_attn_serial": g("seq_attn_serial", False),
-        "mask_feature_filling_type": g("mask_feature_filling_type", "mask_token"),
-        "enable_classification_y_pred": g("enable_classification_y_pred", True),
-        "enable_regression_y_pred": g("enable_regression_y_pred", True),
-        "num_buckets": g("num_buckets", 0),
-        "border_range": g("border_range", [-10.0, 10.0]),
-        "learnable_borders": g("learnable_borders", False),
-        "reg_borders_use_train_quantile": g("reg_borders_use_train_quantile", False),
-        "use_rmsnorm": g("use_rmsnorm", False),
-        "flash_attention_precision": g("flash_attention_precision", "inherit"),
-        "init_seed_dict": seed_dict,
-        "init_seed_mlp_mode": g("init_seed_mlp_mode", "split") or "split",
-        "use_feature_post_adapter": g("use_feature_post_adapter", False),
-        "feature_post_adapter_pattern": g(
-            "feature_post_adapter_pattern", "linear-192"
-        ),
-        "use_feature_post_adapter_residual": g(
-            "use_feature_post_adapter_residual", False
-        ),
-        "use_cls_post_adapter": g("use_cls_post_adapter", False),
-        "cls_post_adapter_pattern": g("cls_post_adapter_pattern", "linear-192"),
-        "use_cls_post_adapter_residual": g("use_cls_post_adapter_residual", False),
-        "use_reg_post_adapter": g("use_reg_post_adapter", False),
-        "reg_post_adapter_pattern": g("reg_post_adapter_pattern", "linear-192"),
-        "use_reg_post_adapter_residual": g("use_reg_post_adapter_residual", False),
-        "decoder_hidden_dim": g("decoder_hidden_dim", emsize * 4),
-        "cls_y_decoder_type": g("cls_y_decoder_type", "original"),
-        "cls_y_decoder_mlp_pattern": g(
-            "cls_y_decoder_mlp_pattern", "linear-768_GELU_linear-10"
-        ),
-        "reg_y_decoder_type": g("reg_y_decoder_type", "original"),
-        "reg_y_decoder_mlp_pattern": g(
-            "reg_y_decoder_mlp_pattern", "linear-768_GELU_linear-10"
-        ),
-        "reg_y_mse_decoder_type": g("reg_y_mse_decoder_type", "original"),
-        "feature_mse_decoder_type": g("feature_mse_decoder_type", "original"),
-        "feature_decoder_type": g("feature_decoder_type", "origin_mse_head"),
-        "use_shared_encoder": g("use_shared_encoder", False),
-        "model_structure_config": model_structure_config,
-        "feature_attention_pipeline": g("feature_attention_pipeline", "legacy"),
-        "decoupled_attn_kv_combined": g("decoupled_attn_kv_combined", False),
-        "dsti_summary_dim": g("dsti_summary_dim", 0),
-        "dsti_relation_dim": g("dsti_relation_dim", 0),
-        "dsti_value_dim": g("dsti_value_dim", 0),
-        "dsti_num_heads": g("dsti_num_heads", 0),
-        "dsti_num_summary_tokens": g("dsti_num_summary_tokens", 1),
-        "dsti_feature_interaction_mode": g(
-            "dsti_feature_interaction_mode", "sample_split"
-        ),
-        "dsti_y_token_aggregation": g("dsti_y_token_aggregation", "concat_linear"),
-        "dsti_dropout": g("dsti_dropout", -1.0),
-        "dsti_use_qk_norm": g("dsti_use_qk_norm", False),
-        "dsti_qk_norm_eps": g("dsti_qk_norm_eps", 1e-5),
-        "dsti_qk_norm_elementwise_affine": g(
-            "dsti_qk_norm_elementwise_affine", True
-        ),
-        "dsti_use_softmax_scaling_mlp": g("dsti_use_softmax_scaling_mlp", False),
-        "dsti_softmax_scaling_temp_upper_bound": g(
-            "dsti_softmax_scaling_temp_upper_bound", 0.4
-        ),
-        "dsti_softmax_scaling_temp_lower_bound": g(
-            "dsti_softmax_scaling_temp_lower_bound", 0.0
-        ),
-        "dsti_softmax_scaling_base_bound": g(
-            "dsti_softmax_scaling_base_bound", 1.0
-        ),
-        "dsti_attention_backend": g("dsti_attention_backend", "auto"),
-        "dsti_use_updated_x_for_y": g("dsti_use_updated_x_for_y", True),
-        "dsti_summary_query_init_std": g("dsti_summary_query_init_std", 0.02),
-        "separate_x_y_ffn": g("separate_x_y_ffn", False),
-        "disable_test_use_train_first_head": g(
-            "disable_test_use_train_first_head", False
-        ),
-        "feature_emb_layer": g("feature_emb_layer", nlayers - 1),
-        "reg_y_emb_layer": g("reg_y_emb_layer", nlayers - 1),
-        "cls_y_emb_layer": g("cls_y_emb_layer", nlayers - 1),
-        "seq_att_kv_num_heads": g("seq_att_kv_num_heads", nhead),
-        "encoder_out_norm_use_affine": g("encoder_out_norm_use_affine", False),
-        "add_task_type": g("add_task_type", False),
-        "tf_mlp_hidden_size_ratio": g("tf_mlp_hidden_size_ratio", 4.0),
-        "tf_mlp_hidden_size_2_even": g("tf_mlp_hidden_size_2_even", False),
-        "tf_mlp_y_hidden_size_ratio": g("tf_mlp_y_hidden_size_ratio", None),
-        "induce_use_qk_norm": g("induce_use_qk_norm", g("seq_att_use_q_norm", False)),
-        "induce_qk_norm_eps": g("induce_qk_norm_eps", 1e-5),
-        "induce_qk_norm_elementwise_affine": g(
-            "induce_qk_norm_elementwise_affine", True
-        ),
-        "induce_use_softmax_scaling_mlp": g(
-            "induce_use_softmax_scaling_mlp",
-            g("seq_att_use_softmax_scaling_mlp_for_q", False),
-        ),
-        "induce_softmax_scaling_temp_upper_bound": g(
-            "induce_softmax_scaling_temp_upper_bound", 0.5
-        ),
-        "induce_softmax_scaling_temp_lower_bound": g(
-            "induce_softmax_scaling_temp_lower_bound", 0.0
-        ),
-        "induce_softmax_scaling_base_bound": g(
-            "induce_softmax_scaling_base_bound", 5.0
-        ),
-        "mlp_use_residual": g("mlp_use_residual", True),
-        "qkv_w_init_method": g("qkv_w_init_method", "xavier_uniform"),
-    }
-    return config
-
-
-def remap_state_key(key: str) -> str | None:
-    if key in DROP_STATE_KEYS or key == "criterion":
-        return None
-    key = key.replace("module.", "")
-    if key in DROP_STATE_KEYS:
-        return None
-    if "cls_criterion.weight" in key:
-        return None
-    if "reg_y_encoder" not in key:
-        for old, new in STATE_KEY_REPLACEMENTS:
-            if old in key:
-                key = key.replace(old, new)
-                break
-    if key in CRITERION_RENAMES:
-        key = CRITERION_RENAMES[key]
-    return key
-
-
-def remap_old_scaling_keys(state: dict) -> dict:
-    """Map legacy 1-D softmax-scaling params onto scale_linear.{weight,bias}."""
-    for key in list(state.keys()):
-        if "softmax_scaling_mlp_for_q.base_scale_param_H" in key:
-            new_key = key.replace(
-                "softmax_scaling_mlp_for_q.base_scale_param_H",
-                "softmax_scaling_mlp_for_q.scale_linear.bias",
-            )
-            state[new_key] = state.pop(key).reshape(-1)
-        elif "softmax_scaling_mlp_for_q.logn_sensitivity_H" in key:
-            new_key = key.replace(
-                "softmax_scaling_mlp_for_q.logn_sensitivity_H",
-                "softmax_scaling_mlp_for_q.scale_linear.weight",
-            )
-            state[new_key] = state.pop(key).reshape(-1, 1)
-    return state
-
-
-def convert_state_dict(raw_state: dict) -> dict:
-    new_state = {}
-    for key, value in raw_state.items():
-        new_key = remap_state_key(key)
-        if new_key is None:
-            continue
-        new_state[new_key] = value
-    return remap_old_scaling_keys(new_state)
-
-
-def convert_checkpoint(src: Path, dst: Path) -> dict:
-    ckpt = torch.load(src, map_location="cpu", weights_only=False)
-    if "state_dict" not in ckpt:
-        raise KeyError(f"{src} has no state_dict")
-    config = build_inference_config(ckpt)
-    state = convert_state_dict(dict(ckpt["state_dict"]))
-    out = {
-        "state_dict": state,
-        "config": config,
-        "arch_version": ckpt.get("arch_version", "2.0"),
-    }
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(out, dst)
-    return {
-        "src": str(src),
-        "dst": str(dst),
-        "n_src": len(ckpt["state_dict"]),
-        "n_dst": len(state),
-        "config_keys": len(config),
-        "has_reg_borders": "_reg_borders" in state,
-        "has_encoder_config_x": "encoder_config_x" in config,
-    }
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--src", type=Path, required=True, help="Path to the source checkpoint")
-    parser.add_argument("--dst", type=Path, required=True, help="Path to the destination checkpoint")
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = parse_args()
-    info = convert_checkpoint(args.src, args.dst)
-    print("converted checkpoint")
-    for key, value in info.items():
-        print(f"  {key}: {value}")
-
-
-if __name__ == "__main__":
-    main()
 
 
 

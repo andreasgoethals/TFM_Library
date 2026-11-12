@@ -1,7 +1,7 @@
 TFM Library official documentation snapshot
 {
   "source": "https://docs.priorlabs.ai/llms-full.txt",
-  "retrieved_utc": "2026-11-10T09:33:57.846389+00:00",
+  "retrieved_utc": "2026-11-12T09:51:35.806932+00:00",
   "source_pages": [
     "https://docs.priorlabs.ai/agentic/mcp",
     "https://docs.priorlabs.ai/agentic/setup-guide",
@@ -165,7 +165,7 @@ TFM Library official documentation snapshot
     "https://docs.priorlabs.ai/tabpfn-in-action/research",
     "https://docs.priorlabs.ai/troubleshooting/OOM-errors"
   ],
-  "sha256": "c58a3ae8bf7952bcb9ee476f4c668b340acf91ce707f37edca0916f7002f233c",
+  "sha256": "9db6371ae530589383efce6bcb8f72bec9b5c89208b12a422099c0de7c4ee315",
   "note": "Official complete Markdown export; no Git revision is published."
 }
 
@@ -16966,7 +16966,7 @@ XGBoost uses [gradient-boosted decision trees](https://en.wikipedia.org/wiki/Gra
 | **Approach** | Pretrained transformer (TabPFN) | Gradient-boosted trees |
 | **Training** | No training required | Trains on each dataset |
 | **Tuning** | Minimal | Often needed |
-| **Prediction speed** | Under 0.2ms on 1M rows | Typically fast |
+| **Prediction speed** | Under 0.2s on 1M rows | Typically fast |
 | **Best suited for** | Best predictive performance & fast deployment | CPU-efficient deployment |
 
 ## Which should you choose?
@@ -28816,6 +28816,16 @@ Source: https://docs.priorlabs.ai/overview
 A tabular foundation model that delivers strong predictions in seconds — no dataset-specific training required.
 
 TabPFN is a pre-trained transformer trained on billions of synthetic datasets to “learn the learning process.” Instead of re-optimizing weights for every new dataset, TabPFN encodes inductive biases, priors, and optimization strategies and applies them to your data via in-context learning. That means one forward pass → high-quality predictions in seconds.
+
+[Tabular Foundation Models for Data Science Agents](https://www.youtube.com/embed/0NbLVdCZHF0)
+
+New course with
+
+![DeepLearning.AI](https://mintcdn.com/priorlabs/-FUwxJ7MZTU2z5Iw/images/deeplearning-ai-logo.png?fit=max\&auto=format\&n=-FUwxJ7MZTU2z5Iw\&q=85\&s=45d1e936faa0a61a8108e9bfeb8d1f94)
+
+Tabular Foundation Models for Data Science Agents
+New to tabular foundation models? Learn how they work, how to best apply them, and put it all together by building a data science agent.
+[Enroll now →](https://bit.ly/4sQZVAA)
 
 ## Get Started
 

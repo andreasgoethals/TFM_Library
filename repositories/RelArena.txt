@@ -2,12 +2,12 @@ TFM Library source snapshot
 Do not edit: regenerate with the registered source refresh command.
 {
   "upstream": "https://github.com/PriorLabs/relarena",
-  "revision": "19be08dd5494a48d935eaf2c14ee22f0c51150a9",
-  "revision_date": "2026-11-06T10:59:55+01:00",
+  "revision": "f3a3ab3317df459b788fed2eb6bd6c0a3c669507",
+  "revision_date": "2026-11-11T16:00:18+01:00",
   "slug": "PriorLabs/relarena",
-  "retrieved_utc": "2026-11-10T09:31:47+00:00",
+  "retrieved_utc": "2026-11-12T09:46:21+00:00",
   "identity_source": "https://arxiv.org/abs/2608.16319",
-  "included_files": 267,
+  "included_files": 279,
   "excluded_files": 14,
   "file_sha256": [
     {
@@ -47,13 +47,13 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "README.md",
-      "bytes": 41440,
-      "sha256": "f4662cf43d2d6a836db51c05735240df5289146704fd71ed447e598c0d000b11"
+      "bytes": 41830,
+      "sha256": "a2bd58b262351910380ab9b37248d47bb3d396085742ec73566a6a78ad0a0a5c"
     },
     {
       "path": "baseline_results/README.md",
-      "bytes": 6009,
-      "sha256": "8df9050207f52fa1d56d70a22b1f25685cbf61757376edf9fb062ad0558178ac"
+      "bytes": 6031,
+      "sha256": "34147d17e3a58bf9e48de5edcf3f968aa17f0878388eb57a6f1ee3a586d4f8eb"
     },
     {
       "path": "baseline_results/SOURCES.md",
@@ -84,6 +84,11 @@ Do not edit: regenerate with the registered source refresh command.
       "path": "docs/models/kurversc.md",
       "bytes": 3022,
       "sha256": "9e2f129e18ba3bfe5cd8e5ac730a8633d89ef210355b5ccc84dcff67240ebe1b"
+    },
+    {
+      "path": "docs/models/relflow.md",
+      "bytes": 3528,
+      "sha256": "55a80d970f790f06605ba0d19c36b3196f4f8062fea12b0b6b51678b9686586c"
     },
     {
       "path": "docs/models/rt.md",
@@ -422,8 +427,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/pyproject.toml",
-      "bytes": 5853,
-      "sha256": "69d0cd3fb30353005bc418fc54cbd7e4a1a56fe99b2d04fe4a169402eb29fc40"
+      "bytes": 5931,
+      "sha256": "baca1a58f10ef85990101e0a26acb46041c84fa5ba22d6e3f7f97926c16d2661"
     },
     {
       "path": "packages/relarena/src/relarena/__init__.py",
@@ -644,6 +649,41 @@ Do not edit: regenerate with the registered source refresh command.
       "path": "packages/relarena/src/relarena/models/rdblearn/tfm.py",
       "bytes": 1832,
       "sha256": "1d891174e82e1d4448a3c16b5d7b4ac10dab9dd8cde8ba2d2a46a32585417674"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/__init__.py",
+      "bytes": 132,
+      "sha256": "43720bbf9bc188cc8b01e1ae632af4c8efc3ca58fdd6fbdfc37416b5cab66ca3"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/context.py",
+      "bytes": 8230,
+      "sha256": "1947c3c924f354084747f355632c77c4950e007649abfbfd047bd7c42fc394a6"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/derive.py",
+      "bytes": 32145,
+      "sha256": "f94d9cad2927aa8f54d7b2a2cab74ae57808a24a12ff70b058a1f6ac1abc1f6c"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/model.py",
+      "bytes": 2380,
+      "sha256": "64fe1b442efbb328dce56e96b4fed1ce982b60802322c685f491c42b0160f861"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/raw.py",
+      "bytes": 17205,
+      "sha256": "c247d4299a8afbf40ab223a1f4fad786617d85e19f33bc0fe861cf97197f5e0f"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/recipes.json",
+      "bytes": 3415,
+      "sha256": "3e875d2607d6cad8e1357a8aff96e1a0f8f34aa31068f58c6f50bed49a36f8cc"
+    },
+    {
+      "path": "packages/relarena/src/relarena/models/relflow/training.py",
+      "bytes": 12755,
+      "sha256": "cde3874e14fb7b1f6dfbcddeab58cb33bc1c4f0836a03317a857bdc13c99ac6b"
     },
     {
       "path": "packages/relarena/src/relarena/models/relgnn/__init__.py",
@@ -1161,6 +1201,26 @@ Do not edit: regenerate with the registered source refresh command.
       "sha256": "a3361a01db925815b8d3825fa9d2fea1e5e07512ac5e85aa6fb75dd1b0096851"
     },
     {
+      "path": "packages/relarena/tests/models/relflow/__init__.py",
+      "bytes": 41,
+      "sha256": "9d01f4bab4273cd5e1cbd4d14c5746d27829fdfa8c2e772415b6a4ec934ef51e"
+    },
+    {
+      "path": "packages/relarena/tests/models/relflow/test_data.py",
+      "bytes": 17066,
+      "sha256": "026a2d961c83ebffe3891aea7722b0e75610e2639155bf67eb55141cad8e70f8"
+    },
+    {
+      "path": "packages/relarena/tests/models/relflow/test_encoder.py",
+      "bytes": 3908,
+      "sha256": "85b57f72520dcb524003e3ebea67007b35e5061b81bd788c95b813802703887c"
+    },
+    {
+      "path": "packages/relarena/tests/models/relflow/test_model.py",
+      "bytes": 12673,
+      "sha256": "3406cbe99e3c7a46ca69f2aad0453414e6053fcf6d25ec3dc73457ce7c3ab753"
+    },
+    {
       "path": "packages/relarena/tests/models/relgnn/__init__.py",
       "bytes": 36,
       "sha256": "5c3f7762eccda814a207d7abae68fdf95648b81cf1d83dc02a9f2bc7edf3db74"
@@ -1217,8 +1277,8 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "packages/relarena/tests/models/test_discovery.py",
-      "bytes": 3575,
-      "sha256": "1e29c6be785fed30ed40fe7b3507fb58cc58665e0c4bd02a48299bd1443a8158"
+      "bytes": 3650,
+      "sha256": "12ac65753ee9b8f93e4d7fb83b8659ff069ba546cfa8bd758a99f4247c96cb5a"
     },
     {
       "path": "packages/relarena/tests/test_cache_extension.py",
@@ -1297,13 +1357,13 @@ Do not edit: regenerate with the registered source refresh command.
     },
     {
       "path": "pyproject.toml",
-      "bytes": 3613,
-      "sha256": "19375b3214109e0cc94073e6f033ad2f1c4d6c56bb39e347f6fbc5462b8c6abc"
+      "bytes": 3882,
+      "sha256": "93b8d3917298817dd711bd688a678c2d9ee6a92147eaf8a6ad57a11ada0b8b9d"
     },
     {
       "path": "workflows/audit_licenses.py",
-      "bytes": 22419,
-      "sha256": "183f22803cc4c56a2da377be445d990715b8cd9dda689cede30835aad4f5305f"
+      "bytes": 22700,
+      "sha256": "4314c4a47340e03587191b9393b41ee65bea7f3e5123c6e02b12c2fac1951365"
     },
     {
       "path": "workflows/check_package_split.py",
@@ -1422,18 +1482,19 @@ they do not measure variation across training seeds. The plots and tables show t
 
 | Rank | Method | Kind | Elo | 95% bootstrap interval |
 |---:|---|---|---:|---:|
-| 1 | tabpfn-rel-client-latest | Model | 2003.3 | 1923.0–2135.0 |
-| 2 | tabpfn-rel-local-latest | Model | 1940.1 | 1867.3–2049.4 |
-| 3 | tabpfn-rel-client-2026-08-15 | Model | 1825.2 | 1767.8–1910.8 |
-| 4 | nori-rel | Model | 1769.6 | 1699.8–1870.9 |
-| 5 | tabpfn-rel-local-2026-08-15 | Model | 1716.4 | 1624.9–1823.8 |
-| 6 | graphsage | Model | 1684.3 | 1576.2–1776.6 |
-| 7 | relgt | Model | 1590.2 | 1487.0–1714.4 |
-| 8 | rdblearn | Model | 1530.2 | 1454.5–1603.7 |
-| 9 | relgnn-es | Model | 1523.8 | 1430.0–1620.0 |
-| 10 | lightgbm | Model | 1362.6 | 1211.2–1481.2 |
-| 11 | constant-per-entity | Model | 1264.3 | 1092.4–1401.4 |
-| 12 | constant-global | Model | 1000.0 | 854.6–1066.1 |
+| 1 | tabpfn-rel-client-latest | Model | 1979.4 | 1905.1–2096.6 |
+| 2 | tabpfn-rel-local-latest | Model | 1932.0 | 1865.0–2028.8 |
+| 3 | relflow-latest | Model | 1897.1 | 1776.1–2041.9 |
+| 4 | tabpfn-rel-client-2026-08-15 | Model | 1816.8 | 1758.0–1896.8 |
+| 5 | nori-rel | Model | 1778.9 | 1705.0–1881.9 |
+| 6 | tabpfn-rel-local-2026-08-15 | Model | 1716.4 | 1621.0–1814.8 |
+| 7 | graphsage | Model | 1676.4 | 1562.4–1768.1 |
+| 8 | relgt | Model | 1585.5 | 1477.0–1699.0 |
+| 9 | rdblearn | Model | 1540.9 | 1454.7–1616.4 |
+| 10 | relgnn-es | Model | 1527.0 | 1434.1–1625.0 |
+| 11 | lightgbm | Model | 1363.9 | 1205.4–1494.6 |
+| 12 | constant-per-entity | Model | 1268.2 | 1093.2–1412.1 |
+| 13 | constant-global | Model | 1000.0 | 851.7–1066.2 |
 
 </details>
 
@@ -1442,22 +1503,23 @@ they do not measure variation across training seeds. The plots and tables show t
 
 | Rank | Method | Kind | Elo | 95% bootstrap interval |
 |---:|---|---|---:|---:|
-| 1 | tabpfn-rel-client-latest | Model | 1933.6 | 1864.7–2033.5 |
-| 2 | kurversc-latest | System | 1913.4 | 1832.3–2050.6 |
-| 3 | tabpfn-rel-local-latest | Model | 1887.7 | 1831.3–1974.8 |
-| 4 | rt-j | System | 1842.2 | 1721.9–1997.8 |
-| 5 | tabpfn-rel-client-2026-08-15 | Model | 1799.0 | 1740.7–1886.9 |
-| 6 | rt-plurel | System | 1787.7 | 1695.9–1889.4 |
-| 7 | kurversc-2026-09-03 | System | 1773.8 | 1709.9–1849.6 |
-| 8 | nori-rel | Model | 1732.3 | 1660.5–1844.7 |
-| 9 | tabpfn-rel-local-2026-08-15 | Model | 1702.0 | 1613.7–1771.7 |
-| 10 | graphsage | Model | 1660.3 | 1550.8–1747.2 |
-| 11 | relgt | Model | 1562.7 | 1430.3–1664.5 |
-| 12 | rdblearn | Model | 1529.8 | 1437.8–1610.5 |
-| 13 | relgnn-es | Model | 1525.0 | 1421.2–1636.6 |
-| 14 | lightgbm | Model | 1363.9 | 1168.9–1501.1 |
-| 15 | constant-per-entity | Model | 1266.5 | 1082.8–1408.5 |
-| 16 | constant-global | Model | 1000.0 | 838.5–1076.9 |
+| 1 | tabpfn-rel-client-latest | Model | 1926.2 | 1863.7–2024.9 |
+| 2 | kurversc-latest | System | 1917.1 | 1838.8–2050.1 |
+| 3 | tabpfn-rel-local-latest | Model | 1887.8 | 1826.2–1974.1 |
+| 4 | relflow-latest | Model | 1865.3 | 1781.3–1984.4 |
+| 5 | rt-j | System | 1843.4 | 1724.8–1993.3 |
+| 6 | tabpfn-rel-client-2026-08-15 | Model | 1795.8 | 1734.5–1882.5 |
+| 7 | rt-plurel | System | 1788.0 | 1692.7–1887.5 |
+| 8 | kurversc-2026-09-03 | System | 1775.1 | 1706.3–1847.7 |
+| 9 | nori-rel | Model | 1741.8 | 1665.9–1858.7 |
+| 10 | tabpfn-rel-local-2026-08-15 | Model | 1703.2 | 1605.8–1775.3 |
+| 11 | graphsage | Model | 1656.3 | 1547.4–1743.4 |
+| 12 | relgt | Model | 1560.7 | 1426.6–1662.1 |
+| 13 | rdblearn | Model | 1538.3 | 1436.0–1619.8 |
+| 14 | relgnn-es | Model | 1527.6 | 1431.5–1637.6 |
+| 15 | lightgbm | Model | 1365.1 | 1166.3–1509.6 |
+| 16 | constant-per-entity | Model | 1270.0 | 1079.3–1417.1 |
+| 17 | constant-global | Model | 1000.0 | 836.8–1076.4 |
 
 </details>
 
@@ -1864,6 +1926,7 @@ registering a method works without its extra installed.
 |---|---|---|
 | `lightgbm` | LightGBM | CPU only |
 | `kurversc` | [KurveRSC](docs/models/kurversc.md) | GraphReduce configuration search + CatBoost; CPU only |
+| `relflow` | [RelFlow](docs/models/relflow.md) | neural model over raw relational records; Python 3.12, GPU recommended |
 | `rdblearn` | RDBLearn | DFS (`fastdfs`) plus a local TabPFN; GPU recommended |
 | `tabpfn-rel-local` | TabPFN-Rel (OSS) | installs `tabpfn-rel[local]`, text-free |
 | `tabpfn-rel-api` | TabPFN-Rel (API) | DFS locally, fit and predict server-side; no GPU needed |
@@ -1988,6 +2051,7 @@ as an experimental final-fit variant.
 | `tabpfn-rel-client-2026-09-18` | TabPFN-Rel (API) | depth-4 DFS + hosted TabPFN-3.5 with text, 200k context | model | pending evaluation | train + val | `tabpfn-rel-api` |
 | `tabpfn-rel-client-2026-09-28` | TabPFN-Rel (API) | TabPFN-3.5 API, hurdle regression | model | 21 tasks | train + val | `tabpfn-rel-api` |
 | `tabpfn-rel-local-2026-09-28` | TabPFN-Rel (local) | TabPFN-3.5 OSS (TF-IDF), hurdle regression | model | 21 tasks | train + val | `tabpfn-rel-local` |
+| `relflow-2026-11-04` | [RelFlow](docs/models/relflow.md) | neural model over raw relational records | model | 21 tasks | train + val | `relflow` |
 | `graphsage` | GraphSAGE | relational GNN | model | report | train + val | `graphsage` |
 | `relgnn-es` | RelGNN | relational GNN | model | report | best-validation checkpoint | `relgnn` |
 | `relgnn` | RelGNN full-data refit | relational GNN | model | experimental variant | train + val | `relgnn` |
@@ -2496,7 +2560,7 @@ exclude-newer = "3 days"
 # without weakening the cutoff for unrelated dependencies.
 # fastdfs has a fixed cutoff that admits 1.2, the core DFS floor, before the 3-day
 # window ends; remove it after 2026-10-01 to restore the rolling cutoff.
-exclude-newer-package = { relational-transformer = false, graphreduce = false, kurversc = false, tabpfn-rel = false, tabpfn-client = false, fastdfs = "2026-09-29T00:00:00Z", certifi = "0 days" }
+exclude-newer-package = { relflow = false, relational-transformer = false, graphreduce = false, kurversc = false, tabpfn-rel = false, tabpfn-client = false, fastdfs = "2026-09-29T00:00:00Z", certifi = "0 days" }
 conflicts = [
     # Specifying this conflict avoids uv trying to resolve the pypi and cpu versions
     # of torch simultaneously.
@@ -2507,6 +2571,12 @@ conflicts = [
         { package = "relarena", extra = "nori-rel" },
     ],
     [{ group = "kurversc" }, { package = "relarena", extra = "nori-rel" }],
+    # relflow needs NumPy>=2.2.6; kurversc pins numpy<2.
+    [
+        { package = "relarena", extra = "kurversc" },
+        { package = "relarena", extra = "relflow" },
+    ],
+    [{ group = "kurversc" }, { package = "relarena", extra = "relflow" }],
 ]
 
 [tool.uv.sources]
@@ -2618,7 +2688,7 @@ A snapshot of RelArena baseline runs over the RelBench-v1 entity-task grid
   `relarena.evaluation.compute_leaderboard`.
 
 Models: `constant-global`, `constant-per-entity`, `lightgbm`, `graphsage`, `rdblearn`,
-`tabpfn-rel-local-2026-08-15`, `tabpfn-rel-client-2026-08-15`, `nori-rel`, `relgnn-es`, `relgt`, `rt-plurel`, `rt-j`.
+`tabpfn-rel-local-2026-08-15`, `tabpfn-rel-client-2026-08-15`, `nori-rel`, `relflow-2026-11-04`, `relgnn-es`, `relgt`, `rt-plurel`, `rt-j`.
 (`constant-global` predicts one global optimal constant; `constant-per-entity` predicts each
 entity's own optimal constant, falling back to the global one for entities absent
 from train; `relgnn-es` is RelGNN scored at its best-val checkpoint instead
@@ -4460,6 +4530,92 @@ tasks on separate CPU nodes when greater throughput is required.
 
 
 ================================================
+FILE: docs/models/relflow.md
+================================================
+# RelFlow
+
+[RelFlow](https://github.com/relflow/relflow) builds a neural model over typed,
+nested records. This adapter derives fields and joins from the supplied
+relational database and trains one fixed recipe per training-set size tier.
+
+## Installation
+
+The optional backend requires Python 3.12 and DuckDB 1.5 or newer:
+
+```bash
+uv sync --python 3.12 --all-packages --extra relflow
+```
+
+For CPU execution, add `--group cpu`. The `relflow` extra cannot be combined
+with KurveRSC, which requires NumPy 1; RelFlow requires NumPy 2.
+
+## Running RelFlow
+
+Run one task through the RelArena CLI:
+
+```bash
+OMP_NUM_THREADS=1 uv run --all-packages --extra relflow relarena \
+    --model relflow-2026-11-04 \
+    --datasets rel-f1 --tasks driver-dnf \
+    --output relflow_driver_dnf.csv
+```
+
+Omit `--datasets` and `--tasks` to run all 21 RelBench v1 entity tasks.
+The registered search space contains one configuration per tier, so
+`--n-trials` does not add candidate configurations.
+
+## Model and training
+
+The original inner training-anchor count selects the tier and remains fixed
+during the train+validation refit. Fields, datatypes and bounded join paths are
+derived from keys and validation-censored column measurements. The model consumes
+raw values and timestamp ages, with per-anchor censoring of histories and timed
+lookups.
+
+| Setting | SMALL | MEDIUM | LARGE |
+| --- | ---: | ---: | ---: |
+| Inner training anchors | <20,000 | 20,000–499,999 | ≥500,000 |
+| Width / root layers / heads | 128 / 2 / 4 | 64 / 2 / 8 | 64 / 2 / 8 |
+| Branch layers / heads / summary vectors | 1 / 4 / 4 | 2 / 4 / 1 | 2 / 4 / 1 |
+| Model outer / inner history caps | 128 / 32 | 64 / 32 | 32 / 16 |
+| Training batch size | 64 | 512 | 512 |
+| Loader workers on CUDA | 0 | 0 | 2 |
+| Shuffle buffer rows | 16,384 | 16,384 | 2,048 |
+| DuckDB memory / spill limits | 16 / 64 GB | 16 / 128 GB | 32 / 256 GB |
+
+The complete settings live in
+[`recipes.json`](../../packages/relarena/src/relarena/models/relflow/recipes.json).
+All tiers use eight pass-equivalents, AdamW at a constant learning rate,
+gradient clipping at 0.25, zero neural dropout and EMA with decay 0.995.
+Regression optimizes MAE. Training randomly crops contiguous history windows;
+prediction uses deterministic tails. Text fields use frozen
+`sentence-transformers/all-MiniLM-L6-v2` weights at revision
+`1110a243fdf4706b3f48f1d95db1a4f5529b4d41`.
+
+The final refit intentionally places shuffled training anchors before
+validation-period anchors on every source pass. The bounded shuffle buffer
+retains this recency bias, so the final EMA weights emphasize validation-period
+rows. Those anchors retain histories frozen at the validation boundary;
+prediction uses the harness-supplied evaluation database.
+
+## Runtime and resources
+
+Preparation, text encoding and training run inside `fit`; no separate cache
+warmer is required. Default-only benchmark timing includes the final refit and
+prediction; the diagnostic inner fit is recorded separately. The runtime ceiling
+is 24 hours on the largest tasks, including preparation. See the
+[runtime policy](../tuning-regime.md).
+
+GPU execution is recommended for the full suite. DuckDB limits in the table
+bound its own memory and spill use; they are not measured peak host or GPU
+memory for the complete process. CPU loaders always use zero workers. An
+out-of-memory error fails the run without reducing its batch or training budget.
+Maintainers reproduce submissions on their benchmark hardware and add
+`baseline_results` after the rerun.
+
+
+
+================================================
 FILE: docs/models/rt.md
 ================================================
 # RT-PluRel and RT-J
@@ -5546,6 +5702,7 @@ Paper = "https://arxiv.org/abs/2608.16319"
 relarena = "relarena.cli:main"
 
 [project.optional-dependencies]
+relflow = ["relflow[text]==0.4.4; python_version >= '3.12'", "duckdb>=1.5.0"]
 # Per-method extras (lazy-import + optional-dependency pattern; imported when run).
 lightgbm = ["lightgbm>=4.0,<4.7"]
 # KurveRSC owns GraphReduce configuration search and CatBoost fitting. It is a
@@ -11115,6 +11272,2250 @@ TFM_REGISTRY: dict[str, TFMSpec] = {
 
 
 __all__ = ["TFM_REGISTRY"]
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/__init__.py
+================================================
+"""relflow singleton-preset baseline."""
+
+from .model import RelFlowModel, search_space
+
+__all__ = ["RelFlowModel", "search_space"]
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/context.py
+================================================
+"""Derive and materialize nested Arrow observations from harness-supplied data.
+
+Profiling always uses the validation-censored database. The train+validation
+outer refit keeps validation anchors' histories frozen at that same boundary.
+"""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import duckdb
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
+from relbench.base import Database, EntityTask, Table, TaskType
+
+from . import derive, raw
+
+
+@dataclass
+class Context:
+    """Owned DuckDB connection with stable ordinals and both cutoff views."""
+
+    connection: duckdb.DuckDBPyConnection
+    schema: dict[str, dict[str, Any]]
+    sources: dict[str, str]
+    cutoff: Any
+    registered: dict[str, str]
+    decimals: dict[str, frozenset[str]]
+
+    @classmethod
+    def open(
+        cls,
+        db: Database,
+        cutoff: Any,
+        directory: Path,
+        *,
+        threads: int = 8,
+        memory_limit: str = "16GB",
+        max_temp_directory_size: str = "64GB",
+    ) -> Context:
+        """Register only provided frames; never consult RelBench's raw cache."""
+        if type(threads) is not int or threads < 1:
+            raise ValueError("relflow DuckDB threads must be a positive integer.")
+        connection = duckdb.connect(
+            config={
+                "threads": threads,
+                "memory_limit": memory_limit,
+                "temp_directory": str(directory / "spill"),
+                "preserve_insertion_order": True,
+            }
+        )
+        # Set this after temp_directory: connection initialization can otherwise
+        # replace the requested spill cap with DuckDB's disk-based default.
+        connection.execute("SET max_temp_directory_size = ?", [max_temp_directory_size])
+        schema, sources, registered, decimals = {}, {}, {}, {}
+        for index, (name, table) in enumerate(sorted(db.table_dict.items())):
+            if "__source_row_id" in table.df.columns:
+                connection.close()
+                raise ValueError("Input column '__source_row_id' is reserved.")
+            relation = f"__relflow_source_{index}"
+            # RelBench pandas categoricals otherwise become DuckDB ENUMs, while
+            # the frozen Parquet path sees VARCHAR. Preserve values and nulls.
+            categorical = [
+                name
+                for name, dtype in table.df.dtypes.items()
+                if isinstance(dtype, pd.CategoricalDtype)
+            ]
+            frame = table.df.copy(deep=False)
+            for column in categorical:
+                frame[column] = frame[column].astype(object)
+            frame["__source_row_id"] = np.arange(len(frame), dtype=np.int64)
+            connection.register(relation, frame)
+            registered[name] = relation
+            decimals[name] = frozenset(
+                column
+                for column, dtype, *_ in connection.execute(
+                    f"DESCRIBE {relation}"
+                ).fetchall()
+                if dtype.startswith("DECIMAL(")
+            )
+            q = derive.quote
+            connection.execute(f"CREATE VIEW {q(name)} AS SELECT * FROM {relation}")
+            schema[name] = {
+                "pkey": table.pkey_col,
+                "time_col": table.time_col,
+                # The harness cleaner can remove all-null columns while retaining
+                # their original foreign-key metadata. Derive only existing links.
+                "fkeys": {
+                    column: target
+                    for column, target in table.fkey_col_to_pkey_table.items()
+                    if column in frame.columns
+                },
+            }
+            if table.time_col:
+                value = str(cutoff).replace("'", "''")
+                sources[name] = (
+                    f"(SELECT * FROM {q(name)} WHERE {q(table.time_col)} "
+                    f"<= TIMESTAMP '{value}')"
+                )
+            else:
+                sources[name] = q(name)
+        return cls(connection, schema, sources, cutoff, registered, decimals)
+
+    def freeze(self) -> None:
+        """Replace timed views with their validation-censored equivalents."""
+        value = str(self.cutoff).replace("'", "''")
+        for name, spec in self.schema.items():
+            if spec["time_col"]:
+                self.connection.execute(
+                    f"CREATE OR REPLACE VIEW {derive.quote(name)} AS "
+                    f"SELECT * FROM {self.registered[name]} "
+                    f"WHERE {derive.quote(spec['time_col'])} <= TIMESTAMP '{value}'"
+                )
+
+    def close(self) -> None:
+        """Release registered frame references and temporary DuckDB storage."""
+        self.connection.close()
+
+
+def infer(
+    context: Context,
+    task: EntityTask,
+    config: dict[str, Any],
+    *,
+    namespace: str = "database",
+) -> raw.Task:
+    """Freeze structure from keys and validation-time column measurements."""
+    task_type = (
+        "binary_classification"
+        if task.task_type == TaskType.BINARY_CLASSIFICATION
+        else "regression"
+    )
+    # Namespace hashes by related table, never by task identity.
+    meta = derive.Meta(
+        dataset=namespace,
+        task="task",
+        task_type=task_type,
+        entity_table=task.entity_table,
+        entity_col=task.entity_col,
+        time_col=task.time_col,
+        target_col=task.target_col,
+        training_rows=config["training_rows"],
+    )
+    tables = derive.profile(context.connection, context.sources, context.schema)
+    return derive.derive(context.connection, tables, meta)
+
+
+def materialize(
+    context: Context,
+    structure: raw.Task,
+    task: EntityTask,
+    table: Table,
+    output: Path,
+    *,
+    labelled: bool,
+    deadline: float | None = None,
+) -> Path:
+    """Write bounded chunks in the supplied task-table order, preserving nulls."""
+    frame = table.df
+    required = [task.entity_col, task.time_col]
+    if labelled:
+        required.append(task.target_col)
+    if any(name not in frame for name in required):
+        raise ValueError(f"Task table requires columns {required!r}.")
+    if frame[required].isna().any().any():
+        raise ValueError("Anchor entity, timestamp and training labels cannot be null.")
+    anchors = pa.table(
+        {
+            "__row_position": np.arange(len(frame), dtype=np.int64),
+            "__entity_key": pa.Array.from_pandas(frame[task.entity_col]),
+            "__as_of": pa.Array.from_pandas(frame[task.time_col]),
+        }
+    )
+    context.connection.register("__relflow_anchors", anchors)
+    query = raw.query(structure, history_overscan=4, decimals=context.decimals).replace(
+        "read_parquet($anchors)", "__relflow_anchors"
+    )
+    targets = pa.Array.from_pandas(frame[task.target_col]) if labelled else None
+    if targets is not None:
+        if task.task_type == TaskType.BINARY_CLASSIFICATION:
+            if not pa.types.is_boolean(targets.type):
+                invalid = pc.and_(pc.not_equal(targets, 0), pc.not_equal(targets, 1))
+                if pc.any(invalid).as_py():
+                    raise ValueError("Binary training labels must be 0 or 1.")
+            targets = pc.cast(targets, pa.bool_())
+        else:
+            targets = pc.cast(targets, pa.float64())
+    writer = None
+    try:
+        for start in range(0, max(len(frame), 1), 8192):
+            if deadline is not None and time.monotonic() >= deadline:
+                raise TimeoutError("relflow exhausted its fit budget in preparation.")
+            result = context.connection.execute(
+                query, {"start": start, "stop": min(start + 8192, len(frame))}
+            ).fetch_arrow_table()
+            if targets is not None:
+                result = result.append_column(
+                    "target", pc.take(targets, result["__row_position"])
+                )
+            if writer is None:
+                writer = pq.ParquetWriter(output, result.schema)
+            writer.write_table(result)
+    finally:
+        if writer is not None:
+            writer.close()
+        context.connection.unregister("__relflow_anchors")
+    return output
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/derive.py
+================================================
+"""Infer nested model structure from keys and label-free column measurements.
+
+``profile`` measures the supplied, censored tables; ``derive`` chooses typed
+fields and bounded relational branches for the original training-set size.
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass, replace
+
+import duckdb
+
+from . import raw
+from .raw import Branch, Col, Lookup, Task
+
+SAMPLE = 200_000
+# Every structural budget is fixed by the original training-anchor count.
+TIERS = ((20_000, "small"), (500_000, "medium"), (None, "large"))
+BUDGETS = {
+    "small": {"branch": 128, "nested": 16, "fields": 48, "root": 64},
+    "medium": {"branch": 64, "nested": 16, "fields": 40, "root": 48},
+    "large": {"branch": 32, "nested": 8, "fields": 24, "root": 32},
+}
+NESTED_FANOUT = 32  # p90 rows per key above which a child table is not nested
+LINK_COLUMNS = 2  # own columns at most for a branch to count as a link table
+ALIGNED = (
+    0.99,
+    0.5,
+)  # unique shared key, and a majority of the sibling's keys covered by the branch
+SOURCE_ROW_ID = "__source_row_id"
+RESERVED = {"as_of", "target", "occurred_at", "age_days"}
+# Table aliases the rendered query already uses; a lookup alias must not shadow them.
+RESERVED_ALIASES = {
+    "anchor",
+    "anchors",
+    "root",
+    "parent",
+    "event",
+    "linked",
+    "labels",
+    "features",
+}
+IDENTIFIER = re.compile(
+    r"(?i:(^|[^a-z])(id|ids|code|type|status|kind|class)([^a-z]|$))|[A-Za-z](Id|ID)$"
+)
+INTEGERS = {
+    "TINYINT",
+    "SMALLINT",
+    "INTEGER",
+    "BIGINT",
+    "HUGEINT",
+    "UTINYINT",
+    "USMALLINT",
+    "UINTEGER",
+    "UBIGINT",
+}
+VECTOR_BLOCK = re.compile(r"^(.*?)_?(\d+)$")
+
+
+@dataclass(frozen=True)
+class Column:
+    """Measurements of one column on a sample of its table."""
+
+    name: str
+    dtype: str
+    n: int
+    nonnull: int
+    distinct: int
+    mean_len: float | None = None
+    wordy: float | None = None
+    spaced: float | None = None
+    fixed: bool | None = None
+    integral: float | None = None
+    daytime: float | None = None  # share of timestamps carrying a time of day
+
+
+@dataclass(frozen=True)
+class Table:
+    """Schema and column measurements for one supplied relational table."""
+
+    name: str
+    # SQL relation the profiler reads, such as read_parquet('...') or a view name
+    source: str
+    pkey: str | None
+    time: str | None
+    fkeys: dict[str, str]
+    rows: int
+    columns: dict[str, Column]
+
+
+@dataclass(frozen=True)
+class Meta:
+    """Task columns and original training size used to derive model structure."""
+
+    dataset: str
+    task: str
+    task_type: str
+    entity_table: str
+    entity_col: str  # the task table's entity column
+    time_col: str  # the task table's timestamp column
+    target_col: str
+    training_rows: int | None = (
+        None  # anchors in the training split; selects the size tier
+    )
+
+
+def tier(training_rows: int | None) -> str:
+    """The size tier of a task; unknown sizes take the smallest tier's budgets."""
+    for limit, name in TIERS:
+        if limit is None or training_rows is None or training_rows < limit:
+            return name
+    raise AssertionError("the last tier is unbounded")
+
+
+def quote(name: str) -> str:
+    """Quote a SQL identifier, escaping embedded double quotes."""
+    return '"' + name.replace('"', '""') + '"'
+
+
+def profile(
+    con: duckdb.DuckDBPyConnection,
+    sources: Mapping[str, str],
+    schema: Mapping[str, dict],
+) -> dict[str, Table]:
+    """Measure every column of every table on one sample per table."""
+    tables = {}
+    for index, (name, source) in enumerate(sources.items()):
+        spec = schema[name]
+        sample = f"sample_{index}"
+        con.execute(
+            (
+                f"CREATE OR REPLACE TEMP TABLE {sample} AS SELECT * FROM {source} "
+                f"USING SAMPLE reservoir({SAMPLE} ROWS) REPEATABLE (0)"
+            )
+        )
+        rows = con.execute(f"SELECT count(*) FROM {source}").fetchone()[0]
+        dtypes = con.execute(f"DESCRIBE {sample}").fetchall()
+        columns = {}
+        for column, dtype, *_ in dtypes:
+            if column == SOURCE_ROW_ID:
+                continue
+            v = quote(column)
+            n, nonnull, distinct = con.execute(
+                f"SELECT count(*), count({v}), count(DISTINCT {v}) FROM {sample}"
+            ).fetchone()
+            measured = Column(column, dtype, n, nonnull, distinct)
+            if dtype.startswith("VARCHAR") and not dtype.endswith("[]"):
+                row = con.execute(
+                    f"SELECT avg(length({v})), avg(CASE WHEN "
+                    f"regexp_matches({v}, '\\p{{L}}{{2,}}') THEN 1 ELSE 0 END), "
+                    f"avg(CASE WHEN {v} LIKE '% %' THEN 1 ELSE 0 END), "
+                    f"min(length({v})) = max(length({v})) "
+                    f"FROM {sample} WHERE {v} IS NOT NULL"
+                ).fetchone()
+                measured = Column(
+                    column,
+                    dtype,
+                    n,
+                    nonnull,
+                    distinct,
+                    mean_len=row[0],
+                    wordy=row[1],
+                    spaced=row[2],
+                    fixed=row[3],
+                )
+            elif dtype in ("DOUBLE", "FLOAT") or dtype.startswith("DECIMAL"):
+                integral = con.execute(
+                    (
+                        f"SELECT avg(CASE WHEN {v} = floor({v}) THEN 1 ELSE 0 END) "
+                        f"FROM {sample} WHERE {v} IS NOT NULL AND isfinite({v})"
+                    )
+                ).fetchone()[0]
+                measured = Column(
+                    column, dtype, n, nonnull, distinct, integral=integral
+                )
+            elif dtype.startswith("TIMESTAMP"):
+                daytime = con.execute(
+                    (
+                        f"SELECT avg(CASE WHEN date_trunc('day', {v}) <> {v} THEN 1 "
+                        f"ELSE 0 END) FROM {sample} WHERE {v} IS NOT NULL"
+                    )
+                ).fetchone()[0]
+                measured = Column(column, dtype, n, nonnull, distinct, daytime=daytime)
+            columns[column] = measured
+        tables[name] = Table(
+            name,
+            source,
+            spec.get("pkey"),
+            spec.get("time_col"),
+            dict(spec.get("fkeys") or {}),
+            rows,
+            columns,
+        )
+    return tables
+
+
+def fanout(
+    con: duckdb.DuckDBPyConnection, table: Table, keys: tuple[str, ...]
+) -> float:
+    """The ninetieth percentile of rows per key tuple."""
+    group = ", ".join(quote(key) for key in keys)
+    present = " AND ".join(f"{quote(key)} IS NOT NULL" for key in keys)
+    value = con.execute(
+        (
+            f"SELECT quantile_cont(n, 0.9) FROM (SELECT count(*) AS n FROM "
+            f"{table.source} WHERE {present} GROUP BY {group})"
+        )
+    ).fetchone()[0]
+    return float(value or 0)
+
+
+def peak(con: duckdb.DuckDBPyConnection, table: Table, keys: tuple[str, ...]) -> int:
+    """Return the maximum number of rows sharing a key tuple."""
+    group = ", ".join(quote(key) for key in keys)
+    present = " AND ".join(f"{quote(key)} IS NOT NULL" for key in keys)
+    value = con.execute(
+        (
+            f"SELECT max(n) FROM (SELECT count(*) AS n FROM {table.source} WHERE "
+            f"{present} GROUP BY {group})"
+        )
+    ).fetchone()[0]
+    return int(value or 0)
+
+
+def alignment(
+    con: duckdb.DuckDBPyConnection,
+    sibling: Table,
+    branch: Table,
+    pairs: tuple[tuple[str, str], ...],
+) -> tuple[float, float]:
+    """Measure sibling uniqueness and overlap on shared keys."""
+    own = ", ".join(quote(s) for s, _ in pairs)
+    other = ", ".join(f"{quote(b)} AS {quote(s)}" for s, b in pairs)
+    own_present = " AND ".join(f"{quote(s)} IS NOT NULL" for s, _ in pairs)
+    other_present = " AND ".join(f"{quote(b)} IS NOT NULL" for _, b in pairs)
+    unique = con.execute(
+        (
+            f"SELECT count(DISTINCT ({own})) / greatest(count(*), 1) FROM "
+            f"{sibling.source} WHERE {own_present}"
+        )
+    ).fetchone()[0]
+    coverage = con.execute(
+        f"WITH s AS (SELECT DISTINCT {own} FROM {sibling.source} WHERE {own_present}), "
+        f"b AS (SELECT DISTINCT {other} FROM {branch.source} WHERE {other_present}) "
+        f"SELECT (SELECT count(*) FROM s JOIN b USING ({own})) / "
+        f"greatest((SELECT count(*) FROM s), 1)"
+    ).fetchone()[0]
+    return float(unique or 0), float(coverage or 0)
+
+
+def references(tables: Mapping[str, Table], name: str) -> int:
+    """Count incoming references to rows of this table."""
+    return sum(
+        t.rows for t in tables.values() for target in t.fkeys.values() if target == name
+    )
+
+
+def kind(
+    column: Column, table: Table, tables: Mapping[str, Table], *, root: bool
+) -> str | None:
+    """The tensorfield for one measured column, or None to leave it out."""
+    d = column.dtype
+    if column.nonnull == 0 or (column.distinct <= 1 and column.nonnull == column.n):
+        return None  # constant with no null signal
+    if column.distinct <= 1:
+        return "category"  # one value or null: a flag
+    if column.name == table.pkey:
+        return "hash" if not root and references(tables, table.name) else None
+    if column.name in table.fkeys:
+        return "hash"
+    if d.startswith(("TIMESTAMP", "DATE")):
+        return "dateparts"
+    if d == "BOOLEAN":
+        return "boolean"
+    if d.endswith("[]"):
+        return "set" if d.startswith("VARCHAR") else "vector"
+    if d.startswith(("STRUCT", "MAP")):
+        return None
+    numeric = d in INTEGERS or d in ("DOUBLE", "FLOAT") or d.startswith("DECIMAL")
+    if numeric:
+        integral = d in INTEGERS or (column.integral or 0) >= 0.999
+        if integral and column.distinct <= 3:
+            return "category"  # binary and ternary flags
+        if integral and IDENTIFIER.search(column.name):
+            return "category" if column.distinct <= 20_000 else "hash"
+        return "number"
+    if d.startswith("VARCHAR"):
+        weight = max(1.0, references(tables, table.name) / max(table.rows, 1))
+        ratio = column.distinct / max(column.nonnull, 1)
+        wordy = column.wordy or 0
+        if (
+            column.fixed
+            and not column.spaced
+            and ratio >= 0.5
+            and (column.mean_len or 0) >= 8
+        ):
+            return "hash"  # opaque fixed-width identifiers
+        if (column.mean_len or 0) >= 40 and wordy >= 0.3:
+            return "text"  # prose, however often it recurs
+        if column.distinct <= 25_000 and ratio / weight <= 0.25:
+            return "category"
+        if wordy >= 0.3:
+            return "text"
+        return "hash"
+    return None
+
+
+def budget(mean_len: float | None) -> int:
+    """Choose the bounded token length for a text field."""
+    length = mean_len or 0
+    return 16 if length < 40 else 32 if length < 160 else 64 if length < 700 else 96
+
+
+def same_time(
+    con: duckdb.DuckDBPyConnection,
+    table: Table,
+    column: str,
+    row_time: str,
+    dimension: Table,
+    on: str | None = None,
+) -> bool:
+    """Check whether a dimension repeats the row timestamp."""
+    rate = con.execute(
+        f"SELECT avg(CASE WHEN r.{quote(row_time)} = d.{quote(dimension.time)} "
+        f"THEN 1 ELSE 0 END) FROM (SELECT {quote(column)}, {quote(row_time)} "
+        f"FROM {table.source} USING SAMPLE reservoir({SAMPLE} ROWS) "
+        f"REPEATABLE (0)) r JOIN {dimension.source} d "
+        f"ON r.{quote(column)} = d.{quote(on or dimension.pkey)} "
+        f"WHERE r.{quote(row_time)} IS NOT NULL "
+        f"AND d.{quote(dimension.time)} IS NOT NULL"
+    ).fetchone()[0]
+    return (rate or 0) >= 0.99
+
+
+def trim(
+    columns: tuple[Col, ...], groups: list[list[Lookup]], budget: int
+) -> tuple[tuple[Col, ...], list[Lookup]]:
+    """Keep own columns first, then lookup groups, within the field budget."""
+    own = columns[:budget]
+    remaining = budget - len(own)
+    kept: list[Lookup] = []
+    for group in groups:
+        for lookup in group:
+            if remaining <= 0:
+                break
+            take = lookup.columns[:remaining]
+            if take:
+                kept.append(replace(lookup, columns=take))
+                remaining -= len(take)
+    return own, kept
+
+
+def snake(name: str) -> str:
+    """Convert a field name to lowercase underscore-separated words."""
+    text = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    if not text or text[0].isdigit():
+        text = "c_" + text
+    return text
+
+
+def stem(column: str) -> str:
+    """Derive a lookup alias from its foreign-key column."""
+    name = re.sub(r"(?i)[_ ]?id$", "", column) or column
+    return snake(name)
+
+
+class Names:
+    """Unique field names within one node; reserved and internal names get a prefix."""
+
+    def __init__(self, reserved: frozenset[str] = frozenset(RESERVED)) -> None:
+        """Reserve existing names before allocating derived field names."""
+        self.used: set[str] = set()
+        self.reserved = reserved
+
+    def take(self, name: str) -> str:
+        """Allocate a unique, non-reserved field or SQL alias name."""
+        name = snake(name)
+        if name in self.reserved or name.startswith("__"):
+            name = "col_" + name.lstrip("_")
+        candidate, index = name, 2
+        while candidate in self.used:
+            candidate = f"{name}_{index}"
+            index += 1
+        self.used.add(candidate)
+        return candidate
+
+
+def vector_blocks(table: Table) -> dict[str, list[str]]:
+    """Group runs of at least eight numbered numeric columns into vectors."""
+    groups: dict[str, list[str]] = {}
+    for column in table.columns.values():
+        match = VECTOR_BLOCK.match(column.name)
+        if (
+            match
+            and match.group(1)
+            and (column.dtype in INTEGERS or column.dtype in ("DOUBLE", "FLOAT"))
+        ):
+            groups.setdefault(match.group(1), []).append(column.name)
+    return {prefix: members for prefix, members in groups.items() if len(members) >= 8}
+
+
+def typed(
+    table: Table,
+    tables: Mapping[str, Table],
+    dataset: str,
+    names: Names,
+    *,
+    prefix: str = "",
+    exclude: set[str] = frozenset(),
+    root: bool = False,
+    text: bool = True,
+) -> tuple[Col, ...]:
+    """Describe table columns in order, optionally including text."""
+    blocks = vector_blocks(table)
+    member_of = {
+        member: block for block, members in blocks.items() for member in members
+    }
+    emitted: set[str] = set()
+    result: list[Col] = []
+    for column in table.columns.values():
+        if column.name in exclude:
+            continue
+        if column.name in member_of:
+            block = member_of[column.name]
+            if block in emitted:
+                continue
+            emitted.add(block)
+            members = blocks[block]
+            values = ", ".join(
+                f"coalesce({{t}}.{quote(member)}, 0)" for member in members
+            )
+            field = names.take(prefix + block)
+            result.append(
+                Col(
+                    field,
+                    f"CAST(list_value({values}) AS FLOAT[{len(members)}])",
+                    "vector",
+                    {"n_dim": len(members)},
+                    source=tuple(members),
+                )
+            )
+            continue
+        k = kind(column, table, tables, root=root)
+        if k == "text" and not text:
+            k = "category" if column.distinct <= 25_000 else None
+        if k is None:
+            continue
+        field = names.take(prefix + column.name)
+        if k == "dateparts":
+            parts = raw.when(column.name, field)
+            if (column.daytime or 0) >= 0.01:
+                parts[0] = replace(
+                    parts[0], options={**parts[0].options, "intraday": True}
+                )
+            result.extend(parts)
+        elif k == "hash":
+            namespace = f"{dataset}:{table.fkeys.get(column.name, table.name)}"
+            result.append(raw.hashed(column.name, namespace, field))
+        elif k == "text":
+            result.append(raw.text(column.name, field, budget(column.mean_len)))
+        elif k == "number":
+            result.append(raw.number(column.name, field))
+        elif k == "category":
+            result.append(raw.category(column.name, field))
+        elif k == "boolean":
+            result.append(raw.boolean(column.name, field))
+        elif k == "set":
+            result.append(raw.setvalued(column.name, field))
+    return tuple(result)
+
+
+def lookups_for(
+    con: duckdb.DuckDBPyConnection,
+    table: Table,
+    tables: Mapping[str, Table],
+    dataset: str,
+    names: Names,
+    *,
+    exclude: set[str] = frozenset(),
+    hops: int = 2,
+    text: bool = True,
+    row_time: str | None = None,
+) -> tuple[list[Lookup], list[Lookup]]:
+    """Follow foreign keys, with a second hop only into vocabulary tables."""
+    aliases = Names(frozenset(RESERVED_ALIASES))
+    first: list[Lookup] = []
+    second: list[Lookup] = []
+    for column, target in table.fkeys.items():
+        if column in exclude or target not in tables or tables[target].pkey is None:
+            continue
+        dimension = tables[target]
+        alias = aliases.take(stem(column))
+        skip = {dimension.pkey}
+        if (
+            row_time
+            and dimension.time
+            and same_time(con, table, column, row_time, dimension)
+        ):
+            skip.add(dimension.time)
+        columns = typed(
+            dimension,
+            tables,
+            dataset,
+            names,
+            prefix=alias + "_",
+            exclude=skip,
+            text=text,
+        )
+        onward = [
+            (column2, target2)
+            for column2, target2 in dimension.fkeys.items()
+            if hops >= 2
+            and target2 in tables
+            and tables[target2].pkey is not None
+            and vocabulary(tables[target2])
+        ]
+        # The second hop joins through the first hop's columns, so the snapshot keeps
+        # them whatever the budget keeps.
+        # They are not part of the key: a composite index over them is useless and
+        # aborts DuckDB on wide tables.
+        first.append(
+            Lookup(
+                alias,
+                target,
+                f"{{t}}.{quote(dimension.pkey)} = {{row}}.{quote(column)}",
+                columns,
+                time=dimension.time,
+                key=(dimension.pkey,),
+                via=(column,),
+                reads=tuple(column2 for column2, _ in onward),
+            )
+        )
+        for column2, target2 in onward:
+            dimension2 = tables[target2]
+            alias2 = aliases.take(f"{alias}_{stem(column2)}")
+            columns2 = typed(
+                dimension2,
+                tables,
+                dataset,
+                names,
+                prefix=alias2 + "_",
+                exclude={dimension2.pkey},
+                text=False,
+            )
+            second.append(
+                Lookup(
+                    alias2,
+                    target2,
+                    f"{{t}}.{quote(dimension2.pkey)} = {alias}.{quote(column2)}",
+                    columns2,
+                    time=dimension2.time,
+                    key=(dimension2.pkey,),
+                )
+            )
+    return first, second
+
+
+def shared_keys(sibling: Table, branch: Table) -> tuple[tuple[str, str], ...]:
+    """Pair sibling and branch columns pointing to shared foreign-key targets."""
+    pairs = []
+    seen = set()
+    for s_column, target in sibling.fkeys.items():
+        for b_column, b_target in branch.fkeys.items():
+            if target == b_target and target not in seen:
+                pairs.append((s_column, b_column))
+                seen.add(target)
+    return tuple(pairs)
+
+
+def vocabulary(table: Table) -> bool:
+    """Identify a static dimension without foreign keys."""
+    return table.time is None and not table.fkeys
+
+
+def belongs_solely(child: Table, dimension: str, tables: Mapping[str, Table]) -> bool:
+    """Check whether other child foreign keys lead only to vocabulary tables."""
+    return all(
+        target == dimension or (target in tables and vocabulary(tables[target]))
+        for target in child.fkeys.values()
+    )
+
+
+def intraday(table: Table) -> bool:
+    """Whether a table's time column carries a time of day worth an hour part."""
+    column = table.columns.get(table.time) if table.time else None
+    return bool(column is not None and (column.daytime or 0) >= 0.01)
+
+
+def own_columns(table: Table) -> int:
+    """Columns that are not keys or the time column."""
+    return sum(
+        1
+        for name in table.columns
+        if name != table.pkey and name != table.time and name not in table.fkeys
+    )
+
+
+def nested_for(
+    con: duckdb.DuckDBPyConnection,
+    branch: Table,
+    tables: Mapping[str, Table],
+    dataset: str,
+    *,
+    entity: str,
+    absorbed: set[str],
+    budgets: Mapping[str, int],
+) -> tuple[str | None, tuple[Branch, ...], tuple[tuple[Table, str], ...]]:
+    """Build nested branches and one-to-one extensions of branch rows."""
+    options: dict[str, list[tuple[Table, str]]] = {}
+    link = own_columns(branch) <= LINK_COLUMNS
+    for name, candidate in tables.items():
+        if name in absorbed:
+            continue
+        for column, target in candidate.fkeys.items():
+            if target == branch.name and branch.pkey is not None:
+                options.setdefault(branch.pkey, []).append((candidate, column))
+            elif link and target != entity and target in set(branch.fkeys.values()):
+                if candidate.name == branch.name or not belongs_solely(
+                    candidate, target, tables
+                ):
+                    continue
+                for via, via_target in branch.fkeys.items():
+                    if via_target == target:
+                        options.setdefault(via, []).append((candidate, column))
+    best: tuple[str | None, list[Branch], list[tuple[Table, str]]] = (None, [], [])
+    for child_key, candidates in options.items():
+        branches: list[Branch] = []
+        folded: list[tuple[Table, str]] = []
+        taken = Names()
+        for candidate, column in candidates:
+            rows_per_key = fanout(con, candidate, (column,))
+            if rows_per_key > NESTED_FANOUT:
+                continue
+            if rows_per_key <= 1 and peak(con, candidate, (column,)) <= 1:
+                folded.append((candidate, column))
+                continue
+            names = Names()
+            columns = typed(
+                candidate,
+                tables,
+                dataset,
+                names,
+                exclude={column, *((candidate.time,) if candidate.time else ())},
+                text=False,
+            )
+            hop1, _ = lookups_for(
+                con,
+                candidate,
+                tables,
+                dataset,
+                names,
+                exclude={column},
+                hops=1,
+                text=False,
+                row_time=candidate.time,
+            )
+            columns, lookups = trim(columns, [hop1], budgets["fields"])
+            branches.append(
+                Branch(
+                    taken.take(
+                        f"{candidate.name}_via_{column}"
+                        if sum(1 for c, _ in candidates if c is candidate) > 1
+                        else candidate.name
+                    ),
+                    candidate.name,
+                    f'{{t}}.{quote(column)} = {{parent}}."__child_key"',
+                    candidate.time,
+                    budgets["nested"],
+                    columns,
+                    lookups=tuple(lookups),
+                    key=(column,),
+                    intraday=intraday(candidate),
+                )
+            )
+        if len(branches) + len(folded) > len(best[1]) + len(best[2]):
+            best = (child_key, branches, folded)
+    return best[0], tuple(best[1]), tuple(best[2])
+
+
+def derive(
+    con: duckdb.DuckDBPyConnection,
+    tables: Mapping[str, Table],
+    meta: Meta,
+    *,
+    nested: bool = True,
+) -> Task:
+    """Build the raw-structure task for one entity table from measured tables.
+
+    ``nested=False`` stops at depth one: an ablation switch for comparing derived
+    structures, not a harness option. Prose is admitted at depth one only.
+    """
+    entity = tables[meta.entity_table]
+    if entity.pkey is None:
+        raise ValueError(f"entity table {meta.entity_table!r} has no primary key")
+    budgets = BUDGETS[tier(meta.training_rows)]
+    root_names = Names()
+    root_columns = typed(
+        entity, tables, meta.dataset, root_names, exclude={entity.pkey}, root=True
+    )
+    hop1, hop2 = lookups_for(
+        con, entity, tables, meta.dataset, root_names, row_time=entity.time
+    )
+    root_columns, root_lookups = trim(root_columns, [hop1, hop2], budgets["root"])
+
+    candidates = [
+        (table, column)
+        for table in tables.values()
+        for column, target in table.fkeys.items()
+        if target == entity.name
+    ]
+    candidates.sort(
+        key=lambda item: (-len(item[0].columns), -item[0].rows, item[0].name, item[1])
+    )
+    absorbed: set[str] = set()
+    kept: set[str] = set()
+    branch_names = Names()
+    branches: list[Branch] = []
+    for table, column in candidates:
+        if table.name in absorbed:
+            continue
+        names = Names()
+        columns = typed(
+            table,
+            tables,
+            meta.dataset,
+            names,
+            exclude={column, *((table.time,) if table.time else ())},
+        )
+        hop1, hop2 = lookups_for(
+            con,
+            table,
+            tables,
+            meta.dataset,
+            names,
+            exclude={column},
+            row_time=table.time,
+        )
+        aliases = Names(frozenset(RESERVED_ALIASES))
+        aliases.used.update(lookup.alias for lookup in hop1 + hop2)
+        siblings: list[Lookup] = []
+        for sibling in tables.values():
+            if (
+                sibling.name == table.name
+                or sibling.name in absorbed
+                or sibling.name in kept
+            ):
+                continue
+            pairs = shared_keys(sibling, table)
+            if len(pairs) < 2:
+                continue
+            unique, coverage = alignment(con, sibling, table, pairs)
+            if unique < ALIGNED[0] or coverage < ALIGNED[1]:
+                continue
+            alias = aliases.take(sibling.name)
+            own = {s for s, _ in pairs}
+            sibling_columns = typed(
+                sibling,
+                tables,
+                meta.dataset,
+                names,
+                prefix=alias + "_",
+                exclude=own | ({sibling.time} if sibling.time else set()),
+            )
+            predicate = " AND ".join(
+                f"{{t}}.{quote(s)} = {{row}}.{quote(b)}" for s, b in pairs
+            )
+            siblings.append(
+                Lookup(
+                    alias,
+                    sibling.name,
+                    predicate,
+                    sibling_columns,
+                    time=sibling.time,
+                    key=tuple(s for s, _ in pairs),
+                    via=tuple(b for _, b in pairs),
+                )
+            )
+            absorbed.add(sibling.name)
+        child_key, children, extensions = (
+            nested_for(
+                con,
+                table,
+                tables,
+                meta.dataset,
+                entity=entity.name,
+                absorbed=absorbed,
+                budgets=budgets,
+            )
+            if nested
+            else (None, (), ())
+        )
+        folded: list[Lookup] = []
+        for extension, column_of in extensions:
+            alias = aliases.take(extension.name)
+            skip = {column_of}
+            if extension.time and (
+                not table.time
+                or same_time(con, table, child_key, table.time, extension, on=column_of)
+            ):
+                skip.add(extension.time)
+            folded.append(
+                Lookup(
+                    alias,
+                    extension.name,
+                    f"{{t}}.{quote(column_of)} = {{row}}.{quote(child_key)}",
+                    typed(
+                        extension,
+                        tables,
+                        meta.dataset,
+                        names,
+                        prefix=alias + "_",
+                        exclude=skip,
+                    ),
+                    time=extension.time,
+                    key=(column_of,),
+                    via=(child_key,),
+                )
+            )
+        columns, lookups = trim(
+            columns, [hop1, siblings, folded, hop2], budgets["fields"]
+        )
+        multiple = sum(1 for t, _ in candidates if t is table) > 1
+        branches.append(
+            Branch(
+                branch_names.take(
+                    f"{table.name}_via_{column}" if multiple else table.name
+                ),
+                table.name,
+                f'{{t}}.{quote(column)} = {{parent}}."__entity_key"',
+                table.time,
+                budgets["branch"],
+                columns,
+                lookups=tuple(lookups),
+                nested=children,
+                child_key=child_key,
+                key=(column,),
+                intraday=intraday(table),
+            )
+        )
+        kept.add(table.name)
+
+    keys: list[tuple[str, str]] = []
+    for via, target in entity.fkeys.items():
+        for candidate in tables.values():
+            if (
+                candidate.name == entity.name
+                or candidate.name in absorbed
+                or not belongs_solely(candidate, target, tables)
+            ):
+                continue
+            reaching = [
+                column
+                for column, child_target in candidate.fkeys.items()
+                if child_target == target
+            ]
+            for column in reaching:
+                if fanout(con, candidate, (column,)) > budgets["branch"]:
+                    continue
+                key = f"__{snake(via)}"
+                if (key, via) not in keys:
+                    keys.append((key, via))
+                names = Names()
+                columns = typed(
+                    candidate,
+                    tables,
+                    meta.dataset,
+                    names,
+                    exclude={column, *((candidate.time,) if candidate.time else ())},
+                )
+                hop1, _ = lookups_for(
+                    con,
+                    candidate,
+                    tables,
+                    meta.dataset,
+                    names,
+                    exclude={column},
+                    hops=1,
+                    row_time=candidate.time,
+                )
+                columns, lookups = trim(columns, [hop1], budgets["fields"])
+                branches.append(
+                    Branch(
+                        branch_names.take(
+                            f"{stem(via)}_{candidate.name}_via_{column}"
+                            if len(reaching) > 1
+                            else f"{stem(via)}_{candidate.name}"
+                        ),
+                        candidate.name,
+                        f"{{t}}.{quote(column)} = {{parent}}.{quote(key)}",
+                        candidate.time,
+                        budgets["branch"],
+                        columns,
+                        lookups=tuple(lookups),
+                        key=(column,),
+                        intraday=intraday(candidate),
+                    )
+                )
+
+    return Task(
+        dataset=meta.dataset,
+        task=meta.task,
+        task_type=meta.task_type,
+        entity_table=entity.name,
+        entity_key=entity.pkey,
+        anchor_entity_column=meta.entity_col,
+        target_column=meta.target_col,
+        root_time=entity.time,
+        columns=root_columns,
+        lookups=tuple(root_lookups),
+        branches=tuple(branches),
+        keys=tuple(keys),
+    )
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/model.py
+================================================
+"""Fixed shared relflow recipes, resolved only from original training-set size.
+
+The harness owns both temporal splits and final scoring. This adapter performs
+no HPO and never reloads benchmark data or reads hidden test labels.
+"""
+
+from __future__ import annotations
+
+import copy
+import json
+from pathlib import Path
+
+import numpy as np
+from relbench.base import Database, EntityTask, Table
+
+from relarena_core.model import RelArenaModel
+from relarena_core.registry import register_model, registry
+from relarena_core.search_space import SearchSpace, TaskStats
+
+
+def search_space(stats: TaskStats) -> SearchSpace:
+    """Return one frozen default, carrying its original tier through the refit."""
+    tier = (
+        "small"
+        if stats.num_train_nodes < 20_000
+        else "medium"
+        if stats.num_train_nodes < 500_000
+        else "large"
+    )
+    recipes = json.loads(Path(__file__).with_name("recipes.json").read_text())
+    config = copy.deepcopy(recipes[tier])
+    config["training_rows"] = stats.num_train_nodes
+    return SearchSpace(default_overrides=config)
+
+
+@register_model(search_space=search_space)
+class RelFlowModel(RelArenaModel):
+    """Fit the fixed size-tier recipe, using only supplied censored data."""
+
+    name = "relflow-2026-11-04"
+    refit_on_full_data = True
+
+    def fit(
+        self,
+        task: EntityTask,
+        db: Database,
+        train_table: Table,
+        val_table: Table | None,
+        *,
+        seed: int,
+        time_limit: float | None = None,
+    ) -> None:
+        """Derive label-free structure and fit eight full passes at constant LR."""
+        from .training import fit
+
+        self.fitted = fit(
+            task,
+            db,
+            train_table,
+            self.config,
+            seed=seed,
+            time_limit=time_limit,
+            namespace="database"
+            if self.run_identity is None
+            else self.run_identity.dataset,
+        )
+
+    def predict(self, task: EntityTask, db: Database, table: Table) -> np.ndarray:
+        """Return one finite scalar or positive-class probability per input row."""
+        from .training import predict
+
+        if not hasattr(self, "fitted"):
+            raise RuntimeError("Fit the relflow model before predicting.")
+        return predict(self.fitted, task, db, table)
+
+
+registry.register_alias("relflow-latest", RelFlowModel.name)
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/raw.py
+================================================
+"""Render nested Arrow observations and model fields from relational structure.
+
+``query`` builds point-in-time SQL with bounded histories and timed lookups;
+``model`` converts the same structure into a relflow model specification.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Collection, Mapping
+from dataclasses import dataclass, field
+
+DAY = 86400000000.0
+TEXT = {
+    "type": "text",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "encoder_batch_size": 320,
+    "encoder_pooling": "mean",
+}
+DATEPARTS = ["month_of_year", "day_of_week"]
+
+
+@dataclass(frozen=True)
+class Col:
+    """One typed output column with its model name and SQL expression."""
+
+    name: str
+    expr: str
+    kind: str
+    options: dict = field(default_factory=dict)
+    source: tuple[str, ...] = ()
+
+    def spec(self) -> dict:
+        """Return the relflow field specification for this column."""
+        if self.kind == "text":
+            return {**TEXT, "max_length": self.options.get("max_length", 64)}
+        if self.kind == "dateparts":
+            return {
+                "type": "dateparts",
+                "dateparts": list(DATEPARTS)
+                + (["hour_of_day"] if self.options.get("intraday") else []),
+            }
+        if self.kind == "hash":
+            return {"type": "hash", "n_hashes": 4}
+        if self.kind == "vector":
+            return {"type": "vector", "n_dim": self.options["n_dim"]}
+        return {"type": self.kind}
+
+
+def number(column: str, name: str | None = None) -> Col:
+    """Describe a numeric source column."""
+    return Col(name or column.lower(), f'{{t}}."{column}"', "number", source=(column,))
+
+
+def category(column: str, name: str | None = None) -> Col:
+    """Describe a categorical source column."""
+    return Col(
+        name or column.lower(), f'{{t}}."{column}"', "category", source=(column,)
+    )
+
+
+def boolean(column: str, name: str | None = None) -> Col:
+    """Describe a boolean source column."""
+    return Col(name or column.lower(), f'{{t}}."{column}"', "boolean", source=(column,))
+
+
+def text(column: str, name: str | None = None, max_length: int = 64) -> Col:
+    """A text column; budgets never exceed 96 tokens, the suite's per-field ceiling."""
+    return Col(
+        name or column.lower(),
+        f'{{t}}."{column}"',
+        "text",
+        {"max_length": min(max_length, 96)},
+        source=(column,),
+    )
+
+
+def hashed(column: str, namespace: str, name: str | None = None) -> Col:
+    """Describe a nullable identifier with its table namespace."""
+    expr = (
+        f"""CASE WHEN {{t}}."{column}" IS NULL THEN NULL ELSE '{namespace}:' || """
+        f"""CAST({{t}}."{column}" AS VARCHAR) END"""
+    )
+    return Col(name or column.lower(), expr, "hash", source=(column,))
+
+
+def setvalued(column: str, name: str | None = None) -> Col:
+    """Describe a set-valued source column."""
+    return Col(name or column.lower(), f'{{t}}."{column}"', "set", source=(column,))
+
+
+def when(column: str, name: str) -> list[Col]:
+    """A timestamp as calendar parts plus its age in days before the anchor."""
+    return [
+        Col(name, f'{{t}}."{column}"', "dateparts", source=(column,)),
+        Col(
+            f"{name}_age_days",
+            (
+                f"""date_diff('microseconds', {{t}}."{column}", """
+                f"""{{anchor}}."__as_of") / {DAY}"""
+            ),
+            "number",
+            source=(column,),
+        ),
+    ]
+
+
+@dataclass(frozen=True)
+class Lookup:
+    """A many-to-one join, censored when the related table has a timestamp."""
+
+    alias: str
+    table: str
+    on: str  # SQL predicate with {t} (related row) and {row} (the row being enriched)
+    columns: tuple[Col, ...]
+    time: str | None = None
+    # Related-table columns used by the predicate and indexed in the snapshot.
+    key: tuple[str, ...] = ()
+    via: tuple[str, ...] = ()  # row-side columns the predicate reads
+    # Related-table columns needed by onward lookups; persisted, not indexed.
+    reads: tuple[str, ...] = ()
+
+    def sql(self, row: str, anchor: str) -> str:
+        """Join a static row by key or the latest timed row before the anchor."""
+        predicate = self.on.format(t=self.alias if not self.time else "linked", row=row)
+        if not self.time:
+            return f'    LEFT JOIN "{self.table}" AS {self.alias} ON {predicate}'
+        return (
+            f'    LEFT JOIN LATERAL (SELECT linked.* FROM "{self.table}" AS linked '
+            f"WHERE {predicate} "
+            f'AND linked."{self.time}" <= {anchor}."__as_of" '
+            f'ORDER BY linked."{self.time}" DESC NULLS LAST, '
+            f'linked."__source_row_id" DESC LIMIT 1) AS {self.alias} ON TRUE'
+        )
+
+
+@dataclass(frozen=True)
+class Branch:
+    """Related rows censored by timestamp and capped by recency."""
+
+    name: str
+    table: str
+    on: str  # predicate with {t} (child row) and {parent} (the parent key expression)
+    time: str | None
+    length: int | None
+    columns: tuple[Col, ...]
+    lookups: tuple[Lookup, ...] = ()
+    nested: tuple[Branch, ...] = ()
+    child_key: str | None = None  # child column that nested branches join to
+    key: tuple[str, ...] = ()
+    overflow: str | None = "tail"
+    intraday: bool = False  # the row timestamp has a time of day worth an hour part
+
+    def __post_init__(self) -> None:
+        """Normalize a single column to the tuple representation."""
+        if isinstance(self.columns, Col):
+            object.__setattr__(self, "columns", (self.columns,))
+
+    def own(self) -> tuple[Col, ...]:
+        """The row's own timestamp as calendar parts and its age before the anchor."""
+        if not self.time:
+            return ()
+        return (
+            Col(
+                "occurred_at",
+                f'{{t}}."{self.time}"',
+                "dateparts",
+                {"intraday": True} if self.intraday else {},
+                source=(self.time,),
+            ),
+            Col(
+                "age_days",
+                (
+                    f"""date_diff('microseconds', {{t}}."{self.time}", """
+                    f"""{{anchor}}."__as_of") / {DAY}"""
+                ),
+                "number",
+            ),
+        )
+
+    def spec(self) -> dict:
+        """Return a nested branch field with its own and related columns."""
+        fields = {column.name: column.spec() for column in (*self.own(), *self.columns)}
+        for lookup in self.lookups:
+            fields.update({column.name: column.spec() for column in lookup.columns})
+        for inner in self.nested:
+            fields[inner.name] = inner.spec()
+        return {
+            "type": "branch",
+            "length": self.length,
+            "overflow": self.overflow,
+            "fields": fields,
+        }
+
+
+@dataclass(frozen=True)
+class Task:
+    """Relational structure shared by SQL materialization and model creation."""
+
+    dataset: str
+    task: str
+    task_type: str
+    entity_table: str
+    entity_key: str
+    anchor_entity_column: str
+    target_column: str
+    root_time: str | None
+    columns: tuple[Col, ...]
+    lookups: tuple[Lookup, ...]
+    branches: tuple[Branch, ...]
+    # Internal root columns (model name, source column) used by branch joins.
+    keys: tuple[tuple[str, str], ...] = ()
+    d_model: int = 64
+    n_layers: int = 2
+    n_heads: int = 4
+
+
+def selections(
+    columns: tuple[Col, ...],
+    table: str,
+    anchor: str,
+    indent: str = "        ",
+    *,
+    decimals: Collection[str] = (),
+) -> list[str]:
+    """Render typed SQL projections for columns, preserving exact categories."""
+    result = []
+    for column in columns:
+        expression = column.expr.format(t=table, anchor=anchor)
+        if (
+            column.kind in {"number", "category"}
+            and len(column.source) == 1
+            and column.source[0] in decimals
+        ):
+            # Approximate continuous values as float64, but keep categorical
+            # identities exact. Convert only outputs: source keys, nulls,
+            # integer features and attachment multiplicity stay intact.
+            datatype = "DOUBLE" if column.kind == "number" else "VARCHAR"
+            expression = f"CAST({expression} AS {datatype})"
+        result.append(f'{indent}{expression} AS "{column.name}"')
+    return result
+
+
+def branch_ctes(
+    branch: Branch,
+    parent: str,
+    prefix: str,
+    nested: bool,
+    *,
+    history_overscan: int = 1,
+    decimals: Mapping[str, Collection[str]] | None = None,
+) -> tuple[list[str], str]:
+    """Emit the CTEs for one branch and return their text plus the grouped CTE name.
+
+    ``parent`` is a CTE carrying ``__row_position``, ``__as_of``, and the key
+    columns the branch predicate reads; nested branches read ``__child_key``.
+    """
+    events, ranked, grouped = (
+        f"{prefix}_events",
+        f"{prefix}_ranked",
+        f"{prefix}_grouped",
+    )
+    keys = ["__row_position", "__child_key"] if nested else ["__row_position"]
+    joins = [
+        (
+            f'    INNER JOIN "{branch.table}" AS event ON '
+            f"{branch.on.format(t='event', parent='parent')}"
+        )
+    ]
+    if branch.time:
+        joins[0] += f' AND event."{branch.time}" <= parent."__as_of"'
+    joins.extend(lookup.sql("event", "parent") for lookup in branch.lookups)
+    decimals = decimals or {}
+    fields = selections(
+        (*branch.own(), *branch.columns),
+        "event",
+        "parent",
+        decimals=decimals.get(branch.table, ()),
+    )
+    for lookup in branch.lookups:
+        fields.extend(
+            selections(
+                lookup.columns,
+                lookup.alias,
+                "parent",
+                decimals=decimals.get(lookup.table, ()),
+            )
+        )
+    time_expr = f'event."{branch.time}"' if branch.time else "NULL"
+    carried = ", ".join(f'parent."{key}"' for key in keys)
+    lines = [
+        f"{events} AS (",
+        f'    SELECT {carried}, parent."__as_of",',
+        (
+            f'        {time_expr} AS "__event_time", event."__source_row_id" AS '
+            f'"__source_order",'
+        ),
+    ]
+    if branch.nested:
+        lines.append(f'        event."{branch.child_key}" AS "__nested_key",')
+    lines.append(",\n".join(fields))
+    lines.append(f"    FROM {parent} AS parent")
+    lines.extend(joins)
+    lines.append("),")
+    text = ["\n".join(lines)]
+    partition = ", ".join(f'"{key}"' for key in keys)
+    text.append(
+        f"{ranked} AS (\n    SELECT *, row_number() OVER (PARTITION BY {partition} "
+        'ORDER BY "__event_time" DESC NULLS LAST, "__source_order" DESC) '
+        f'AS "__recency"\n    FROM {events}\n),'
+    )
+    inner_groups = []
+    if branch.nested:
+        text.append(
+            (
+                f'{events}_keys AS (\n    SELECT "__row_position", "__as_of", '
+                f'"__nested_key" AS "__child_key" FROM {ranked} '
+            )
+            + (
+                f'WHERE "__recency" <= {branch.length * history_overscan}\n'
+                if branch.length is not None
+                else ""
+            )
+            + "),"
+        )
+        for inner in branch.nested:
+            inner_text, inner_grouped = branch_ctes(
+                inner,
+                f"{events}_keys",
+                f"{prefix}_{inner.name}",
+                nested=True,
+                history_overscan=history_overscan,
+                decimals=decimals,
+            )
+            text.extend(inner_text)
+            inner_groups.append((inner.name, inner_grouped))
+    packed = [
+        f'"{column.name}" := {ranked}."{column.name}"'
+        for column in (*branch.own(), *branch.columns)
+    ]
+    for lookup in branch.lookups:
+        packed.extend(
+            f'"{column.name}" := {ranked}."{column.name}"' for column in lookup.columns
+        )
+    inner_joins = []
+    for name, inner_grouped in inner_groups:
+        packed.append(f'"{name}" := coalesce({inner_grouped}."{name}", [])')
+        inner_joins.append(
+            f'    LEFT JOIN {inner_grouped} ON {inner_grouped}."__row_position" '
+            f'= {ranked}."__row_position" '
+            f'AND {inner_grouped}."__child_key" = {ranked}."__nested_key"'
+        )
+    group = ", ".join(f'{ranked}."{key}"' for key in keys)
+    text.append(
+        f"{grouped} AS (\n    SELECT {group},\n        list(struct_pack(\n            "
+        + ",\n            ".join(packed)
+        + (
+            f'\n        ) ORDER BY {ranked}."__event_time" ASC NULLS LAST, '
+            f'{ranked}."__source_order" ASC) AS "{branch.name}"\n'
+        )
+        + f"    FROM {ranked}\n"
+        + ("\n".join(inner_joins) + "\n" if inner_joins else "")
+        + (
+            f'    WHERE {ranked}."__recency" <= {branch.length * history_overscan}\n'
+            if branch.length is not None
+            else ""
+        )
+        + f"    GROUP BY {group}\n),"
+    )
+    return text, grouped
+
+
+def check_overscan(value: int) -> int:
+    """Validate the positive integer history-pool multiplier."""
+    if type(value) is not int or value < 1:
+        raise ValueError(f"history_overscan must be a positive integer, got {value!r}")
+    return value
+
+
+def query(
+    task: Task,
+    *,
+    history_overscan: int = 1,
+    decimals: Mapping[str, Collection[str]] | None = None,
+) -> str:
+    """Render a recent candidate pool independently of the model's branch caps."""
+    check_overscan(history_overscan)
+    decimals = decimals or {}
+    lines = [
+        (
+            "-- Raw structure: the entity row, its related rows nested by recency, and "
+            "their looked-up context."
+        ),
+        (
+            "-- No counts, windows, or summaries are computed here; ages measure each "
+            "timestamp against the anchor."
+        ),
+        "WITH",
+        "anchors AS (",
+        '    SELECT "__row_position", "__entity_key", "__as_of"',
+        "    FROM read_parquet($anchors)",
+        '    WHERE "__row_position" >= $start AND "__row_position" < $stop',
+        "),",
+    ]
+    root_join = (
+        f'    LEFT JOIN "{task.entity_table}" AS root ON anchor."__entity_key" = '
+        f'root."{task.entity_key}"'
+    )
+    order = 'root."__source_row_id" DESC NULLS LAST'
+    if task.root_time:
+        root_join += f' AND root."{task.root_time}" <= anchor."__as_of"'
+        order = (
+            f'root."{task.root_time}" DESC NULLS LAST, root."__source_row_id" DESC '
+            f"NULLS LAST"
+        )
+    fields = [f'        root."{column}" AS "{name}"' for name, column in task.keys]
+    fields.extend(
+        selections(
+            task.columns, "root", "anchor", decimals=decimals.get(task.entity_table, ())
+        )
+    )
+    for lookup in task.lookups:
+        fields.extend(
+            selections(
+                lookup.columns,
+                lookup.alias,
+                "anchor",
+                decimals=decimals.get(lookup.table, ()),
+            )
+        )
+    lines.append("root AS (")
+    lines.append(
+        '    SELECT anchor."__row_position", anchor."__entity_key", anchor."__as_of",'
+    )
+    lines.append('        anchor."__as_of" AS "as_of",')
+    lines.append(",\n".join(fields))
+    lines.append("    FROM anchors AS anchor")
+    lines.append(root_join)
+    lines.extend(lookup.sql("root", "anchor") for lookup in task.lookups)
+    lines.append(
+        (
+            f'    QUALIFY row_number() OVER (PARTITION BY anchor."__row_position" '
+            f"ORDER BY {order}) = 1"
+        )
+    )
+    lines.append("),")
+    grouped_names = []
+    for branch in task.branches:
+        text, grouped = branch_ctes(
+            branch,
+            "root",
+            branch.name,
+            nested=False,
+            history_overscan=history_overscan,
+            decimals=decimals,
+        )
+        lines.extend(text)
+        grouped_names.append((branch.name, grouped))
+    lines[-1] = lines[-1].rstrip(",")
+    output = ['root."__row_position"', 'root."as_of"']
+    output.extend(f'root."{column.name}"' for column in task.columns)
+    for lookup in task.lookups:
+        output.extend(f'root."{column.name}"' for column in lookup.columns)
+    for name, grouped in grouped_names:
+        output.append(f'coalesce({grouped}."{name}", []) AS "{name}"')
+    lines.append("SELECT\n    " + ",\n    ".join(output))
+    lines.append("FROM root")
+    for name, grouped in grouped_names:
+        lines.append(f'LEFT JOIN {grouped} USING ("__row_position")')
+    lines.append('ORDER BY root."__row_position"')
+    return "\n".join(lines) + "\n"
+
+
+def model(task: Task) -> dict:
+    """Build the relflow model specification for a derived task."""
+    fields: dict = {"as_of": {"type": "dateparts", "dateparts": list(DATEPARTS)}}
+    fields.update({column.name: column.spec() for column in task.columns})
+    for lookup in task.lookups:
+        fields.update({column.name: column.spec() for column in lookup.columns})
+    for branch in task.branches:
+        fields[branch.name] = branch.spec()
+    fields["target"] = {
+        "type": "boolean" if task.task_type == "binary_classification" else "number",
+        "mask": True,
+    }
+    return {
+        "d_model": task.d_model,
+        "n_layers": task.n_layers,
+        "n_heads": task.n_heads,
+        "fields": fields,
+    }
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/recipes.json
+================================================
+{
+  "small": {
+    "tier": "small",
+    "training_rows": 0,
+    "recipe": {
+      "batch_size": 64,
+      "branch_dropout": 0.0,
+      "branch_ffnx": 8,
+      "branch_heads": 4,
+      "branch_layers": 1,
+      "branch_mask": 0.1,
+      "branch_outputs": 4,
+      "d_model": 128,
+      "decoder_dropout": 0.0,
+      "decoder_ffnx": 8,
+      "decoder_heads": 4,
+      "decoder_layers": 1,
+      "dropout": 0.0,
+      "ema_decay": 0.995,
+      "ffnx": 2,
+      "jitter": 0.05,
+      "learning_rate": 0.0001504508367492947,
+      "mask": 0.3,
+      "n_heads": 4,
+      "n_layers": 2,
+      "objective": "mae",
+      "overflow": "random",
+      "passes": 8,
+      "weight_decay": 0.01
+    },
+    "caps": {
+      "inner": 32,
+      "outer": 128
+    },
+    "pools": {
+      "inner": 64,
+      "outer": 512
+    },
+    "execution": {
+      "batch_size": 64,
+      "workers": 0,
+      "persistent_workers": false,
+      "prefetch_factor": 1,
+      "shuffle_rows": 16384,
+      "text_token_cache": 4096,
+      "duckdb_threads": 8,
+      "duckdb_memory_limit": "16GB",
+      "duckdb_spill_limit": "64GB",
+      "text_resident_mib": 256
+    }
+  },
+  "medium": {
+    "tier": "medium",
+    "training_rows": 20000,
+    "recipe": {
+      "batch_size": 512,
+      "branch_dropout": 0.0,
+      "branch_ffnx": 8,
+      "branch_heads": 4,
+      "branch_layers": 2,
+      "branch_mask": 0.05,
+      "branch_outputs": 1,
+      "d_model": 64,
+      "decoder_dropout": 0.0,
+      "decoder_ffnx": 8,
+      "decoder_heads": 4,
+      "decoder_layers": 1,
+      "dropout": 0.0,
+      "ema_decay": 0.995,
+      "ffnx": 4,
+      "jitter": 0.0,
+      "learning_rate": 0.00021681002964478338,
+      "mask": 0.3,
+      "n_heads": 8,
+      "n_layers": 2,
+      "objective": "mae",
+      "overflow": "random",
+      "passes": 8,
+      "weight_decay": 0.0
+    },
+    "caps": {
+      "inner": 32,
+      "outer": 64
+    },
+    "pools": {
+      "inner": 64,
+      "outer": 256
+    },
+    "execution": {
+      "batch_size": 512,
+      "workers": 0,
+      "persistent_workers": false,
+      "prefetch_factor": 1,
+      "shuffle_rows": 16384,
+      "text_token_cache": 4096,
+      "duckdb_threads": 8,
+      "duckdb_memory_limit": "16GB",
+      "duckdb_spill_limit": "128GB",
+      "text_resident_mib": 256
+    }
+  },
+  "large": {
+    "tier": "large",
+    "training_rows": 500000,
+    "recipe": {
+      "batch_size": 512,
+      "branch_dropout": 0.0,
+      "branch_ffnx": 8,
+      "branch_heads": 4,
+      "branch_layers": 2,
+      "branch_mask": 0.05,
+      "branch_outputs": 1,
+      "d_model": 64,
+      "decoder_dropout": 0.0,
+      "decoder_ffnx": 8,
+      "decoder_heads": 4,
+      "decoder_layers": 1,
+      "dropout": 0.0,
+      "ema_decay": 0.995,
+      "ffnx": 4,
+      "jitter": 0.0,
+      "learning_rate": 0.00021681002964478338,
+      "mask": 0.3,
+      "n_heads": 8,
+      "n_layers": 2,
+      "objective": "mae",
+      "overflow": "random",
+      "passes": 8,
+      "weight_decay": 0.0
+    },
+    "caps": {
+      "inner": 16,
+      "outer": 32
+    },
+    "pools": {
+      "inner": 32,
+      "outer": 128
+    },
+    "execution": {
+      "batch_size": 512,
+      "workers": 2,
+      "persistent_workers": true,
+      "prefetch_factor": 1,
+      "shuffle_rows": 2048,
+      "text_token_cache": 16384,
+      "duckdb_threads": 8,
+      "duckdb_memory_limit": "32GB",
+      "duckdb_spill_limit": "256GB",
+      "text_resident_mib": 2048
+    }
+  }
+}
+
+
+
+================================================
+FILE: packages/relarena/src/relarena/models/relflow/training.py
+================================================
+"""Native relflow fit/predict execution for fixed size-tier recipes.
+
+Only this execution module imports relflow and its optional neural dependencies.
+No experiment controller, test evaluator or external data source is included.
+"""
+
+from __future__ import annotations
+
+import math
+import tempfile
+import time
+from collections.abc import Iterator
+from dataclasses import dataclass
+from datetime import timedelta
+from functools import partial
+from pathlib import Path
+from typing import Any
+
+import lightning.pytorch as lit
+import numpy as np
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
+import relflow as rf
+import torch
+import yaml
+from relbench.base import Database, EntityTask, Table
+
+from . import raw
+from .context import Context, infer, materialize
+
+ENCODER = "sentence-transformers/all-MiniLM-L6-v2"
+ENCODER_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+ENCODER_FILES = (
+    "config.json",
+    "model.safetensors",
+    "special_tokens_map.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "vocab.txt",
+)
+
+
+@dataclass
+class Fitted:
+    """Trained model, fixed structure and owned scratch directory."""
+
+    model: Any
+    structure: raw.Task
+    directory: Any
+    seed: int
+    accelerator: str
+    precision: str
+    batch_size: int
+    execution: dict[str, Any]
+
+
+def schema(
+    structure: raw.Task, config: dict[str, Any], *, store: Path | None = None
+) -> dict[str, Any]:
+    """Apply independent root, branch and target settings from the frozen recipe."""
+    model = raw.model(structure)
+    recipe = config["recipe"]
+    encoders: dict[str, str] = {}
+    model.update(
+        {
+            key: recipe[key]
+            for key in ("d_model", "n_layers", "n_heads", "ffnx", "dropout")
+        }
+    )
+
+    def configure(fields: dict[str, Any], depth: int) -> None:
+        for name, field in fields.items():
+            field["ffnx"] = recipe["ffnx"]
+            if field["type"] == "branch":
+                field.update(
+                    {
+                        "length": config["caps"]["outer" if depth == 0 else "inner"],
+                        "overflow": "random",
+                        "n_layers": recipe["branch_layers"],
+                        "n_heads": recipe["branch_heads"],
+                        "ffnx": recipe["branch_ffnx"],
+                        "dropout": 0.0,
+                        "mask": recipe["branch_mask"],
+                        "reduction": {
+                            "type": "attention",
+                            "n_outputs": recipe["branch_outputs"],
+                        },
+                    }
+                )
+                configure(field["fields"], depth + 1)
+            elif name == "target":
+                field.update(
+                    {
+                        "n_linear": recipe["decoder_layers"],
+                        "n_heads": recipe["decoder_heads"],
+                        "ffnx": recipe["decoder_ffnx"],
+                        "dropout": 0.0,
+                    }
+                )
+                if field["type"] == "number":
+                    field["objective"] = recipe["objective"]
+            else:
+                field["mask"] = recipe["mask"]
+                if field["type"] == "text":
+                    identifier = field["model"]
+                    if identifier not in encoders:
+                        from huggingface_hub import snapshot_download
+
+                        if identifier != ENCODER:
+                            raise ValueError(
+                                "relflow has no frozen revision for text encoder "
+                                f"{identifier!r}."
+                            )
+                        # The local snapshot fixes weights and tokenizer together;
+                        # acquiring it belongs to this fit's preparation clock.
+                        encoders[identifier] = snapshot_download(
+                            repo_id=identifier,
+                            revision=ENCODER_REVISION,
+                            allow_patterns=list(ENCODER_FILES),
+                        )
+                    field["model"] = encoders[identifier]
+                    if store is not None:
+                        field["store"] = str(store)
+                        field["cache"] = config["execution"]["text_token_cache"]
+                        field["resident"] = config["execution"]["text_resident_mib"]
+                if recipe["jitter"] and field["type"] in {
+                    "number",
+                    "vector",
+                    "dateparts",
+                    "text",
+                }:
+                    field["jitter"] = {"add": recipe["jitter"]}
+
+    configure(model["fields"], 0)
+    return model
+
+
+def batches(path: Path) -> Iterator[pa.RecordBatch]:
+    """Reopen the source in bounded record batches for each loader pass."""
+    yield from pq.ParquetFile(path).iter_batches(batch_size=8192, use_threads=False)
+
+
+def loader(
+    model: Any,
+    path: Path,
+    seed: int,
+    settings: dict[str, Any],
+    *,
+    predict: bool,
+) -> Any:
+    """Keep source buffers and worker queues bounded by the tier settings."""
+    split = "predict" if predict else "train"
+    workers = settings["workers"] if torch.cuda.is_available() else 0
+    return rf.ArrowDataModule(
+        model=model,
+        **{split: partial(batches, path)},
+        seed=seed,
+        shuffle={split: not predict},
+        shuffle_rows=settings["shuffle_rows"],
+        num_workers=workers,
+        persistent_workers=bool(workers and settings["persistent_workers"]),
+        prefetch_factor=settings["prefetch_factor"],
+        multiprocessing_context="spawn" if workers else None,
+        pin_memory=False,
+        retain=("__row_position",),
+    )
+
+
+def fit(
+    task: EntityTask,
+    db: Database,
+    train_table: Table,
+    config: dict[str, Any],
+    *,
+    seed: int,
+    time_limit: float | None,
+    namespace: str = "database",
+) -> Fitted:
+    """Fit all available labels, retaining validation anchors' frozen history."""
+    if len(train_table) == 0:
+        raise ValueError("relflow requires at least one training anchor.")
+    if time_limit is not None and (not math.isfinite(time_limit) or time_limit <= 0):
+        raise ValueError("relflow fit time_limit must be finite and positive.")
+    started = time.monotonic()
+    deadline = None if time_limit is None else started + time_limit
+    scratch = tempfile.TemporaryDirectory(prefix="relarena-relflow-")
+    directory = Path(scratch.name)
+    cutoff = task.dataset.val_timestamp
+    settings = config["execution"]
+    context = Context.open(
+        db,
+        cutoff,
+        directory,
+        threads=settings["duckdb_threads"],
+        memory_limit=settings["duckdb_memory_limit"],
+        max_temp_directory_size=settings["duckdb_spill_limit"],
+    )
+    try:
+        structure = infer(context, task, config, namespace=namespace)
+        # Intentional recency bias: every source pass ends with validation-period
+        # anchors. The bounded loader shuffle preserves this bias in the EMA.
+        # Their histories stay frozen at the validation boundary.
+        frame = train_table.df
+        stale = frame[task.time_col] >= cutoff
+        parts = []
+        for name, selected in (
+            ("fresh", frame.loc[~stale].sample(frac=1, random_state=seed)),
+            ("stale", frame.loc[stale]),
+        ):
+            if name == "stale":
+                context.freeze()
+            if len(selected):
+                path = materialize(
+                    context,
+                    structure,
+                    task,
+                    Table(
+                        selected,
+                        train_table.fkey_col_to_pkey_table,
+                        pkey_col=train_table.pkey_col,
+                        time_col=train_table.time_col,
+                    ),
+                    directory / f"{name}.parquet",
+                    labelled=True,
+                    deadline=deadline,
+                )
+                parts.append(path)
+        writer, offset = None, 0
+        try:
+            for path in parts:
+                for batch in pq.ParquetFile(path).iter_batches(batch_size=8192):
+                    table = pa.Table.from_batches([batch])
+                    table = table.set_column(
+                        table.schema.get_field_index("__row_position"),
+                        "__row_position",
+                        pa.array(
+                            np.arange(offset, offset + len(table), dtype=np.int64)
+                        ),
+                    )
+                    if writer is None:
+                        writer = pq.ParquetWriter(
+                            directory / "train.parquet", table.schema
+                        )
+                    writer.write_table(table)
+                    offset += len(table)
+        finally:
+            if writer is not None:
+                writer.close()
+    finally:
+        context.close()
+    schema_path = directory / "model.yaml"
+    schema_path.write_text(
+        yaml.safe_dump(
+            schema(structure, config, store=directory / "text-store"), sort_keys=False
+        )
+    )
+    cuda = torch.cuda.is_available()
+    accelerator = "gpu" if cuda else "cpu"
+    precision = "bf16-mixed" if cuda and torch.cuda.is_bf16_supported() else "32-true"
+    recipe = config["recipe"]
+    settings = config["execution"]
+    batch_size = settings["batch_size"]
+    lit.seed_everything(seed, workers=True)
+    model = rf.Model.from_yaml(schema_path, batch_size=batch_size)
+    remaining = None if deadline is None else deadline - time.monotonic()
+    if remaining is not None and remaining <= 0:
+        raise TimeoutError("relflow exhausted its fit budget in preparation.")
+    steps = math.ceil(len(train_table) / batch_size) * 8
+    model.fit(
+        loader(model, directory / "train.parquet", seed, settings, predict=False),
+        learning_rate=recipe["learning_rate"],
+        weight_decay=recipe["weight_decay"],
+        fused=cuda,
+        callbacks=[rf.EMA(decay=recipe["ema_decay"])],
+        early_stopping=False,
+        rollback=False,
+        max_epochs=-1,
+        max_steps=steps,
+        max_time=None if remaining is None else timedelta(seconds=remaining),
+        accelerator=accelerator,
+        devices=1,
+        precision=precision,
+        gradient_clip_val=0.25,
+        deterministic=True,
+        default_root_dir=str(directory),
+        logger=False,
+        enable_checkpointing=False,
+        enable_progress_bar=False,
+        enable_model_summary=False,
+        num_sanity_val_steps=0,
+        limit_val_batches=0,
+        log_every_n_steps=50,
+    )
+    if model.trainer.global_step != steps:
+        raise TimeoutError("relflow did not finish its fixed eight-pass budget.")
+    model.eval()
+    return Fitted(
+        model, structure, scratch, seed, accelerator, precision, batch_size, settings
+    )
+
+
+def predict(fitted: Fitted, task: EntityTask, db: Database, table: Table) -> np.ndarray:
+    """Materialize the current provided DB and restore the exact anchor order."""
+    if len(table) == 0:
+        return np.empty(0, dtype=np.float64)
+    directory = Path(fitted.directory.name)
+    settings = fitted.execution
+    context = Context.open(
+        db,
+        task.dataset.val_timestamp,
+        directory,
+        threads=settings["duckdb_threads"],
+        memory_limit=settings["duckdb_memory_limit"],
+        max_temp_directory_size=settings["duckdb_spill_limit"],
+    )
+    try:
+        path = materialize(
+            context,
+            fitted.structure,
+            task,
+            table,
+            directory / "predict.parquet",
+            labelled=False,
+        )
+    finally:
+        context.close()
+    output = fitted.model.predict(
+        loader(fitted.model, path, fitted.seed, fitted.execution, predict=True),
+        batch_size=min(64, fitted.batch_size),
+        accelerator=fitted.accelerator,
+        devices=1,
+        precision=fitted.precision,
+        logger=False,
+        enable_progress_bar=False,
+    )
+    positions = pc.struct_field(output["inputs"], "__row_position").to_numpy()
+    content = pc.struct_field(
+        pc.struct_field(output["predictions"], "target"), "content"
+    )
+    if pa.types.is_struct(content.type):
+        content = pc.struct_field(content, "probability")
+    values = content.to_numpy().astype(np.float64)
+    if len(values) != len(table) or not np.array_equal(
+        np.sort(positions), np.arange(len(table))
+    ):
+        raise RuntimeError("relflow must return exactly one prediction per anchor.")
+    if not np.isfinite(values).all():
+        raise RuntimeError("relflow predictions must be finite.")
+    return values[np.argsort(positions)]
 
 
 
@@ -20544,6 +22945,7 @@ _BASELINES = {
     "relgnn",
     "relgnn-es",
     "relgt",
+    "relflow-2026-11-04",
     "rt-j",
     "rt-plurel",
 }
@@ -20559,7 +22961,7 @@ class BlockBackends(importlib.abc.MetaPathFinder):
         if fullname.split('.')[0] in {{
             'fastdfs', 'tabpfn', 'tabpfn_client', 'torch_geometric',
             'torch_frame', 'relational_transformer', 'graphreduce', 'lightgbm',
-            'synthefy_nori',
+            'synthefy_nori', 'relflow',
         }}:
             raise ModuleNotFoundError(fullname, name=fullname)
         return None
@@ -20611,7 +23013,7 @@ assert registry.get('extra-model') is ExtraModel
 assert registry.search_space('extra-model').default_overrides == {{}}
 relarena.models._register_builtin_models()
 assert registry.get('extra-model') is ExtraModel
-assert len(registry) == 14
+assert set(registry.names()) == {_BASELINES | {"extra-model"}!r}
 """
     subprocess.run([sys.executable, "-c", code], check=True)
 
@@ -22576,6 +24978,961 @@ def test__local_tabpfn_spec__does_not_apply_environment_batch_limit(
 
     assert os.environ["TABPFN_MAX_BATCHED_TEST_ROWS"] == "4096"
     assert settings.settings.tabpfn.max_batched_test_rows == 32768
+
+
+
+================================================
+FILE: packages/relarena/tests/models/relflow/__init__.py
+================================================
+"""Tests for the relflow integration."""
+
+
+
+================================================
+FILE: packages/relarena/tests/models/relflow/test_data.py
+================================================
+"""Adapter boundary checks for fixed-point inputs and cleaned FK metadata."""
+
+from __future__ import annotations
+
+import importlib.util
+from decimal import Decimal
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+import pytest
+from relbench.base import Database, Table, TaskType
+
+from relarena.models.relflow import RelFlowModel, raw, search_space
+from relarena.models.relflow.context import Context, infer, materialize
+from relarena_core.search_space import TaskStats
+
+
+def decimal_fixture() -> tuple[SimpleNamespace, Database, Table]:
+    task = SimpleNamespace(
+        dataset=SimpleNamespace(val_timestamp=pd.Timestamp("2020-01-10")),
+        task_type=TaskType.REGRESSION,
+        entity_table="entities",
+        entity_col="entity_id",
+        time_col="timestamp",
+        target_col="label",
+    )
+    db = Database(
+        {
+            "entities": Table(
+                pd.DataFrame(
+                    {
+                        "entity_id": [0, 1, 2],
+                        "amount": [Decimal("1.25"), None, Decimal("7.125")],
+                        "count": [2, 4, 6],
+                        "flag": [Decimal("1.00"), None, Decimal("1.00")],
+                    }
+                ),
+                {},
+                pkey_col="entity_id",
+            ),
+            "events": Table(
+                pd.DataFrame(
+                    {
+                        "event_id": [0, 1, 2, 3],
+                        "entity_id": [0, 0, 1, 1],
+                        "value": [
+                            Decimal("2.25"),
+                            None,
+                            Decimal("4.50"),
+                            Decimal("6.75"),
+                        ],
+                        "timestamp": pd.to_datetime(["2020-01-02"] * 4),
+                    }
+                ),
+                {"entity_id": "entities"},
+                pkey_col="event_id",
+                time_col="timestamp",
+            ),
+        }
+    )
+    anchors = Table(
+        pd.DataFrame(
+            {
+                "entity_id": [0, 1, 2, 0, 1, 2],
+                "timestamp": pd.to_datetime(["2020-01-05"] * 3 + ["2020-01-12"] * 3),
+                "label": [
+                    Decimal(value)
+                    for value in ("1.2", "2.0", "3.0", "1.4", "2.2", "3.2")
+                ],
+            }
+        ),
+        {"entity_id": "entities"},
+        time_col="timestamp",
+    )
+    return task, db, anchors
+
+
+def test__context__cleaned_null_foreign_key__omits_stale_metadata(
+    tmp_path: Path,
+) -> None:
+    task, db, anchors = decimal_fixture()
+    events = db.table_dict["events"]
+    # The official cleaner drops this all-null physical column but retains its FK.
+    events.fkey_col_to_pkey_table["removed_entity_id"] = "entities"
+    original = {name: table.df.copy(deep=True) for name, table in db.table_dict.items()}
+    metadata = dict(events.fkey_col_to_pkey_table)
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        assert context.schema["events"]["fkeys"] == {"entity_id": "entities"}
+        structure = infer(context, task, search_space(TaskStats(3)).default_overrides)
+        materialize(
+            context,
+            structure,
+            task,
+            anchors,
+            tmp_path / "cleaned.parquet",
+            labelled=True,
+        )
+        assert "removed_entity_id" not in raw.query(structure)
+    finally:
+        context.close()
+    assert events.fkey_col_to_pkey_table == metadata
+    for name, frame in original.items():
+        pd.testing.assert_frame_equal(db.table_dict[name].df, frame)
+
+
+def test__materialize__decimal_features_at_every_depth__casts_only_output_atoms(
+    tmp_path: Path,
+) -> None:
+    task, db, anchors = decimal_fixture()
+    large_integer = 2**53 + 1
+    db.table_dict["entities"].df["count"] = [large_integer, 4, 6]
+    db.table_dict["entities"].df["dimension_id"] = [0, 1, 2]
+    db.table_dict["events"].df["dimension_id"] = [0, 1, 1, 2]
+    db.table_dict["dimensions"] = Table(
+        pd.DataFrame(
+            {
+                "dimension_id": [0, 1, 2],
+                "rate": [Decimal("1.125"), None, Decimal("3.375")],
+            }
+        ),
+        {},
+        pkey_col="dimension_id",
+    )
+    db.table_dict["lines"] = Table(
+        pd.DataFrame(
+            {
+                "event_id": [0, 0, 1],
+                "price": [Decimal("9.875"), None, Decimal("10.125")],
+            }
+        ),
+        {"event_id": "events"},
+    )
+    dimension = raw.Lookup(
+        "dimension",
+        "dimensions",
+        '{t}."dimension_id" = {row}."dimension_id"',
+        (raw.number("rate", "dimension_rate"),),
+    )
+    structure = raw.Task(
+        dataset="fixture",
+        task="decimal",
+        task_type="regression",
+        entity_table="entities",
+        entity_key="entity_id",
+        anchor_entity_column="entity_id",
+        target_column="label",
+        root_time=None,
+        columns=(raw.number("amount"), raw.number("count"), raw.category("flag")),
+        lookups=(dimension,),
+        branches=(
+            raw.Branch(
+                name="events",
+                table="events",
+                on='{t}."entity_id" = {parent}."__entity_key"',
+                time="timestamp",
+                length=8,
+                columns=(raw.number("value"),),
+                lookups=(dimension,),
+                child_key="event_id",
+                nested=(
+                    raw.Branch(
+                        name="lines",
+                        table="lines",
+                        on='{t}."event_id" = {parent}."__child_key"',
+                        time=None,
+                        length=8,
+                        columns=(raw.number("price"),),
+                    ),
+                ),
+            ),
+        ),
+    )
+    original = {name: table.df.copy(deep=True) for name, table in db.table_dict.items()}
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        path = materialize(
+            context,
+            structure,
+            task,
+            anchors,
+            tmp_path / "decimals.parquet",
+            labelled=True,
+        )
+        assert (
+            context.connection.execute('SELECT typeof("amount") FROM entities LIMIT 1')
+            .fetchone()[0]
+            .startswith("DECIMAL")
+        )
+    finally:
+        context.close()
+    observations = pq.read_table(path)
+    for name in ("amount", "dimension_rate", "target"):
+        assert observations[name].type == pa.float64()
+    assert observations["flag"].type == pa.string()
+    assert observations["flag"].to_pylist() == ["1.00", None, "1.00"] * 2
+    assert observations["amount"].to_pylist() == [1.25, None, 7.125] * 2
+    assert observations["dimension_rate"].to_pylist() == [1.125, None, 3.375] * 2
+    assert observations["count"].type == pa.int64()
+    assert observations["count"][0].as_py() == large_integer
+    events = observations["events"].to_pylist()
+    assert events[0][0]["value"] == 2.25
+    assert events[0][1]["value"] is None
+    assert events[0][1]["dimension_rate"] is None
+    assert events[0][0]["lines"] == [{"price": 9.875}, {"price": None}]
+    assert events[0][1]["lines"] == [{"price": 10.125}]
+    assert events[2] == []
+    event_type = observations.schema.field("events").type.value_type
+    assert event_type.field("value").type == pa.float64()
+    assert event_type.field("dimension_rate").type == pa.float64()
+    assert event_type.field("lines").type.value_type.field("price").type == pa.float64()
+    assert observations["target"].to_pylist() == pytest.approx(
+        [1.2, 2.0, 3.0, 1.4, 2.2, 3.2]
+    )
+    for name, frame in original.items():
+        pd.testing.assert_frame_equal(db.table_dict[name].df, frame)
+
+
+def test__materialize__large_decimal_categories__retain_distinct_labels(
+    tmp_path: Path,
+) -> None:
+    task, db, anchors = decimal_fixture()
+    labels = [Decimal("9007199254740992"), Decimal("9007199254740993"), None]
+    db.table_dict["entities"].df["segment_code"] = labels
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, search_space(TaskStats(3)).default_overrides)
+        assert raw.model(structure)["fields"]["segment_code"]["type"] == "category"
+        path = materialize(
+            context,
+            structure,
+            task,
+            anchors,
+            tmp_path / "labels.parquet",
+            labelled=True,
+        )
+    finally:
+        context.close()
+    categories = pq.read_table(path)["segment_code"]
+    assert categories.type == pa.string()
+    assert categories.to_pylist() == ["9007199254740992", "9007199254740993", None] * 2
+    assert len(set(value for value in categories.to_pylist() if value is not None)) == 2
+    assert db.table_dict["entities"].df["segment_code"].tolist() == labels
+
+
+@pytest.mark.parametrize("reset_spill_limit", [False, True])
+def test__context__configured_resources__sets_explicit_limits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, reset_spill_limit: bool
+) -> None:
+    import duckdb
+
+    original_connect = duckdb.connect
+
+    def connect(*, config: dict[str, object]) -> duckdb.DuckDBPyConnection:
+        connection = original_connect(config=config)
+        if reset_spill_limit:
+            # Reproduce initialization overwriting the requested cap, regardless
+            # of whether this platform's DuckDB build exhibits that behavior.
+            connection.execute("SET max_temp_directory_size = '1TiB'")
+        return connection
+
+    monkeypatch.setattr(duckdb, "connect", connect)
+    task, db, _ = decimal_fixture()
+    context = Context.open(
+        db,
+        task.dataset.val_timestamp,
+        tmp_path,
+        threads=2,
+        memory_limit="128MB",
+        max_temp_directory_size="256MB",
+    )
+    try:
+        configured = dict(
+            context.connection.execute(
+                "SELECT name, value FROM duckdb_settings() "
+                "WHERE name IN ('threads', 'memory_limit', 'max_temp_directory_size')"
+            ).fetchall()
+        )
+        assert configured == {
+            "threads": "2",
+            "memory_limit": "122.0 MiB",
+            "max_temp_directory_size": "244.1 MiB",
+        }
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("dtype", ["bool", "boolean", "int64", "float64"])
+def test__materialize__binary_label_types__writes_boolean_targets(
+    tmp_path: Path, dtype: str
+) -> None:
+    task, db, anchors = decimal_fixture()
+    task.task_type = TaskType.BINARY_CLASSIFICATION
+    anchors.df[task.target_col] = pd.Series([0, 1, 0, 1, 1, 0], dtype=dtype)
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, search_space(TaskStats(3)).default_overrides)
+        path = materialize(
+            context,
+            structure,
+            task,
+            anchors,
+            tmp_path / "binary.parquet",
+            labelled=True,
+        )
+    finally:
+        context.close()
+    targets = pq.read_table(path)["target"]
+    assert targets.type == pa.bool_()
+    assert targets.to_pylist() == [False, True, False, True, True, False]
+
+
+@pytest.mark.parametrize("invalid", [-1, 2, 0.5])
+def test__materialize__nonbinary_numeric_label__raises(
+    tmp_path: Path, invalid: float
+) -> None:
+    task, db, anchors = decimal_fixture()
+    task.task_type = TaskType.BINARY_CLASSIFICATION
+    anchors.df[task.target_col] = [0.0, 1.0, invalid, 1.0, 0.0, 1.0]
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, search_space(TaskStats(3)).default_overrides)
+        with pytest.raises(ValueError, match="Binary training labels must be 0 or 1"):
+            materialize(
+                context,
+                structure,
+                task,
+                anchors,
+                tmp_path / "invalid.parquet",
+                labelled=True,
+            )
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("timestamp", ["2020-01-03", "2020-01-04"])
+def test__materialize__anchor_cutoff__censors_each_relational_depth(
+    tmp_path: Path, timestamp: str
+) -> None:
+    task, db, anchors = decimal_fixture()
+    db.table_dict["entities"].df.loc[1, "amount"] = Decimal("3.00")
+    db.table_dict["entities"].df["created"] = pd.to_datetime(
+        ["2020-01-02", "2020-01-04", "2020-01-02"]
+    )
+    db.table_dict["entities"].time_col = "created"
+    db.table_dict["events"].df.loc[1, "timestamp"] = pd.Timestamp("2020-01-04")
+    db.table_dict["events"].df.loc[1, "value"] = Decimal("99.00")
+    db.table_dict["dimensions"] = Table(
+        pd.DataFrame(
+            {
+                "entity_id": [0, 0],
+                "timestamp": pd.to_datetime(["2020-01-02", "2020-01-04"]),
+                "rate": [10.0, 99.0],
+            }
+        ),
+        {"entity_id": "entities"},
+        time_col="timestamp",
+    )
+    db.table_dict["lines"] = Table(
+        pd.DataFrame(
+            {
+                "event_id": [0, 0],
+                "timestamp": pd.to_datetime(["2020-01-02", "2020-01-04"]),
+                "price": [20.0, 99.0],
+            }
+        ),
+        {"event_id": "events"},
+        time_col="timestamp",
+    )
+    frame = anchors.df.iloc[:2].copy()
+    frame[task.time_col] = pd.Timestamp(timestamp)
+    anchors = Table(frame, anchors.fkey_col_to_pkey_table, time_col=task.time_col)
+    structure = raw.Task(
+        dataset="fixture",
+        task="anchor-cutoff",
+        task_type="regression",
+        entity_table="entities",
+        entity_key="entity_id",
+        anchor_entity_column="entity_id",
+        target_column="label",
+        root_time="created",
+        columns=(raw.number("amount"),),
+        lookups=(
+            raw.Lookup(
+                "dimension",
+                "dimensions",
+                '{t}."entity_id" = {row}."entity_id"',
+                (raw.number("rate"),),
+                time="timestamp",
+            ),
+        ),
+        branches=(
+            raw.Branch(
+                name="events",
+                table="events",
+                on='{t}."entity_id" = {parent}."__entity_key"',
+                time="timestamp",
+                length=8,
+                columns=(raw.number("value"),),
+                child_key="event_id",
+                nested=(
+                    raw.Branch(
+                        name="lines",
+                        table="lines",
+                        on='{t}."event_id" = {parent}."__child_key"',
+                        time="timestamp",
+                        length=8,
+                        columns=(raw.number("price"),),
+                    ),
+                ),
+            ),
+        ),
+    )
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        path = materialize(
+            context,
+            structure,
+            task,
+            anchors,
+            tmp_path / "cutoff.parquet",
+            labelled=True,
+        )
+    finally:
+        context.close()
+    observations = pq.read_table(path)
+    at_boundary = timestamp == "2020-01-04"
+    assert observations["amount"].to_pylist() == [1.25, 3.0 if at_boundary else None]
+    assert observations["rate"].to_pylist() == [99.0 if at_boundary else 10.0, None]
+    events = observations["events"].to_pylist()[0]
+    assert [row["value"] for row in events] == ([2.25, 99.0] if at_boundary else [2.25])
+    assert [row["price"] for row in events[0]["lines"]] == (
+        [20.0, 99.0] if at_boundary else [20.0]
+    )
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("relflow") is None, reason="Needs relflow extra"
+)
+def test__fit_predict__derived_decimal_features_and_target__satisfies_contract() -> (
+    None
+):
+    import torch
+
+    torch.set_num_threads(1)
+    task, db, train = decimal_fixture()
+    original = {name: table.df.copy(deep=True) for name, table in db.table_dict.items()}
+    config = search_space(TaskStats(3)).default_overrides
+    model = RelFlowModel(config)
+    model.fit(task, db, train, None, seed=0)
+    assert model.fitted.model.trainer.global_step == 8
+    prepared = pq.read_table(Path(model.fitted.directory.name) / "train.parquet")
+    assert prepared["amount"].type == pa.float64()
+    assert prepared["amount"].null_count == 2
+    assert prepared["target"].type == pa.float64()
+    assert (
+        prepared.schema.field("events").type.value_type.field("value").type
+        == pa.float64()
+    )
+    frame = train.df.iloc[[2, 0, 1, 0]].drop(columns=[task.target_col])
+    evaluate = Table(frame, train.fkey_col_to_pkey_table, time_col=train.time_col)
+    predictions = model.predict(task, db, evaluate)
+    assert predictions.shape == (4,)
+    assert np.isfinite(predictions).all()
+    assert predictions[1] == predictions[3]
+    assert np.array_equal(predictions, model.predict(task, db, evaluate))
+    for name, data in original.items():
+        pd.testing.assert_frame_equal(db.table_dict[name].df, data)
+
+
+
+================================================
+FILE: packages/relarena/tests/models/relflow/test_encoder.py
+================================================
+"""Offline checks for the adapter's immutable frozen-text encoder snapshot."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from relarena.models.relflow import raw, search_space
+from relarena_core.search_space import TaskStats
+
+
+def structure(*, text: bool) -> raw.Task:
+    return raw.Task(
+        dataset="fixture",
+        task="encoder",
+        task_type="regression",
+        entity_table="entities",
+        entity_key="entity_id",
+        anchor_entity_column="entity_id",
+        target_column="label",
+        root_time=None,
+        columns=(raw.text("summary"), raw.text("description"))
+        if text
+        else (raw.number("amount"),),
+        lookups=(),
+        branches=(
+            raw.Branch(
+                name="events",
+                table="events",
+                on='{t}."entity_id" = {parent}."__entity_key"',
+                time=None,
+                length=8,
+                columns=(raw.text("note"),) if text else (raw.number("value"),),
+            ),
+        ),
+    )
+
+
+@pytest.mark.parametrize("store", [False, True])
+def test__schema__text_fields__resolve_one_exact_encoder_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, store: bool
+) -> None:
+    pytest.importorskip("relflow")
+    import huggingface_hub
+
+    from relarena.models.relflow.training import schema
+
+    snapshot = str(tmp_path / "snapshot")
+    calls = []
+
+    def download(**options: Any) -> str:
+        calls.append(options)
+        return snapshot
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", download)
+    config = search_space(TaskStats(3)).default_overrides
+    configured = schema(
+        structure(text=True), config, store=tmp_path / "text-store" if store else None
+    )
+    assert calls == [
+        {
+            "repo_id": "sentence-transformers/all-MiniLM-L6-v2",
+            "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+            "allow_patterns": [
+                "config.json",
+                "model.safetensors",
+                "special_tokens_map.json",
+                "tokenizer.json",
+                "tokenizer_config.json",
+                "vocab.txt",
+            ],
+        }
+    ]
+    fields = configured["fields"]
+    for field in (
+        fields["summary"],
+        fields["description"],
+        fields["events"]["fields"]["note"],
+    ):
+        assert field["model"] == snapshot
+        assert field["encoder_pooling"] == "mean"
+        assert field["encoder_batch_size"] == 320
+        assert field["max_length"] == 64
+        assert field.get("store") == (str(tmp_path / "text-store") if store else None)
+
+
+def test__schema__no_text__does_not_acquire_encoder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pytest.importorskip("relflow")
+    import huggingface_hub
+
+    from relarena.models.relflow.training import schema
+
+    def unexpected(**options: Any) -> str:
+        raise AssertionError(f"No text field may acquire an encoder: {options!r}")
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", unexpected)
+    configured = schema(
+        structure(text=False), search_space(TaskStats(3)).default_overrides
+    )
+    assert configured["fields"]["amount"]["type"] == "number"
+
+
+def test__schema__unknown_text_encoder__refuses_unpinned_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pytest.importorskip("relflow")
+    import huggingface_hub
+
+    from relarena.models.relflow.training import schema
+
+    def unexpected(**options: Any) -> str:
+        raise AssertionError(f"An unpinned encoder may not be acquired: {options!r}")
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", unexpected)
+    monkeypatch.setitem(raw.TEXT, "model", "example/unpinned-encoder")
+    with pytest.raises(ValueError, match="no frozen revision"):
+        schema(structure(text=True), search_space(TaskStats(3)).default_overrides)
+
+
+
+================================================
+FILE: packages/relarena/tests/models/relflow/test_model.py
+================================================
+from __future__ import annotations
+
+import importlib.util
+import os
+import pickle
+import subprocess
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+import pandas as pd
+import pytest
+from relbench.base import Database, Table, TaskType
+
+from relarena.models.relflow import RelFlowModel, search_space
+from relarena_core.registry import registry
+from relarena_core.search_space import TaskStats
+
+
+def fixture(
+    task_type: TaskType = TaskType.REGRESSION,
+) -> tuple[SimpleNamespace, Database, Table]:
+    dataset = SimpleNamespace(val_timestamp=pd.Timestamp("2020-01-10"))
+    task = SimpleNamespace(
+        dataset=dataset,
+        task_type=task_type,
+        entity_table="entities",
+        entity_col="entity_id",
+        time_col="timestamp",
+        target_col="label",
+    )
+    db = Database(
+        {
+            "entities": Table(
+                pd.DataFrame(
+                    {
+                        "entity_id": [0, 1, 2, 3],
+                        "amount": [1.5, 3.0, 5.5, 9.0],
+                        "future_only": [None, None, None, 17.0],
+                        "created": pd.to_datetime(["2020-01-01"] * 3 + ["2020-01-20"]),
+                    }
+                ),
+                {},
+                pkey_col="entity_id",
+                time_col="created",
+            ),
+            "events": Table(
+                pd.DataFrame(
+                    {
+                        "event_id": [0, 1, 2, 3],
+                        "entity_id": [0, 0, 1, 1],
+                        "value": [1.0, None, 3.0, 100.0],
+                        "timestamp": pd.to_datetime(
+                            ["2020-01-02", "2020-01-04", "2020-01-02", "2020-01-15"]
+                        ),
+                    }
+                ),
+                {"entity_id": "entities"},
+                pkey_col="event_id",
+                time_col="timestamp",
+            ),
+        }
+    )
+    anchors = Table(
+        pd.DataFrame(
+            {
+                "entity_id": [0, 1, 2, 0, 1, 2],
+                "timestamp": pd.to_datetime(["2020-01-05"] * 3 + ["2020-01-12"] * 3),
+                "label": [0, 1, 0, 1, 0, 1]
+                if task_type == TaskType.BINARY_CLASSIFICATION
+                else [1.2, 2.0, 3.0, 1.4, 2.2, 3.2],
+            }
+        ),
+        {"entity_id": "entities"},
+        time_col="timestamp",
+    )
+    return task, db, anchors
+
+
+def test__registry__without_optional_backend__registers() -> None:
+    assert registry.get(RelFlowModel.name) is RelFlowModel
+    assert registry.get("relflow-latest") is RelFlowModel
+    code = """
+import builtins
+original = builtins.__import__
+def guarded(name, *args, **kwargs):
+    if name == "relflow" or name.startswith("relflow."):
+        raise RuntimeError("Optional backend imported during registration")
+    return original(name, *args, **kwargs)
+builtins.__import__ = guarded
+from relarena.models.relflow import RelFlowModel
+assert RelFlowModel.name == "relflow-2026-11-04"
+"""
+    subprocess.run([sys.executable, "-c", code], check=True, env=os.environ)
+
+
+@pytest.mark.parametrize(
+    "rows,tier,caps",
+    [
+        (19_239, "small", {"outer": 128, "inner": 32}),
+        (20_000, "medium", {"outer": 64, "inner": 32}),
+        (499_999, "medium", {"outer": 64, "inner": 32}),
+        (500_000, "large", {"outer": 32, "inner": 16}),
+    ],
+)
+def test__space__original_training_rows__freezes_single_default(
+    rows: int, tier: str, caps: dict[str, int]
+) -> None:
+    space = search_space(TaskStats(rows))
+    assert not space.is_tunable
+    assert space.configs(n_trials=50, seed=0) == [space.default_overrides]
+    assert space.default_overrides["tier"] == tier
+    assert space.default_overrides["caps"] == caps
+    assert space.default_overrides["execution"]["duckdb_memory_limit"] == (
+        "32GB" if tier == "large" else "16GB"
+    )
+    assert space.default_overrides["recipe"]["passes"] == 8
+    assert space.default_overrides["recipe"]["overflow"] == "random"
+
+
+def test__context__outer_database__profiles_only_validation_time(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("duckdb")
+    import pyarrow.parquet as pq
+
+    from relarena.models.relflow import raw
+    from relarena.models.relflow.context import Context, infer, materialize
+
+    task, db, anchors = fixture()
+    config = search_space(TaskStats(19_239)).default_overrides
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, config)
+        assert "future_only" not in raw.model(structure)["fields"]
+        assert "DISTINCT" not in raw.query(structure)
+        context.freeze()
+        path = materialize(
+            context, structure, task, anchors, tmp_path / "data.parquet", labelled=True
+        )
+        observations = pq.read_table(path)
+        assert observations["__row_position"].to_pylist() == list(range(len(anchors)))
+        assert observations["target"].to_pylist() == anchors.df["label"].tolist()
+        histories = observations["events"].to_pylist()
+        assert histories[2] == []
+        assert any(item["value"] is None for item in histories[0])
+        assert len(histories[4]) == 1  # January 15 event is invisible to stale val.
+    finally:
+        context.close()
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("relflow") is None, reason="Needs relflow extra"
+)
+@pytest.mark.parametrize("kind", [TaskType.REGRESSION, TaskType.BINARY_CLASSIFICATION])
+def test__fit_predict__tiny_supplied_database__satisfies_contract(
+    kind: TaskType,
+) -> None:
+    import torch
+
+    torch.set_num_threads(1)
+    task, db, train = fixture(kind)
+    config = search_space(TaskStats(3)).default_overrides
+    model = RelFlowModel(config)
+    model.fit(task, db, train, None, seed=0)
+    assert model.fitted.model.trainer.global_step == 8
+    frame = train.df.iloc[[2, 0, 1, 0]].drop(columns=[task.target_col])
+    table = Table(frame, train.fkey_col_to_pkey_table, time_col=train.time_col)
+    prediction = model.predict(task, db, table)
+    assert prediction.shape == (4,)
+    assert np.isfinite(prediction).all()
+    assert prediction[1] == prediction[3]
+    assert np.array_equal(prediction, model.predict(task, db, table))
+    if kind == TaskType.BINARY_CLASSIFICATION:
+        assert np.all((prediction >= 0) & (prediction <= 1))
+    empty = Table(frame.iloc[:0], table.fkey_col_to_pkey_table, time_col=table.time_col)
+    assert model.predict(task, db, empty).shape == (0,)
+
+
+def test__context__pandas_categories__retains_string_fields(tmp_path: Path) -> None:
+    from relarena.models.relflow import raw
+    from relarena.models.relflow.context import Context, infer
+
+    task, db, _ = fixture()
+    db.table_dict["entities"].df["segment"] = pd.Categorical(["a", "b", None, "c"])
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, search_space(TaskStats(3)).default_overrides)
+        assert raw.model(structure)["fields"]["segment"]["type"] == "hash"
+    finally:
+        context.close()
+
+
+def test__context__timestamp_ties__uses_stable_input_ordinals(tmp_path: Path) -> None:
+    import pyarrow.parquet as pq
+
+    from relarena.models.relflow.context import Context, infer, materialize
+
+    task, db, anchors = fixture()
+    db.table_dict["events"].df.loc[1, "timestamp"] = pd.Timestamp("2020-01-02")
+    config = search_space(TaskStats(3)).default_overrides
+    observed = []
+    for index in range(2):
+        context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+        try:
+            structure = infer(context, task, config)
+            path = materialize(
+                context,
+                structure,
+                task,
+                anchors,
+                tmp_path / f"ties-{index}.parquet",
+                labelled=True,
+            )
+            observed.append(pq.read_table(path)["events"].to_pylist()[0])
+        finally:
+            context.close()
+    assert observed[0] == observed[1]
+    assert [row["value"] for row in observed[0]] == [1.0, None]
+    assert "__source_row_id" not in db.table_dict["events"].df
+
+
+@pytest.mark.parametrize(
+    "rows,dataset,task,expected",
+    [
+        (19_239, "rel-event", "user-attendance", 64),
+        (59_454, "rel-avito", "user-clicks", 512),
+        (86_619, "rel-avito", "user-visits", 512),
+        (151_407, "rel-trial", "site-success", 512),
+        (43_335, "rel-trial", "study-adverse", 512),
+        (3_386_276, "rel-stack", "user-badge", 512),
+        (50_000, "unseen", "new-task", 512),
+    ],
+)
+def test__fit__task_identity__uses_only_tier_batch(
+    rows: int,
+    dataset: str,
+    task: str,
+    expected: int,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from unittest.mock import Mock
+
+    from relarena_core.identity import RunIdentity
+
+    config = search_space(TaskStats(rows)).default_overrides
+    backend = SimpleNamespace(fit=Mock())
+    monkeypatch.setitem(sys.modules, "relarena.models.relflow.training", backend)
+    task_spec, db, anchors = fixture()
+    for identity in (RunIdentity(dataset, None, task, None), None):
+        model = RelFlowModel(config, run_identity=identity)
+        model.fit(task_spec, db, anchors, None, seed=0)
+        resolved = backend.fit.call_args.args[3]
+        assert resolved["execution"]["batch_size"] == expected
+        assert resolved == config
+        assert resolved["execution"]["text_resident_mib"] == (
+            256 if rows < 500_000 else 2048
+        )
+
+
+def test__execution__large_loader_and_text__retains_bounded_memory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("relflow")
+    from relarena.models.relflow.training import schema
+
+    hub = pytest.importorskip("huggingface_hub")
+    monkeypatch.setattr(
+        hub, "snapshot_download", lambda **kwargs: str(tmp_path / "encoder")
+    )
+    task, db, _ = fixture()
+    from relarena.models.relflow.context import Context, infer
+
+    db.table_dict["entities"].df["description"] = [
+        "A detailed description of a different financial transaction with context.",
+        "Another long description of the customer account and recent activity.",
+        "A third description of the merchant profile and payment preferences.",
+        "Future content that remains outside the schema profiling boundary.",
+    ]
+    config = search_space(TaskStats(500_000)).default_overrides
+    assert config["execution"] == {
+        "batch_size": 512,
+        "workers": 2,
+        "persistent_workers": True,
+        "prefetch_factor": 1,
+        "shuffle_rows": 2048,
+        "text_token_cache": 16384,
+        "text_resident_mib": 2048,
+        "duckdb_threads": 8,
+        "duckdb_memory_limit": "32GB",
+        "duckdb_spill_limit": "256GB",
+    }
+    context = Context.open(db, task.dataset.val_timestamp, tmp_path)
+    try:
+        structure = infer(context, task, config)
+        configured = schema(structure, config, store=tmp_path / "text-store")
+        assert configured["fields"]["events"]["length"] == 32
+        assert configured["fields"]["events"]["overflow"] == "random"
+        text = configured["fields"]["description"]
+        assert text["type"] == "text"
+        assert text["cache"] == 16384
+        assert text["resident"] == 2048
+        assert text["store"] == str(tmp_path / "text-store")
+    finally:
+        context.close()
+
+
+@pytest.mark.parametrize("predict", [False, True])
+def test__loader__parquet_source__restarts_with_archived_scan_geometry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, predict: bool
+) -> None:
+    pytest.importorskip("relflow")
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    from relarena.models.relflow import training
+
+    path = tmp_path / "records.parquet"
+    pq.write_table(pa.table({"ordinal": np.arange(8193)}), path, row_group_size=8193)
+    monkeypatch.setattr(
+        training.rf, "ArrowDataModule", lambda **kw: SimpleNamespace(**kw)
+    )
+    monkeypatch.setattr(training.torch.cuda, "is_available", lambda: False)
+    config = search_space(TaskStats(500_000)).default_overrides
+    datamodule = training.loader(None, path, 0, config["execution"], predict=predict)
+    split = "predict" if predict else "train"
+    source = pickle.loads(pickle.dumps(getattr(datamodule, split)))
+    for _ in range(2):
+        scanned = list(source())
+        assert [len(batch) for batch in scanned] == [8192, 1]
+        assert pa.Table.from_batches(scanned)["ordinal"].to_pylist() == list(
+            range(8193)
+        )
+    assert datamodule.shuffle == {split: not predict}
+    assert datamodule.shuffle_rows == 2048
+    assert datamodule.num_workers == 0
 
 
 
@@ -33102,6 +36459,11 @@ MANUAL_LICENSES: dict[str, str] = {
     # The kditransform 1.2.0 wheel ships plain Apache-2.0 in
     # dist-info/licenses/LICENSE while its metadata only says "OSI Approved".
     "kditransform": "Apache-2.0",
+    # The anytree 2.13.0 wheel declares License-Expression: Apache-2.0 and ships
+    # dist-info/licenses/LICENSE, identical to LICENSE at
+    # c0fec0de/anytree@2e0a1b956172654d75aff93277ce3d883355e0bf.
+    # PyPI JSON omits that PEP 639 declaration.
+    "anytree": "Apache-2.0",
 }
 
 

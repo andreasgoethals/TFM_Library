@@ -13,7 +13,9 @@ Directory structure:
     │   ├── README.md
     │   ├── 438.added.md
     │   ├── 439.added.md
-    │   └── 440.added.md
+    │   ├── 440.added.md
+    │   ├── 441.added.md
+    │   └── 445.changed.md
     ├── examples/
     │   └── sagemaker/
     │       └── tabpfn-3-sample.ipynb
@@ -210,7 +212,7 @@ Knobs:
 
 - `thinking_mode: bool = False` — enable thinking with default effort. Equivalent to `thinking_effort="medium"`.
 - `thinking_effort: {"micro", "mini", "low", "medium", "high", "xhigh", "max"} | None` — effort level, from least to most compute. Setting this also enables thinking, so `thinking_mode=True` is optional when you've set the level explicitly. Levels other than `"medium"` and `"high"` are not available to every account; the server rejects a level your account cannot use.
-- `thinking_timeout_s: float | None` — budget for the fit, in seconds. Only consulted when thinking is enabled. Capped at 2400 (40 minutes).
+- `thinking_timeout_s: float | None` — time limit for the fit, in seconds. Only consulted when thinking is enabled. Each effort level has a maximum; the server rejects a longer value.
 - `thinking_metric: str | None` — optimization metric for the fit. Only consulted when thinking is enabled. See the constructor docstring of `TabPFNClassifier` / `TabPFNRegressor` for the full list of supported metrics per task (classification, multiclass, regression) and their aliases.
 - `group_col: str | list[str] | None` — column(s) of `X` identifying groups of related rows, e.g. a patient or session id. Rows of one group are never split between training and validation during the fit. Thinking mode only.
 - `time_col: str | None` — column of `X` holding time. Validation uses contiguous time blocks. Cannot be combined with `group_col`. Thinking mode only.
@@ -4156,6 +4158,20 @@ The hosted estimators can run each prediction as a job on the endpoint with `use
 
 
 ================================================
+FILE: changelog/441.added.md
+================================================
+A thinking-mode `TabPFNRegressor` documents the outputs it returns: `"mean"`, `"median"` and `"quantiles"`, where `"mean"` is the prediction that scores best on `thinking_metric`.
+
+
+
+================================================
+FILE: changelog/445.changed.md
+================================================
+`thinking_timeout_s` is now checked against the maximum of the chosen `thinking_effort` before the data is uploaded.
+
+
+
+================================================
 FILE: examples/sagemaker/tabpfn-3-sample.ipynb
 ================================================
 # Jupyter notebook converted to Python script.
@@ -4997,6 +5013,26 @@ class GetPredictResultResponse(BaseModel):
     timings: PredictTimings | None = None
 
 
+class ThinkingLimit(BaseModel):
+    train_set_max_rows: int
+    train_set_max_cells: int = Field(
+        description="Maximum training cells per estimator: selected rows times uploaded columns. Row subsampling can keep each context below this limit even when the full upload exceeds it."
+    )
+    train_set_max_upload_cells: int = Field(
+        description="Maximum cells in the full training upload before row subsampling. This bounds the table processed before estimator contexts are selected."
+    )
+    test_set_max_rows: int
+    max_classes: int
+    max_cols: int
+    predict_row_pairs_budget: int
+    efforts: list[Annotated[ThinkingEffort | str, Field(union_mode="left_to_right")]]
+    max_timeout_secs: (
+        dict[Annotated[ThinkingEffort | str, Field(union_mode="left_to_right")], float] | None
+    ) = None
+    test_set_max_rows_w_full_regression_output: int
+    test_set_max_cells: int
+
+
 class GetSettingsResponse(BaseModel):
     default_model_version: Annotated[ModelVersion | UnknownEnum, Field(union_mode="left_to_right")]
     max_model_limit: ModelLimit
@@ -5006,6 +5042,13 @@ class GetSettingsResponse(BaseModel):
     dataset_max_size_bytes: int
     async_settings: AsyncSettings
     inline_test_set_max_parquet_bytes: int | None = None
+    thinking_default_model_version: (
+        Annotated[ModelVersion | UnknownEnum, Field(union_mode="left_to_right")] | None
+    ) = None
+    thinking_model_limits: (
+        dict[Annotated[ModelVersion | UnknownEnum, Field(union_mode="left_to_right")], ThinkingLimit]
+        | None
+    ) = None
     thinking_max_timeout_secs: float | None = None
 
 
@@ -8216,6 +8259,7 @@ from tabpfn_client.utils import (
 )
 from tabpfn_client.service_wrapper import InferenceClient
 from tabpfn_client.api_models import (
+    GetSettingsResponse,
     ModelLimit,
     RegressorTabPFNConfig,
     ClassifierTabPFNConfig,
@@ -8777,8 +8821,9 @@ class TabPFNClassifier(
                 account cannot use.
 
             thinking_timeout_s:
-                Budget for the fit, in seconds. Only consulted when thinking is
-                enabled. Capped at 2400.
+                Time limit for the fit, in seconds. Only consulted when thinking
+                is enabled. Each effort level has a maximum; the server rejects
+                a longer value.
 
             thinking_metric:
                 Optimization metric for the fit. Only consulted when thinking
@@ -8951,6 +8996,7 @@ class TabPFNClassifier(
         thinking_config = _build_thinking_config(
             X,
             enabled=thinking_mode,
+            model_path=tabpfn_config.model_path,
             effort=self.thinking_effort,
             timeout_secs=self.thinking_timeout_s,
             metric=self.thinking_metric,
@@ -9437,8 +9483,9 @@ class TabPFNRegressor(
                 account cannot use.
 
             thinking_timeout_s:
-                Budget for the fit, in seconds. Only consulted when thinking is
-                enabled. Capped at 2400.
+                Time limit for the fit, in seconds. Only consulted when thinking
+                is enabled. Each effort level has a maximum; the server rejects
+                a longer value.
 
             thinking_metric:
                 Optimization metric for the fit. Only consulted when thinking
@@ -9594,6 +9641,7 @@ class TabPFNRegressor(
         thinking_config = _build_thinking_config(
             X,
             enabled=thinking_mode,
+            model_path=tabpfn_config.model_path,
             effort=self.thinking_effort,
             timeout_secs=self.thinking_timeout_s,
             metric=self.thinking_metric,
@@ -9669,6 +9717,12 @@ class TabPFNRegressor(
                   one response is split over several requests; those that run
                   as background jobs overlap, up to 4 at once.
 
+                A thinking-mode fit returns only `"mean"`, `"median"` and
+                `"quantiles"`, and its `"mean"` is the prediction that scores
+                best on `thinking_metric`: the mean for the default RMSE, the
+                median for MAE. Its quantiles range from 0.001 to 0.999. A
+                thinking-mode fit of a model version before 3.5 returns only
+                `"mean"`.
             quantiles: The quantiles to return if `output_type="quantiles"`.
                 By default, the `[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]`
                 quantiles are returned.
@@ -10292,6 +10346,7 @@ def _build_thinking_config(
     X: pd.DataFrame | np.ndarray,
     *,
     enabled: bool,
+    model_path: str | None = None,
     effort: str | None = None,
     timeout_secs: float | None = None,
     metric: str | None = None,
@@ -10310,7 +10365,7 @@ def _build_thinking_config(
     if not enabled:
         return None
     if timeout_secs is not None:
-        _validate_thinking_timeout(timeout_secs)
+        _validate_thinking_timeout(timeout_secs, effort=effort, model_path=model_path)
     return ThinkingConfig(
         effort=effort,
         timeout_secs=timeout_secs,
@@ -10321,20 +10376,53 @@ def _build_thinking_config(
     )
 
 
-def _validate_thinking_timeout(timeout_secs: float) -> None:
+def _validate_thinking_timeout(
+    timeout_secs: float, *, effort: str | None, model_path: str | None
+) -> None:
     """Reject a `thinking_timeout_s` above the server's limit before the upload.
 
-    Servers that do not report a limit still reject a too-large value when the fit
-    arrives.
+    The limit is the effort level's when the server reports one, else the longest
+    any fit takes. Servers that report neither still reject a too-large value when
+    the fit arrives.
     """
     settings = ServiceClient.get_settings()
-    if settings is None or settings.thinking_max_timeout_secs is None:
+    if settings is None:
         return
-    if timeout_secs > settings.thinking_max_timeout_secs:
+    level_cap = _thinking_level_timeout_cap(
+        settings, effort=effort, model_path=model_path
+    )
+    if level_cap is not None:
+        if timeout_secs > level_cap:
+            raise ValueError(
+                f"thinking_timeout_s={timeout_secs:g} exceeds the maximum of "
+                f"{level_cap:g} seconds for thinking_effort={effort!r}."
+            )
+        return
+    max_timeout = settings.thinking_max_timeout_secs
+    if max_timeout is not None and timeout_secs > max_timeout:
         raise ValueError(
             f"thinking_timeout_s={timeout_secs:g} exceeds the maximum of "
-            f"{settings.thinking_max_timeout_secs:g} seconds."
+            f"{max_timeout:g} seconds."
         )
+
+
+def _thinking_level_timeout_cap(
+    settings: GetSettingsResponse, *, effort: str | None, model_path: str | None
+) -> float | None:
+    """The longest timeout the server takes at `effort` for this fit, if it says."""
+    if effort is None or settings.thinking_model_limits is None:
+        return None
+    version = (
+        settings.thinking_default_model_version
+        if model_path is None or model_path in _AUTO_MODEL_PATH_ALIASES
+        else model_version_from_path(model_path)
+    )
+    if version is None:
+        return None
+    limit = settings.thinking_model_limits.get(version)
+    if limit is None or limit.max_timeout_secs is None:
+        return None
+    return limit.max_timeout_secs.get(effort)
 
 
 def _validate_group_columns(
@@ -28200,6 +28288,67 @@ def test_fit_leaves_the_check_to_a_server_that_reports_no_limit():
     ) as mock_fit:
         TabPFNClassifier(thinking_mode=True, thinking_timeout_s=10_000).fit(_X, _Y)
     assert mock_fit.call_args.kwargs["thinking_config"].timeout_secs == 10_000
+
+
+def _thinking_limit(max_timeout_secs: dict[str, float]) -> dict:
+    limit = _api_settings_payload()["max_model_limit"]
+    return {
+        **limit,
+        "efforts": list(max_timeout_secs),
+        "max_timeout_secs": max_timeout_secs,
+    }
+
+
+def _use_level_caps() -> None:
+    _use_settings(
+        thinking_max_timeout_secs=5_000.0,
+        thinking_default_model_version="v3.5",
+        thinking_model_limits={
+            "v3.5": _thinking_limit({"micro": 100.0, "max": 5_000.0}),
+            "v3": _thinking_limit({"medium": 900.0, "high": 900.0}),
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    ("model_path", "effort", "cap"),
+    [
+        (None, "micro", 100),
+        ("auto", "micro", 100),
+        ("tabpfn-v3-classifier-v3_default.ckpt", "high", 900),
+    ],
+)
+def test_fit_rejects_a_timeout_above_the_level_s_cap_before_upload(
+    model_path, effort, cap
+):
+    _use_level_caps()
+    kwargs = {} if model_path is None else {"model_path": model_path}
+    with patch.object(InferenceClient, "fit_with_result") as mock_fit:
+        with pytest.raises(
+            ValueError,
+            match=f"exceeds the maximum of {cap} seconds for thinking_effort='{effort}'",
+        ):
+            TabPFNClassifier(
+                thinking_effort=effort, thinking_timeout_s=cap + 1, **kwargs
+            ).fit(_X, _Y)
+    mock_fit.assert_not_called()
+
+
+def test_fit_sends_a_timeout_at_the_level_s_cap():
+    _use_level_caps()
+    with patch.object(
+        InferenceClient, "fit_with_result", return_value=_FIT_RESULT
+    ) as mock_fit:
+        TabPFNClassifier(thinking_effort="micro", thinking_timeout_s=100).fit(_X, _Y)
+    assert mock_fit.call_args.kwargs["thinking_config"].timeout_secs == 100
+
+
+def test_fit_without_an_effort_checks_the_longest_timeout_any_level_takes():
+    _use_level_caps()
+    with patch.object(InferenceClient, "fit_with_result") as mock_fit:
+        with pytest.raises(ValueError, match="exceeds the maximum of 5000 seconds\\.$"):
+            TabPFNClassifier(thinking_mode=True, thinking_timeout_s=5_001).fit(_X, _Y)
+    mock_fit.assert_not_called()
 
 
 

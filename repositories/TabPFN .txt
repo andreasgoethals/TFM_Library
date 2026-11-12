@@ -27,9 +27,15 @@ Directory structure:
     │   ├── 1387.fixed.md
     │   ├── 1388.fixed.md
     │   ├── 1389.changed.md
+    │   ├── 1392.added.md
     │   ├── 1395.changed.md
     │   ├── 1396.changed.md
-    │   └── 1400.fixed.md
+    │   ├── 1397.added.md
+    │   ├── 1398.added.md
+    │   ├── 1398.fixed.md
+    │   ├── 1400.fixed.md
+    │   ├── 1402.changed.md
+    │   └── 1403.changed.md
     ├── examples/
     │   ├── batched_classification_cv.py
     │   ├── batched_regression_m4.py
@@ -119,6 +125,7 @@ Directory structure:
     │       │   ├── datamodel.py
     │       │   ├── datetimes.py
     │       │   ├── ensemble.py
+    │       │   ├── group_ids.py
     │       │   ├── label_encoder.py
     │       │   ├── modality_detection.py
     │       │   ├── pipeline_factory.py
@@ -152,6 +159,7 @@ Directory structure:
     │       │       ├── pipeline_interface.py
     │       │       ├── steps.py
     │       │       ├── torch_quantile_transformer.py
+    │       │       ├── torch_safe_power_transformer.py
     │       │       ├── torch_soft_clip_outliers.py
     │       │       ├── torch_squashing_scaler.py
     │       │       ├── torch_standard_scaler.py
@@ -255,6 +263,7 @@ Directory structure:
     │   │   ├── test_encode_categorical_features_step.py
     │   │   ├── test_ensemble.py
     │   │   ├── test_feature_name_uniqueness.py
+    │   │   ├── test_group_ids.py
     │   │   ├── test_inf_handling.py
     │   │   ├── test_kdi_transformer.py
     │   │   ├── test_label_encoder.py
@@ -307,6 +316,7 @@ Directory structure:
     │       ├── test_pipeline_interface.py
     │       ├── test_random_sign_flip.py
     │       ├── test_torch_quantile_transformer.py
+    │       ├── test_torch_safe_power_transformer.py
     │       ├── test_torch_shuffle_features_step.py
     │       ├── test_torch_soft_clip_outliers.py
     │       ├── test_torch_squashing_scaler.py
@@ -2500,6 +2510,13 @@ The `inference_precision` docstrings of `TabPFNClassifier` and `TabPFNRegressor`
 
 
 ================================================
+FILE: changelog/1392.added.md
+================================================
+`TabPFNClassifier` and `TabPFNRegressor` take `group_col`: the label of the column that says which group a row belongs to, or a list of labels whose joint value is one composite key. The selected columns are replaced by one categorical feature holding that key's integer code, fitted on the training rows alone.
+
+
+
+================================================
 FILE: changelog/1395.changed.md
 ================================================
 TabPFN-3.5 uses native grouped-query attention on CPU (PyTorch 2.9+) instead of copying the shared K/V head, so predictions are faster, mainly with `fit_mode="fit_with_cache"`.
@@ -2514,9 +2531,44 @@ Attention no longer copies its inputs on CUDA and CPU. This lowers GPU memory an
 
 
 ================================================
+FILE: changelog/1397.added.md
+================================================
+The `quantile_norm`, `quantile_norm_coarse` and `quantile_norm_fine` presets now run on GPU when GPU preprocessing is enabled.
+
+
+
+================================================
+FILE: changelog/1398.added.md
+================================================
+The `safepower` preset now runs on GPU when GPU preprocessing is enabled.
+
+
+
+================================================
+FILE: changelog/1398.fixed.md
+================================================
+The `safepower` preset now leaves a column unchanged before scaling when its non-missing values are equal up to rounding. Before, such columns with missing values could map test values to huge numbers or infinity.
+
+
+
+================================================
 FILE: changelog/1400.fixed.md
 ================================================
 Fix excessive memory use on CPUs with AVX512-BF16 (AMD Zen 4 and later, Intel Sapphire Rapids and later), due to batching of estimators.
+
+
+
+================================================
+FILE: changelog/1402.changed.md
+================================================
+Attention over an int8 or float8 KV cache now casts the cache and folds the scales into the query and the output, which makes cached predicts on large training sets faster. Custom attention backends now receive the cast cache instead of the dequantized one (see `AttentionBackend`).
+
+
+
+================================================
+FILE: changelog/1403.changed.md
+================================================
+The many-class decoder now runs one attention call per 64 classes and no longer copies the one-hot targets over the heads. Its peak memory no longer grows with the class count, and cached predicts are faster.
 
 
 
@@ -8837,6 +8889,7 @@ def get_embeddings(
     task_type = "regression" if isinstance(model, TabPFNRegressor) else "multiclass"
 
     check_input_shape_matches(X, estimator=model)
+    X = model.group_encoder_.transform(X)
     X = model.date_transformer_.transform(X)
     X = model.text_transformer_.transform(X)
     X = ensure_compatible_predict_input_sklearn(X, model)
@@ -9841,7 +9894,7 @@ from tabpfn.downsample_correction import (
     context_class_prior,
     downsample_class_weights,
 )
-from tabpfn.errors import handle_oom_errors
+from tabpfn.errors import TabPFNValidationError, handle_oom_errors
 from tabpfn.inference import (
     InferenceEngine,
     InferenceEngineBatchedNoPreprocessing,
@@ -9877,6 +9930,11 @@ from tabpfn.preprocessing.datetimes import DateTransformer
 from tabpfn.preprocessing.ensemble import (
     TabPFNEnsemblePreprocessor,
     scale_n_estimators_for_feature_coverage,
+)
+from tabpfn.preprocessing.group_ids import (
+    GroupIdEncoder,
+    as_group_feature,
+    reject_group_col,
 )
 from tabpfn.preprocessing.label_encoder import TabPFNLabelEncoder
 from tabpfn.preprocessing.modality_detection import detect_feature_modalities
@@ -10008,6 +10066,14 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
     text_transformer_: TextTransformer
     """The transformer that expanded every text column before validation."""
 
+    group_encoder_: GroupIdEncoder
+    """The encoder that replaced the `group_col` columns with one categorical
+    feature, holding the key-to-code mapping fitted on the training rows."""
+
+    group_feature_index_: int | None
+    """Where the encoded group feature sits in the cleaned input, or `None`
+    without `group_col`."""
+
     categorical_features_indices_: list[int] | None
     """Declared categorical column positions after date/text expansion, including
     columns declared through pandas `category` dtype. Expanded source columns are
@@ -10041,6 +10107,7 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
         n_estimators: int | Literal["auto"] = "auto",
         auto_scale_n_estimators: bool = True,
         categorical_features_indices: Sequence[int] | None = None,
+        group_col: str | list[str] | None = None,
         softmax_temperature: float | Literal["auto"] = "auto",
         balance_probabilities: bool = False,
         average_before_softmax: bool = False,
@@ -10125,6 +10192,19 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
                     model and the `.fit()`, consider setting the
                     `.categorical_features_indices` attribute after the model was
                     initialized and before `.fit()`.
+
+            group_col:
+                The label of the column that says which group a row belongs to,
+                e.g. a patient, or a list of labels whose joint value is one
+                composite key. The selected columns are replaced by one
+                categorical feature holding that key's integer code.
+
+                The codes are fitted on the training rows alone, every group
+                keeping its own; a key `fit` did not see becomes a missing
+                value. When set, `fit` and `predict` take a DataFrame holding
+                those columns and raise `ValueError` otherwise.
+                Combining it with `tuning_config`, `differentiable_input=True`
+                or `fit_from_preprocessed` raises `ValueError` too.
 
             softmax_temperature:
                 The temperature for the softmax function. This is used to control the
@@ -10373,6 +10453,7 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
         self.n_estimators = n_estimators
         self.auto_scale_n_estimators = auto_scale_n_estimators
         self.categorical_features_indices = categorical_features_indices
+        self.group_col = group_col
         self.softmax_temperature = softmax_temperature
         self.balance_probabilities = balance_probabilities
         self.average_before_softmax = average_before_softmax
@@ -10550,16 +10631,20 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
 
         # Minimal preprocessing for prompt tuning
         reject_categoricals_for_differentiable_input(self.categorical_features_indices)
+        reject_group_col(self.group_col, "differentiable_input=True")
         n_features = X.shape[1]
         features = [
             Feature(name=f"f{i}", modality=FeatureModality.NUMERICAL)
             for i in range(n_features)
         ]
         self.inferred_feature_schema_ = FeatureSchema(features=features)
-        # A tensor holds no dates or strings, so these fit nothing; set anyway, so
-        # every predict path converts through them without first checking.
+        # A tensor holds no dates, strings or named columns, so these fit nothing;
+        # set anyway, so every predict path converts through them without first
+        # checking.
         self.date_transformer_ = DateTransformer().fit(X)
         self.text_transformer_ = TextTransformer().fit(X)
+        self.group_encoder_ = GroupIdEncoder().fit(X)
+        self.group_feature_index_ = None
         preprocessor_configs = [PreprocessorConfig("none", differentiable=True)]
 
         self.n_estimators_ = scale_n_estimators_for_feature_coverage(
@@ -10602,6 +10687,11 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
         categorical_indices = resolve_categorical_features_indices(
             X, self.categorical_features_indices
         )
+        # Before the expansion below, so each group key is read as the caller
+        # passed it rather than as the features a date or text column becomes.
+        self.group_encoder_ = GroupIdEncoder(group_col=self.group_col)
+        X = self.group_encoder_.fit_transform(X)
+        categorical_indices = self.group_encoder_.output_indices(categorical_indices)
         X, date_transformer, text_transformer, feature_names, categorical_indices = (
             expand_dates_and_text(
                 X,
@@ -10632,10 +10722,20 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
             min_unique_for_numerical=self.inference_config_.MIN_UNIQUE_FOR_NUMERICAL_FEATURES,
             min_cardinality_for_text=self.inference_config_.MIN_CARDINALITY_FOR_TEXT,
         )
+        # Numerical through cleaning, so neither the ordinal encoder nor the
+        # constant-column restore rewrites an unseen group's NaN; categorical
+        # after it, whatever the number of groups.
+        self.group_feature_index_ = self.group_encoder_.feature_index(feature_names)
+        feature_schema = as_group_feature(
+            feature_schema, self.group_feature_index_, FeatureModality.NUMERICAL
+        )
         X, ordinal_encoder, feature_schema = clean_data(
             X=X,
             feature_schema=feature_schema,
             passthrough_inf=self.get_inference_config().PASSTHROUGH_INF,
+        )
+        feature_schema = as_group_feature(
+            feature_schema, self.group_feature_index_, FeatureModality.CATEGORICAL
         )
         self.inferred_feature_schema_ = feature_schema
         self.ordinal_encoder_ = ordinal_encoder
@@ -10855,6 +10955,7 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
             no_refit: if True, the classifier will not be reinitialized when calling
                 fit multiple times.
         """
+        reject_group_col(self.group_col, "fit_from_preprocessed")
         if self.fit_mode != "batched":
             logging.warning(
                 "The model was not in 'batched' mode. "
@@ -10893,6 +10994,8 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
         # duration, like any fitted one.
         self.date_transformer_ = DateTransformer().fit(X_preprocessed[0])
         self.text_transformer_ = TextTransformer().fit(X_preprocessed[0])
+        self.group_encoder_ = GroupIdEncoder().fit(X_preprocessed[0])
+        self.group_feature_index_ = None
 
         self.n_estimators_ = len(configs[0])
         self.executor_ = InferenceEngineBatchedNoPreprocessing(
@@ -11061,6 +11164,7 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
             # (_raw_predict) before the per-member preprocessors run, so non-numeric
             # inputs (DataFrames, categoricals, NaNs) are handled identically.
             check_input_shape_matches(X_test, estimator=worker)
+            X_test = worker.group_encoder_.transform(X_test)  # noqa: PLW2901
             X_test = worker.date_transformer_.transform(X_test)  # noqa: PLW2901
             X_test = worker.text_transformer_.transform(X_test)  # noqa: PLW2901
             X_test = ensure_compatible_predict_input_sklearn(X_test, worker)  # noqa: PLW2901
@@ -11258,6 +11362,13 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
 
         assert isinstance(tuning_config_resolved, ClassifierTuningConfig)
 
+        if self.group_encoder_.group_columns_:
+            raise TabPFNValidationError(
+                "`tuning_config` cannot be combined with `group_col` yet: tuning "
+                "holds out random rows, not whole groups. Set `tuning_config=None` "
+                "or drop `group_col`."
+            )
+
         if self.eval_metric_ is ClassifierEvalMetrics.ROC_AUC:
             if tuning_config_resolved.tune_decision_thresholds:
                 raise ValueError(
@@ -11417,6 +11528,7 @@ class TabPFNClassifier(ClassifierMixin, BaseEstimator):
 
         if not self.differentiable_input:
             check_input_shape_matches(X, estimator=self)
+            X = self.group_encoder_.transform(X)
             X = self.date_transformer_.transform(X)
             X = self.text_transformer_.transform(X)
             X = ensure_compatible_predict_input_sklearn(X, self)
@@ -14458,10 +14570,10 @@ class InferenceConfig:
     the model, which can be significantly faster for large datasets (>10 k rows).
     When ``False`` (default), all preprocessing runs on CPU / sklearn as before.
 
-    Only ``quantile_uni*`` transforms are accelerated (the torch quantile
-    transformer only supports uniform output).  Other transforms stay on CPU
-    regardless of this flag.  SVD and shuffle always move to GPU / torch when this
-    flag is set."""
+    Only the ``quantile_uni*``, ``quantile_norm*``, ``squashing_scaler_*`` and
+    ``safepower`` transforms are accelerated.  Other transforms stay on CPU
+    regardless of this flag.  SVD and shuffle always move to GPU / torch when
+    this flag is set."""
 
     FEATURE_SUBSAMPLING_METHOD: Literal[
         "balanced",
@@ -17478,6 +17590,11 @@ from tabpfn.preprocessing.ensemble import (
     TabPFNEnsemblePreprocessor,
     scale_n_estimators_for_feature_coverage,
 )
+from tabpfn.preprocessing.group_ids import (
+    GroupIdEncoder,
+    as_group_feature,
+    reject_group_col,
+)
 from tabpfn.preprocessing.modality_detection import detect_feature_modalities
 from tabpfn.preprocessing.steps import (
     get_all_reshape_feature_distribution_preprocessors,
@@ -17648,6 +17765,14 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
     text_transformer_: TextTransformer
     """The transformer that expanded every text column before validation."""
 
+    group_encoder_: GroupIdEncoder
+    """The encoder that replaced the `group_col` columns with one categorical
+    feature, holding the key-to-code mapping fitted on the training rows."""
+
+    group_feature_index_: int | None
+    """Where the encoded group feature sits in the cleaned input, or `None`
+    without `group_col`."""
+
     categorical_features_indices_: list[int] | None
     """Declared categorical column positions after date/text expansion, including
     columns declared through pandas `category` dtype. Expanded source columns are
@@ -17672,6 +17797,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         n_estimators: int | Literal["auto"] = "auto",
         auto_scale_n_estimators: bool = True,
         categorical_features_indices: Sequence[int] | None = None,
+        group_col: str | list[str] | None = None,
         softmax_temperature: float | Literal["auto"] = "auto",
         average_before_softmax: bool = False,
         model_path: str
@@ -17754,6 +17880,19 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
                     model and the `.fit()`, consider setting the
                     `.categorical_features_indices` attribute after the model was
                     initialized and before `.fit()`.
+
+            group_col:
+                The label of the column that says which group a row belongs to,
+                e.g. a patient, or a list of labels whose joint value is one
+                composite key. The selected columns are replaced by one
+                categorical feature holding that key's integer code.
+
+                The codes are fitted on the training rows alone, every group
+                keeping its own; a key `fit` did not see becomes a missing
+                value. When set, `fit` and `predict` take a DataFrame holding
+                those columns and raise `ValueError` otherwise.
+                Combining it with `tuning_config`, `differentiable_input=True`
+                or `fit_from_preprocessed` raises `ValueError` too.
 
             softmax_temperature:
                 The temperature for the softmax function. This is used to control the
@@ -17996,6 +18135,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         self.n_estimators = n_estimators
         self.auto_scale_n_estimators = auto_scale_n_estimators
         self.categorical_features_indices = categorical_features_indices
+        self.group_col = group_col
         self.softmax_temperature = softmax_temperature
         self.average_before_softmax = average_before_softmax
         self.model_path = model_path
@@ -18291,6 +18431,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         # Minimal preprocessing for prompt tuning: no categorical features,
         # all-numerical schema, identity preprocessor that preserves grads.
         reject_categoricals_for_differentiable_input(self.categorical_features_indices)
+        reject_group_col(self.group_col, "differentiable_input=True")
         n_features = X.shape[1]
         # One Feature instance per column — list multiplication would share
         # the same dataclass and any later in-place update would leak across
@@ -18300,10 +18441,13 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             for _ in range(n_features)
         ]
         self.inferred_feature_schema_ = FeatureSchema(features=features)
-        # A tensor holds no dates or strings, so these fit nothing; set anyway, so
-        # every predict path converts through them without first checking.
+        # A tensor holds no dates, strings or named columns, so these fit nothing;
+        # set anyway, so every predict path converts through them without first
+        # checking.
         self.date_transformer_ = DateTransformer().fit(X)
         self.text_transformer_ = TextTransformer().fit(X)
+        self.group_encoder_ = GroupIdEncoder().fit(X)
+        self.group_feature_index_ = None
         self.n_features_in_ = n_features
 
         preprocessor_configs = [PreprocessorConfig("none", differentiable=True)]
@@ -18358,6 +18502,11 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         categorical_indices = resolve_categorical_features_indices(
             X, self.categorical_features_indices
         )
+        # Before the expansion below, so each group key is read as the caller
+        # passed it rather than as the features a date or text column becomes.
+        self.group_encoder_ = GroupIdEncoder(group_col=self.group_col)
+        X = self.group_encoder_.fit_transform(X)
+        categorical_indices = self.group_encoder_.output_indices(categorical_indices)
         X, date_transformer, text_transformer, feature_names, categorical_indices = (
             expand_dates_and_text(
                 X,
@@ -18389,10 +18538,20 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             min_unique_for_numerical=self.inference_config_.MIN_UNIQUE_FOR_NUMERICAL_FEATURES,
             min_cardinality_for_text=self.inference_config_.MIN_CARDINALITY_FOR_TEXT,
         )
+        # Numerical through cleaning, so neither the ordinal encoder nor the
+        # constant-column restore rewrites an unseen group's NaN; categorical
+        # after it, whatever the number of groups.
+        self.group_feature_index_ = self.group_encoder_.feature_index(feature_names)
+        feature_schema = as_group_feature(
+            feature_schema, self.group_feature_index_, FeatureModality.NUMERICAL
+        )
         X, ordinal_encoder, feature_schema = clean_data(
             X=X,
             feature_schema=feature_schema,
             passthrough_inf=self.get_inference_config().PASSTHROUGH_INF,
+        )
+        feature_schema = as_group_feature(
+            feature_schema, self.group_feature_index_, FeatureModality.CATEGORICAL
         )
         self.inferred_feature_schema_ = feature_schema
         self.ordinal_encoder_ = ordinal_encoder
@@ -18569,6 +18728,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             no_refit: if True, the classifier will not be reinitialized when calling
                 fit multiple times.
         """
+        reject_group_col(self.group_col, "fit_from_preprocessed")
         self.y_train_mean_ = y_train_mean
         self.y_train_std_ = y_train_std
         if self.fit_mode != "batched":
@@ -18601,6 +18761,8 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         # duration, like any fitted one.
         self.date_transformer_ = DateTransformer().fit(X_preprocessed[0])
         self.text_transformer_ = TextTransformer().fit(X_preprocessed[0])
+        self.group_encoder_ = GroupIdEncoder().fit(X_preprocessed[0])
+        self.group_feature_index_ = None
 
         self.n_estimators_ = len(configs[0])
         self.executor_ = InferenceEngineBatchedNoPreprocessing(
@@ -18891,6 +19053,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         # TODO: Move these at some point to InferenceEngine
         check_input_shape_matches(X, estimator=self)
+        X = self.group_encoder_.transform(X)
         X = self.date_transformer_.transform(X)
         X = self.text_transformer_.transform(X)
         X = ensure_compatible_predict_input_sklearn(X, self)
@@ -18989,6 +19152,13 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         if not tuning_config_resolved.calibrate_temperature:
             return
 
+        if self.group_encoder_.group_columns_:
+            raise TabPFNValidationError(
+                "`tuning_config` cannot be combined with `group_col` yet: tuning "
+                "holds out random rows, not whole groups. Set `tuning_config=None` "
+                "or drop `group_col`."
+            )
+
         holdout_folds = self._compute_holdout_validation_data(
             X=X,
             y=y,
@@ -19076,6 +19246,9 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             # are the untempered aggregated logits, with the per-estimator
             # `softmax_temperature` correctly still applied.
             check_input_shape_matches(X_holdout_NhF, estimator=tuning_regressor)
+            X_holdout_NhF = tuning_regressor.group_encoder_.transform(  # noqa: PLW2901
+                X_holdout_NhF
+            )
             X_holdout_NhF = tuning_regressor.date_transformer_.transform(  # noqa: PLW2901
                 X_holdout_NhF
             )
@@ -19388,6 +19561,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             # Clean X_test as the standard predict path does, so DataFrames,
             # categoricals and NaNs behave identically.
             check_input_shape_matches(X_test, estimator=worker)
+            X_test = worker.group_encoder_.transform(X_test)  # noqa: PLW2901
             X_test = worker.date_transformer_.transform(X_test)  # noqa: PLW2901
             X_test = worker.text_transformer_.transform(X_test)  # noqa: PLW2901
             X_test = ensure_compatible_predict_input_sklearn(X_test, worker)  # noqa: PLW2901
@@ -26464,10 +26638,9 @@ class ManyClassDecoder(nn.Module):
     """Attention-based retrieval decoder for many-class classification.
 
     Computes weighted (by attention score) average over one-hot encoded
-    train targets, then takes the log to obtain logits.  Supports arbitrary
-    class counts by chunking the value (one-hot) dimension into head_dim-sized
-    pieces and folding them into the batch dimension for a single flash-attention
-    call.
+    train targets, then takes the log to obtain logits. Supports any class
+    count by running one attention call per head_dim classes (see
+    `_class_attention`).
     """
 
     def __init__(
@@ -26500,7 +26673,7 @@ class ManyClassDecoder(nn.Module):
         train_keys_BNHD: torch.Tensor,  # (B, N, H, D)
         test_embeddings: torch.Tensor,  # (B, M, E)
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Project test rows to queries and match the keys' dtype to them."""
+        """Project test rows to scaled queries and match the keys' dtype to them."""
         q_BME = self.q_projection(test_embeddings)
         h, d = self.num_heads, self.head_dim
         q_BMHD = q_BME.view(*q_BME.shape[:2], h, d).contiguous()
@@ -26508,6 +26681,8 @@ class ManyClassDecoder(nn.Module):
         # under autocast are fp16/bf16 and must match q for the attention call.
         if train_keys_BNHD.dtype != q_BMHD.dtype:
             train_keys_BNHD = train_keys_BNHD.to(q_BMHD.dtype)
+        if self.softmax_scaling_layer is not None:
+            q_BMHD = self.softmax_scaling_layer(q_BMHD, train_keys_BNHD.shape[1])
         return q_BMHD, train_keys_BNHD
 
     @override
@@ -26532,18 +26707,11 @@ class ManyClassDecoder(nn.Module):
 
         if highest_target is None:
             highest_target = int(targets.max())
-        one_hot_targets_BNHT = (
-            F.one_hot(targets.long(), num_classes=highest_target + 1)
-            .to(dtype=q_BMHD.dtype)
-            .unsqueeze(2)
-            .expand(-1, -1, self.num_heads, -1)
-            .contiguous()
-        )
-        test_output_BMHT = _chunked_class_attention(
+        test_output_BMHT = _class_attention(
             q_BMHD,
             k_BNHD,
-            one_hot_targets_BNHT,
-            softmax_scaling_layer=self.softmax_scaling_layer,
+            targets.long(),
+            num_classes=highest_target + 1,
         )
         test_output_BMT = test_output_BMHT.mean(2)  # average over heads
 
@@ -26568,83 +26736,48 @@ class ManyClassDecoder(nn.Module):
         Collapsing by training label recovers the pre-log class average that
         `forward` turns into logits.
 
-        `forward` fuses this into a single attention kernel to avoid
-        materializing an O(N*M) tensor.
+        `forward` fuses this into attention kernels to avoid materializing
+        an O(N*M) tensor.
         """
         q_BMHD, k_BNHD = self._project_q(train_keys_BNHD, test_embeddings)
-        if self.softmax_scaling_layer is not None:
-            q_BMHD = self.softmax_scaling_layer(q_BMHD, k_BNHD.shape[1])
         scores_BHMN = torch.einsum("bmhd,bnhd->bhmn", q_BMHD, k_BNHD).float()
         scores_BHMN /= math.sqrt(self.head_dim)
         return torch.softmax(scores_BHMN, dim=-1).mean(dim=1)  # over heads -> (B, M, N)
 
 
-def _chunked_class_attention(
-    q_BSHD: torch.Tensor,
-    k_BJHD: torch.Tensor,
-    v_BJHT: torch.Tensor,
-    softmax_scaling_layer: nn.Module | None = None,
+def _class_attention(
+    q_BMHD: torch.Tensor,
+    k_BNHD: torch.Tensor,
+    targets_BN: torch.Tensor,
+    *,
+    num_classes: int,
 ) -> torch.Tensor:
-    """Run retrieval attention where the value dimension C may exceed head_dim D.
+    """Attention of test rows over the one-hot train targets: `(B, M, H, num_classes)`.
 
-    Splits V into head_dim-sized chunks along the class axis, folds the chunk
-    index into the batch dimension, and dispatches a single flash-attention call.
-    This avoids the O(N*M) memory cost of the math backend for any class count.
+    Runs one attention call per head_dim classes. Each call's values are the
+    one-hot columns of its classes, a `(B, N, head_dim)` tensor expanded over the
+    heads, so their size does not grow with the class count. Backends that need
+    contiguous inputs copy them over the heads, one chunk at a time.
 
     Args:
-        q_BSHD: Query tensor of shape (B, S, H, D) for test points.
-        k_BJHD: Key tensor of shape (B, J, H, D) for train points.
-        v_BJHT: Value tensor of shape (B, J, H, T) holding one-hot class
-            encodings; T may be larger than D.
-        softmax_scaling_layer: Optional scaling module to scale queries before SDPA.
-
-    Returns:
-        Output tensor of shape (B, S, H, T).
+        q_BMHD: Queries of the test rows.
+        k_BNHD: Keys of the train rows.
+        targets_BN: Integer class of each train row. A row that matches no
+            class id in `[0, num_classes)` gets no vote.
+        num_classes: Width of the class axis of the output.
     """
-    B, S, H, D = q_BSHD.shape
-    T = v_BJHT.shape[-1]
-    num_chunks = math.ceil(T / D)
-
-    # Pad V to a multiple of D along the class axis
-    pad = num_chunks * D - T
-    if pad > 0:
-        v_BJHT = F.pad(v_BJHT, (0, pad))
-
-    # Fold chunk index into batch dimension
-    J = v_BJHT.shape[1]
-    v_folded = (
-        v_BJHT.reshape(B, J, H, num_chunks, D)
-        .permute(0, 3, 1, 2, 4)
-        .reshape(B * num_chunks, J, H, D)
-        .contiguous()
-    )
-    q_folded = (
-        q_BSHD.unsqueeze(1)
-        .expand(-1, num_chunks, -1, -1, -1)
-        .reshape(B * num_chunks, S, H, D)
-        .contiguous()
-    )
-    k_folded = (
-        k_BJHD.unsqueeze(1)
-        .expand(-1, num_chunks, -1, -1, -1)
-        .reshape(B * num_chunks, J, H, D)
-        .contiguous()
-    )
-
-    # Single flash-attention call across all chunks
-    out_folded = _batched_scaled_dot_product_attention(
-        q_folded,
-        k_folded,
-        v_folded,
-        softmax_scaling_layer=softmax_scaling_layer,
-    )
-
-    # Unfold and trim padding: (B*K, S, H, D) -> (B, S, H, T)
-    return (
-        out_folded.reshape(B, num_chunks, S, H, D)
-        .permute(0, 2, 3, 1, 4)
-        .reshape(B, S, H, num_chunks * D)[..., :T]
-    )
+    head_dim, num_heads = q_BMHD.shape[-1], k_BNHD.shape[2]
+    chunks_BMHD = []
+    for first_class in range(0, num_classes, head_dim):
+        class_ids = torch.arange(
+            first_class, first_class + head_dim, device=targets_BN.device
+        )
+        v_BND = (targets_BN.unsqueeze(-1) == class_ids).to(q_BMHD.dtype)
+        v_BNHD = v_BND.unsqueeze(2).expand(-1, -1, num_heads, -1)
+        chunks_BMHD.append(
+            _batched_scaled_dot_product_attention(q_BMHD, k_BNHD, v_BNHD)
+        )
+    return torch.cat(chunks_BMHD, dim=-1)[..., :num_classes]
 
 
 class TrainableOrthogonalEmbedding(nn.Module):
@@ -26982,7 +27115,7 @@ class ICLAttention(nn.Module):
                 assert k.shape[2] == nh_test_heads, "cached key has wrong num heads"
                 assert v.shape[2] == nh_test_heads, "cached value has wrong num heads"
             if isinstance(cached_kv, QuantizedKVCacheEntry):
-                # The SDPA wrapper dequantizes unless a backend takes it as is.
+                # The SDPA wrapper folds the scales unless a backend takes it as is.
                 out = _batched_scaled_dot_product_attention(
                     q,
                     None,
@@ -29190,10 +29323,9 @@ class ManyClassDecoder(nn.Module):
     """Attention-based retrieval decoder for many-class classification.
 
     Computes weighted (by attention score) average over one-hot encoded
-    train targets, then takes the log to obtain logits.  Supports arbitrary
-    class counts by chunking the value (one-hot) dimension into head_dim-sized
-    pieces and folding them into the batch dimension for a single flash-attention
-    call.
+    train targets, then takes the log to obtain logits. Supports any class
+    count by running one attention call per head_dim classes (see
+    `_class_attention`).
     """
 
     def __init__(
@@ -29230,7 +29362,7 @@ class ManyClassDecoder(nn.Module):
         train_keys_BNHD: torch.Tensor,
         test_embeddings_BME: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Project test rows to per-head queries, and match the keys' dtype to them.
+        """Project test rows to scaled per-head queries, and match the keys' dtype.
 
         Mirrors the dtype guard in ICLAttention's cached path: keys built under
         autocast, or read back from the cache, may not match the query dtype.
@@ -29240,6 +29372,8 @@ class ManyClassDecoder(nn.Module):
         q_BMHD = q_BME.view(B, M, self.num_heads, self.head_dim).contiguous()
         if train_keys_BNHD.dtype != q_BMHD.dtype:
             train_keys_BNHD = train_keys_BNHD.to(q_BMHD.dtype)
+        if self.softmax_scaling_layer is not None:
+            q_BMHD = self.softmax_scaling_layer(q_BMHD, train_keys_BNHD.shape[1])
         return q_BMHD, train_keys_BNHD
 
     @override
@@ -29263,32 +29397,14 @@ class ManyClassDecoder(nn.Module):
             empty = test_embeddings_BME.new_empty((0, B, self.max_num_classes))
             return empty + (q_BMHD.sum() + train_keys_BNHD.sum()) * 0.0
 
-        # Mask out non-finite target rows. Those shouldn't contribute to the output
-        # and the .long conversion results in different values on different platforms.
-        is_finite_BN = torch.isfinite(targets_BN)
-        targets_long = torch.where(is_finite_BN, targets_BN.long(), 0)
-        # Only the classes present in the batch need a one-hot column; the rest
-        # are zero everywhere and are restored by the padding below. Narrowing
-        # the class axis shrinks the int64 one-hot and, since
-        # `_chunked_class_attention` runs `ceil(T / head_dim)` folded attention
-        # passes, can cut the attention cost by that factor.
-        one_hot_targets_BNT = torch.where(
-            is_finite_BN[..., None],
-            F.one_hot(targets_long, num_classes=num_present_classes),
-            0,
-        ).to(dtype=q_BMHD.dtype)
-
-        k_BNHD = train_keys_BNHD
-        one_hot_targets_BNHT = (
-            one_hot_targets_BNT.unsqueeze(2)
-            .expand(-1, -1, self.num_heads, -1)
-            .contiguous()
-        )
-        test_output_BMHT = _chunked_class_attention(
+        # Non-finite targets must not vote, and `.long()` maps them to different
+        # values on different platforms. -1 matches no class.
+        targets_BN = torch.where(torch.isfinite(targets_BN), targets_BN.long(), -1)
+        test_output_BMHT = _class_attention(
             q_BMHD,
-            k_BNHD,
-            one_hot_targets_BNHT,
-            softmax_scaling_layer=self.softmax_scaling_layer,
+            train_keys_BNHD,
+            targets_BN,
+            num_classes=num_present_classes,
         )
         test_output_BMT = test_output_BMHT.mean(2)  # average over heads
 
@@ -29313,82 +29429,50 @@ class ManyClassDecoder(nn.Module):
         `weights[..., n]` is the vote mass a test row places on train row `n`;
         non-negative and summing to 1 over the training axis. Collapsing it by
         training label recovers the pre-log class average that `forward` turns
-        into logits. `forward` fuses this into one attention kernel rather than
+        into logits. `forward` fuses this into attention kernels rather than
         materializing the O(N*M) tensor.
         """
         q_BMHD, train_keys_BNHD = self._project_queries(
             train_keys_BNHD, test_embeddings_BME
         )
-        if self.softmax_scaling_layer is not None:
-            q_BMHD = self.softmax_scaling_layer(q_BMHD, train_keys_BNHD.shape[1])
         scores_BHMN = torch.einsum("bmhd,bnhd->bhmn", q_BMHD, train_keys_BNHD).float()
         scores_BHMN /= math.sqrt(self.head_dim)
         return torch.softmax(scores_BHMN, dim=-1).mean(dim=1)
 
 
-def _chunked_class_attention(
-    q_BSHD: torch.Tensor,
-    k_BJHD: torch.Tensor,
-    v_BJHT: torch.Tensor,
-    softmax_scaling_layer: nn.Module | None = None,
+def _class_attention(
+    q_BMHD: torch.Tensor,
+    k_BNHD: torch.Tensor,
+    targets_BN: torch.Tensor,
+    *,
+    num_classes: int,
 ) -> torch.Tensor:
-    """Run retrieval attention where the value dimension C may exceed head_dim D.
+    """Attention of test rows over the one-hot train targets: `(B, M, H, num_classes)`.
 
-    Splits V into head_dim-sized chunks along the class axis, folds the chunk
-    index into the batch dimension, and dispatches a single flash-attention call.
-    This avoids the O(N*M) memory cost of the math backend for any class count.
+    Runs one attention call per head_dim classes. Each call's values are the
+    one-hot columns of its classes, a `(B, N, head_dim)` tensor expanded over the
+    heads, so their size does not grow with the class count. Backends that need
+    contiguous inputs copy them over the heads, one chunk at a time.
 
     Args:
-        q_BSHD: Query tensor of shape (B, S, H, D) for test points.
-        k_BJHD: Key tensor of shape (B, J, H, D) for train points.
-        v_BJHT: Value tensor of shape (B, J, H, T) holding one-hot class
-            encodings; T may be larger than D.
-        softmax_scaling_layer: Optional scaling module to scale queries before SDPA.
-
-    Returns:
-        Output tensor of shape (B, S, H, T).
+        q_BMHD: Queries of the test rows.
+        k_BNHD: Keys of the train rows.
+        targets_BN: Integer class of each train row. A row that matches no
+            class id in `[0, num_classes)` gets no vote.
+        num_classes: Width of the class axis of the output.
     """
-    B, S, H, D = q_BSHD.shape
-    T = v_BJHT.shape[-1]
-    num_chunks = math.ceil(T / D)
-
-    # Pad V to a multiple of D along the class axis
-    pad = num_chunks * D - T
-    if pad > 0:
-        v_BJHT = F.pad(v_BJHT, (0, pad))
-
-    # Fold chunk index into batch dimension
-    J = v_BJHT.shape[1]
-    v_folded = (
-        v_BJHT.reshape(B, J, H, num_chunks, D)
-        .permute(0, 3, 1, 2, 4)
-        .reshape(B * num_chunks, J, H, D)
-        .contiguous()
-    )
-    q_folded = (
-        q_BSHD.unsqueeze(1)
-        .expand(-1, num_chunks, -1, -1, -1)
-        .reshape(B * num_chunks, S, H, D)
-        .contiguous()
-    )
-    k_folded = (
-        k_BJHD.unsqueeze(1)
-        .expand(-1, num_chunks, -1, -1, -1)
-        .reshape(B * num_chunks, J, H, D)
-        .contiguous()
-    )
-
-    # Single flash-attention call across all chunks
-    out_folded = _batched_scaled_dot_product_attention(
-        q_folded, k_folded, v_folded, softmax_scaling_layer=softmax_scaling_layer
-    )
-
-    # Unfold and trim padding: (B*K, S, H, D) -> (B, S, H, T)
-    return (
-        out_folded.reshape(B, num_chunks, S, H, D)
-        .permute(0, 2, 3, 1, 4)
-        .reshape(B, S, H, num_chunks * D)[..., :T]
-    )
+    head_dim, num_heads = q_BMHD.shape[-1], k_BNHD.shape[2]
+    chunks_BMHD = []
+    for first_class in range(0, num_classes, head_dim):
+        class_ids = torch.arange(
+            first_class, first_class + head_dim, device=targets_BN.device
+        )
+        v_BND = (targets_BN.unsqueeze(-1) == class_ids).to(q_BMHD.dtype)
+        v_BNHD = v_BND.unsqueeze(2).expand(-1, -1, num_heads, -1)
+        chunks_BMHD.append(
+            _batched_scaled_dot_product_attention(q_BMHD, k_BNHD, v_BNHD)
+        )
+    return torch.cat(chunks_BMHD, dim=-1)[..., :num_classes]
 
 
 class TrainableOrthogonalEmbedding(nn.Module):
@@ -29669,7 +29753,8 @@ def _batched_scaled_dot_product_attention(
         _backends_override (list[SDPBackend] | None): Optional list of SDP backends.
         quantized_kv (QuantizedKVCacheEntry | None): Keys and values as a
             quantized cache entry, in place of `k_BSJD`/`v_BSJD`. The dispatcher
-            dequantizes it unless the backend it picks consumes it as stored.
+            casts it and folds its scales into q and the output, unless the
+            backend it picks consumes it as stored.
 
     Returns:
         torch.Tensor: Attention output, shape (B, S, H, D).
@@ -29911,7 +29996,7 @@ class ICLAttention(nn.Module):
                 assert k.shape[2] == nh_test_heads, "cached key has wrong num heads"
                 assert v.shape[2] == nh_test_heads, "cached value has wrong num heads"
             if isinstance(cached_kv, QuantizedKVCacheEntry):
-                # The SDPA wrapper dequantizes unless a backend takes it as is.
+                # The SDPA wrapper folds the scales unless a backend takes it as is.
                 out = _batched_scaled_dot_product_attention(
                     q,
                     None,
@@ -32074,8 +32159,11 @@ class AttentionBackend(Protocol):
 
     All tensors use the ``(B, S, H, D)`` layout of
     ``shared.scaled_dot_product_attention``. Backends receive dense
-    ``k``/``v`` — the SDPA wrapper dequantizes a quantized KV cache entry
-    exactly once, before dispatch. A backend that wants the entry *as
+    ``k``/``v``. For a quantized KV cache entry, ``k``/``v`` are the stored
+    values cast to q's dtype, q is multiplied by the key scale, and the
+    wrapper multiplies the output by the value scale. So ``run`` must depend
+    on q and k only through ``q @ k^T`` and be linear in v, as standard
+    softmax attention is. A backend that wants the entry *as
     stored* (to feed its kernel without materializing a dense copy) sets
     the class attribute ``consumes_quantized_kv = True``; it then receives
     ``quantized_kv`` with ``k``/``v`` as ``None`` whenever the call carries
@@ -33680,7 +33768,7 @@ class FA3Backend(AttentionBackend):
         The threshold compares ``max(seq_q, seq_kv)`` so cross-attention with
         small Q against a large K (test queries vs train cache) still routes
         through FA3; unknown (None) lengths count as 0, i.e. never argue for
-        FA3. A quantized KV cache entry is fine: the SDPA wrapper dequantizes
+        FA3. A quantized KV cache entry is fine: the SDPA wrapper casts it
         to q's dtype, which is what the eligibility check validates.
         """
         max_seq_len = max(spec.seq_len_q or 0, spec.seq_len_kv or 0)
@@ -33696,7 +33784,7 @@ class FA3Backend(AttentionBackend):
         v_BSJD: torch.Tensor | None,
         **_informational: Any,  # forward-compat context; safe to ignore
     ) -> torch.Tensor:
-        """Run FA3 (k/v arrive dense; the SDPA wrapper dequantizes)."""
+        """Run FA3 (k/v arrive dense from the SDPA wrapper)."""
         assert k_BSJD is not None
         assert v_BSJD is not None
         return fa3_attn_func(
@@ -33952,7 +34040,7 @@ class MLXBackend(AttentionBackend):
         v_BSJD: torch.Tensor | None,
         **_informational: Any,  # forward-compat context; safe to ignore
     ) -> torch.Tensor:
-        """Run MLX attention (k/v arrive dense; the SDPA wrapper dequantizes)."""
+        """Run MLX attention (k/v arrive dense from the SDPA wrapper)."""
         assert k_BSJD is not None
         assert v_BSJD is not None
         out_BHSD = flash_attention_mlx(
@@ -34024,8 +34112,9 @@ def scaled_dot_product_attention(
     ``quantized_kv`` supplies the keys/values as a quantized cache entry
     instead of ``k_BSJD``/``v_BSJD``.
 
-    Dequantization happens exactly once, here: whoever takes the call
-    receives dense ``k``/``v`` — unless it is a backend declaring
+    A quantized entry is handled exactly once, here: whoever takes the call
+    receives dense ``k``/``v`` cast to q's dtype, with the scales folded into
+    q and the output — unless it is a backend declaring
     ``consumes_quantized_kv = True``, which receives the entry as stored.
     """
     if isinstance(backend, str):  # "auto"
@@ -34034,16 +34123,47 @@ def scaled_dot_product_attention(
         )
     record_attention_backend(backend)
 
-    if quantized_kv is not None and not (
-        backend is not None and getattr(backend, "consumes_quantized_kv", False)
+    if quantized_kv is not None and not getattr(
+        backend, "consumes_quantized_kv", False
     ):
-        entry = quantized_kv.dequantize(q_BSHD.dtype)
-        k_BSJD, v_BSJD = entry.key, entry.value
-        quantized_kv = None
+        return _attend_to_quantized_kv(
+            q_BSHD, quantized_kv, backend, _backends_override
+        )
 
     if backend is not None:
         return backend.run(q_BSHD, k_BSJD, v_BSJD, quantized_kv=quantized_kv)
     return _torch_sdpa(q_BSHD, k_BSJD, v_BSJD, _backends_override)
+
+
+def _attend_to_quantized_kv(
+    q_BSHD: torch.Tensor,
+    quantized_kv: QuantizedKVCacheEntry,
+    backend: AttentionBackend | None,
+    _backends_override: list[SDPBackend] | None,
+) -> torch.Tensor:
+    """Attention over a quantized entry, with its scales folded into q and the output.
+
+    ``softmax((q * s_k) k_q^T) (v_q) * s_v`` equals attention over the dequantized
+    keys and values, so the cache is only cast to q's dtype, never scaled. The
+    scales are scalars or ``(B, 1, 1, 1)``, which broadcast over ``(B, S, H, D)``.
+    """
+    dtype = q_BSHD.dtype
+    assert quantized_kv.key is not None
+    assert quantized_kv.value is not None
+    assert quantized_kv.key_scale is not None
+    assert quantized_kv.value_scale is not None
+    # Per-head or per-token scales would broadcast silently into a wrong result.
+    batch_scale = (q_BSHD.shape[0], 1, 1, 1)
+    for scale in (quantized_kv.key_scale, quantized_kv.value_scale):
+        assert scale.ndim == 0 or scale.shape == batch_scale, scale.shape
+    q_BSHD = q_BSHD * quantized_kv.key_scale.to(dtype)
+    k_BSJD = quantized_kv.key.to(dtype)
+    v_BSJD = quantized_kv.value.to(dtype)
+    if backend is not None:
+        out_BSHD = backend.run(q_BSHD, k_BSJD, v_BSJD)
+    else:
+        out_BSHD = _torch_sdpa(q_BSHD, k_BSJD, v_BSJD, _backends_override)
+    return out_BSHD * quantized_kv.value_scale.to(dtype)
 
 
 # MATH is the reference implementation. Keeping it as a final fallback
@@ -34282,7 +34402,7 @@ class TorchMPSBackend(AttentionBackend):
         v_BSJD: torch.Tensor | None,
         **_informational: Any,  # forward-compat context; safe to ignore
     ) -> torch.Tensor:
-        """Run MPS SDPA (k/v arrive dense; the SDPA wrapper dequantizes)."""
+        """Run MPS SDPA (k/v arrive dense from the SDPA wrapper)."""
         assert k_BSJD is not None
         assert v_BSJD is not None
         out_BHSD = torch_mps_sdpa(
@@ -40997,6 +41117,7 @@ class GPUTransformType(str, Enum):
 
     QUANTILE = "quantile"
     SQUASHING_SCALER = "squashing_scaler"
+    SAFE_POWER = "safe_power"
 
 
 @dataclasses.dataclass
@@ -41019,6 +41140,7 @@ class Feature:
             the steps run but which carry more than one distinct non-finite
             value (so they are genuinely non-constant once restored). Honoured by
             :class:`RemoveConstantFeaturesStep`.
+        is_group_id: Whether this is the feature that ``group_col`` encodes.
     """
 
     name: str
@@ -41026,6 +41148,7 @@ class Feature:
     scheduled_gpu_transform: GPUTransformType | None = None
     ancestor: str | None = None
     non_constant_with_inf: bool = False
+    is_group_id: bool = False
 
 
 @dataclasses.dataclass
@@ -41120,6 +41243,14 @@ class FeatureSchema:
             i
             for i, f in enumerate(self.features)
             if f.scheduled_gpu_transform == GPUTransformType.SQUASHING_SCALER
+        ]
+
+    def get_indices_marked_for_gpu_safe_power_transform(self) -> list[int]:
+        """Get column indices marked for GPU safe power transform."""
+        return [
+            i
+            for i, f in enumerate(self.features)
+            if f.scheduled_gpu_transform == GPUTransformType.SAFE_POWER
         ]
 
     def clear_gpu_transform_marks(self) -> FeatureSchema:
@@ -43285,6 +43416,267 @@ def scale_n_estimators_for_feature_coverage(
 
 
 ================================================
+FILE: src/tabpfn/preprocessing/group_ids.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Replace an input's group-key columns with one encoded categorical feature.
+
+`group_col` names the columns that say which group a row belongs to, e.g. a
+patient or a site. Their joint value is one composite key, encoded as an integer
+code fitted on the training rows: a key `fit` did not see becomes `NaN`.
+
+A key is a value to look up, never a number to compare: keys match by equality,
+not by closeness, so two floats that differ in the last bit are two groups.
+
+Only `TabPFNClassifier` and `TabPFNRegressor` run this, before `DateTransformer`,
+so a group column is read as the caller passed it. Columns are selected by label
+here, unlike everywhere else in the preprocessing, because that is what
+`group_col` names. A label that repeats is refused.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+from typing import TYPE_CHECKING
+
+import numpy as np
+import pandas as pd
+from sklearn.exceptions import NotFittedError
+
+from tabpfn.errors import TabPFNValidationError
+from tabpfn.preprocessing.datamodel import (
+    FeatureModality,
+    FeatureSchema,
+    make_names_unique,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from tabpfn.constants import XType
+
+__all__ = [
+    "GROUP_FEATURE_NAME",
+    "GroupIdEncoder",
+    "as_group_feature",
+    "reject_group_col",
+]
+
+#: Label of the feature the group columns are replaced with, made unique against
+#: the labels that stay.
+GROUP_FEATURE_NAME = "group_id"
+
+
+class GroupIdEncoder:
+    """Encodes the composite group key of each row as one categorical feature.
+
+    Used like `DateTransformer`, and right before it: `fit_transform` once at fit
+    time, keep the instance as `group_encoder_`, `transform` at predict time.
+    With no column selected every input passes through unchanged, whatever its
+    type.
+
+    Args:
+        group_col: The label of the group column, several labels whose joint
+            value is one composite key, or `None` for no grouping. An empty
+            sequence selects nothing, like `None`.
+
+    Attributes:
+        group_columns_: The selected labels, in the order given. Empty when
+            nothing is selected.
+        positions_: Where each of `group_columns_` sat in the fit input.
+        keys_: The fitted mapping: the training rows' composite keys,
+            deduplicated, each one's position being its code.
+        feature_name_: The label of the encoded feature, appended last.
+    """
+
+    group_columns_: list[str]
+    positions_: list[int]
+    keys_: pd.MultiIndex | None
+    feature_name_: str | None
+
+    def __init__(self, group_col: str | Sequence[str] | None = None) -> None:
+        self.group_col = group_col
+
+    def fit(self, X: XType) -> GroupIdEncoder:
+        """Give every composite key in `X` a code, and return itself."""
+        self._fit(X)
+        return self
+
+    def fit_transform(self, X: XType) -> XType:
+        """`fit(X).transform(X)`, reading the group columns only once.
+
+        Returns:
+            `X` with the group columns replaced by the encoded feature, appended
+            last. `X` itself when no column is selected.
+
+        Raises:
+            TabPFNValidationError: If a column is selected and `X` is not a
+                `DataFrame`, or does not hold every selected label exactly once.
+        """
+        codes = self._fit(X)
+        if codes is None:
+            return X
+        return self._replace(X, codes)
+
+    def transform(self, X: XType) -> XType:
+        """Encode `X`'s keys with the mapping `fit` built, so the width holds.
+
+        A key the training rows did not hold has no code and becomes `NaN`; the
+        mapping itself is left as `fit` built it.
+
+        Raises:
+            NotFittedError: If `fit` has not run yet.
+            TabPFNValidationError: As `fit_transform`.
+        """
+        self._check_is_fitted()
+        if self.keys_ is None:
+            return X
+        _, keys = self._keys(X)
+        indexer = self.keys_.get_indexer(keys)
+        codes = indexer.astype(np.float64)
+        codes[indexer < 0] = np.nan
+        return self._replace(X, codes)
+
+    def output_indices(self, indices: Sequence[int] | None) -> list[int] | None:
+        """Where each of `indices`, input positions, sits in the replaced frame.
+
+        A kept column shifts down by however many group columns sat ahead of it.
+        A selected position is dropped rather than moved: its column is gone. The
+        encoded feature is not added either: the estimator sets its modality
+        itself, around cleaning.
+        """
+        self._check_is_fitted()
+        if indices is None:
+            return None
+        if self.keys_ is None:
+            return list(indices)
+        dropped = set(self.positions_)
+        return [
+            i - sum(1 for p in self.positions_ if p < i)
+            for i in indices
+            if i not in dropped
+        ]
+
+    def feature_index(self, feature_names: Sequence[str] | None) -> int | None:
+        """The encoded feature's position among `feature_names`, `None` if none."""
+        self._check_is_fitted()
+        if self.feature_name_ is None:
+            return None
+        assert feature_names is not None, "the fit input was not a DataFrame"
+        return list(feature_names).index(self.feature_name_)
+
+    def _check_is_fitted(self) -> None:
+        # By hand: sklearn's `check_is_fitted` requires a `BaseEstimator`.
+        if not hasattr(self, "keys_"):
+            raise NotFittedError(
+                f"This {type(self).__name__} instance is not fitted yet. Call "
+                "`fit` before using `transform`."
+            )
+
+    def _fit(self, X: XType) -> np.ndarray | None:
+        """Fit the mapping; return the training rows' codes, `None` for no grouping."""
+        # Cleared first, so refitting without a grouping still forgets the last fit.
+        self.group_columns_ = _resolve_group_col(self.group_col)
+        self.positions_ = []
+        self.keys_ = None
+        self.feature_name_ = None
+        if not self.group_columns_:
+            return None
+
+        self.positions_, keys = self._keys(X)
+        kept = [
+            str(label)
+            for i, label in enumerate(X.columns)
+            if i not in set(self.positions_)
+        ]
+        self.feature_name_ = make_names_unique([GROUP_FEATURE_NAME], existing=kept)[0]
+        codes, self.keys_ = pd.factorize(keys)
+        return codes.astype(np.float64)
+
+    def _keys(self, X: XType) -> tuple[list[int], pd.MultiIndex]:
+        """Where the group columns sit in `X`, and the composite key of every row."""
+        if not isinstance(X, pd.DataFrame):
+            raise TabPFNValidationError(
+                f"`group_col` selects the columns {self.group_columns_} by label, so "
+                f"fit and predict input has to be a DataFrame; got {type(X).__name__}."
+            )
+        positions = _locate(X, self.group_columns_)
+        return positions, pd.MultiIndex.from_frame(X.loc[:, self.group_columns_])
+
+    def _replace(self, X: pd.DataFrame, codes: np.ndarray) -> pd.DataFrame:
+        """Drop the group columns and append the encoded feature, leaving `X` alone."""
+        out = X.drop(columns=self.group_columns_)
+        # Positional, so the appended values keep the caller's row order whatever
+        # the frame's own index holds.
+        out.insert(out.shape[1], self.feature_name_, codes)
+        return out
+
+
+def as_group_feature(
+    feature_schema: FeatureSchema, index: int | None, modality: FeatureModality
+) -> FeatureSchema:
+    """`feature_schema` with the feature at `index` marked as the group feature."""
+    if index is None:
+        return feature_schema
+    features = list(feature_schema.features)
+    features[index] = dataclasses.replace(
+        features[index], modality=modality, is_group_id=True
+    )
+    return FeatureSchema(features=features)
+
+
+def reject_group_col(group_col: str | Sequence[str] | None, path: str) -> None:
+    """Raise if `group_col` selects a column, for a `path` that does not encode it."""
+    if _resolve_group_col(group_col):
+        raise TabPFNValidationError(
+            f"`group_col` is not supported with {path}; set `group_col=None`."
+        )
+
+
+def _resolve_group_col(group_col: str | Sequence[str] | None) -> list[str]:
+    """Read `group_col` as the list of labels it selects, refusing anything else."""
+    if group_col is None:
+        return []
+    if isinstance(group_col, str):
+        return [group_col]
+    if not isinstance(group_col, (list, tuple)) or not all(
+        isinstance(label, str) for label in group_col
+    ):
+        raise TabPFNValidationError(
+            f"`group_col` must be a column label, a list of them, or None; got "
+            f"{group_col!r} ({type(group_col).__name__})."
+        )
+    labels = list(group_col)
+    repeated = sorted({label for label in labels if labels.count(label) > 1})
+    if repeated:
+        raise TabPFNValidationError(
+            f"`group_col` names these columns more than once: {repeated}. A column "
+            "adds nothing to the composite key twice over; name each one once."
+        )
+    return labels
+
+
+def _locate(X: pd.DataFrame, labels: Sequence[str]) -> list[int]:
+    """The position of each of `labels` in `X`, refusing a missing or repeated one."""
+    counts = X.columns.value_counts()
+    missing = [label for label in labels if counts.get(label, 0) == 0]
+    if missing:
+        raise TabPFNValidationError(
+            f"`group_col` selects columns that are not in the input: {missing}. "
+            f"The input holds {[str(label) for label in X.columns]}."
+        )
+    repeated = [label for label in labels if counts[label] > 1]
+    if repeated:
+        raise TabPFNValidationError(
+            f"`group_col` selects column labels that the input holds more than "
+            f"once: {repeated}. Rename them so each one names a single column."
+        )
+    return [X.columns.get_loc(label) for label in labels]
+
+
+
+================================================
 FILE: src/tabpfn/preprocessing/label_encoder.py
 ================================================
 #  Copyright (c) Prior Labs GmbH 2026.
@@ -43781,7 +44173,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from tabpfn.preprocessing.datamodel import GPUTransformType
 from tabpfn.preprocessing.pipeline_interface import (
     PreprocessingPipeline,
     PreprocessingStep,
@@ -43798,8 +44189,7 @@ from tabpfn.preprocessing.steps import (
     ShuffleFeaturesStep,
 )
 from tabpfn.preprocessing.torch.gpu_preprocessing_metadata import (
-    is_gpu_quantile_eligible,
-    is_gpu_squashing_scaler_eligible,
+    get_gpu_transform_type,
 )
 
 if TYPE_CHECKING:
@@ -43832,7 +44222,7 @@ def create_preprocessing_pipeline(
     Args:
         config: Ensemble configuration.
         random_state: Random state for reproducibility.
-        enable_gpu_preprocessing: When True, the quantile transform (if GPU-
+        enable_gpu_preprocessing: When True, the reshape transform (if GPU-
             eligible), SVD, and shuffle steps are omitted from the CPU pipeline
             because they will run on GPU instead.
     """
@@ -43858,12 +44248,9 @@ def create_preprocessing_pipeline(
     # still runs on CPU (handling categorical reclassification,
     # append_to_original) but uses "none" (identity) as the transform so the
     # actual work happens on GPU.
-    schedule_gpu_transform: GPUTransformType | None = None
-    if enable_gpu_preprocessing:
-        if is_gpu_quantile_eligible(pconfig.name):
-            schedule_gpu_transform = GPUTransformType.QUANTILE
-        elif is_gpu_squashing_scaler_eligible(pconfig.name):
-            schedule_gpu_transform = GPUTransformType.SQUASHING_SCALER
+    schedule_gpu_transform = (
+        get_gpu_transform_type(pconfig.name) if enable_gpu_preprocessing else None
+    )
 
     if pconfig.differentiable:
         steps.append(DifferentiableZNormStep())
@@ -46019,6 +46406,7 @@ from tabpfn.preprocessing.steps.preprocessing_helpers import (
 from tabpfn.utils import infer_random_state
 
 ONE_HOT_ENCODER_NAME = "one_hot_encoder"
+ORDINAL_ENCODER_NAME = "ordinal_encoder"
 
 # Per-column ``Feature`` metadata carried onto columns that map 1:1 from input to
 # output. ``name`` and ``modality`` are excluded: the rebuilt output schema sets
@@ -46154,7 +46542,36 @@ def _carry_over_input_feature_metadata(
             **{attr: getattr(in_feat, attr) for attr in _CARRIED_FEATURE_FIELDS},
         )
 
+    if column_transformer is not None:
+        _carry_over_group_flag(input_schema, new_features, column_transformer)
+
     return FeatureSchema(features=new_features)
+
+
+def _carry_over_group_flag(
+    input_schema: FeatureSchema,
+    new_features: list[Feature],
+    column_transformer: ColumnTransformer,
+) -> None:
+    """Keep `is_group_id` on the ordinal-encoded columns, in place.
+
+    An ordinal-encoded column is still the same feature; the other carried fields
+    describe the raw values it no longer holds. One-hot columns are not the
+    feature, even a binary one's single column, so they drop the flag.
+    """
+    if ORDINAL_ENCODER_NAME not in column_transformer.output_indices_:
+        return
+    cols = next(
+        c for n, _, c in column_transformer.transformers_ if n == ORDINAL_ENCODER_NAME
+    )
+    out_positions = range(len(new_features))[
+        column_transformer.output_indices_[ORDINAL_ENCODER_NAME]
+    ]
+    for in_idx, out_idx in zip(cols, out_positions, strict=True):
+        new_features[out_idx] = dataclasses.replace(
+            new_features[out_idx],
+            is_group_id=input_schema.features[in_idx].is_group_id,
+        )
 
 
 class EncodeCategoricalFeaturesStep(PreprocessingStep):
@@ -46228,7 +46645,7 @@ class EncodeCategoricalFeaturesStep(PreprocessingStep):
             ct = EfficientColumnTransformer(
                 [
                     (
-                        "ordinal_encoder",
+                        ORDINAL_ENCODER_NAME,
                         OrdinalEncoder(
                             handle_unknown="use_encoded_value",
                             unknown_value=np.nan,
@@ -46305,7 +46722,9 @@ class EncodeCategoricalFeaturesStep(PreprocessingStep):
             if self.categorical_transform_name.endswith("_shuffled"):
                 for col_ix in categorical_features:
                     col_cats = len(
-                        ct.named_transformers_["ordinal_encoder"].categories_[col_ix],
+                        ct.named_transformers_[ORDINAL_ENCODER_NAME].categories_[
+                            col_ix
+                        ],
                     )
                     perm = rng.permutation(col_cats)
                     self.random_mappings_[col_ix] = perm
@@ -46368,7 +46787,9 @@ class EncodeCategoricalFeaturesStep(PreprocessingStep):
             if self.categorical_transform_name.endswith("_shuffled"):
                 for col_ix in categorical_features:
                     col_cats = len(
-                        ct.named_transformers_["ordinal_encoder"].categories_[col_ix],
+                        ct.named_transformers_[ORDINAL_ENCODER_NAME].categories_[
+                            col_ix
+                        ],
                     )
                     perm = rng.permutation(col_cats)
                     self.random_mappings_[col_ix] = perm
@@ -47801,6 +48222,7 @@ class ReshapeFeatureDistributionsStep(PreprocessingStep):
             names=_build_reshape_output_names(feature_schema, layout),
         )
         self._set_ancestors(new_schema, feature_schema, layout)
+        self._keep_group_flag(new_schema, feature_schema, layout)
 
         # A transform scheduled onto the GPU leaves "none" behind on this side, which
         # the registry maps to the identity `FunctionTransformer`. Then the only thing
@@ -47843,6 +48265,20 @@ class ReshapeFeatureDistributionsStep(PreprocessingStep):
                 )
 
         return self.transformer_, new_schema
+
+    def _keep_group_flag(
+        self,
+        new_schema: FeatureSchema,
+        old_schema: FeatureSchema,
+        layout: list[_ReshapeColumn],
+    ) -> None:
+        """Keep `is_group_id` on the columns passed through unchanged, in place."""
+        for idx, column in enumerate(layout):
+            if column.is_passthrough:
+                source = old_schema.features[column.source_ix]
+                new_schema.features[idx] = dataclasses.replace(
+                    new_schema.features[idx], is_group_id=source.is_group_id
+                )
 
     def _set_ancestors(
         self,
@@ -48386,6 +48822,12 @@ def _yeojohnson_inverse_transform(x: np.ndarray, lmbda: float) -> np.ndarray:
     return x_inv
 
 
+def _is_constant_feature(var: float, mean: float, n_samples: int) -> bool:
+    """Near-zero variance test of sklearn's ``_is_constant_feature``."""
+    eps = np.finfo(np.float64).eps
+    return var <= n_samples * eps * var + (n_samples * mean * eps) ** 2
+
+
 class SafePowerTransformer(PowerTransformer):
     """Variant of PowerTransformer that uses the scipy yeo-johnson functions
     which have been fixed to avoid overflow issues.
@@ -48408,6 +48850,11 @@ class SafePowerTransformer(PowerTransformer):
         # the computation of lambda is influenced by NaNs so we need to
         # get rid of them
         x = x[~np.isnan(x)]
+        # sklearn >= 1.3 skips the search only for constant columns without NaNs.
+        # On a constant column the search optimises rounding noise, so apply
+        # sklearn's test to the observed values here, for every sklearn version.
+        if x.size and _is_constant_feature(x.var(), x.mean(), x.size):
+            return 1.0
         _, lmbda = _yeojohnson(x, lmbda=None)
         return lmbda  # type: ignore
 
@@ -49093,6 +49540,7 @@ from tabpfn.preprocessing.steps.adaptive_quantile_transformer import (
 )
 from tabpfn.preprocessing.torch.gpu_preprocessing_metadata import (
     compute_effective_n_quantiles,
+    get_quantile_output_distribution,
     get_squashing_scaler_max_absolute_value,
 )
 from tabpfn.preprocessing.torch.pipeline_interface import (
@@ -49104,6 +49552,7 @@ from tabpfn.preprocessing.torch.steps import (
     TorchAddSVDFeaturesStep,
     TorchRandomSignFlipStep,
     TorchSelectiveQuantileTransformerStep,
+    TorchSelectiveSafePowerStep,
     TorchSelectiveSquashingScalerStep,
     TorchShuffleFeaturesStep,
     TorchSoftClipOutliersStep,
@@ -49130,9 +49579,9 @@ def create_gpu_preprocessing_pipeline(
     Args:
         config: Ensemble configuration.
         keep_fitted_cache: Whether to keep fitted state for cache reuse.
-        enable_gpu_preprocessing: When True, adds quantile transform, SVD, and
-            shuffle steps.  Requires ``feature_schema`` (to read GPU quantile
-            target annotations) and ``n_train_samples``.
+        enable_gpu_preprocessing: When True, adds the scheduled reshape
+            transform, SVD, and shuffle steps.  Requires ``feature_schema`` (to
+            read GPU transform annotations) and ``n_train_samples``.
         feature_schema: Feature schema from the CPU preprocessing output.
             Used to read ``scheduled_gpu_transform`` column annotations.
         n_train_samples: Number of training samples (after subsampling).
@@ -49158,6 +49607,9 @@ def create_gpu_preprocessing_pipeline(
                         n_quantiles=n_quantiles,
                         target_column_indices=quantile_target_indices,
                         extrapolate_ratio=extrapolate_ratio,
+                        output_distribution=get_quantile_output_distribution(
+                            pconfig.name
+                        ),
                     ),
                     None,  # operates on explicit indices, receives full tensor
                 )
@@ -49176,6 +49628,19 @@ def create_gpu_preprocessing_pipeline(
                     TorchSelectiveSquashingScalerStep(
                         max_absolute_value=max_absolute_value,
                         target_column_indices=squashing_scaler_target_indices,
+                    ),
+                    None,  # operates on explicit indices, receives full tensor
+                )
+            )
+
+        safe_power_target_indices = (
+            feature_schema.get_indices_marked_for_gpu_safe_power_transform()
+        )
+        if safe_power_target_indices:
+            steps.append(
+                (
+                    TorchSelectiveSafePowerStep(
+                        target_column_indices=safe_power_target_indices
                     ),
                     None,  # operates on explicit indices, receives full tensor
                 )
@@ -49253,19 +49718,23 @@ FILE: src/tabpfn/preprocessing/torch/gpu_preprocessing_metadata.py
 
 from __future__ import annotations
 
+from typing import Literal
+
+from tabpfn.preprocessing.datamodel import GPUTransformType
 from tabpfn.preprocessing.steps.adaptive_quantile_transformer import (
     compute_effective_n_quantiles as _compute_effective_n_quantiles,
     get_user_n_quantiles_for_preset,
 )
 
-_GPU_ELIGIBLE_QUANTILE_TRANSFORMS = frozenset(
-    {
-        "quantile_uni",
-        "quantile_uni_coarse",
-        "quantile_uni_fine",
-        "quantile_uni_extrapolate",
-    }
-)
+_GPU_ELIGIBLE_QUANTILE_TRANSFORMS: dict[str, Literal["uniform", "normal"]] = {
+    "quantile_uni": "uniform",
+    "quantile_uni_coarse": "uniform",
+    "quantile_uni_fine": "uniform",
+    "quantile_uni_extrapolate": "uniform",
+    "quantile_norm": "normal",
+    "quantile_norm_coarse": "normal",
+    "quantile_norm_fine": "normal",
+}
 
 _GPU_ELIGIBLE_SQUASHING_SCALER_TRANSFORMS: dict[str, float] = {
     "squashing_scaler_default": 3.0,
@@ -49274,16 +49743,36 @@ _GPU_ELIGIBLE_SQUASHING_SCALER_TRANSFORMS: dict[str, float] = {
 
 
 def is_gpu_quantile_eligible(transform_name: str) -> bool:
-    """Check if a transform name can be accelerated on GPU.
-
-    Currently, only the quantile_uni* transforms are eligible for GPU acceleration.
-    """
+    """Check if a quantile transform name can be accelerated on GPU."""
     return transform_name in _GPU_ELIGIBLE_QUANTILE_TRANSFORMS
+
+
+def get_quantile_output_distribution(
+    transform_name: str,
+) -> Literal["uniform", "normal"]:
+    """Return the output distribution of a GPU-eligible quantile preset."""
+    try:
+        return _GPU_ELIGIBLE_QUANTILE_TRANSFORMS[transform_name]
+    except KeyError as err:
+        raise ValueError(
+            f"Unknown GPU-eligible quantile preset: {transform_name!r}"
+        ) from err
 
 
 def is_gpu_squashing_scaler_eligible(transform_name: str) -> bool:
     """Check if a squashing-scaler transform name can be accelerated on GPU."""
     return transform_name in _GPU_ELIGIBLE_SQUASHING_SCALER_TRANSFORMS
+
+
+def get_gpu_transform_type(transform_name: str) -> GPUTransformType | None:
+    """Return the GPU transform that replaces a reshape preset, if any."""
+    if is_gpu_quantile_eligible(transform_name):
+        return GPUTransformType.QUANTILE
+    if is_gpu_squashing_scaler_eligible(transform_name):
+        return GPUTransformType.SQUASHING_SCALER
+    if transform_name == "safepower":
+        return GPUTransformType.SAFE_POWER
+    return None
 
 
 def get_squashing_scaler_max_absolute_value(transform_name: str) -> float:
@@ -49744,9 +50233,17 @@ class TorchPreprocessingPipeline:
 def _move_cache_to_device(
     cache: dict[str, torch.Tensor], device: torch.device
 ) -> dict[str, torch.Tensor]:
-    return {
-        k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in cache.items()
-    }
+    """Move cache tensors to ``device``, keeping float64 on CPU for MPS.
+
+    MPS has no float64; steps that need it fall back to CPU themselves.
+    """
+
+    def move(v: torch.Tensor) -> torch.Tensor:
+        if device.type == "mps" and v.dtype == torch.float64:
+            return v.cpu()
+        return v.to(device)
+
+    return {k: move(v) if isinstance(v, torch.Tensor) else v for k, v in cache.items()}
 
 
 def _extract_inf_masks(
@@ -49858,6 +50355,9 @@ from tabpfn.preprocessing.torch.pipeline_interface import (
 )
 from tabpfn.preprocessing.torch.torch_quantile_transformer import (
     TorchQuantileTransformer,
+)
+from tabpfn.preprocessing.torch.torch_safe_power_transformer import (
+    TorchSafePowerTransformer,
 )
 from tabpfn.preprocessing.torch.torch_soft_clip_outliers import TorchSoftClipOutliers
 from tabpfn.preprocessing.torch.torch_squashing_scaler import TorchSquashingScaler
@@ -50055,11 +50555,13 @@ class TorchSelectiveQuantileTransformerStep(TorchPreprocessingStep):
         n_quantiles: int,
         target_column_indices: list[int],
         extrapolate_ratio: float | None = None,
+        output_distribution: Literal["uniform", "normal"] = "uniform",
     ) -> None:
         super().__init__()
         self._qt = TorchQuantileTransformer(
             n_quantiles=n_quantiles,
             extrapolate_ratio=extrapolate_ratio,
+            output_distribution=output_distribution,
         )
         self._target_column_indices = target_column_indices
 
@@ -50089,6 +50591,7 @@ class TorchSelectiveQuantileTransformerStep(TorchPreprocessingStep):
             fitted_cache = _move_cache_to_device(fitted_cache, target_x.device)
 
         transformed = self._qt.transform(target_x, fitted_cache=fitted_cache)
+        del target_x  # free before the full-size clone below
 
         if run_on_cpu:
             transformed = transformed.to(orig_device)
@@ -50180,6 +50683,62 @@ class TorchSelectiveSquashingScalerStep(TorchPreprocessingStep):
         fitted_cache: dict[str, torch.Tensor],
     ) -> tuple[torch.Tensor, torch.Tensor | None, FeatureModality | None]:
         return self._scaler.transform(x, fitted_cache=fitted_cache), None, None
+
+
+class TorchSelectiveSafePowerStep(TorchPreprocessingStep):
+    """Safe power transform that only transforms specified column indices.
+
+    Register with ``modalities=None``, like
+    :class:`TorchSelectiveQuantileTransformerStep`.
+    """
+
+    def __init__(self, target_column_indices: list[int]) -> None:
+        super().__init__()
+        self._transformer = TorchSafePowerTransformer()
+        self._target_column_indices = target_column_indices
+
+    @override
+    def fit_transform(
+        self,
+        x: torch.Tensor,
+        column_indices: list[int],
+        num_train_rows: int,
+        fitted_cache: dict[str, torch.Tensor] | None = None,
+    ) -> TorchPreprocessingStepResult:
+        """Override to select only target columns for the power transform."""
+        del column_indices
+        orig_device = x.device
+        target_x = x[:, :, self._target_column_indices]
+
+        # MPS has no float64.
+        run_on_cpu = orig_device.type == "mps"
+        if run_on_cpu:
+            target_x = target_x.cpu()
+
+        if fitted_cache is None:
+            fitted_cache = self._transformer.fit(target_x[:num_train_rows])
+        else:
+            fitted_cache = _move_cache_to_device(fitted_cache, target_x.device)
+
+        transformed = self._transformer.transform(target_x, fitted_cache=fitted_cache)
+        del target_x  # free before the full-size clone below
+
+        x = x.clone()
+        x[:, :, self._target_column_indices] = transformed.to(orig_device)
+
+        return TorchPreprocessingStepResult(x=x, fitted_cache=fitted_cache)
+
+    @override
+    def _fit(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+        return self._transformer.fit(x)
+
+    @override
+    def _transform(
+        self,
+        x: torch.Tensor,
+        fitted_cache: dict[str, torch.Tensor],
+    ) -> tuple[torch.Tensor, torch.Tensor | None, FeatureModality | None]:
+        return self._transformer.transform(x, fitted_cache=fitted_cache), None, None
 
 
 class TorchShuffleFeaturesStep(TorchPreprocessingStep):
@@ -50477,23 +51036,41 @@ FILE: src/tabpfn/preprocessing/torch/torch_quantile_transformer.py
 
 from __future__ import annotations
 
+from typing import Literal
+
+import numpy as np
 import torch
+
+# Same as sklearn's QuantileTransformer: inputs this close to the fitted range
+# boundaries map to the clipped tails of the normal output.
+_BOUNDS_THRESHOLD = 1e-7
+_NORMAL_CLIP_MAX = float(
+    torch.special.ndtri(
+        torch.tensor(1 - (_BOUNDS_THRESHOLD - np.spacing(1)), dtype=torch.float64)
+    )
+)
+_NORMAL_CLIP_MIN = float(
+    torch.special.ndtri(
+        torch.tensor(_BOUNDS_THRESHOLD - np.spacing(1), dtype=torch.float64)
+    )
+)
+# sklearn tests ``x - 1e-7 < q_min`` and ``x + 1e-7 > q_max`` in float64. From
+# |x| = 2**30 on, 1e-7 is below half an ulp, so ``x +- 1e-7`` rounds back to x.
+_TIE_LIMIT = 2.0**30
 
 
 class TorchQuantileTransformer:
     """Quantile transformer for PyTorch tensors with NaN handling.
 
     Similar to sklearn's QuantileTransformer but without any implicit state.
-    The state is returned explicitly. Only supports uniform output distribution.
-
-    This transformer maps the data to a uniform distribution in [0, 1] using
-    quantile information from the training data.
+    The state is returned explicitly.
     """
 
     def __init__(
         self,
         n_quantiles: int = 1_000,
         extrapolate_ratio: float | None = None,
+        output_distribution: Literal["uniform", "normal"] = "uniform",
     ) -> None:
         """Initialize the quantile transformer.
 
@@ -50505,12 +51082,19 @@ class TorchQuantileTransformer:
                 ``-ratio`` / ``1 + ratio`` instead of being clamped at the
                 boundary quantile. Mirrors the
                 :class:`AdaptiveQuantileTransformer` mode-1 behaviour.
+            output_distribution: Marginal distribution of the output, as in
+                sklearn's ``QuantileTransformer``.
         """
         super().__init__()
         if extrapolate_ratio is not None and extrapolate_ratio < 0:
             raise ValueError("extrapolate_ratio must be non-negative.")
+        if extrapolate_ratio is not None and output_distribution != "uniform":
+            raise ValueError(
+                "extrapolate_ratio is only supported for output_distribution='uniform'."
+            )
         self.n_quantiles = n_quantiles
         self.extrapolate_ratio = extrapolate_ratio
+        self.output_distribution = output_distribution
 
     def fit(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """Compute the quantiles from the training data.
@@ -50525,32 +51109,32 @@ class TorchQuantileTransformer:
         """
         n_samples = x.shape[0]
 
-        if n_samples <= 1:
-            # Not enough data to compute meaningful quantiles.
-            # Return a degenerate cache that makes transform return 0.5
-            # for all non-NaN values (identity-like behaviour).
-            references = torch.tensor([0.0, 1.0], device=x.device, dtype=x.dtype)
-            if n_samples == 0:
-                val = torch.zeros(x.shape[1:], device=x.device, dtype=x.dtype)
-            else:
-                val = x[0]
-            quantiles = torch.stack([val, val], dim=0)
-            return {"quantiles": quantiles, "references": references}
-
-        n_quantiles_effective = min(self.n_quantiles, n_samples)
-
-        # torch.nanquantile requires float32 or float64; cast up if needed
+        # torch.nanquantile and ndtri need float32 or float64; cast up if needed
         # (e.g. when inference_precision is float16).
         compute_dtype = x.dtype
         if x.dtype not in (torch.float32, torch.float64):
             compute_dtype = torch.float32
 
+        # The normal output assumes references == linspace(0, 1, n) and does
+        # not read them.
+        if n_samples <= 1:
+            # Not enough data to compute meaningful quantiles. With the
+            # degenerate cache, uniform output is 0.5 for every non-NaN value
+            # and normal output is a clip bound.
+            references = torch.tensor([0.0, 1.0], device=x.device, dtype=compute_dtype)
+            if n_samples == 0:
+                val = torch.zeros(x.shape[1:], device=x.device, dtype=compute_dtype)
+            else:
+                val = x[0].to(compute_dtype)
+            quantiles = torch.stack([val, val], dim=0)
+            return {"quantiles": quantiles, "references": references}
+
+        n_quantiles_effective = min(self.n_quantiles, n_samples)
         references = torch.linspace(
             0, 1, n_quantiles_effective, device=x.device, dtype=compute_dtype
         )
 
-        x_compute = x.to(compute_dtype)
-        quantiles = self._nanquantile_chunked(x_compute, references)
+        quantiles = self._nanquantile_chunked(x, references)
 
         # Ensure monotonicity (handle floating point issues)
         # Use cumulative maximum along the quantile dimension
@@ -50580,12 +51164,13 @@ class TorchQuantileTransformer:
         process_all_at_once = n_features <= chunk_cols
 
         if process_all_at_once:
-            quantiles = torch.nanquantile(x, references, dim=0)
+            quantiles = torch.nanquantile(x.to(references.dtype), references, dim=0)
         else:
             chunks = []
             for col_start in range(0, n_features, chunk_cols):
+                x_chunk = x_flat[:, col_start : col_start + chunk_cols]
                 q_chunk = torch.nanquantile(
-                    x_flat[:, col_start : col_start + chunk_cols], references, dim=0
+                    x_chunk.to(references.dtype), references, dim=0
                 )
                 chunks.append(q_chunk)
             quantiles = torch.cat(chunks, dim=-1)
@@ -50604,7 +51189,8 @@ class TorchQuantileTransformer:
         while 1M-row datasets stay bounded at ~2 GB of workspace per chunk.
         """
         n_samples = x_flat.shape[0]
-        element_size = x_flat.element_size()
+        # Computed in at least float32.
+        element_size = max(x_flat.element_size(), 4)
         overhead_factor = 10
         target_bytes = 2 * 1024**3  # 2 GB
         bytes_per_col = n_samples * element_size * overhead_factor
@@ -50615,7 +51201,7 @@ class TorchQuantileTransformer:
         x: torch.Tensor,
         fitted_cache: dict[str, torch.Tensor],
     ) -> torch.Tensor:
-        """Transform the data to uniform distribution using fitted quantiles.
+        """Transform the data to the output distribution using fitted quantiles.
 
         Automatically processes in row-chunks when the data is large to keep
         peak intermediate memory bounded (~2 GB of temporaries).
@@ -50625,7 +51211,7 @@ class TorchQuantileTransformer:
             fitted_cache: Cache returned by fit.
 
         Returns:
-            Transformed tensor with values in [0, 1].
+            Transformed tensor.
         """
         if "quantiles" not in fitted_cache or "references" not in fitted_cache:
             raise ValueError(
@@ -50636,24 +51222,20 @@ class TorchQuantileTransformer:
         references = fitted_cache["references"]
 
         # The cache may be in float32 (from fit) while input is float16.
-        # Compute in the cache dtype, then cast back.
-        orig_dtype = x.dtype
-        compute_dtype = quantiles.dtype
-        x_compute = x.to(compute_dtype)
-
-        chunk_size = self._get_transform_chunk_size(x_compute)
-        n_samples = x_compute.shape[0]
-
-        if n_samples <= chunk_size:
-            result = self._transform_chunk(x_compute, quantiles, references)
-        else:
-            chunks = []
-            for start in range(0, n_samples, chunk_size):
-                chunk = x_compute[start : start + chunk_size]
-                chunks.append(self._transform_chunk(chunk, quantiles, references))
-            result = torch.cat(chunks, dim=0)
-
-        return result.to(orig_dtype) if orig_dtype != compute_dtype else result
+        # Compute each chunk in the cache dtype and write it into the output.
+        chunk_size = self._get_transform_chunk_size(x)
+        if x.shape[0] <= chunk_size:
+            return self._transform_chunk(
+                x.to(quantiles.dtype), quantiles, references
+            ).to(x.dtype)
+        out = torch.empty_like(x)
+        for start in range(0, x.shape[0], chunk_size):
+            out[start : start + chunk_size] = self._transform_chunk(
+                x[start : start + chunk_size].to(quantiles.dtype),
+                quantiles,
+                references,
+            )
+        return out
 
     def _transform_chunk(
         self,
@@ -50674,8 +51256,9 @@ class TorchQuantileTransformer:
         ~2 GB of intermediates so that even very large datasets stay within
         reasonable GPU memory.
         """
-        n_features = x.shape[-1] if x.ndim > 1 else 1
-        element_size = x.element_size()
+        n_features = x[0].numel() if x.shape[0] else 1
+        # Computed in at least float32.
+        element_size = max(x.element_size(), 4)
         overhead_factor = 15
         target_bytes = 2 * 1024**3  # 2 GB
         bytes_per_row = n_features * element_size * overhead_factor
@@ -50702,7 +51285,7 @@ class TorchQuantileTransformer:
             references: Reference positions [n_quantiles].
 
         Returns:
-            Interpolated values in [0, 1].
+            Values in the output distribution.
         """
         original_shape = x.shape
         n_quantiles = quantiles.shape[0]
@@ -50720,6 +51303,12 @@ class TorchQuantileTransformer:
         # Transpose to [n_features, ...] for batched searchsorted
         x_t = x_flat.t().contiguous()  # [n_features, n_samples]
         q_t = quantiles_flat.t().contiguous()  # [n_features, n_quantiles]
+
+        if self.output_distribution == "normal":
+            result = self._to_normal(x_t, q_t).t()
+            if len(original_shape) > 1:
+                return result.reshape(original_shape)
+            return result.squeeze(-1)
 
         # Forward interpolation: interp(x, quantiles, references)
         refs = references.unsqueeze(0).expand_as(q_t)  # [n_features, n_quantiles]
@@ -50746,6 +51335,46 @@ class TorchQuantileTransformer:
             result = result.squeeze(-1)
 
         return result
+
+    def _to_normal(self, x: torch.Tensor, xp: torch.Tensor) -> torch.Tensor:
+        """Map ``x`` [n_features, n_samples] to sklearn's clipped normal output.
+
+        ``references`` is always ``linspace(0, 1, n)``, so grid positions replace
+        it. ``u`` and ``1 - u`` are each built from small terms, which keeps
+        float32 precise in both tails. Inputs within ``_BOUNDS_THRESHOLD`` of the
+        fitted min/max go to the clip bounds; the min side wins for constant
+        features.
+        """
+        n = xp.shape[1]
+        p_fwd, c_fwd = _interp_positions(x, xp)
+        p_bwd, c_bwd = _interp_positions(-x, torch.flip(-xp, dims=[1]))
+        # sklearn averages forward and backward np.interp; ties get the midpoint.
+        lower = p_fwd.add_(c_bwd)  # 2 * (n - 1) * u
+        upper = c_fwd.add_(p_bwd)  # 2 * (n - 1) * (1 - u)
+        del c_bwd, p_bwd
+        # ndtri of the smaller tail is <= 0; flip it for the upper half.
+        result = torch.special.ndtri(torch.minimum(lower, upper).div_(2 * (n - 1)))
+        result.copysign_(lower.sub_(upper))
+        del lower, upper
+
+        q_min, q_max = xp[:, :1], xp[:, -1:]
+        if x.dtype == torch.float64:
+            # sklearn's own test, in the dtype it runs in.
+            above = (x + _BOUNDS_THRESHOLD) > q_max
+            below = (x - _BOUNDS_THRESHOLD) < q_min
+        else:
+            # Per-feature thresholds; 0 where sklearn's float64 test misses ties.
+            thr_min = torch.where(
+                (q_min > -_TIE_LIMIT) & (q_min <= _TIE_LIMIT), _BOUNDS_THRESHOLD, 0.0
+            )
+            thr_max = torch.where(
+                (q_max >= -_TIE_LIMIT) & (q_max < _TIE_LIMIT), _BOUNDS_THRESHOLD, 0.0
+            )
+            above = (q_max - x) < thr_max
+            below = (x - q_min) < thr_min
+        result = torch.where(above, _NORMAL_CLIP_MAX, result)
+        result = torch.where(below, _NORMAL_CLIP_MIN, result)
+        return result.clamp_(_NORMAL_CLIP_MIN, _NORMAL_CLIP_MAX)
 
     def _apply_extrapolation(
         self,
@@ -50862,7 +51491,7 @@ class TorchQuantileTransformer:
                 quantiles are computed from all data.
 
         Returns:
-            Transformed tensor with values in [0, 1].
+            Transformed tensor.
         """
         # Determine which data to use for fitting
         if num_train_rows is not None and num_train_rows > 0:
@@ -50872,6 +51501,220 @@ class TorchQuantileTransformer:
 
         fitted_cache = self.fit(fit_data)
         return self.transform(x, fitted_cache=fitted_cache)
+
+
+def _interp_positions(
+    x: torch.Tensor, xp: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """``np.interp`` position ``p`` of ``x`` in each row of ``xp``, and ``n - 1 - p``.
+
+    Both are a whole number plus a fraction in [0, 1], so neither cancels.
+    """
+    n = xp.shape[1]
+    idx = torch.searchsorted(xp, x, right=True).clamp_(1, n - 1)
+    x_high = torch.gather(xp, 1, idx)
+    idx.sub_(1)
+    x_low = torch.gather(xp, 1, idx)
+    # xp[idx] <= x < xp[idx + 1] inside the range. Below it, p < 0 and
+    # c > n - 1, so clamping fixes them. At or above it, set p and c directly:
+    # a tie at the top gives 0 / 0.
+    dx = x_high - x_low
+    p = (x - x_low).div_(dx).add_(idx)
+    c = (x_high - x).div_(dx).add_(torch.rsub(idx, n - 2))
+    del idx, x_low, x_high, dx
+    above = x >= xp[:, -1:]
+    p = torch.where(above, n - 1.0, p).clamp_(min=0.0)
+    c = torch.where(above, 0.0, c).clamp_(max=n - 1.0)
+    return p, c
+
+
+
+================================================
+FILE: src/tabpfn/preprocessing/torch/torch_safe_power_transformer.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Torch implementation of the ``safepower`` preset."""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Callable
+
+import torch
+
+_INV_GOLDEN = (math.sqrt(5) - 1) / 2
+# scipy.optimize.fminbound's xtol, as used by SafePowerTransformer.
+_XTOL = 1.48e-8
+_EPS = torch.finfo(torch.float64).eps
+# Float64 working set of one fit or transform chunk, including temporaries.
+_CHUNK_TARGET_BYTES = 1024**3
+# Float64 tensors alive per chunk element at peak: measured about 4.3 on CUDA
+# for both fit and transform, rounded up for margin.
+_OVERHEAD_FACTOR = 6
+
+
+class TorchSafePowerTransformer:
+    """Yeo-Johnson power transform followed by a NaN-safe standard scaler.
+
+    Mirrors the CPU ``safepower`` preset: ``SafePowerTransformer(standardize=False)``
+    then ``make_scaler_safe(StandardScaler())``. Each column's lambda maximises the
+    Yeo-Johnson log-likelihood within scipy's overflow-safe bounds, found by a
+    batched golden-section search. Computes in float64, so it cannot run on MPS.
+    Fit runs on column chunks and transform on row chunks to keep the float64
+    working set near ``_CHUNK_TARGET_BYTES``. A fit chunk holds at least one
+    whole column, so beyond about 22M rows the fit working set grows with the
+    row count.
+    """
+
+    def fit(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+        """Fit lambdas and scaler statistics on ``x`` of shape [n_rows, ...]."""
+        x = x.reshape(x.shape[0], -1)
+        bytes_per_col = 8 * _OVERHEAD_FACTOR * max(x.shape[0], 1)
+        n_cols = max(1, _CHUNK_TARGET_BYTES // bytes_per_col)
+        caches = [
+            _fit_chunk(x[:, i : i + n_cols].to(torch.float64))
+            for i in range(0, x.shape[1], n_cols)
+        ]
+        return {k: torch.cat([c[k] for c in caches]) for k in caches[0]}
+
+    def transform(
+        self, x: torch.Tensor, fitted_cache: dict[str, torch.Tensor]
+    ) -> torch.Tensor:
+        """Apply the fitted transform; the output has no NaNs."""
+        shape = x.shape
+        x = x.reshape(shape[0], -1)
+        out = torch.empty_like(x)
+        bytes_per_row = 8 * _OVERHEAD_FACTOR * max(x.shape[1], 1)
+        n_rows = max(1, _CHUNK_TARGET_BYTES // bytes_per_row)
+        for i in range(0, x.shape[0], n_rows):
+            out[i : i + n_rows] = _transform_chunk(
+                x[i : i + n_rows].to(torch.float64), fitted_cache
+            )
+        return out.reshape(shape)
+
+
+def _fit_chunk(x: torch.Tensor) -> dict[str, torch.Tensor]:
+    lambdas = _fit_lambdas(x)
+    y = _yeo_johnson(x, torch.log1p(x.abs()), lambdas)
+    y.masked_fill_(torch.isinf(y), torch.nan)
+    impute_mean = torch.nan_to_num(y.nanmean(dim=0), nan=0.0)
+    torch.where(torch.isnan(y), impute_mean, y, out=y)
+
+    mean = y.mean(dim=0)
+    var = y.var(dim=0, correction=0)
+    scale = torch.where(_is_constant(var, mean, x.shape[0]), 1.0, var.sqrt())
+    return {
+        "lambdas": lambdas,
+        "impute_mean": impute_mean,
+        "mean": mean,
+        "scale": scale,
+    }
+
+
+def _transform_chunk(
+    x: torch.Tensor, fitted_cache: dict[str, torch.Tensor]
+) -> torch.Tensor:
+    y = _yeo_johnson(x, torch.log1p(x.abs()), fitted_cache["lambdas"])
+    torch.where(torch.isfinite(y), y, fitted_cache["impute_mean"], out=y)
+    return y.sub_(fitted_cache["mean"]).div_(fitted_cache["scale"])
+
+
+def _fit_lambdas(x: torch.Tensor) -> torch.Tensor:
+    """Per-column ``_yeojohnson_normmax`` with sklearn's special cases."""
+    invalid = torch.isnan(x)
+    n_valid = x.shape[0] - invalid.sum(dim=0)
+    abs_max = x.abs().nan_to_num_(nan=0.0).amax(dim=0)
+    n_neg = (x < 0).sum(dim=0)
+    # Near-constant observed values, as in SafePowerTransformer; False when all-NaN.
+    obs_mean = x.nansum(dim=0) / n_valid
+    obs_var = (x - obs_mean).square_().nansum(dim=0) / n_valid
+    constant = _is_constant(obs_var, obs_mean, n_valid)
+    any_neg, all_neg = n_neg > 0, n_neg == n_valid
+
+    finfo = torch.finfo(torch.float64)
+    log_tiny = (math.log(finfo.tiny) - math.log(_EPS)) / 2
+    log_max = (math.log(finfo.max) + math.log(_EPS)) / 2
+    log1p_max_x = torch.log1p(20 * abs_max)
+    lb, ub = log_tiny / log1p_max_x, log_max / log1p_max_x
+    neg_lb, neg_ub = 2 - ub, 2 - lb
+    lb, ub = (
+        torch.where(all_neg, neg_lb, torch.where(any_neg, neg_lb.maximum(lb), lb)),
+        torch.where(all_neg, neg_ub, torch.where(any_neg, neg_ub.minimum(ub), ub)),
+    )
+
+    # Columns without a search get finite dummy bounds and are overwritten below.
+    skip = constant | (n_valid == 0)
+    lb = torch.where(skip, 0.0, lb)
+    ub = torch.where(skip, 1.0, ub)
+
+    # Lambda-independent terms of the log-likelihood, computed once.
+    log1p_abs = torch.log1p(x.abs())
+    sum_log = log1p_abs.copysign(x).nansum(dim=0)
+
+    def neg_llf(lambdas: torch.Tensor) -> torch.Tensor:
+        y = _yeo_johnson(x, log1p_abs, lambdas).masked_fill_(invalid, 0.0)
+        mean = y.sum(dim=0) / n_valid
+        y.sub_(mean).masked_fill_(invalid, 0.0)
+        var = y.square_().sum(dim=0) / n_valid
+        llf = -n_valid / 2 * var.log() + (lambdas - 1) * sum_log
+        # scipy rejects near-zero variance as an infinite likelihood.
+        return torch.where(var < finfo.tiny, torch.inf, -llf)
+
+    lambdas = _golden_section_search(neg_llf, lb, ub)
+    lambdas = torch.where(constant, 1.0, lambdas)
+    return torch.where(n_valid == 0, torch.nan, lambdas)
+
+
+def _yeo_johnson(
+    x: torch.Tensor, log1p_abs: torch.Tensor, lambdas: torch.Tensor
+) -> torch.Tensor:
+    """Yeo-Johnson transform with one lambda per column, as in scipy.
+
+    Both branches equal ``sign(x) * expm1(m * log1p(|x|)) / m``, with
+    ``m = lambda`` for ``x >= 0`` and ``m = 2 - lambda`` otherwise, and the
+    ``m -> 0`` limit ``sign(x) * log1p(|x|)``.
+    """
+    pos = x >= 0
+    m = torch.where(pos, lambdas, 2 - lambdas)
+    m_abs = m.abs()
+    # scipy's lambda == 0 test is strict, its lambda == 2 test is not.
+    m_is_0 = torch.where(pos, m_abs < _EPS, m_abs <= _EPS)
+    del m_abs, pos
+    m.masked_fill_(m_is_0, 1.0)
+    y = torch.mul(m, log1p_abs).expm1_().div_(m)
+    del m
+    torch.where(m_is_0, log1p_abs, y, out=y)
+    return y.copysign_(x)
+
+
+def _golden_section_search(
+    f: Callable[[torch.Tensor], torch.Tensor], lb: torch.Tensor, ub: torch.Tensor
+) -> torch.Tensor:
+    """Minimise ``f`` elementwise on ``[lb, ub]`` to within ``_XTOL``."""
+    a, b = lb.clone(), ub.clone()
+    width = float((b - a).max()) if a.numel() else 0.0
+    n_iter = math.ceil(math.log(max(width, _XTOL) / _XTOL) / -math.log(_INV_GOLDEN))
+    c = b - _INV_GOLDEN * (b - a)
+    d = a + _INV_GOLDEN * (b - a)
+    fc, fd = f(c), f(d)
+    for _ in range(n_iter):
+        # Ties move right, as in fminbound.
+        left = fc < fd
+        a = torch.where(left, a, c)
+        b = torch.where(left, d, b)
+        new = torch.where(left, b - _INV_GOLDEN * (b - a), a + _INV_GOLDEN * (b - a))
+        f_new = f(new)
+        c, d = torch.where(left, new, d), torch.where(left, c, new)
+        fc, fd = torch.where(left, f_new, fd), torch.where(left, fc, f_new)
+    return (a + b) / 2
+
+
+def _is_constant(
+    var: torch.Tensor, mean: torch.Tensor, n: int | torch.Tensor
+) -> torch.Tensor:
+    """Sklearn's ``_is_constant_feature`` near-zero variance test."""
+    return var <= n * _EPS * var + (n * mean * _EPS) ** 2
 
 
 
@@ -73210,10 +74053,12 @@ def test__many_class_decoder_attention_weights_matches_forward(
     """attention_weights is a proper distribution and matches the fused forward.
 
     Collapsing the per-train-row weights by class label must reproduce, up to the
-    head's log-clamping, the logits the fused decoder returns.
+    head's log-clamping, the logits the fused decoder returns. 40 classes over
+    head_dim 16 make forward run three attention calls, the last one on a
+    partial chunk of classes.
     """
     torch.manual_seed(0)
-    B, N, M, E, max_num_classes = 2, 40, 7, 48, 10
+    B, N, M, E, max_num_classes = 2, 40, 7, 48, 40
     head_dim, num_heads = 16, 3
     scaling = (
         tabpfn_v3.SoftmaxScalingMLP(num_heads=num_heads, head_dim=head_dim)
@@ -74454,12 +75299,10 @@ def test__forward_many_class_head__fewer_classes_than_max__pads_absent_columns()
 
 @torch.no_grad()
 @pytest.mark.skipif(sys.platform == "win32", reason="float64 tests fail on Windows")
-def test__many_class_decoder__unused_classes__matches_full_width_one_hot() -> None:
-    """Narrowing the one-hot to the present classes must not change the output.
+def test__many_class_decoder__narrowed_and_nonfinite__match_reference() -> None:
+    """Narrowing to the present classes must not change the output.
 
-    `head_dim` below the class count makes the full-width reference span three
-    folded attention passes where the narrowed path needs one, so a mismatch in
-    the trim, the chunking or the padding surfaces here.
+    Rows with a non-finite target must get no vote.
     """
     num_classes, input_size, num_heads, head_dim = 10, 12, 3, 4
     batch, num_train, num_test = 2, 17, 3
@@ -74475,22 +75318,22 @@ def test__many_class_decoder__unused_classes__matches_full_width_one_hot() -> No
     test_emb = torch.randn(batch, num_test, input_size, dtype=torch.float64)
     # Only classes 0..2 occur, so the decoder trims 10 columns down to 3.
     targets = (torch.arange(num_train) % 3).repeat(batch, 1).to(torch.float64)
+    targets[0, 1] = float("nan")
+    targets[1, 2] = float("inf")
+    targets[1, 4] = float("-inf")
+    votes_BN = torch.isfinite(targets)
 
     train_keys = decoder.project_keys(train_emb)
     actual = decoder(train_keys, test_emb, targets, num_present_classes=3)
 
     q_BMHD = decoder.q_projection(test_emb).view(batch, num_test, num_heads, head_dim)
-    one_hot_BNHT = (
-        torch.nn.functional.one_hot(targets.long(), num_classes=num_classes)
-        .to(torch.float64)
-        .unsqueeze(2)
-        .expand(-1, -1, num_heads, -1)
-        .contiguous()
-    )
-    reference_BMT = tabpfn_v3_5._chunked_class_attention(
-        q_BMHD.contiguous(), train_keys, one_hot_BNHT
-    ).mean(2)
-    expected = torch.log(torch.clamp(reference_BMT.transpose(0, 1), min=1e-5) + 3e-5)
+    scores_BHMN = torch.einsum("bmhd,bnhd->bhmn", q_BMHD, train_keys) / head_dim**0.5
+    weights_BMN = scores_BHMN.softmax(-1).mean(1)
+    classes_BN = torch.where(votes_BN, targets, 0).long()
+    one_hot_BNT = torch.nn.functional.one_hot(classes_BN, num_classes).double()
+    one_hot_BNT *= votes_BN.unsqueeze(-1)
+    class_avg_BMT = torch.einsum("bmn,bnt->bmt", weights_BMN, one_hot_BNT)
+    expected = torch.log(torch.clamp(class_avg_BMT.transpose(0, 1), min=1e-5) + 3e-5)
 
     assert actual.shape == (num_test, batch, num_classes)
     assert torch.allclose(actual, expected, atol=1e-12), (
@@ -75074,7 +75917,7 @@ def test__kv_cache__adaptive__several_cached_heads__falls_back_to_int8() -> None
 def test__forward__quantized_kv_cache__equals_the_dequantized_cache(
     task_type: TaskType,
 ) -> None:
-    """Quantizing must add nothing but the dequantize on the way back in."""
+    """A quantized cache gives the output of its dequantized cache, up to rounding."""
     arch = _get_model()
     x, y = _inputs(task_type)
     _, cache = arch(x, y, task_type=task_type, return_kv_cache=True)
@@ -75086,7 +75929,9 @@ def test__forward__quantized_kv_cache__equals_the_dequantized_cache(
     predict = functools.partial(
         arch, x[NUM_TRAIN:], y, task_type=task_type, x_is_test_only=True
     )
-    assert torch.equal(predict(kv_cache=quantized), predict(kv_cache=dequantized))
+    torch.testing.assert_close(
+        predict(kv_cache=quantized), predict(kv_cache=dequantized), rtol=1e-5, atol=1e-5
+    )
 
 
 @torch.no_grad()
@@ -75348,9 +76193,12 @@ def test__many_class_decoder_attention_weights__matches_forward(
 ) -> None:
     """The weights are a distribution over train rows and reproduce the fused
     forward's logits once collapsed by class label.
+
+    40 classes over head_dim 16 make forward run three attention calls, the
+    last one on a partial chunk of classes.
     """
     torch.manual_seed(0)
-    B, N, M, E, max_num_classes = 2, 40, 7, 48, 10
+    B, N, M, E, max_num_classes = 2, 40, 7, 48, 40
     head_dim, num_heads = 16, 3
     scaling = (
         tabpfn_v3_5.SoftmaxScalingMLP(num_heads=num_heads, head_dim=head_dim)
@@ -75457,6 +76305,7 @@ from tabpfn.architectures.shared.scaled_dot_product_attention import (
     scaled_dot_product_attention,
 )
 from tabpfn.architectures.shared.torch_mps_backend import TORCH_MPS_BACKEND
+from tests.utils import get_pytest_devices
 
 
 class _RecordingBackend:
@@ -75555,11 +76404,12 @@ def test_reregistration_is_reentrant_but_conflicts_raise() -> None:
 
 @pytest.mark.usefixtures("registry_sandbox")
 @pytest.mark.parametrize("consumes_quantized_kv", [True, False])
-def test_quantized_kv_is_passed_on_or_dequantized_once(
+def test_quantized_kv_is_passed_on_or_cast_with_scales_folded(
     consumes_quantized_kv: bool,
 ) -> None:
     """The entry is passed on only to a backend that declares it consumes
-    one; otherwise the SDPA wrapper dequantizes, once.
+    one; otherwise the backend gets the cast keys and values and the key scale
+    folded into q.
     """
     backend = _RecordingBackend()
     backend.consumes_quantized_kv = consumes_quantized_kv
@@ -75575,9 +76425,48 @@ def test_quantized_kv_is_passed_on_or_dequantized_once(
         assert call["k"] is None
     else:
         assert call["quantized_kv"] is None
-        dequant = entry.dequantize(q.dtype)
-        torch.testing.assert_close(call["k"], dequant.key)
-        torch.testing.assert_close(call["v"], dequant.value)
+        torch.testing.assert_close(call["q"], q * entry.key_scale)
+        torch.testing.assert_close(call["k"], entry.key.to(q.dtype))
+        torch.testing.assert_close(call["v"], entry.value.to(q.dtype))
+
+
+@pytest.mark.usefixtures("registry_sandbox")
+@pytest.mark.parametrize("device", get_pytest_devices())
+@pytest.mark.parametrize("quant_dtype", [torch.int8, FP8_KV_DTYPE])
+@pytest.mark.parametrize(
+    "compute_dtype", [torch.float32, torch.float16, torch.bfloat16]
+)
+@pytest.mark.parametrize("batch", [1, 3])
+@pytest.mark.parametrize("magnitude", [1.0, 1e-4])
+def test_folded_scales_match_attention_over_the_dequantized_entry(
+    device: str,
+    quant_dtype: torch.dtype,
+    compute_dtype: torch.dtype,
+    batch: int,
+    magnitude: float,
+) -> None:
+    """Folding the scales into q and the output equals dequantizing first.
+
+    Batch 1 gives a scalar scale and batch 3 one scale per batch element. The
+    small magnitude puts ``q * key_scale`` near the fp16 subnormal range.
+    """
+    if device == "mps" and quant_dtype == FP8_KV_DTYPE:
+        pytest.skip("MPS cannot cast float8.")
+    torch.manual_seed(0)
+    q, k, v = _qkv(b=batch, s=16, h=4, j=1, d=8)  # GQA: 4 query heads, 1 kv head
+    entry = KVCacheEntry(key=k * magnitude, value=v * magnitude).quantize(quant_dtype)
+    entry = entry.to(device)
+    q = q.to(device, compute_dtype)
+
+    folded = scaled_dot_product_attention(q, None, None, quantized_kv=entry)
+    dequant = entry.dequantize(compute_dtype)
+    reference = scaled_dot_product_attention(q, dequant.key, dequant.value)
+
+    tolerances = {torch.float32: 1e-5, torch.float16: 2e-3, torch.bfloat16: 2e-2}
+    tol = tolerances[compute_dtype]
+    torch.testing.assert_close(
+        folded / magnitude, reference / magnitude, rtol=tol, atol=tol
+    )
 
 
 @pytest.mark.usefixtures("registry_sandbox")
@@ -79381,6 +80270,7 @@ FILE: tests/test_preprocessing/test_encode_categorical_features_step.py
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 import numpy as np
@@ -79928,6 +80818,27 @@ class TestCarryOverGpuTransformMarks:
 
         marked = result.feature_schema.get_indices_marked_for_gpu_quantile_transform()
         assert marked == []
+
+
+@pytest.mark.parametrize(
+    ("transform_name", "flagged"),
+    [("ordinal", [0]), ("onehot", [])],
+)
+def test__group_flag__kept_by_ordinal_encoding_only(
+    transform_name: str, flagged: list[int]
+) -> None:
+    """A binary one-hot column is as wide as its input, yet not the feature."""
+    rng = np.random.default_rng(42)
+    X = _make_test_data(rng, 50, 3, [1])
+    X[:, 1] = rng.integers(0, 2, size=50).astype(float)
+    schema = _make_feature_schema(3, [1])
+    schema.features[1] = dataclasses.replace(schema.features[1], is_group_id=True)
+
+    result = EncodeCategoricalFeaturesStep(transform_name).fit_transform(X, schema)
+
+    assert result.X.shape[1] == 3
+    features = result.feature_schema.features
+    assert [i for i, f in enumerate(features) if f.is_group_id] == flagged
 
 
 # ---------------------------------------------------------------------------
@@ -82345,6 +83256,441 @@ def test__duplicate_input_columns_are_disambiguated() -> None:
     _, schema = _schema_from_dataframe(df)
     assert_unique_feature_names(schema)
     assert schema.feature_names[0] == "input_dup"
+
+
+
+================================================
+FILE: tests/test_preprocessing/test_group_ids.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Tests for `group_col`: selecting the columns, coding the keys, using the feature."""
+
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+import pytest
+import torch
+from sklearn.base import clone
+from sklearn.exceptions import NotFittedError
+
+from tabpfn import TabPFNClassifier, TabPFNRegressor
+from tabpfn.errors import TabPFNValidationError
+from tabpfn.preprocessing.datamodel import FeatureModality
+from tabpfn.preprocessing.group_ids import GroupIdEncoder
+
+ESTIMATORS = [TabPFNClassifier, TabPFNRegressor]
+
+
+def _frame(groups: list[Any], *, column: str = "g") -> pd.DataFrame:
+    """A numeric column next to the group column."""
+    return pd.DataFrame({"num": np.arange(len(groups), dtype=float), column: groups})
+
+
+def _estimator_data(
+    estimator_cls: type, groups: list[Any]
+) -> tuple[pd.DataFrame, np.ndarray]:
+    """A frame with a group column, plus a `y` matching the estimator."""
+    n = len(groups)
+    rng = np.random.default_rng(seed=42)
+    X = pd.DataFrame(
+        {"num": rng.normal(size=n), "other": rng.normal(size=n), "g": groups}
+    )
+    y = (
+        rng.integers(0, 2, size=n)
+        if estimator_cls is TabPFNClassifier
+        else rng.normal(size=n)
+    )
+    return X, y
+
+
+def _fitted(estimator_cls: type, groups: list[Any], **kwargs: Any):  # noqa: ANN202
+    X, y = _estimator_data(estimator_cls, groups)
+    estimator = estimator_cls(n_estimators=1, **kwargs)
+    estimator.fit(X, y)
+    return estimator, X, y
+
+
+def _group_feature(estimator: Any) -> tuple[int, Any]:
+    """The encoded feature's position in the fitted schema, and the feature."""
+    name = estimator.group_encoder_.feature_name_
+    features = estimator.inferred_feature_schema_.features
+    index = [f.name for f in features].index(f"input_{name}")
+    return index, features[index]
+
+
+class TestSelection:
+    """What `group_col` selects, and what it refuses."""
+
+    @pytest.mark.parametrize("group_col", [None, []], ids=["none", "empty"])
+    def test__nothing_selected__passes_every_input_through(
+        self, group_col: Any
+    ) -> None:
+        X = np.array([[1.0, 2.0], [3.0, 4.0]])
+        encoder = GroupIdEncoder(group_col)
+
+        assert encoder.fit_transform(X) is X
+        assert encoder.transform(X) is X
+        assert encoder.output_indices([1]) == [1]
+        assert encoder.output_indices(None) is None
+
+    def test__single_label__is_read_as_one_column(self) -> None:
+        encoder = GroupIdEncoder("g")
+        encoder.fit(_frame(["a", "b"]))
+
+        assert encoder.group_columns_ == ["g"]
+
+    def test__non_dataframe_input__is_refused(self) -> None:
+        with pytest.raises(TabPFNValidationError, match="has to be a DataFrame"):
+            GroupIdEncoder("g").fit_transform(np.zeros((2, 2)))
+
+    def test__missing_column__is_refused_naming_it(self) -> None:
+        with pytest.raises(
+            TabPFNValidationError, match=r"not in the input: \['gone'\]"
+        ):
+            GroupIdEncoder(["g", "gone"]).fit_transform(_frame(["a", "b"]))
+
+    def test__column_label_the_input_repeats__is_refused(self) -> None:
+        X = pd.DataFrame([[1.0, "a", "b"]], columns=["num", "g", "g"])
+
+        with pytest.raises(TabPFNValidationError, match="holds more than"):
+            GroupIdEncoder("g").fit_transform(X)
+
+    def test__label_named_twice__is_refused(self) -> None:
+        with pytest.raises(TabPFNValidationError, match="more than once"):
+            GroupIdEncoder(["g", "g"]).fit_transform(_frame(["a", "b"]))
+
+    @pytest.mark.parametrize(
+        "group_col",
+        [1, 1.0, {"g"}, ["g", 1], np.array(["g"])],
+        ids=["int", "float", "set", "mixed_list", "array"],
+    )
+    def test__anything_but_labels__is_refused(self, group_col: Any) -> None:
+        with pytest.raises(TabPFNValidationError, match="must be a column label"):
+            GroupIdEncoder(group_col).fit_transform(_frame(["a", "b"]))
+
+    def test__transform_before_fit__is_refused(self) -> None:
+        with pytest.raises(NotFittedError):
+            GroupIdEncoder("g").transform(_frame(["a", "b"]))
+
+    def test__predict_input_missing_the_column__is_refused(self) -> None:
+        encoder = GroupIdEncoder("g")
+        encoder.fit_transform(_frame(["a", "b"]))
+
+        with pytest.raises(TabPFNValidationError, match="not in the input"):
+            encoder.transform(pd.DataFrame({"num": [1.0]}))
+
+
+class TestEncoding:
+    """The codes themselves: one per distinct key, fitted on the training rows."""
+
+    def test__repeated_and_singleton_groups__each_keep_a_code(self) -> None:
+        out = GroupIdEncoder("g").fit_transform(_frame(["a", "b", "a", "c"]))
+
+        assert list(out.columns) == ["num", "group_id"]
+        np.testing.assert_array_equal(out["group_id"], [0.0, 1.0, 0.0, 2.0])
+
+    @pytest.mark.parametrize(
+        "groups",
+        [["a", "b", "a"], [10, 20, 10], [1.5, 2.5, 1.5]],
+        ids=["string", "integer", "float"],
+    )
+    def test__keys_of_any_type__are_coded_the_same_way(self, groups: list) -> None:
+        out = GroupIdEncoder("g").fit_transform(_frame(groups))
+
+        np.testing.assert_array_equal(out["group_id"], [0.0, 1.0, 0.0])
+
+    def test__several_columns__are_one_composite_key(self) -> None:
+        X = pd.DataFrame(
+            {
+                "site": ["s1", "s1", "s2", "s2"],
+                "patient": ["p1", "p2", "p1", "p2"],
+                "num": [1.0, 2.0, 3.0, 4.0],
+            }
+        )
+
+        out = GroupIdEncoder(["site", "patient"]).fit_transform(X)
+
+        assert list(out.columns) == ["num", "group_id"]
+        # Four distinct pairs, though each column holds only two values: one
+        # feature per column would have coded this as two features of two codes.
+        np.testing.assert_array_equal(out["group_id"], [0.0, 1.0, 2.0, 3.0])
+
+    def test__unseen_key__is_missing_at_predict(self) -> None:
+        encoder = GroupIdEncoder("g")
+        encoder.fit_transform(_frame(["a", "a", "b"]))
+
+        out = encoder.transform(_frame(["b", "zzz", "a"]))
+
+        np.testing.assert_array_equal(out["group_id"], [1.0, np.nan, 0.0])
+
+    @pytest.mark.parametrize(
+        ("fit_keys", "predict_keys"),
+        [([1.0, np.nan], [np.nan]), (["a", None], [None])],
+        ids=["nan", "none"],
+    )
+    def test__missing_key__is_one_group_coded_alike_at_fit_and_predict(
+        self, fit_keys: list, predict_keys: list
+    ) -> None:
+        encoder = GroupIdEncoder("g")
+        out = encoder.fit_transform(_frame(fit_keys))
+
+        predicted = encoder.transform(_frame(predict_keys))
+
+        np.testing.assert_array_equal(out["group_id"], [0.0, 1.0])
+        np.testing.assert_array_equal(predicted["group_id"], [1.0])
+
+    def test__predict__leaves_the_fitted_mapping_alone(self) -> None:
+        encoder = GroupIdEncoder("g")
+        encoder.fit_transform(_frame(["a", "b"]))
+        before = encoder.keys_.tolist()
+
+        encoder.transform(_frame(["c", "d"]))
+
+        assert encoder.keys_.tolist() == before
+
+    def test__refit__rebuilds_the_mapping(self) -> None:
+        encoder = GroupIdEncoder("g")
+        encoder.fit_transform(_frame(["a", "b"]))
+
+        out = encoder.fit_transform(_frame(["x", "x", "y"]))
+
+        assert encoder.keys_.tolist() == [("x",), ("y",)]
+        np.testing.assert_array_equal(out["group_id"], [0.0, 0.0, 1.0])
+
+    def test__row_order_and_the_callers_frame__are_untouched(self) -> None:
+        X = _frame(["a", "b", "a"])
+        X.index = [7, 3, 5]
+
+        out = GroupIdEncoder("g").fit_transform(X)
+
+        np.testing.assert_array_equal(out["num"], [0.0, 1.0, 2.0])
+        np.testing.assert_array_equal(out["group_id"], [0.0, 1.0, 0.0])
+        assert list(X.columns) == ["num", "g"]
+
+    def test__a_column_already_called_group_id__does_not_collide(self) -> None:
+        X = pd.DataFrame({"group_id": [1.0, 2.0], "g": ["a", "b"]})
+
+        out = GroupIdEncoder("g").fit_transform(X)
+
+        assert list(out.columns) == ["group_id", "group_id_1"]
+
+    def test__declared_categoricals__move_past_the_dropped_columns(self) -> None:
+        X = pd.DataFrame({"a": [1], "g": ["x"], "b": [2], "c": [3]})
+        encoder = GroupIdEncoder("g")
+        encoder.fit_transform(X)
+
+        # 'b' and 'c' each move down one. The selected column itself is gone, so
+        # a declaration on it is dropped.
+        assert encoder.output_indices([1, 2, 3]) == [1, 2]
+        assert encoder.output_indices(None) is None
+
+
+class TestEstimators:
+    """Both estimators expose `group_col` and feed the encoded feature to the model."""
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__group_col__survives_a_clone(self, estimator_cls: type) -> None:
+        estimator = estimator_cls(group_col=["site", "patient"])
+
+        assert clone(estimator).get_params()["group_col"] == ["site", "patient"]
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__no_group_col__leaves_the_input_as_it_is(
+        self, estimator_cls: type
+    ) -> None:
+        """The default path is unchanged: every column stays an ordinary feature."""
+        X, y = _estimator_data(estimator_cls, [f"p{i % 5}" for i in range(30)])
+        estimator = estimator_cls(n_estimators=1)
+
+        estimator.fit(X, y)
+
+        assert estimator.n_features_in_ == 3
+        assert estimator.inferred_feature_schema_.num_columns == 3
+        assert estimator.group_encoder_.feature_name_ is None
+        assert estimator.predict(X).shape == (30,)
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    @pytest.mark.parametrize(
+        ("group_col", "n_schema_columns"),
+        [("g", 3), (["g", "other"], 2)],
+        ids=["single", "composite"],
+    )
+    def test__group_col__replaces_the_columns_with_one_categorical(
+        self, estimator_cls: type, group_col: Any, n_schema_columns: int
+    ) -> None:
+        estimator, X, _ = _fitted(
+            estimator_cls, [f"p{i % 7}" for i in range(30)], group_col=group_col
+        )
+
+        # The caller still passes the group columns, so the input width is
+        # unchanged; the model sees one encoded feature in place of them.
+        assert estimator.n_features_in_ == 3
+        assert estimator.inferred_feature_schema_.num_columns == n_schema_columns
+        index, feature = _group_feature(estimator)
+        assert feature.modality is FeatureModality.CATEGORICAL
+        flagged = [
+            i
+            for i, f in enumerate(estimator.inferred_feature_schema_.features)
+            if f.is_group_id
+        ]
+        assert flagged == [index]
+        assert estimator.predict(X).shape == (30,)
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__ensemble_members__keep_one_group_feature(
+        self, estimator_cls: type
+    ) -> None:
+        """Through the distribution reshaping and the ordinal encoding."""
+        X, y = _estimator_data(estimator_cls, [f"p{i % 4}" for i in range(40)])
+        X["colour"] = ["red", "blue"] * 20
+        estimator = estimator_cls(n_estimators=4, group_col="g").fit(X, y)
+
+        for member in estimator.executor_.ensemble_members:
+            schema = member.cpu_preprocessor.final_feature_schema_
+            flagged = [f for f in schema.features if f.is_group_id]
+            assert len(flagged) == 1
+            assert flagged[0].modality is FeatureModality.CATEGORICAL
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__numeric_group_ids__are_categorical_however_many_there_are(
+        self, estimator_cls: type
+    ) -> None:
+        """One group per row: far past the cardinality cap for a numeric column."""
+        estimator, _, _ = _fitted(estimator_cls, list(range(40)), group_col="g")
+
+        _, feature = _group_feature(estimator)
+        assert feature.modality is FeatureModality.CATEGORICAL
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__array_input__is_refused_at_fit_and_at_predict(
+        self, estimator_cls: type
+    ) -> None:
+        """`ValueError`, as the `group_col` documentation promises."""
+        X, y = _estimator_data(estimator_cls, [f"p{i % 5}" for i in range(30)])
+        estimator = estimator_cls(n_estimators=1, group_col="g")
+
+        with pytest.raises(ValueError, match="has to be a DataFrame"):
+            estimator.fit(X.to_numpy(), y)
+
+        estimator.fit(X, y)
+        # The array is as wide as the fit input, so only the encoder catches it.
+        with pytest.raises(ValueError, match="has to be a DataFrame"):
+            estimator.predict(X.to_numpy())
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__group_col_that_names_no_column__is_refused_at_fit(
+        self, estimator_cls: type
+    ) -> None:
+        X, y = _estimator_data(estimator_cls, [f"p{i % 5}" for i in range(30)])
+
+        with pytest.raises(ValueError, match="not in the input"):
+            estimator_cls(n_estimators=1, group_col="patient").fit(X, y)
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__refit__forgets_the_groups_of_the_first_fit(
+        self, estimator_cls: type
+    ) -> None:
+        estimator, _, _ = _fitted(estimator_cls, ["a", "b"] * 15, group_col="g")
+
+        X, y = _estimator_data(estimator_cls, ["x", "y", "z"] * 10)
+        estimator.fit(X, y)
+
+        assert estimator.group_encoder_.keys_.tolist() == [("x",), ("y",), ("z",)]
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    @pytest.mark.parametrize(
+        ("groups", "with_string_column"),
+        [
+            # Few enough distinct codes that detection alone calls them categorical.
+            (["a", "b"] * 51, False),
+            # Another string column, so cleaning runs its ordinal encoder.
+            (["a", "b"] * 51, True),
+            # A single group, which detection calls constant.
+            (["a"] * 30, False),
+        ],
+        ids=["detected_categorical", "next_to_a_string_column", "single_group"],
+    )
+    def test__model_input__carries_the_codes_and_misses_unseen_groups(
+        self, estimator_cls: type, groups: list[str], with_string_column: bool
+    ) -> None:
+        """The codes reach the model untouched by cleaning, unseen keys as NaN."""
+        X, y = _estimator_data(estimator_cls, groups)
+        if with_string_column:
+            X["colour"] = ["red", "blue"] * (len(groups) // 2)
+        estimator = estimator_cls(n_estimators=1, group_col="g", fit_mode="low_memory")
+        estimator.fit(X, y)
+
+        X_predict = X.iloc[:2].copy()
+        X_predict["g"] = ["a", "unseen"]
+        seen: list[np.ndarray] = []
+        iter_outputs = estimator.executor_.iter_outputs
+
+        def spy(X: np.ndarray, **kwargs: Any) -> Any:
+            seen.append(np.asarray(X))
+            return iter_outputs(X, **kwargs)
+
+        with patch.object(estimator.executor_, "iter_outputs", spy):
+            estimator.predict(X_predict)
+
+        codes = seen[0][:, estimator.group_feature_index_]
+        assert codes[0] == 0.0
+        assert np.isnan(codes[1])
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__get_embeddings__encodes_the_groups_first(
+        self, estimator_cls: type
+    ) -> None:
+        estimator, X, _ = _fitted(estimator_cls, ["a", "b", "c"] * 10, group_col="g")
+
+        assert estimator.get_embeddings(X).shape[1] == 30
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__tuning_config__is_refused_with_group_col(
+        self, estimator_cls: type
+    ) -> None:
+        X, y = _estimator_data(estimator_cls, [f"p{i % 5}" for i in range(30)])
+        estimator = estimator_cls(
+            n_estimators=1,
+            group_col="g",
+            tuning_config={"calibrate_temperature": True},
+        )
+
+        with pytest.raises(ValueError, match="cannot be combined with `group_col`"):
+            estimator.fit(X, y)
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__differentiable_input__is_refused_with_group_col(
+        self, estimator_cls: type
+    ) -> None:
+        estimator = estimator_cls(
+            n_estimators=1, device="cpu", differentiable_input=True, group_col="g"
+        )
+        X = torch.randn(20, 3)
+        y = (
+            torch.arange(20) % 2
+            if estimator_cls is TabPFNClassifier
+            else torch.randn(20)
+        )
+
+        with pytest.raises(ValueError, match="not supported with differentiable"):
+            estimator.fit_with_differentiable_input(X, y)
+
+    @pytest.mark.parametrize("estimator_cls", ESTIMATORS)
+    def test__fit_from_preprocessed__is_refused_with_group_col(
+        self, estimator_cls: type
+    ) -> None:
+        estimator = estimator_cls(n_estimators=1, group_col="g")
+        kwargs: dict[str, Any] = {"performance_options": None}
+        if estimator_cls is TabPFNRegressor:
+            kwargs |= {"y_train_mean": 0.0, "y_train_std": 1.0}
+
+        with pytest.raises(ValueError, match="not supported with fit_from_prep"):
+            estimator.fit_from_preprocessed([], [], [], [], **kwargs)
 
 
 
@@ -109406,12 +110752,14 @@ class TestGpuQuantileEligibility:
         assert is_gpu_quantile_eligible("quantile_uni_coarse")
         assert is_gpu_quantile_eligible("quantile_uni_fine")
         assert is_gpu_quantile_eligible("quantile_uni_extrapolate")
+        assert is_gpu_quantile_eligible("quantile_norm")
+        assert is_gpu_quantile_eligible("quantile_norm_coarse")
+        assert is_gpu_quantile_eligible("quantile_norm_fine")
 
     def test_not_eligible(self) -> None:
         assert not is_gpu_quantile_eligible("squashing_scaler_default")
         assert not is_gpu_quantile_eligible("none")
         assert not is_gpu_quantile_eligible("power")
-        assert not is_gpu_quantile_eligible("quantile_norm")
 
     def test_effective_n_quantiles(self) -> None:
         assert compute_effective_n_quantiles("quantile_uni", 200) == 40
@@ -109465,6 +110813,25 @@ class TestPipelineConsistency:
         categorical_name="numeric",
         max_features_per_estimator=680,
     )
+    QUANTILE_NORM_NUMERIC = PreprocessorConfig(
+        "quantile_norm",
+        categorical_name="numeric",
+        max_features_per_estimator=680,
+    )
+    QUANTILE_NORM_COARSE_APPEND_ORIGINAL = PreprocessorConfig(
+        "quantile_norm_coarse",
+        categorical_name="onehot",
+        append_original=True,
+        max_features_per_estimator=680,
+    )
+    # v2 regressor config
+    V2_SAFEPOWER_ONEHOT = PreprocessorConfig("safepower", categorical_name="onehot")
+    SAFEPOWER_NUMERIC_APPEND_ORIGINAL = PreprocessorConfig(
+        "safepower",
+        categorical_name="numeric",
+        append_original=True,
+        max_features_per_estimator=680,
+    )
     # v2.5 classifier configs (non-quantile)
     V25_SQUASHING_SVD = PreprocessorConfig(
         name="squashing_scaler_default",
@@ -109514,6 +110881,10 @@ class TestPipelineConsistency:
             V26_QUANTILE_NUMERIC_APPEND_ORIGINAL,
             V26_QUANTILE_ONEHOT,
             V26_QUANTILE_EXTRAPOLATE,
+            QUANTILE_NORM_NUMERIC,
+            QUANTILE_NORM_COARSE_APPEND_ORIGINAL,
+            V2_SAFEPOWER_ONEHOT,
+            SAFEPOWER_NUMERIC_APPEND_ORIGINAL,
             pytest.param(V26_QUANTILE_SVD, marks=_SKIP_IF_GPU_CPU_SVD_NOT_CONSISTENT),
             pytest.param(V25_SQUASHING_SVD, marks=_SKIP_IF_GPU_CPU_SVD_NOT_CONSISTENT),
             V25_SQUASHING_NO_SVD,
@@ -109524,6 +110895,10 @@ class TestPipelineConsistency:
             "v26_quantile_numeric_append_original",
             "v26_quantile_onehot",
             "v26_quantile_extrapolate",
+            "quantile_norm_numeric",
+            "quantile_norm_coarse_append_original",
+            "v2_safepower_onehot",
+            "safepower_numeric_append_original",
             "v26_quantile_svd",
             "v25_squashing_svd",
             "v25_squashing_no_svd",
@@ -109764,7 +111139,7 @@ class TestGpuPipelineInfPassthrough:
     """
 
     @pytest.mark.parametrize(
-        "preset", ["quantile_uni_coarse", "squashing_scaler_default"]
+        "preset", ["quantile_uni_coarse", "squashing_scaler_default", "safepower"]
     )
     @pytest.mark.parametrize("global_transformer_name", [None, "svd"])
     def test_infinities_survive_cpu_plus_gpu_pipeline(
@@ -110894,6 +112269,121 @@ class TestTorchQuantileTransformerExtrapolation:
         )
 
 
+class TestTorchQuantileTransformerNormalOutput:
+    """Tests for ``output_distribution="normal"``."""
+
+    @pytest.mark.parametrize("n_quantiles", [10, 60, 300])
+    def test__transform__matches_sklearn(self, n_quantiles: int):
+        """Matches sklearn on NaNs, ties, constant columns and out-of-range rows."""
+        rng = np.random.default_rng(0)
+        x_train = rng.standard_normal((300, 4))
+        x_train[:, 1] = 3.0
+        x_train[:, 2] = np.round(x_train[:, 2])
+        x_train[rng.random(x_train.shape) < 0.05] = np.nan
+        x_test = np.concatenate([x_train, 4 * rng.standard_normal((50, 4))])
+
+        sklearn_qt = AdaptiveQuantileTransformer(
+            n_quantiles=n_quantiles, output_distribution="normal"
+        ).fit(x_train)
+        expected = sklearn_qt.transform(x_test)
+
+        torch_qt = TorchQuantileTransformer(
+            n_quantiles=n_quantiles, output_distribution="normal"
+        )
+        cache = torch_qt.fit(torch.from_numpy(x_train))
+        result = torch_qt.transform(torch.from_numpy(x_test), fitted_cache=cache)
+
+        np.testing.assert_allclose(result.numpy(), expected, rtol=0, atol=1e-12)
+
+    @pytest.mark.parametrize("scale", [1.0, 1.6e9, 2.0**30, -(2.0**30)])
+    def test__transform__ties_at_fitted_bounds_match_sklearn(self, scale: float):
+        """Ties at the fitted min/max match sklearn, including when |x| >= 2**30."""
+        rng = np.random.default_rng(0)
+        base = np.concatenate(
+            [rng.uniform(1, 1.0625, 500), np.full(50, 1.0), np.full(50, 1.0625)]
+        )
+        x = (base * scale)[:, None]
+
+        expected = (
+            AdaptiveQuantileTransformer(n_quantiles=600, output_distribution="normal")
+            .fit(x)
+            .transform(x)
+        )
+        torch_qt = TorchQuantileTransformer(
+            n_quantiles=600, output_distribution="normal"
+        )
+        x_t = torch.from_numpy(x)
+        result = torch_qt.transform(x_t, fitted_cache=torch_qt.fit(x_t))
+
+        np.testing.assert_allclose(result.numpy(), expected, rtol=0, atol=1e-12)
+
+    @pytest.mark.parametrize(
+        "x",
+        [
+            np.arange(300) % 30 * 1e-7,
+            1.5 * 2.0**27 + np.arange(300) % 30 * 2.0**-25,
+        ],
+        ids=["1e-7_grid", "near_1.5*2**27"],
+    )
+    def test__transform__float64_near_bounds_match_sklearn(self, x: np.ndarray):
+        """Float64 inputs about 1e-7 inside a fitted bound match sklearn."""
+        x = x[:, None]
+        expected = (
+            AdaptiveQuantileTransformer(n_quantiles=60, output_distribution="normal")
+            .fit(x)
+            .transform(x)
+        )
+        torch_qt = TorchQuantileTransformer(
+            n_quantiles=60, output_distribution="normal"
+        )
+        x_t = torch.from_numpy(x)
+        result = torch_qt.transform(x_t, fitted_cache=torch_qt.fit(x_t))
+
+        np.testing.assert_allclose(result.numpy(), expected, rtol=0, atol=1e-12)
+
+    def test__transform__float32_tails_match_sklearn(self):
+        """Float32 keeps precision in both tails, not only near 0."""
+        rng = np.random.default_rng(0)
+        x = rng.standard_normal((50_000, 2))
+        n_quantiles = 10_000
+        sklearn_qt = AdaptiveQuantileTransformer(
+            n_quantiles=n_quantiles, output_distribution="normal"
+        ).fit(x)
+        torch_qt = TorchQuantileTransformer(
+            n_quantiles=n_quantiles, output_distribution="normal"
+        )
+        cache = torch_qt.fit(torch.from_numpy(x).float())
+
+        lo, hi = x.min(0), x.max(0)
+        for grid in (
+            np.linspace(lo, lo + 0.01 * (hi - lo), 2000),
+            np.linspace(hi - 0.01 * (hi - lo), hi, 2000),
+        ):
+            expected = sklearn_qt.transform(grid)
+            result = torch_qt.transform(
+                torch.from_numpy(grid).float(), fitted_cache=cache
+            )
+            # The float32 quantiles alone account for about 1.5e-4.
+            np.testing.assert_allclose(result.numpy(), expected, rtol=0, atol=5e-4)
+
+    @pytest.mark.parametrize("n_train", [0, 1])
+    def test__transform__float16_degenerate_fit(self, n_train: int):
+        """Fitting on at most one float16 row still transforms."""
+        x = torch.randn(300, 3).half()
+        torch_qt = TorchQuantileTransformer(
+            n_quantiles=60, output_distribution="normal"
+        )
+        result = torch_qt.transform(x, fitted_cache=torch_qt.fit(x[:n_train]))
+        assert result.dtype == torch.float16
+        assert result.shape == x.shape
+
+    def test__init__extrapolate_ratio_raises(self):
+        with pytest.raises(ValueError, match="extrapolate_ratio"):
+            TorchQuantileTransformer(
+                extrapolate_ratio=1.0, output_distribution="normal"
+            )
+
+
 def _make_schema(
     *,
     num_numericals: int = 0,
@@ -111044,6 +112534,160 @@ def test__torch_extrapolate_ratio__rejects_negative():
     """Negative extrapolate_ratio is rejected at construction."""
     with pytest.raises(ValueError, match="non-negative"):
         TorchQuantileTransformer(n_quantiles=10, extrapolate_ratio=-1.0)
+
+
+
+================================================
+FILE: tests/test_torch_preprocessing/test_torch_safe_power_transformer.py
+================================================
+#  Copyright (c) Prior Labs GmbH 2026.
+
+"""Tests for TorchSafePowerTransformer."""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+import torch
+
+from tabpfn.preprocessing.datamodel import Feature, FeatureModality, FeatureSchema
+from tabpfn.preprocessing.steps.reshape_feature_distribution_step import (
+    get_all_reshape_feature_distribution_preprocessors,
+)
+from tabpfn.preprocessing.torch.pipeline_interface import TorchPreprocessingPipeline
+from tabpfn.preprocessing.torch.steps import TorchSelectiveSafePowerStep
+from tabpfn.preprocessing.torch.torch_safe_power_transformer import (
+    TorchSafePowerTransformer,
+)
+
+
+def _make_columns(rng: np.random.Generator, n: int) -> np.ndarray:
+    return np.column_stack(
+        [
+            rng.standard_normal(n),
+            rng.lognormal(0, 1, n),
+            -rng.lognormal(0, 1.5, n),
+            100 * rng.exponential(1, n),
+            1e4 * rng.standard_normal(n),
+            rng.uniform(-1, 1, n) ** 3,
+            rng.integers(0, 3, n).astype(np.float64),
+            np.full(n, 3.0),
+            np.zeros(n),
+        ]
+    )
+
+
+@pytest.mark.parametrize("n_samples", [5, 100, 1000])
+@pytest.mark.parametrize("nan_fraction", [0.0, 0.1])
+def test__fit_transform__matches_cpu_safepower(n_samples: int, nan_fraction: float):
+    """Lambdas and outputs match the CPU ``safepower`` preset."""
+    rng = np.random.default_rng(0)
+    x_train = _make_columns(rng, n_samples)
+    x_train[rng.random(x_train.shape) < nan_fraction] = np.nan
+    x_test = np.concatenate([x_train, 5 * _make_columns(rng, 50)])
+
+    cpu = get_all_reshape_feature_distribution_preprocessors(n_samples)["safepower"]
+    cpu.fit(x_train)
+    expected = cpu.transform(x_test.copy())
+
+    torch_pt = TorchSafePowerTransformer()
+    cache = torch_pt.fit(torch.from_numpy(x_train))
+    result = torch_pt.transform(torch.from_numpy(x_test), fitted_cache=cache)
+
+    np.testing.assert_allclose(
+        cache["lambdas"].numpy(), cpu.steps[0][1].lambdas_, rtol=1e-6, atol=1e-7
+    )
+    np.testing.assert_allclose(result.numpy(), expected, rtol=1e-5, atol=1e-6)
+
+
+def test__transform__keeps_shape_and_dtype_of_3d_input():
+    x = torch.randn(40, 2, 3, dtype=torch.float32)
+    torch_pt = TorchSafePowerTransformer()
+    result = torch_pt.transform(x, fitted_cache=torch_pt.fit(x))
+    assert result.shape == x.shape
+    assert result.dtype == torch.float32
+
+
+def test__fit_transform__chunking_matches_single_chunk(monkeypatch):
+    """Column-chunked fit and row-chunked transform match one chunk."""
+    rng = np.random.default_rng(0)
+    x_np = _make_columns(rng, 300)
+    x_np[rng.random(x_np.shape) < 0.1] = np.nan
+    x = torch.from_numpy(x_np)
+
+    torch_pt = TorchSafePowerTransformer()
+    cache = torch_pt.fit(x)
+    expected = torch_pt.transform(x, fitted_cache=cache)
+
+    monkeypatch.setattr(
+        "tabpfn.preprocessing.torch.torch_safe_power_transformer._CHUNK_TARGET_BYTES",
+        1,
+    )
+    chunked_cache = torch_pt.fit(x)
+    chunked = torch_pt.transform(x, fitted_cache=chunked_cache)
+
+    # Reductions over chunks of different widths sum in a different order, so
+    # the lambda search may stop at a different point within its tolerance.
+    for key, value in cache.items():
+        torch.testing.assert_close(chunked_cache[key], value, rtol=1e-6, atol=1e-7)
+    torch.testing.assert_close(chunked, expected, rtol=1e-6, atol=1e-6)
+
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+def test__fit_transform__constant_observed_values__lambda_one_and_finite(
+    dtype: torch.dtype,
+):
+    """Near-constant observed values get lambda 1 on CPU and torch."""
+    nan, one_up = np.nan, np.nextafter(1.0, 2.0)
+    x_train = np.array(
+        [
+            [1.0, -3.0, nan, 1.0],
+            [1.0, -3.0, 5.0, one_up],
+            [nan, nan, nan, nan],
+            [1.0, -3.0, nan, 1.0],
+        ]
+    )
+    x_test = np.array(
+        [[1.0, -3.0, 5.0, 1.0], [2.0, -1.0, 7.0, 2.0], [nan, nan, nan, nan]]
+    )
+
+    cpu = get_all_reshape_feature_distribution_preprocessors(4)["safepower"]
+    cpu.fit(x_train)
+    expected = cpu.transform(x_test.copy())
+
+    torch_pt = TorchSafePowerTransformer()
+    cache = torch_pt.fit(torch.from_numpy(x_train).to(dtype))
+    result = torch_pt.transform(torch.from_numpy(x_test).to(dtype), fitted_cache=cache)
+
+    np.testing.assert_array_equal(cpu.steps[0][1].lambdas_, [1.0, 1.0, 1.0, 1.0])
+    np.testing.assert_array_equal(cache["lambdas"].numpy(), [1.0, 1.0, 1.0, 1.0])
+    assert torch.isfinite(result).all()
+    np.testing.assert_allclose(result.numpy(), expected, rtol=1e-6, atol=1e-6)
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="needs MPS")
+def test__pipeline__mps_fitted_cache__matches_uncached():
+    """The float64 cache survives reuse on MPS, which has no float64."""
+    rng = np.random.default_rng(0)
+    x = torch.from_numpy(_make_columns(rng, 120)).float().unsqueeze(1).to("mps")
+    n_train = 100
+    n_cols = x.shape[-1]
+    schema = FeatureSchema(
+        features=[
+            Feature(name=f"f{i}", modality=FeatureModality.NUMERICAL)
+            for i in range(n_cols)
+        ]
+    )
+    pipeline = TorchPreprocessingPipeline(
+        steps=[(TorchSelectiveSafePowerStep(list(range(n_cols))), None)],
+        keep_fitted_cache=True,
+    )
+
+    uncached = pipeline(x, schema, num_train_rows=n_train).x
+    cached = pipeline(x[n_train:], schema, use_fitted_cache=True).x
+
+    assert cached.device.type == "mps"
+    torch.testing.assert_close(cached, uncached[n_train:])
 
 
 

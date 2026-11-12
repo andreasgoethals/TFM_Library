@@ -4,6 +4,10 @@ Human-readable log of library updates, **newest first**. Consuming projects
 pin a commit of this repo — read this to decide whether to update your pin.
 One line per change; one dated section per day.
 
+## 2026-11-12
+
+- Reconciled 72 core papers with live Zotero and verified the 14 supporting references. Refreshed registered sources and official external sources. Tracked changes include LimiX, RelArena, TabICL, TabPFN, TabPFN Client and the official TabPFN documentation.
+
 ## 2026-11-10
 
 - Refreshed four papers from arXiv: TabPFN-3 to v3 and TabPFN-3.5 to v3 (both 3 November), Xu et al. to v2 (3 November) and Klötergens et al. to v2 (4 November). TabPFN-3, TabPFN-3.5 and Klötergens moved to `papers/2026/11_…` with `git mv`. Their text was regenerated and hashes and versions were recorded in `papers/version_updates.json`. Summary entries, overview rows and timeline rows moved to November with their anchors unchanged. Titles are unchanged, and Zotero records and attachments were not modified.
